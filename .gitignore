@@ -1,0 +1,45 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Dependency directories
+node_modules/
+/__pycache__/
+*.pyc
+/backend/**/__pycache__/**
+# Build artifacts
+build/
+dist/
+out/
+.next/ # For Next.js projects
+public/build/ # If your build output goes here
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+/backend/.env
+/frontend/.env
+/frontend/node_modules/
+# IDE and OS specific files
+.DS_Store
+.idea/
+.vscode/
+Thumbs.db
+
+# Test coverage reports
+coverage/
+
+# npm/yarn cache
+.npm/
+.yarn/
+
+# Miscellaneous
+*.tgz
+*.zip
+*.rar
+*.swp

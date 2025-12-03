@@ -1,0 +1,49 @@
+{
+  "databases": {
+    "authentication": {
+      "db_info": {
+        "connectionScheme": "mongodb",
+        "username": "admin",
+        "password": "password",
+        "host": "localhost:27017",
+        "database": "easylife_auth",
+        "collections": [
+          "users",
+          "tokens",
+          "reset_tokens",
+          "sessions",
+          "roles",
+          "groups",
+          "scenario_requests",
+          "feedbacks",
+          "easylife_domain",
+          "easylife_scenerios",
+          "easylife_sceneario_playboard"
+        ]
+      }
+    }
+  },
+  "specs": {
+    "app_secrets": {
+      "auth_secret_key": "your-super-secret-key-change-in-production"
+    },
+    "smtp": {
+      "smtp_server": "localhost",
+      "smtp_port": 25,
+      "email": "noreply@easylife.com",
+      "password": ""
+    },
+    "webapp": {
+      "host": "http://localhost:3000/"
+    },
+    "auth": {
+      "token_timeout": 15
+    }
+  },
+  "cors": {
+    "origins": [
+      "http://localhost:3000",
+      "http://localhost:5173"
+    ]
+  }
+}

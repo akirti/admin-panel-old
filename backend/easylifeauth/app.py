@@ -1,0 +1,155 @@
+"""
+EasyLife Auth - FastAPI Application (Async with Motor)
+Main application entry point
+"""
+from typing import Optional, Dict, Any
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
+
+from . import API_VERSION, API_BASE_ROUTE
+from .api import (
+    auth_router,
+    admin_router,
+    domain_router,
+    scenario_router,
+    playboard_router,
+    feedback_router,
+    scenario_request_router,
+    health_router
+)
+from .api.dependencies import init_dependencies
+from .db.db_manager import DatabaseManager
+from .services.token_manager import TokenManager
+from .services.email_service import EmailService
+from .errors.auth_error import AuthError
+
+
+def create_app(
+    db_config: Optional[Dict[str, Any]] = None,
+    token_secret: Optional[str] = None,
+    smtp_config: Optional[Dict[str, Any]] = None,
+    cors_origins: list = None,
+    title: str = "EasyLife Auth API",
+    description: str = "Authentication and Authorization API for EasyLife"
+) -> FastAPI:
+    """Create and configure FastAPI application"""
+    
+    # Store references for cleanup
+    db_manager: Optional[DatabaseManager] = None
+    
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        nonlocal db_manager
+        
+        # Startup
+        if db_config and token_secret:
+            # Initialize database with Motor (async)
+            db_manager = DatabaseManager(config=db_config)
+            
+            # Test connection
+            try:
+                is_connected = await db_manager.ping()
+                if is_connected:
+                    print("✓ Connected to MongoDB")
+                else:
+                    print("✗ Failed to connect to MongoDB")
+            except Exception as e:
+                print(f"✗ MongoDB connection error: {e}")
+            
+            # Initialize token manager
+            token_manager = TokenManager(
+                secret_key=token_secret,
+                db=db_manager
+            )
+            
+            # Initialize email service (optional)
+            email_service = None
+            if smtp_config and all(k in smtp_config for k in ["smtp_server", "smtp_port", "email"]):
+                email_service = EmailService(smtp_config)
+                print("✓ Email service configured")
+            
+            # Initialize all dependencies
+            init_dependencies(db_manager, token_manager, email_service)
+            print("✓ Services initialized")
+        
+        yield
+        
+        # Shutdown
+        if db_manager:
+            db_manager.close()
+            print("✓ Database connection closed")
+    
+    app = FastAPI(
+        title=title,
+        description=description,
+        version=API_VERSION,
+        lifespan=lifespan,
+        docs_url=f"{API_BASE_ROUTE}/docs",
+        redoc_url=f"{API_BASE_ROUTE}/redoc",
+        openapi_url=f"{API_BASE_ROUTE}/openapi.json"
+    )
+    
+    # CORS middleware
+    if cors_origins is None:
+        cors_origins = ["*"]
+    
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    
+    # Exception handlers
+    @app.exception_handler(AuthError)
+    async def auth_error_handler(request: Request, exc: AuthError):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"error": exc.message}
+        )
+    
+    @app.exception_handler(HTTPException)
+    async def http_exception_handler(request: Request, exc: HTTPException):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"error": exc.detail}
+        )
+    
+    @app.exception_handler(Exception)
+    async def general_exception_handler(request: Request, exc: Exception):
+        # Log the error for debugging
+        import traceback
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Internal server error"}
+        )
+    
+    # Include routers with API base route prefix
+    app.include_router(auth_router, prefix=API_BASE_ROUTE)
+    app.include_router(admin_router, prefix=API_BASE_ROUTE)
+    app.include_router(domain_router, prefix=API_BASE_ROUTE)
+    app.include_router(scenario_router, prefix=API_BASE_ROUTE)
+    app.include_router(playboard_router, prefix=API_BASE_ROUTE)
+    app.include_router(feedback_router, prefix=API_BASE_ROUTE)
+    app.include_router(scenario_request_router, prefix=API_BASE_ROUTE)
+    app.include_router(health_router, prefix=API_BASE_ROUTE)
+    
+    # Root endpoint
+    @app.get("/")
+    async def root():
+        return {
+            "message": "EasyLife Auth API",
+            "version": API_VERSION,
+            "docs": f"{API_BASE_ROUTE}/docs"
+        }
+    
+    return app
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("easylifeauth.app:app", host="0.0.0.0", port=8000, reload=True)

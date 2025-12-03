@@ -1,0 +1,126 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: easylife-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password123}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-easylife_auth}
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    networks:
+      - easylife-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Backend API (FastAPI)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: easylife-backend
+    restart: unless-stopped
+    environment:
+      # Database - simplified env vars
+      MONGODB_SCHEME: mongodb
+      MONGODB_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGODB_PASSWORD: ${MONGO_ROOT_PASSWORD:-password123}
+      MONGODB_HOST: mongodb:27017
+      MONGODB_DATABASE: ${MONGO_DATABASE:-easylife_auth}
+      # Auth
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-super-secret-jwt-key-change-in-production}
+      EASYLIFE_SPECS_AUTH_TOKEN_TIMEOUT: ${TOKEN_TIMEOUT:-30}
+      # SMTP (optional)
+      SMTP_SERVER: ${SMTP_SERVER:-mailhog}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_EMAIL: ${SMTP_EMAIL:-noreply@easylife.local}
+      # App
+      WEBAPP_HOST: ${WEBAPP_HOST:-http://localhost:3000/}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - easylife-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/live')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Frontend (React + Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: easylife-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - backend
+    networks:
+      - easylife-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # MailHog - Email testing (optional, for development)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: easylife-mailhog
+    restart: unless-stopped
+    ports:
+      - "${MAILHOG_SMTP_PORT:-1025}:1025"  # SMTP
+      - "${MAILHOG_WEB_PORT:-8025}:8025"   # Web UI
+    networks:
+      - easylife-network
+    profiles:
+      - dev
+
+  # Mongo Express - Database UI (optional, for development)
+  mongo-express:
+    image: mongo-express:latest
+    container_name: easylife-mongo-express
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD:-password123}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password123}@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USERNAME:-admin}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD:-admin123}
+    ports:
+      - "${MONGO_EXPRESS_PORT:-8081}:8081"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - easylife-network
+    profiles:
+      - dev
+
+networks:
+  easylife-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
