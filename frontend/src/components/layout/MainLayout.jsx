@@ -13,7 +13,9 @@ import {
   X,
   User,
   ChevronDown,
-  Home
+  Home,
+  MessageSquarePlus,
+  ClipboardList
 } from 'lucide-react';
 
 function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
@@ -37,6 +39,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
         { path: '/admin/roles', icon: Shield, label: 'Roles Management' },
         { path: '/admin/domains', icon: Layers, label: 'Domains Management' },
         { path: '/admin/scenarios', icon: FileText, label: 'Scenarios Management' },
+        { path: '/admin/scenario-requests', icon: ClipboardList, label: 'Scenario Requests' },
       ];
     }
 
@@ -46,6 +49,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
         { path: '/management', icon: LayoutDashboard, label: 'Dashboard', exact: true },
         { path: '/management/users', icon: Users, label: 'Users Management' },
         { path: '/management/domains', icon: Layers, label: 'Domains' },
+        { path: '/management/scenario-requests', icon: ClipboardList, label: 'Scenario Requests' },
       ];
     }
 
@@ -53,6 +57,8 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
     const items = [
       { path: '/dashboard', icon: Home, label: 'Dashboard' },
       { path: '/domains', icon: Layers, label: 'My Domains' },
+      { path: '/ask-scenario', icon: MessageSquarePlus, label: 'Ask Scenario' },
+      { path: '/my-requests', icon: ClipboardList, label: 'My Requests' },
       { path: '/profile', icon: User, label: 'Profile' },
     ];
 

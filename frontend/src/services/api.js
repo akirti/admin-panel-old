@@ -7,29 +7,69 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Required for CSRF cookies
 });
 
-// Request interceptor for auth token
+// CSRF token management
+let csrfToken = null;
+
+const fetchCSRFToken = async () => {
+  try {
+    // First call sets the cookie, second call returns the token
+    let response = await axios.get(`${API_BASE_URL}/auth/csrf-token`, {
+      withCredentials: true
+    });
+
+    // If no token returned, retry (first call sets cookie)
+    if (!response.data.csrf_token) {
+      response = await axios.get(`${API_BASE_URL}/auth/csrf-token`, {
+        withCredentials: true
+      });
+    }
+
+    csrfToken = response.data.csrf_token;
+    return csrfToken;
+  } catch (error) {
+    console.error('Failed to fetch CSRF token:', error);
+    return null;
+  }
+};
+
+// Request interceptor for auth token and CSRF token
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    // Add auth token
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Add CSRF token for state-changing requests
+    const needsCSRF = ['post', 'put', 'delete', 'patch'].includes(config.method?.toLowerCase());
+    if (needsCSRF) {
+      if (!csrfToken) {
+        await fetchCSRFToken();
+      }
+      if (csrfToken) {
+        config.headers['X-CSRF-Token'] = csrfToken;
+      }
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for token refresh
+// Response interceptor for token refresh and CSRF errors
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    
+
+    // Handle 401 Unauthorized - refresh JWT token
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      
+
       try {
         const refreshToken = localStorage.getItem('refresh_token');
         if (refreshToken) {
@@ -38,13 +78,14 @@ api.interceptors.response.use(
           }, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('access_token')}`
-            }
+            },
+            withCredentials: true
           });
-          
+
           const { access_token, refresh_token } = response.data;
           localStorage.setItem('access_token', access_token);
           localStorage.setItem('refresh_token', refresh_token);
-          
+
           originalRequest.headers.Authorization = `Bearer ${access_token}`;
           return api(originalRequest);
         }
@@ -55,7 +96,23 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
-    
+
+    // Handle 403 CSRF errors - refresh CSRF token and retry
+    if (error.response?.status === 403 &&
+        error.response?.data?.error?.includes('CSRF') &&
+        !originalRequest._csrfRetry) {
+      originalRequest._csrfRetry = true;
+
+      // Fetch new CSRF token
+      await fetchCSRFToken();
+
+      // Retry with new token
+      if (csrfToken) {
+        originalRequest.headers['X-CSRF-Token'] = csrfToken;
+        return api(originalRequest);
+      }
+    }
+
     return Promise.reject(error);
   }
 );
@@ -122,10 +179,87 @@ export const feedbackAPI = {
 
 // Scenario Request API
 export const scenarioRequestAPI = {
+  // CRUD operations
   getAll: (params = {}) => api.get('/ask_scenarios/all', { params }),
   get: (requestId) => api.get(`/ask_scenarios/${requestId}`),
   create: (data) => api.post('/ask_scenarios', data),
   update: (requestId, data) => api.put(`/ask_scenarios/${requestId}`, data),
+  adminUpdate: (requestId, data) => api.put(`/ask_scenarios/${requestId}/admin`, data),
+  
+  // Lookup endpoints
+  getStatuses: () => api.get('/ask_scenarios/lookup/statuses'),
+  getRequestTypes: () => api.get('/ask_scenarios/lookup/request_types'),
+  getDomains: () => api.get('/ask_scenarios/lookup/domains'),
+  searchUsers: (query) => api.get('/ask_scenarios/lookup/users', { params: { q: query } }),
+  
+  // Comments and Workflow
+  addComment: (requestId, comment) => {
+    const formData = new FormData();
+    formData.append('comment', comment);
+    return api.post(`/ask_scenarios/${requestId}/comment`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  addWorkflow: (requestId, data) => {
+    const formData = new FormData();
+    if (data.assigned_to) formData.append('assigned_to', data.assigned_to);
+    if (data.to_status) formData.append('to_status', data.to_status);
+    if (data.comment) formData.append('comment', data.comment);
+    return api.post(`/ask_scenarios/${requestId}/workflow`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  updateStatus: (requestId, status, comment = '') => {
+    const formData = new FormData();
+    formData.append('new_status', status);
+    if (comment) formData.append('comment', comment);
+    return api.put(`/ask_scenarios/${requestId}/status`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  
+  // File operations
+  uploadFile: (requestId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/ask_scenarios/${requestId}/files`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  uploadBucketFile: (requestId, file, comment = '') => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (comment) {
+      formData.append('comment', comment);
+    }
+    return api.post(`/ask_scenarios/${requestId}/buckets`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  previewFile: (requestId, filePath) => api.get(`/ask_scenarios/${requestId}/files/${encodeURIComponent(filePath)}/preview`),
+  downloadFile: (requestId, filePath) => api.get(`/ask_scenarios/${requestId}/files/${encodeURIComponent(filePath)}/download`, {
+    responseType: 'blob'
+  }),
+  
+  // Stats for dashboard
+  getStats: async () => {
+    try {
+      const response = await api.get('/ask_scenarios/all', { params: { limit: 1000 } });
+      const data = response.data?.data || [];
+      
+      const stats = {
+        total: data.length,
+        submitted: data.filter(r => r.status === 'submitted').length,
+        inProgress: data.filter(r => ['in-progress', 'development', 'review', 'testing', 'accepted'].includes(r.status)).length,
+        deployed: data.filter(r => ['deployed', 'active', 'snapshot'].includes(r.status)).length,
+        rejected: data.filter(r => ['rejected', 'inactive'].includes(r.status)).length,
+        recent: data.slice(0, 5)
+      };
+      return { data: stats };
+    } catch (error) {
+      return { data: { total: 0, submitted: 0, inProgress: 0, deployed: 0, rejected: 0, recent: [] } };
+    }
+  }
 };
 
 export default api;

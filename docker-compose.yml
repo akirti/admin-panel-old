@@ -42,7 +42,7 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-super-secret-jwt-key-change-in-production}
       EASYLIFE_SPECS_AUTH_TOKEN_TIMEOUT: ${TOKEN_TIMEOUT:-30}
       # SMTP (optional)
-      SMTP_SERVER: ${SMTP_SERVER:-mailhog}
+      SMTP_SERVER: ${SMTP_SERVER:-mailpit}
       SMTP_PORT: ${SMTP_PORT:-1025}
       SMTP_EMAIL: ${SMTP_EMAIL:-noreply@easylife.local}
       # App
@@ -83,14 +83,17 @@ services:
       retries: 3
       start_period: 10s
 
-  # MailHog - Email testing (optional, for development)
-  mailhog:
-    image: mailhog/mailhog:latest
-    container_name: easylife-mailhog
+  # Mailpit - Email testing (optional, for development)
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: easylife-mailpit
     restart: unless-stopped
     ports:
-      - "${MAILHOG_SMTP_PORT:-1025}:1025"  # SMTP
-      - "${MAILHOG_WEB_PORT:-8025}:8025"   # Web UI
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"  # SMTP
+      - "${MAILPIT_WEB_PORT:-8025}:8025"   # Web UI
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
     networks:
       - easylife-network
     profiles:

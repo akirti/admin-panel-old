@@ -41,12 +41,13 @@ services:
       MONGODB_DATABASE: easylife_auth
       JWT_SECRET_KEY: dev-secret-key-not-for-production
       EASYLIFE_SPECS_AUTH_TOKEN_TIMEOUT: 60
-      SMTP_SERVER: mailhog
+      SMTP_SERVER: mailpit
       SMTP_PORT: 1025
       SMTP_EMAIL: noreply@easylife.local
       WEBAPP_HOST: http://localhost:5173/
       CORS_ORIGINS: http://localhost:5173,http://localhost:3000
       ENVIRONMENT: development
+      ENV: development
     volumes:
       - ./backend:/app
       - /app/__pycache__
@@ -91,14 +92,17 @@ services:
     networks:
       - easylife-network-dev
 
-  # MailHog - Email testing
-  mailhog:
-    image: mailhog/mailhog:latest
-    container_name: easylife-mailhog-dev
+  # Mailpit - Email testing (replacement for deprecated MailHog)
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: easylife-mailpit-dev
     restart: unless-stopped
     ports:
       - "1025:1025"   # SMTP
       - "8025:8025"   # Web UI
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
     networks:
       - easylife-network-dev
 

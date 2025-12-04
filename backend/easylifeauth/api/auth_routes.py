@@ -1,4 +1,5 @@
 """Async Authentication Routes"""
+from typing import Dict
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 
 from .models import (
@@ -15,8 +16,33 @@ from ..services.password_service import PasswordResetService
 from ..services.token_manager import TokenManager
 from ..security.access_control import CurrentUser
 from ..errors.auth_error import AuthError
+from ..middleware.csrf import get_csrf_token
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+@router.get("/csrf-token")
+async def csrf_token(request: Request) -> Dict[str, str]:
+    """Get CSRF token for the current session
+
+    The CSRF middleware automatically sets a cookie on GET requests.
+    This endpoint returns the token value so the frontend can include it in
+    X-CSRF-Token headers for POST/PUT/DELETE requests.
+
+    On first call, the cookie may not be in the request yet, but it will be
+    set in the response. Subsequent calls will have the cookie available.
+    """
+    token = get_csrf_token(request)
+    if token:
+        return {"csrf_token": token}
+
+    # If no token in request yet, it means this is the first call
+    # The middleware will set the cookie in the response
+    # Return a message indicating the client should retry
+    return {
+        "csrf_token": "",
+        "message": "CSRF cookie set, please retry to get token"
+    }
 
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)

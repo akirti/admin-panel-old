@@ -24,17 +24,31 @@ from .db.db_manager import DatabaseManager
 from .services.token_manager import TokenManager
 from .services.email_service import EmailService
 from .errors.auth_error import AuthError
+from .middleware.csrf import CSRFProtectMiddleware
 
 
 def create_app(
     db_config: Optional[Dict[str, Any]] = None,
     token_secret: Optional[str] = None,
     smtp_config: Optional[Dict[str, Any]] = None,
+    jira_config: Optional[Dict[str, Any]] = None,
+    file_storage_config: Optional[Dict[str, Any]] = None,
     cors_origins: list = None,
     title: str = "EasyLife Auth API",
     description: str = "Authentication and Authorization API for EasyLife"
 ) -> FastAPI:
-    """Create and configure FastAPI application"""
+    """Create and configure FastAPI application
+    
+    Args:
+        db_config: MongoDB configuration
+        token_secret: JWT secret key
+        smtp_config: SMTP email configuration
+        jira_config: Jira integration config (base_url, email, api_token, project_key)
+        file_storage_config: File storage config (type: 'local' or 'gcs', bucket_name, base_path)
+        cors_origins: CORS allowed origins
+        title: API title
+        description: API description
+    """
     
     # Store references for cleanup
     db_manager: Optional[DatabaseManager] = None
@@ -70,8 +84,14 @@ def create_app(
                 email_service = EmailService(smtp_config)
                 print("✓ Email service configured")
             
-            # Initialize all dependencies
-            init_dependencies(db_manager, token_manager, email_service)
+            # Initialize all dependencies with new services
+            init_dependencies(
+                db_manager,
+                token_manager,
+                email_service,
+                jira_config=jira_config,
+                file_storage_config=file_storage_config
+            )
             print("✓ Services initialized")
         
         yield
@@ -102,6 +122,20 @@ def create_app(
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # CSRF Protection middleware
+    if token_secret:
+        import os
+        is_dev = os.environ.get("ENV", "production") == "development"
+        app.add_middleware(
+            CSRFProtectMiddleware,
+            secret_key=token_secret,
+            cookie_name="csrf_token",
+            header_name="X-CSRF-Token",
+            cookie_secure=not is_dev,  # False in dev, True in production
+            cookie_samesite="lax",
+            exempt_paths={"/api/v1/auth/login", "/api/v1/auth/register"}
+        )
     
     # Exception handlers
     @app.exception_handler(AuthError)

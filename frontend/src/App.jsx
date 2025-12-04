@@ -18,6 +18,9 @@ import DashboardPage from './pages/user/DashboardPage';
 import ProfilePage from './pages/user/ProfilePage';
 import DomainsPage from './pages/user/DomainsPage';
 import DomainDetailPage from './pages/user/DomainDetailPage';
+import AskScenarioPage from './pages/user/AskScenarioPage';
+import MyRequestsPage from './pages/user/MyRequestsPage';
+import RequestDetailPage from './pages/user/RequestDetailPage';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -25,6 +28,7 @@ import UsersManagement from './pages/admin/UsersManagement';
 import RolesManagement from './pages/admin/RolesManagement';
 import DomainsManagement from './pages/admin/DomainsManagement';
 import ScenariosManagement from './pages/admin/ScenariosManagement';
+import ScenarioRequestsManagement from './pages/admin/ScenarioRequestsManagement';
 
 // Protected Route Component
 function ProtectedRoute({ children, requireAdmin = false, requireGroupAdmin = false }) {
@@ -33,7 +37,7 @@ function ProtectedRoute({ children, requireAdmin = false, requireGroupAdmin = fa
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
       </div>
     );
   }
@@ -60,7 +64,7 @@ function PublicRoute({ children }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
       </div>
     );
   }
@@ -111,6 +115,9 @@ function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/domains" element={<DomainsPage />} />
           <Route path="/domains/:domainKey" element={<DomainDetailPage />} />
+          <Route path="/ask-scenario" element={<AskScenarioPage />} />
+          <Route path="/my-requests" element={<MyRequestsPage />} />
+          <Route path="/my-requests/:requestId" element={<RequestDetailPage />} />
         </Route>
 
         {/* Admin Routes - Super Admin Only */}
@@ -124,6 +131,8 @@ function App() {
           <Route path="roles" element={<RolesManagement />} />
           <Route path="domains" element={<DomainsManagement />} />
           <Route path="scenarios" element={<ScenariosManagement />} />
+          <Route path="scenario-requests" element={<ScenarioRequestsManagement />} />
+          <Route path="scenario-requests/:requestId" element={<RequestDetailPage />} />
         </Route>
 
         {/* Group Admin Routes */}
@@ -135,6 +144,8 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<UsersManagement />} />
           <Route path="domains" element={<DomainsManagement />} />
+          <Route path="scenario-requests" element={<ScenarioRequestsManagement />} />
+          <Route path="scenario-requests/:requestId" element={<RequestDetailPage />} />
         </Route>
 
         {/* Redirects */}
