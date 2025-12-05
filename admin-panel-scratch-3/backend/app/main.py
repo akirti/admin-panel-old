@@ -97,23 +97,8 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Security middleware
+# Security middleware (imported first)
 from app.middleware import RateLimitMiddleware, SecurityHeadersMiddleware, RequestValidationMiddleware
-
-# Add security headers
-app.add_middleware(SecurityHeadersMiddleware, enable_hsts=False)  # Set to True in production with HTTPS
-
-# Add request validation
-app.add_middleware(RequestValidationMiddleware, max_body_size=10 * 1024 * 1024)
 
 # Add rate limiting (can be disabled by setting enabled=False)
 # Note: Development-friendly settings - adjust for production
@@ -123,6 +108,24 @@ app.add_middleware(
     requests_per_hour=2000,
     auth_requests_per_minute=20,  # Increased from 5 to allow development testing
     enabled=True  # Set to False to disable rate limiting
+)
+
+# Add request validation
+app.add_middleware(RequestValidationMiddleware, max_body_size=10 * 1024 * 1024)
+
+# Add security headers
+app.add_middleware(SecurityHeadersMiddleware, enable_hsts=False)  # Set to True in production with HTTPS
+
+# CORS configuration - MUST be added LAST so it processes requests FIRST
+# Middleware in FastAPI is applied in LIFO order (Last In, First Out)
+# This ensures CORS headers are added before any other middleware potentially blocks the request
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure appropriately for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],  # Ensure all headers are exposed to the client
 )
 
 # Include routers
