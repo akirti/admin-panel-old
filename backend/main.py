@@ -3,8 +3,14 @@ Main entry point for EasyLife Auth API
 """
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 from easylifeauth.app import create_app
 from easylifeauth.utils.config import ConfigurationLoader
+
+# Load environment variables from .env file
+# Explicitly specify the path to ensure it works regardless of working directory
+env_path = Path(__file__).parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 # Try to load from config file first
 config_path = os.environ.get("CONFIG_PATH", str(Path(__file__).parent / "config"))
@@ -35,8 +41,8 @@ if env_db_host:
         "database": os.environ.get("MONGODB_DATABASE", os.environ.get("EASYLIFE_DATABASES_AUTHENTICATION_DB_INFO_DATABASE", "easylife_auth")),
         "collections": [
             "users", "tokens", "reset_tokens", "sessions", "roles", "groups",
-            "scenario_requests", "feedbacks", "easylife_domain",
-            "easylife_scenerios", "easylife_sceneario_playboard"
+            "permissions", "customers", "scenario_requests", "feedbacks", "domains",
+            "domain_scenarios", "playboards", "configurations", "activity_logs"
         ]
     }
 
@@ -57,11 +63,42 @@ env_cors = os.environ.get("CORS_ORIGINS")
 if env_cors:
     cors_origins = [o.strip() for o in env_cors.split(",")]
 
+# GCS configuration from environment variables
+gcs_config = None
+env_gcs_credentials = os.environ.get("GCS_CREDENTIALS_JSON")
+env_gcs_bucket = os.environ.get("GCS_BUCKET_NAME")
+if env_gcs_credentials and env_gcs_credentials != "{}":
+    gcs_config = {
+        "credentials_json": env_gcs_credentials,
+        "bucket_name": env_gcs_bucket
+    }
+
+# File storage configuration from environment variables
+# FILE_STORAGE_TYPE: "gcs" or "local" (default: "local")
+# When "gcs", uses GCS_CREDENTIALS_JSON and GCS_BUCKET_NAME
+# Falls back to local storage if GCS initialization fails
+file_storage_config = None
+env_file_storage_type = os.environ.get("FILE_STORAGE_TYPE", "local").lower()
+if env_file_storage_type == "gcs" and gcs_config:
+    file_storage_config = {
+        "type": "gcs",
+        "bucket_name": env_gcs_bucket,
+        "credentials_json": env_gcs_credentials,
+        "base_path": os.environ.get("LOCAL_UPLOAD_PATH", "/tmp/easylife_uploads")
+    }
+elif env_file_storage_type == "local" or not gcs_config:
+    file_storage_config = {
+        "type": "local",
+        "base_path": os.environ.get("LOCAL_UPLOAD_PATH", "/tmp/easylife_uploads")
+    }
+
 # Create app
 app = create_app(
     db_config=db_config,
     token_secret=token_secret,
     smtp_config=smtp_config,
+    file_storage_config=file_storage_config,
+    gcs_config=gcs_config,
     cors_origins=cors_origins,
     title="EasyLife Admin Panel API",
     description="Authentication, Authorization, and Administration API"

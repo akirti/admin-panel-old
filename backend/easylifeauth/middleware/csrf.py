@@ -78,16 +78,23 @@ class CSRFProtectMiddleware(BaseHTTPMiddleware):
         if request.method in self.exempt_methods:
             return True
 
-        # Exempt specific paths
-        if request.url.path in self.exempt_paths:
+        path = request.url.path
+
+        # Exempt specific paths (exact match)
+        if path in self.exempt_paths:
             return True
 
+        # Exempt paths by prefix (for patterns like /api/v1/auth/*)
+        for exempt_path in self.exempt_paths:
+            if exempt_path.endswith("*") and path.startswith(exempt_path[:-1]):
+                return True
+
         # Exempt health check endpoints
-        if "/health/" in request.url.path:
+        if "/health" in path:
             return True
 
         # Exempt docs endpoints
-        if any(path in request.url.path for path in ["/docs", "/redoc", "/openapi.json"]):
+        if any(doc_path in path for doc_path in ["/docs", "/redoc", "/openapi.json"]):
             return True
 
         return False

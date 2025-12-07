@@ -22,7 +22,7 @@ class DataDomainService:
 
     async def get_all(self) -> List[Dict[str, Any]]:
         """Get all active domains"""
-        cursor = self.db.easylife_domain.find(
+        cursor = self.db.domains.find(
             filter={"status": "A"},
             projection={"_id": 0}
         ).sort("order", 1)
@@ -32,7 +32,7 @@ class DataDomainService:
 
     async def get_domain_by_key(self, key: str) -> Optional[Dict[str, Any]]:
         """Get domain by key"""
-        result = await self.db.easylife_domain.find_one(
+        result = await self.db.domains.find_one(
             filter={"key": key, "status": "A"}
         )
         if result is not None:
@@ -46,7 +46,7 @@ class DataDomainService:
         else:
             query = {"key": docid, "status": "A"}
 
-        result = await self.db.easylife_domain.find_one(filter=query)
+        result = await self.db.domains.find_one(filter=query)
 
         if result is not None:
             result["_id"] = str(result["_id"])
@@ -63,7 +63,7 @@ class DataDomainService:
         update_attributes["row_update_user_id"] = user_id
         update_attributes["row_update_stp"] = datetime.now(timezone.utc)
         
-        result = await self.db.easylife_domain.update_one(
+        result = await self.db.domains.update_one(
             {"_id": ObjectId(docid)},
             {"$set": update_attributes}
         )
@@ -82,7 +82,7 @@ class DataDomainService:
         if docid is None or status not in ["A", "I"]:
             raise DomainBadError("Bad values provided")
         
-        result = await self.db.easylife_domain.update_one(
+        result = await self.db.domains.update_one(
             {"_id": ObjectId(docid)},
             {"$set": {"status": status}}
         )
@@ -108,10 +108,10 @@ class DataDomainService:
         insertable["row_update_user_id"] = user_id
         insertable["row_update_stp"] = datetime.now(timezone.utc)
 
-        result = await self.db.easylife_domain.insert_one(insertable)
+        result = await self.db.domains.insert_one(insertable)
         new_doc_id = str(result.inserted_id)
 
-        out_result = await self.db.easylife_domain.find_one({"_id": ObjectId(new_doc_id)})
+        out_result = await self.db.domains.find_one({"_id": ObjectId(new_doc_id)})
         out_result["_id"] = str(out_result["_id"])
         return out_result
 
@@ -122,7 +122,7 @@ class DataDomainService:
         else:
             query = {"key": docid}
         
-        result = await self.db.easylife_domain.update_one(
+        result = await self.db.domains.update_one(
             query,
             {"$set": {"status": "I", "row_update_stp": datetime.now(timezone.utc)}}
         )

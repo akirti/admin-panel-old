@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   ArrowLeft,
@@ -25,23 +25,36 @@ import {
 import { scenarioRequestAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
+// Status config matching backend ScenarioRequestStatusTypes enum values
 const STATUS_CONFIG = {
-  S: { label: 'Submitted', color: 'bg-blue-100 text-blue-700', icon: Clock },
-  P: { label: 'In Progress', color: 'bg-yellow-100 text-yellow-700', icon: AlertCircle },
-  D: { label: 'Development', color: 'bg-purple-100 text-purple-700', icon: AlertCircle },
-  R: { label: 'Review', color: 'bg-orange-100 text-orange-700', icon: AlertCircle },
-  Y: { label: 'Deployed', color: 'bg-green-100 text-green-700', icon: CheckCircle },
-  A: { label: 'Active', color: 'bg-green-100 text-green-700', icon: CheckCircle },
-  I: { label: 'Inactive', color: 'bg-neutral-100 text-neutral-700', icon: XCircle },
-  X: { label: 'Rejected', color: 'bg-red-100 text-red-700', icon: XCircle },
-  ACC: { label: 'Accepted', color: 'bg-teal-100 text-teal-700', icon: CheckCircle },
-  TST: { label: 'Testing', color: 'bg-indigo-100 text-indigo-700', icon: AlertCircle }
+  'submitted': { label: 'Submitted', color: 'bg-blue-100 text-blue-700', icon: Clock },
+  'review': { label: 'Review', color: 'bg-orange-100 text-orange-700', icon: AlertCircle },
+  'rejected': { label: 'Rejected', color: 'bg-red-100 text-red-700', icon: XCircle },
+  'accepted': { label: 'Accepted', color: 'bg-teal-100 text-teal-700', icon: CheckCircle },
+  'in-progress': { label: 'In Progress', color: 'bg-yellow-100 text-yellow-700', icon: AlertCircle },
+  'development': { label: 'Development', color: 'bg-purple-100 text-purple-700', icon: AlertCircle },
+  'testing': { label: 'Testing', color: 'bg-indigo-100 text-indigo-700', icon: AlertCircle },
+  'deployed': { label: 'Deployed', color: 'bg-green-100 text-green-700', icon: CheckCircle },
+  'snapshot': { label: 'Files Ready', color: 'bg-cyan-100 text-cyan-700', icon: Clock },
+  'active': { label: 'Active', color: 'bg-green-100 text-green-700', icon: CheckCircle },
+  'inactive': { label: 'Inactive', color: 'bg-neutral-100 text-neutral-700', icon: XCircle }
 };
 
 function RequestDetailPage() {
   const { requestId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isEditor } = useAuth();
+
+  // Determine the base path based on current location (admin, management, or user)
+  const getEditPath = () => {
+    if (location.pathname.startsWith('/admin/')) {
+      return `/admin/scenario-requests/${requestId}/edit`;
+    } else if (location.pathname.startsWith('/management/')) {
+      return `/management/scenario-requests/${requestId}/edit`;
+    }
+    return `/my-requests/${requestId}/edit`;
+  };
 
   const [request, setRequest] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -220,9 +233,14 @@ function RequestDetailPage() {
             <h1 className="text-2xl font-bold text-neutral-900">{request.name}</h1>
           </div>
           
-          {request.user_id === user?.user_id && ['S', 'P'].includes(request.status) && (
+          {/* Show Edit button for:
+              - Request owner (only for S/P status)
+              - Editors/Admins (for any editable status)
+          */}
+          {((request.user_id === user?.user_id && ['submitted', 'in-progress'].includes(request.status)) ||
+            (isEditor() && !['rejected', 'inactive'].includes(request.status))) && (
             <button
-              onClick={() => navigate(`/my-requests/${requestId}/edit`)}
+              onClick={() => navigate(getEditPath())}
               className="btn btn-secondary flex items-center gap-2"
             >
               <Edit size={16} />

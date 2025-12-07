@@ -90,8 +90,9 @@ function DomainDetailPage() {
         ) : (
           <div className="space-y-3">
             {scenarios.map((scenario) => (
-              <div
+              <Link
                 key={scenario.key}
+                to={`/domains/${domainKey}/scenarios/${scenario.key}`}
                 className="flex items-center gap-4 p-4 border rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors cursor-pointer"
               >
                 <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -107,7 +108,7 @@ function DomainDetailPage() {
                   )}
                 </div>
                 <ChevronRight className="text-gray-400" size={20} />
-              </div>
+              </Link>
             ))}
           </div>
         )}
@@ -125,11 +126,11 @@ function DomainDetailPage() {
             <dt className="text-sm text-gray-500">Status</dt>
             <dd>
               <span className={`px-2 py-1 text-xs rounded-full ${
-                domain.status === 'A' 
-                  ? 'bg-green-100 text-green-800' 
+                domain.status === 'active' || domain.status === 'A'
+                  ? 'bg-green-100 text-green-800'
                   : 'bg-gray-100 text-gray-800'
               }`}>
-                {domain.status === 'A' ? 'Active' : 'Inactive'}
+                {domain.status === 'active' || domain.status === 'A' ? 'Active' : 'Inactive'}
               </span>
             </dd>
           </div>

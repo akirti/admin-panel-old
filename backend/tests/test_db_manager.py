@@ -128,8 +128,8 @@ class TestDatabaseManager:
                 "users", "tokens", "reset_tokens", "sessions",
                 "roles", "groups", "scenario_requests",
                 "update_scenario_requests", "feedbacks",
-                "easylife_domain", "easylife_scenerios",
-                "easylife_sceneario_playboard", "custom_collection"
+                "domains", "domain_scenarios",
+                "playboards", "custom_collection"
             ]
         }
         

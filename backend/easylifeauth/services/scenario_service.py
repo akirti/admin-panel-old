@@ -22,8 +22,8 @@ class ScenarioService:
 
     async def get_all(self) -> List[Dict[str, Any]]:
         """Get all active scenarios"""
-        cursor = self.db.easylife_scenerios.find(
-            filter={"status": "A"},
+        cursor = self.db.domain_scenarios.find(
+            filter={"status": {"$in":["A","active"]}},
             projection={"_id": 0}
         ).sort("order", 1)
         
@@ -35,7 +35,7 @@ class ScenarioService:
         data_domain_key: str
     ) -> List[Dict[str, Any]]:
         """Get all scenarios by domain key"""
-        cursor = self.db.easylife_scenerios.find(
+        cursor = self.db.domain_scenarios.find(
             filter={"dataDomain": data_domain_key, "status": "A"},
             projection={"_id": 0}
         ).sort("order", 1)
@@ -46,11 +46,11 @@ class ScenarioService:
     async def get(self, key: str) -> Optional[Dict[str, Any]]:
         """Get scenario by key or id"""
         if is_valid_objectid(key):
-            query = {"_id": ObjectId(key), "status": "A"}
+            query = {"_id": ObjectId(key), "status": {"$in":["A","active"]}}
         else:
-            query = {"key": key, "status": "A"}
+            query = {"key": key, "status": {"$in":["A","active"]}}
 
-        result = await self.db.easylife_scenerios.find_one(query)
+        result = await self.db.domain_scenarios.find_one(query)
         
         if result is None:
             raise ScenarioNotFoundError("Scenario not found", 404)
@@ -60,8 +60,8 @@ class ScenarioService:
 
     async def get_scenario(self, docid: str) -> Optional[Dict[str, Any]]:
         """Get scenario by id"""
-        result = await self.db.easylife_scenerios.find_one(
-            filter={"_id": ObjectId(docid), "status": "A"}
+        result = await self.db.domain_scenarios.find_one(
+            filter={"_id": ObjectId(docid), "status": {"$in":["A","active"]}}
         )
         
         if result is None:
@@ -81,7 +81,7 @@ class ScenarioService:
         update_attributes["row_update_user_id"] = user_id
         update_attributes["row_update_stp"] = datetime.now(timezone.utc)
 
-        result = await self.db.easylife_scenerios.update_one(
+        result = await self.db.domain_scenarios.update_one(
             {"_id": ObjectId(docid)},
             {"$set": update_attributes}
         )
@@ -97,10 +97,10 @@ class ScenarioService:
         status: str
     ) -> Optional[Dict[str, Any]]:
         """Update scenario status"""
-        if docid is None or status not in ["A", "I"]:
+        if docid is None or status not in ["A", "I","active","inactive"]:
             raise ScenarioBadError("Bad values provided")
         
-        result = await self.db.easylife_scenerios.update_one(
+        result = await self.db.domain_scenarios.update_one(
             {"_id": ObjectId(docid)},
             {"$set": {"status": status}}
         )
@@ -120,16 +120,16 @@ class ScenarioService:
             raise ScenarioBadError("Bad data provided")
         
         insertable = {k: v for k, v in document.items() if k in INSERT_ATTRS}
-        insertable["status"] = "A"
+        insertable["status"] = "active"
         insertable["row_add_userid"] = user_id
         insertable["row_add_stp"] = datetime.now(timezone.utc)
         insertable["row_update_user_id"] = user_id
         insertable["row_update_stp"] = datetime.now(timezone.utc)
 
-        result = await self.db.easylife_scenerios.insert_one(insertable)
+        result = await self.db.domain_scenarios.insert_one(insertable)
         new_doc_id = str(result.inserted_id)
 
-        out_result = await self.db.easylife_scenerios.find_one({"_id": ObjectId(new_doc_id)})
+        out_result = await self.db.domain_scenarios.find_one({"_id": ObjectId(new_doc_id)})
         out_result["_id"] = str(out_result["_id"])
         return out_result
 
@@ -140,9 +140,9 @@ class ScenarioService:
         else:
             query = {"key": key}
         
-        result = await self.db.easylife_scenerios.update_one(
+        result = await self.db.domain_scenarios.update_one(
             query,
-            {"$set": {"status": "I", "row_update_stp": datetime.now(timezone.utc)}}
+            {"$set": {"status": {"$in":["I","inactive"]}, "row_update_stp": datetime.now(timezone.utc)}}
         )
 
         if result.matched_count == 0:

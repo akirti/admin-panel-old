@@ -349,3 +349,385 @@ class MessageResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     error: str
+
+
+# ============ Enums ============
+from enum import Enum
+
+
+class StatusEnum(str, Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    PENDING = "pending"
+
+
+class TypeEnum(str, Enum):
+    SYSTEM = "system"
+    CUSTOM = "custom"
+
+
+# ============ Pagination Models ============
+class PaginationMeta(BaseModel):
+    total: int
+    page: int
+    limit: int
+    pages: int
+    has_next: bool
+    has_prev: bool
+
+
+# ============ Permission Models ============
+class PermissionBase(BaseModel):
+    key: str
+    name: str
+    description: Optional[str] = None
+    module: str
+    actions: List[str] = ["read"]
+
+
+class PermissionCreate(PermissionBase):
+    pass
+
+
+class PermissionUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    module: Optional[str] = None
+    actions: Optional[List[str]] = None
+
+
+class PermissionInDB(PermissionBase):
+    id: Optional[str] = Field(None, alias="_id")
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        populate_by_name = True
+
+
+# ============ Role Models ============
+class RoleBase(BaseModel):
+    type: str = "custom"
+    roleId: str
+    name: str
+    description: Optional[str] = None
+    permissions: List[str] = []
+    domains: List[str] = []
+    status: str = "active"
+    priority: int = 0
+
+
+class RoleCreate(RoleBase):
+    pass
+
+
+class RoleUpdate(BaseModel):
+    type: Optional[str] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    permissions: Optional[List[str]] = None
+    domains: Optional[List[str]] = None
+    status: Optional[str] = None
+    priority: Optional[int] = None
+
+
+class RoleInDB(RoleBase):
+    id: Optional[str] = Field(None, alias="_id")
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        populate_by_name = True
+
+
+# ============ Group Models ============
+class GroupBase(BaseModel):
+    type: str = "custom"
+    groupId: str
+    name: str
+    description: Optional[str] = None
+    permissions: List[str] = []
+    domains: List[str] = []
+    status: str = "active"
+    priority: int = 0
+
+
+class GroupCreate(GroupBase):
+    pass
+
+
+class GroupUpdate(BaseModel):
+    type: Optional[str] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    permissions: Optional[List[str]] = None
+    domains: Optional[List[str]] = None
+    status: Optional[str] = None
+    priority: Optional[int] = None
+
+
+class GroupInDB(GroupBase):
+    id: Optional[str] = Field(None, alias="_id")
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        populate_by_name = True
+
+
+# ============ Customer Models ============
+class CustomerBase(BaseModel):
+    customerId: str
+    name: str
+    description: Optional[str] = None
+    status: str = "active"
+    settings: Dict[str, Any] = {}
+
+
+class CustomerCreate(CustomerBase):
+    pass
+
+
+class CustomerUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+    settings: Optional[Dict[str, Any]] = None
+
+
+class CustomerInDB(CustomerBase):
+    id: Optional[str] = Field(None, alias="_id")
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        populate_by_name = True
+
+
+# ============ Extended User Models ============
+class UserCreate(BaseModel):
+    email: str
+    username: str = Field(..., min_length=3, max_length=50)
+    password: str = Field(..., min_length=8)
+    full_name: str
+    roles: List[str] = []
+    groups: List[str] = []
+    customers: List[str] = []
+    is_active: bool = True
+    send_password_email: bool = True
+
+
+class UserUpdate(BaseModel):
+    email: Optional[str] = None
+    username: Optional[str] = None
+    full_name: Optional[str] = None
+    roles: Optional[List[str]] = None
+    groups: Optional[List[str]] = None
+    customers: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+
+
+class UserInDB(BaseModel):
+    id: Optional[str] = Field(None, alias="_id")
+    email: str
+    username: str
+    full_name: str
+    password_hash: str
+    roles: List[str] = []
+    groups: List[str] = []
+    customers: List[str] = []
+    is_active: bool = True
+    is_super_admin: bool = False
+    last_login: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        populate_by_name = True
+
+
+class UserResponseFull(BaseModel):
+    id: Optional[str] = Field(None, alias="_id")
+    email: str
+    username: str
+    full_name: str
+    roles: List[str] = []
+    groups: List[str] = []
+    customers: List[str] = []
+    is_active: bool = True
+    is_super_admin: bool = False
+    last_login: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        populate_by_name = True
+
+
+# ============ Extended Domain Models ============
+class SubDomain(BaseModel):
+    key: str
+    name: str
+    description: Optional[str] = None
+    path: str
+    status: str = "active"
+    order: int = 0
+    icon: Optional[str] = None
+
+
+class DomainInDB(BaseModel):
+    id: Optional[str] = Field(None, alias="_id")
+    type: str = "custom"
+    key: str
+    name: str
+    description: Optional[str] = None
+    path: str
+    dataDomain: Optional[str] = None
+    status: str = "active"
+    defaultSelected: bool = False
+    order: int = 0
+    icon: Optional[str] = None
+    subDomains: List[SubDomain] = []
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        populate_by_name = True
+
+
+# ============ Domain Scenario Models ============
+class DomainScenarioCreate(BaseModel):
+    type: str = "custom"
+    key: str
+    name: str
+    description: Optional[str] = None
+    path: str
+    dataDomain: Optional[str] = None
+    status: str = "active"
+    defaultSelected: bool = False
+    order: int = 0
+    icon: Optional[str] = None
+    subDomains: List[SubDomain] = []
+    domainKey: str
+
+
+class DomainScenarioUpdate(BaseModel):
+    type: Optional[str] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    path: Optional[str] = None
+    dataDomain: Optional[str] = None
+    status: Optional[str] = None
+    defaultSelected: Optional[bool] = None
+    order: Optional[int] = None
+    icon: Optional[str] = None
+    subDomains: Optional[List[SubDomain]] = None
+    domainKey: Optional[str] = None
+
+
+class DomainScenarioInDB(BaseModel):
+    id: Optional[str] = Field(None, alias="_id")
+    type: str = "custom"
+    key: str
+    name: str
+    description: Optional[str] = None
+    path: str = ""
+    dataDomain: Optional[str] = None
+    status: str = "active"
+    defaultSelected: bool = False
+    order: int = 0
+    icon: Optional[str] = None
+    subDomains: List[SubDomain] = []
+    domainKey: Optional[str] = None  # Optional to handle legacy data
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        populate_by_name = True
+
+
+# ============ Extended Playboard Models ============
+class PlayboardInDB(BaseModel):
+    id: Optional[str] = Field(None, alias="_id")
+    name: str
+    description: Optional[str] = None
+    scenarioKey: str
+    data: Dict[str, Any] = {}
+    status: str = "active"
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        populate_by_name = True
+
+
+# ============ Configuration Models ============
+class ConfigurationCreate(BaseModel):
+    type: str
+    key: str
+    lookups: Optional[Dict[str, Any]] = None
+    queries: Optional[Dict[str, Any]] = None
+    logics: Optional[Dict[str, Any]] = None
+    operations: Optional[Dict[str, Any]] = None
+    data: Optional[Dict[str, Any]] = None
+
+
+class ConfigurationUpdate(BaseModel):
+    type: Optional[str] = None
+    key: Optional[str] = None
+    lookups: Optional[Dict[str, Any]] = None
+    queries: Optional[Dict[str, Any]] = None
+    logics: Optional[Dict[str, Any]] = None
+    operations: Optional[Dict[str, Any]] = None
+    data: Optional[Dict[str, Any]] = None
+
+
+class ConfigurationResponse(BaseModel):
+    id: Optional[str] = None
+    config_id: Optional[str] = None
+    type: str
+    key: str
+    lookups: Optional[Dict[str, Any]] = None
+    queries: Optional[Dict[str, Any]] = None
+    logics: Optional[Dict[str, Any]] = None
+    operations: Optional[Dict[str, Any]] = None
+    data: Optional[Dict[str, Any]] = None
+    gcs: Optional[Dict[str, Any]] = None
+    row_add_userid: Optional[str] = None
+    row_add_stp: Optional[str] = None
+    row_update_userid: Optional[str] = None
+    row_update_stp: Optional[str] = None
+
+    class Config:
+        extra = "allow"
+
+
+class FileUploadResponse(BaseModel):
+    message: str
+    config_id: str
+    key: str
+    gcs_key: Optional[str] = None
+    version: Optional[int] = None
+    file_name: Optional[str] = None
+
+
+# ============ Bulk Upload Models ============
+class BulkUploadResult(BaseModel):
+    total: int
+    successful: int
+    failed: int
+    errors: List[Dict[str, Any]] = []
+
+
+# ============ Dashboard Models ============
+class DashboardStats(BaseModel):
+    total_users: int = 0
+    active_users: int = 0
+    total_roles: int = 0
+    total_groups: int = 0
+    total_customers: int = 0
+    total_domains: int = 0
+    total_scenarios: int = 0
+    total_configurations: int = 0
+    total_playboards: int = 0
+    recent_activities: List[Dict[str, Any]] = []

@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+// Use relative path - Vite dev server proxies /api to backend
+// In production, nginx handles the proxy
 const API_BASE_URL = '/api/v1';
 
 const api = axios.create({
@@ -140,16 +142,85 @@ export const adminAPI = {
   deleteUser: (userId) => api.delete(`/admin/management/users/${userId}`),
 };
 
-// Domain API
+// Users API (scratch-3 compatible)
+export const usersAPI = {
+  list: (params = {}) => api.get('/users', { params }),
+  count: (params = {}) => api.get('/users/count', { params }),
+  get: (id) => api.get(`/users/${id}`),
+  create: (data) => api.post('/users', data),
+  update: (id, data) => api.put(`/users/${id}`, data),
+  delete: (id) => api.delete(`/users/${id}`),
+  toggleStatus: (id) => api.post(`/users/${id}/toggle-status`),
+  sendPasswordReset: (id, sendEmail = true) =>
+    api.post(`/users/${id}/send-password-reset`, null, { params: { send_email: sendEmail } }),
+  adminResetPassword: (id, sendEmail = true) =>
+    api.post(`/users/${id}/reset-password`, null, { params: { send_email: sendEmail } }),
+};
+
+// Roles API (scratch-3 compatible)
+export const rolesAPI = {
+  list: (params = {}) => api.get('/roles', { params }),
+  count: (params = {}) => api.get('/roles/count', { params }),
+  get: (id) => api.get(`/roles/${id}`),
+  create: (data) => api.post('/roles', data),
+  update: (id, data) => api.put(`/roles/${id}`, data),
+  delete: (id) => api.delete(`/roles/${id}`),
+  toggleStatus: (id) => api.post(`/roles/${id}/toggle-status`),
+  getUsers: (id) => api.get(`/roles/${id}/users`),
+};
+
+// Permissions API (scratch-3 compatible)
+export const permissionsAPI = {
+  list: (params = {}) => api.get('/permissions', { params }),
+  getModules: () => api.get('/permissions/modules'),
+  count: (params = {}) => api.get('/permissions/count', { params }),
+  get: (id) => api.get(`/permissions/${id}`),
+  create: (data) => api.post('/permissions', data),
+  update: (id, data) => api.put(`/permissions/${id}`, data),
+  delete: (id) => api.delete(`/permissions/${id}`),
+  getRoles: (id) => api.get(`/permissions/${id}/roles`),
+  getGroups: (id) => api.get(`/permissions/${id}/groups`),
+};
+
+// Customers API (scratch-3 compatible)
+export const customersAPI = {
+  list: (params = {}) => api.get('/customers', { params }),
+  count: (params = {}) => api.get('/customers/count', { params }),
+  get: (id) => api.get(`/customers/${id}`),
+  create: (data) => api.post('/customers', data),
+  update: (id, data) => api.put(`/customers/${id}`, data),
+  delete: (id) => api.delete(`/customers/${id}`),
+  toggleStatus: (id) => api.post(`/customers/${id}/toggle-status`),
+  getUsers: (id) => api.get(`/customers/${id}/users`),
+  assignUsers: (id, userIds) => api.post(`/customers/${id}/assign-users`, userIds),
+  removeUsers: (id, userIds) => api.post(`/customers/${id}/remove-users`, userIds),
+};
+
+// Domain API (scratch-3 compatible)
 export const domainAPI = {
-  getAll: () => api.get('/domains/all'),
+  getAll: () => api.get('/domains/all'),  // Returns user-accessible domains only
+  getAllAdmin: () => api.get('/domains/admin/all'),  // Returns all domains (admin only)
   get: (key) => api.get(`/domains/${key}`),
   create: (data) => api.post('/domains', data),
   update: (key, data) => api.put(`/domains/${key}`, data),
   delete: (key) => api.delete(`/domains/${key}`),
 };
 
-// Scenario API
+// Domains API (scratch-3 compatible with pagination)
+export const domainsAPI = {
+  list: (params = {}) => api.get('/domains', { params }),
+  count: (params = {}) => api.get('/domains/count', { params }),
+  get: (id) => api.get(`/domains/${id}`),
+  create: (data) => api.post('/domains', data),
+  update: (id, data) => api.put(`/domains/${id}`, data),
+  delete: (id) => api.delete(`/domains/${id}`),
+  toggleStatus: (id) => api.post(`/domains/${id}/toggle-status`),
+  addSubdomain: (id, data) => api.post(`/domains/${id}/subdomains`, data),
+  removeSubdomain: (id, subdomainKey) => api.delete(`/domains/${id}/subdomains/${subdomainKey}`),
+  getScenarios: (id) => api.get(`/domains/${id}/scenarios`),
+};
+
+// Scenario API (legacy)
 export const scenarioAPI = {
   getAll: () => api.get('/scenarios/all'),
   getByDomain: (domainKey) => api.get(`/scenarios/all/${domainKey}`),
@@ -159,7 +230,19 @@ export const scenarioAPI = {
   delete: (key) => api.delete(`/scenarios/${key}`),
 };
 
-// Playboard API
+// Domain Scenarios API (scratch-3 compatible)
+export const scenariosAPI = {
+  list: (params = {}) => api.get('/domain-scenarios', { params }),
+  count: (params = {}) => api.get('/domain-scenarios/count', { params }),
+  get: (id) => api.get(`/domain-scenarios/${id}`),
+  create: (data) => api.post('/domain-scenarios', data),
+  update: (id, data) => api.put(`/domain-scenarios/${id}`, data),
+  delete: (id) => api.delete(`/domain-scenarios/${id}`),
+  toggleStatus: (id) => api.post(`/domain-scenarios/${id}/toggle-status`),
+  getPlayboards: (id) => api.get(`/domain-scenarios/${id}/playboards`),
+};
+
+// Playboard API (legacy)
 export const playboardAPI = {
   getAll: () => api.get('/playboards/all'),
   getByDomain: (domainKey) => api.get(`/playboards/all/${domainKey}`),
@@ -169,12 +252,138 @@ export const playboardAPI = {
   delete: (key) => api.delete(`/playboards/${key}`),
 };
 
+// Playboards API (scratch-3 compatible)
+export const playboardsAPI = {
+  list: (params = {}) => api.get('/playboards', { params }),
+  count: (params = {}) => api.get('/playboards/count', { params }),
+  get: (id) => api.get(`/playboards/${id}`),
+  create: (data) => api.post('/playboards', data),
+  upload: (formData, params) =>
+    api.post('/playboards/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      params,
+    }),
+  update: (id, data) => api.put(`/playboards/${id}`, data),
+  updateJson: (id, formData) =>
+    api.put(`/playboards/${id}/upload`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  delete: (id) => api.delete(`/playboards/${id}`),
+  toggleStatus: (id) => api.post(`/playboards/${id}/toggle-status`),
+  download: (id) => api.get(`/playboards/${id}/download`),
+};
+
+// Configurations API (scratch-3 compatible)
+export const configurationsAPI = {
+  list: (params = {}) => api.get('/configurations', { params }),
+  count: (params = {}) => api.get('/configurations/count', { params }),
+  getTypes: () => api.get('/configurations/types'),
+  get: (id) => api.get(`/configurations/${id}`),
+  create: (data) => api.post('/configurations', data),
+  update: (id, data) => api.put(`/configurations/${id}`, data),
+  delete: (id) => api.delete(`/configurations/${id}`),
+  upload: (formData, key, configType = null) =>
+    api.post('/configurations/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  download: (id, version = null) =>
+    api.get(`/configurations/${id}/download`, {
+      params: version ? { version } : {},
+      responseType: 'blob',
+    }),
+  downloadJson: (id) => api.get(`/configurations/${id}/download`),
+  getVersions: (id) => api.get(`/configurations/${id}/versions`),
+};
+
 // Feedback API
 export const feedbackAPI = {
   getAll: () => api.get('/feedback/all'),
   get: (id) => api.get(`/feedback/${id}`),
   create: (data) => api.post('/feedback', data),
   update: (id, data) => api.put(`/feedback/${id}`, data),
+};
+
+// Dashboard API
+export const dashboardAPI = {
+  getStats: () => api.get('/dashboard/stats'),
+  getSummary: () => api.get('/dashboard/summary'),
+  getRecentLogins: (limit = 10) => api.get('/dashboard/recent-logins', { params: { limit } }),
+  getAnalytics: () => api.get('/dashboard/analytics'),
+};
+
+// Groups API (scratch-3 compatible)
+export const groupsAPI = {
+  list: (params = {}) => api.get('/groups', { params }),
+  count: (params = {}) => api.get('/groups/count', { params }),
+  get: (id) => api.get(`/groups/${id}`),
+  create: (data) => api.post('/groups', data),
+  update: (id, data) => api.put(`/groups/${id}`, data),
+  delete: (id) => api.delete(`/groups/${id}`),
+  toggleStatus: (id) => api.post(`/groups/${id}/toggle-status`),
+  getUsers: (id) => api.get(`/groups/${id}/users`),
+};
+
+// Activity Logs API
+export const activityLogsAPI = {
+  list: (params = {}) => api.get('/activity-logs', { params }),
+  getStats: (days = 7) => api.get('/activity-logs/stats', { params: { days } }),
+  getActions: () => api.get('/activity-logs/actions'),
+  getEntityTypes: () => api.get('/activity-logs/entity-types'),
+  getEntityHistory: (entityType, entityId) => api.get(`/activity-logs/entity/${entityType}/${entityId}`),
+  getUserActivity: (userEmail, params = {}) => api.get(`/activity-logs/user/${userEmail}`, { params }),
+};
+
+// Bulk Upload API
+export const bulkAPI = {
+  upload: (entityType, formData, sendPasswordEmails = true) =>
+    api.post(`/bulk/upload/${entityType}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      params: { send_password_emails: sendPasswordEmails },
+    }),
+  getTemplate: (entityType, format = 'xlsx') =>
+    api.get(`/bulk/template/${entityType}`, {
+      params: { format },
+      responseType: 'blob',
+    }),
+  getGCSStatus: () => api.get('/bulk/gcs/status'),
+  listGCSFiles: (prefix = '', bucketName = null) =>
+    api.get('/bulk/gcs/list', { params: { prefix, bucket_name: bucketName } }),
+};
+
+// Export API (scratch-3 compatible)
+export const exportAPI = {
+  users: {
+    csv: (params = {}) => api.get('/export/users/csv', { params, responseType: 'blob' }),
+    json: (params = {}) => api.get('/export/users/json', { params, responseType: 'blob' }),
+  },
+  roles: {
+    csv: (params = {}) => api.get('/export/roles/csv', { params, responseType: 'blob' }),
+    json: (params = {}) => api.get('/export/roles/json', { params, responseType: 'blob' }),
+  },
+  groups: {
+    csv: (params = {}) => api.get('/export/groups/csv', { params, responseType: 'blob' }),
+    json: (params = {}) => api.get('/export/groups/json', { params, responseType: 'blob' }),
+  },
+  customers: {
+    csv: (params = {}) => api.get('/export/customers/csv', { params, responseType: 'blob' }),
+    json: (params = {}) => api.get('/export/customers/json', { params, responseType: 'blob' }),
+  },
+  domains: {
+    csv: (params = {}) => api.get('/export/domains/csv', { params, responseType: 'blob' }),
+    json: (params = {}) => api.get('/export/domains/json', { params, responseType: 'blob' }),
+  },
+  scenarios: {
+    csv: (params = {}) => api.get('/export/scenarios/csv', { params, responseType: 'blob' }),
+    json: (params = {}) => api.get('/export/scenarios/json', { params, responseType: 'blob' }),
+  },
+  activityLogs: {
+    csv: (params = {}) => api.get('/export/activity-logs/csv', { params, responseType: 'blob' }),
+    json: (params = {}) => api.get('/export/activity-logs/json', { params, responseType: 'blob' }),
+  },
+  permissions: {
+    csv: (params = {}) => api.get('/export/permissions/csv', { params, responseType: 'blob' }),
+    json: (params = {}) => api.get('/export/permissions/json', { params, responseType: 'blob' }),
+  },
 };
 
 // Scenario Request API

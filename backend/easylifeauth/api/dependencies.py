@@ -15,6 +15,7 @@ from ..services.feedback_service import FeedbackService
 from ..services.new_scenarios_service import NewScenarioService
 from ..services.jira_service import JiraService
 from ..services.file_storage_service import FileStorageService
+from ..services.activity_log_service import ActivityLogService, init_activity_log_service
 from ..security.access_control import CurrentUser, get_current_user, set_token_manager
 
 
@@ -32,6 +33,7 @@ _feedback_service: Optional[FeedbackService] = None
 _scenario_request_service: Optional[NewScenarioService] = None
 _jira_service: Optional[JiraService] = None
 _file_storage_service: Optional[FileStorageService] = None
+_activity_log_service: Optional[ActivityLogService] = None
 
 
 def init_dependencies(
@@ -39,28 +41,30 @@ def init_dependencies(
     token_manager: TokenManager,
     email_service: Optional[EmailService] = None,
     jira_config: Optional[Dict[str, Any]] = None,
-    file_storage_config: Optional[Dict[str, Any]] = None
+    file_storage_config: Optional[Dict[str, Any]] = None,
+    gcs_config: Optional[Dict[str, Any]] = None
 ) -> None:
     """Initialize all dependencies"""
     global _db, _token_manager, _user_service, _admin_service
     global _password_service, _email_service, _domain_service
     global _scenario_service, _playboard_service, _feedback_service
     global _scenario_request_service, _jira_service, _file_storage_service
-    
+    global _activity_log_service
+
     _db = db
     _token_manager = token_manager
     _email_service = email_service
-    
+
     # Set token manager for access control
     set_token_manager(token_manager)
-    
+
     # Initialize Jira service if configured
     _jira_service = None
     if jira_config:
         _jira_service = JiraService(jira_config)
         if _jira_service.enabled:
             print("✓ Jira integration configured")
-    
+
     # Initialize file storage service if configured
     _file_storage_service = None
     if file_storage_config:
@@ -71,7 +75,7 @@ def init_dependencies(
         # Default to local storage
         _file_storage_service = FileStorageService({"type": "local"})
         print("✓ File storage configured (local)")
-    
+
     # Initialize services
     _user_service = UserService(db, token_manager)
     _admin_service = AdminService(db)
@@ -83,6 +87,22 @@ def init_dependencies(
     _scenario_request_service = NewScenarioService(
         db, token_manager, email_service, _jira_service, _file_storage_service
     )
+
+    # Initialize activity log service
+    _activity_log_service = init_activity_log_service(db)
+    print("✓ Activity logging service initialized")
+
+    # Initialize bulk upload services with GCS config
+    from .bulk_upload_routes import init_bulk_services
+    init_bulk_services(db, gcs_config)
+    if gcs_config:
+        print("✓ Bulk upload services initialized (with GCS)")
+    else:
+        print("✓ Bulk upload services initialized (local only)")
+
+    # Initialize configurations GCS service
+    from .configurations_routes import init_gcs_service
+    init_gcs_service(gcs_config)
 
 
 def get_db() -> DatabaseManager:
@@ -170,6 +190,11 @@ def get_file_storage_service() -> Optional[FileStorageService]:
     return _file_storage_service
 
 
+def get_activity_log_service() -> Optional[ActivityLogService]:
+    """Get activity log service"""
+    return _activity_log_service
+
+
 # Re-export get_current_user
 __all__ = [
     "init_dependencies",
@@ -186,5 +211,6 @@ __all__ = [
     "get_scenario_request_service",
     "get_jira_service",
     "get_file_storage_service",
+    "get_activity_log_service",
     "get_current_user",
 ]

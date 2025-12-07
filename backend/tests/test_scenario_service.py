@@ -22,7 +22,7 @@ class TestScenarioService:
         mock_cursor = MagicMock()
         mock_cursor.sort = MagicMock(return_value=mock_cursor)
         mock_cursor.to_list = AsyncMock(return_value=[sample_scenario_data])
-        mock_db.easylife_scenerios.find = MagicMock(return_value=mock_cursor)
+        mock_db.domain_scenarios.find = MagicMock(return_value=mock_cursor)
         
         result = await scenario_service.get_all()
         
@@ -35,7 +35,7 @@ class TestScenarioService:
         mock_cursor = MagicMock()
         mock_cursor.sort = MagicMock(return_value=mock_cursor)
         mock_cursor.to_list = AsyncMock(return_value=[sample_scenario_data])
-        mock_db.easylife_scenerios.find = MagicMock(return_value=mock_cursor)
+        mock_db.domain_scenarios.find = MagicMock(return_value=mock_cursor)
         
         result = await scenario_service.get_all_by_data_domain_key("test-domain")
         
@@ -44,7 +44,7 @@ class TestScenarioService:
     @pytest.mark.asyncio
     async def test_get_by_object_id(self, scenario_service, mock_db, sample_scenario_data):
         """Test getting scenario by ObjectId"""
-        mock_db.easylife_scenerios.find_one = AsyncMock(return_value=sample_scenario_data)
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value=sample_scenario_data)
         
         result = await scenario_service.get("507f1f77bcf86cd799439014")
         
@@ -53,7 +53,7 @@ class TestScenarioService:
     @pytest.mark.asyncio
     async def test_get_by_key_string(self, scenario_service, mock_db, sample_scenario_data):
         """Test getting scenario by key string"""
-        mock_db.easylife_scenerios.find_one = AsyncMock(return_value=sample_scenario_data)
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value=sample_scenario_data)
         
         result = await scenario_service.get("test-scenario")
         
@@ -62,7 +62,7 @@ class TestScenarioService:
     @pytest.mark.asyncio
     async def test_get_not_found(self, scenario_service, mock_db):
         """Test getting non-existent scenario"""
-        mock_db.easylife_scenerios.find_one = AsyncMock(return_value=None)
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value=None)
         
         with pytest.raises(ScenarioNotFoundError):
             await scenario_service.get("nonexistent")
@@ -70,7 +70,7 @@ class TestScenarioService:
     @pytest.mark.asyncio
     async def test_get_scenario_by_id(self, scenario_service, mock_db, sample_scenario_data):
         """Test get_scenario method"""
-        mock_db.easylife_scenerios.find_one = AsyncMock(return_value=sample_scenario_data)
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value=sample_scenario_data)
         
         result = await scenario_service.get_scenario("507f1f77bcf86cd799439014")
         
@@ -79,7 +79,7 @@ class TestScenarioService:
     @pytest.mark.asyncio
     async def test_get_scenario_not_found(self, scenario_service, mock_db):
         """Test get_scenario with non-existent ID"""
-        mock_db.easylife_scenerios.find_one = AsyncMock(return_value=None)
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value=None)
         
         with pytest.raises(ScenarioNotFoundError):
             await scenario_service.get_scenario("nonexistent")
@@ -87,10 +87,10 @@ class TestScenarioService:
     @pytest.mark.asyncio
     async def test_save_success(self, scenario_service, mock_db, sample_scenario_data):
         """Test saving a new scenario"""
-        mock_db.easylife_scenerios.insert_one = AsyncMock(
+        mock_db.domain_scenarios.insert_one = AsyncMock(
             return_value=MagicMock(inserted_id=ObjectId())
         )
-        mock_db.easylife_scenerios.find_one = AsyncMock(return_value=sample_scenario_data)
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value=sample_scenario_data)
         
         result = await scenario_service.save(
             {"key": "new-scenario", "name": "New Scenario", "dataDomain": "test"},
@@ -116,10 +116,10 @@ class TestScenarioService:
     @pytest.mark.asyncio
     async def test_update_success(self, scenario_service, mock_db, sample_scenario_data):
         """Test updating a scenario"""
-        mock_db.easylife_scenerios.update_one = AsyncMock(
+        mock_db.domain_scenarios.update_one = AsyncMock(
             return_value=MagicMock(matched_count=1)
         )
-        mock_db.easylife_scenerios.find_one = AsyncMock(return_value=sample_scenario_data)
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value=sample_scenario_data)
         
         result = await scenario_service.update(
             {"_id": "507f1f77bcf86cd799439014", "name": "Updated Scenario"},
@@ -131,7 +131,7 @@ class TestScenarioService:
     @pytest.mark.asyncio
     async def test_update_not_found(self, scenario_service, mock_db):
         """Test updating non-existent scenario"""
-        mock_db.easylife_scenerios.update_one = AsyncMock(
+        mock_db.domain_scenarios.update_one = AsyncMock(
             return_value=MagicMock(matched_count=0)
         )
         
@@ -144,10 +144,10 @@ class TestScenarioService:
     @pytest.mark.asyncio
     async def test_update_status_success(self, scenario_service, mock_db, sample_scenario_data):
         """Test updating scenario status"""
-        mock_db.easylife_scenerios.update_one = AsyncMock(
+        mock_db.domain_scenarios.update_one = AsyncMock(
             return_value=MagicMock(matched_count=1)
         )
-        mock_db.easylife_scenerios.find_one = AsyncMock(return_value=sample_scenario_data)
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value=sample_scenario_data)
         
         result = await scenario_service.update_status("507f1f77bcf86cd799439014", "I")
         
@@ -163,7 +163,7 @@ class TestScenarioService:
     @pytest.mark.asyncio
     async def test_update_status_not_found(self, scenario_service, mock_db):
         """Test updating status of non-existent scenario"""
-        mock_db.easylife_scenerios.update_one = AsyncMock(
+        mock_db.domain_scenarios.update_one = AsyncMock(
             return_value=MagicMock(matched_count=0)
         )
         
@@ -173,7 +173,7 @@ class TestScenarioService:
     @pytest.mark.asyncio
     async def test_delete_success(self, scenario_service, mock_db):
         """Test deleting (deactivating) a scenario"""
-        mock_db.easylife_scenerios.update_one = AsyncMock(
+        mock_db.domain_scenarios.update_one = AsyncMock(
             return_value=MagicMock(matched_count=1)
         )
         
@@ -184,7 +184,7 @@ class TestScenarioService:
     @pytest.mark.asyncio
     async def test_delete_not_found(self, scenario_service, mock_db):
         """Test deleting non-existent scenario"""
-        mock_db.easylife_scenerios.update_one = AsyncMock(
+        mock_db.domain_scenarios.update_one = AsyncMock(
             return_value=MagicMock(matched_count=0)
         )
         

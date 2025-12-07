@@ -36,9 +36,9 @@ def mock_db():
     db.users = AsyncMock()
     db.tokens = AsyncMock()
     db.reset_tokens = AsyncMock()
-    db.easylife_domain = AsyncMock()
-    db.easylife_scenerios = AsyncMock()
-    db.easylife_sceneario_playboard = AsyncMock()
+    db.domains = AsyncMock()
+    db.domain_scenarios = AsyncMock()
+    db.playboards = AsyncMock()
     db.feedbacks = AsyncMock()
     db.scenario_requests = AsyncMock()
     

@@ -48,12 +48,16 @@ class DatabaseManager:
         self.sessions: Optional[AsyncIOMotorCollection] = None
         self.roles: Optional[AsyncIOMotorCollection] = None
         self.groups: Optional[AsyncIOMotorCollection] = None
+        self.permissions: Optional[AsyncIOMotorCollection] = None
+        self.customers: Optional[AsyncIOMotorCollection] = None
         self.scenario_requests: Optional[AsyncIOMotorCollection] = None
         self.update_scenario_requests: Optional[AsyncIOMotorCollection] = None
         self.feedbacks: Optional[AsyncIOMotorCollection] = None
-        self.easylife_domain: Optional[AsyncIOMotorCollection] = None
-        self.easylife_scenerios: Optional[AsyncIOMotorCollection] = None
-        self.easylife_sceneario_playboard: Optional[AsyncIOMotorCollection] = None
+        self.domains: Optional[AsyncIOMotorCollection] = None
+        self.domain_scenarios: Optional[AsyncIOMotorCollection] = None
+        self.playboards: Optional[AsyncIOMotorCollection] = None
+        self.configurations: Optional[AsyncIOMotorCollection] = None
+        self.activity_logs: Optional[AsyncIOMotorCollection] = None
         
         if config is not None:
             self._initialize(config)
@@ -81,12 +85,16 @@ class DatabaseManager:
             "sessions": "sessions",
             "roles": "roles",
             "groups": "groups",
+            "permissions": "permissions",
+            "customers": "customers",
             "scenario_requests": "scenario_requests",
             "update_scenario_requests": "update_scenario_requests",
             "feedbacks": "feedbacks",
-            "easylife_domain": "easylife_domain",
-            "easylife_scenerios": "easylife_scenerios",
-            "easylife_sceneario_playboard": "easylife_sceneario_playboard"
+            "domains": "domains",
+            "domain_scenarios": "domain_scenarios",
+            "playboards": "playboards",
+            "configurations": "configurations",
+            "activity_logs": "activity_logs"
         }
 
         for key in config.get("collections", []):

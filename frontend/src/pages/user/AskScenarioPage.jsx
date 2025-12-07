@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   Send,
@@ -14,9 +14,12 @@ import {
   List,
   ListOrdered,
   Link as LinkIcon,
-  Code
+  Code,
+  ArrowLeft,
+  Save
 } from 'lucide-react';
 import { scenarioRequestAPI } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Simple Rich Text Editor Component
 function RichTextEditor({ value, onChange, placeholder, rows = 6 }) {
@@ -179,10 +182,17 @@ function RichTextEditor({ value, onChange, placeholder, rows = 6 }) {
 
 function AskScenarioPage() {
   const navigate = useNavigate();
+  const { requestId } = useParams();
+  const { user, isEditor } = useAuth();
+
+  const isEditMode = !!requestId;
   const [loading, setLoading] = useState(false);
+  const [loadingRequest, setLoadingRequest] = useState(false);
   const [domains, setDomains] = useState([]);
   const [requestTypes, setRequestTypes] = useState([]);
-  
+  const [statuses, setStatuses] = useState([]);
+  const [originalRequest, setOriginalRequest] = useState(null);
+
   const [formData, setFormData] = useState({
     requestType: 'scenario',
     dataDomain: '',
@@ -191,31 +201,99 @@ function AskScenarioPage() {
     has_suggestion: false,
     knows_steps: false,
     steps: [],
-    reason: ''
+    reason: '',
+    // Admin fields (only editable by editors)
+    status: '',
+    scenarioKey: '',
+    configName: '',
+    fulfilmentDate: '',
+    // Workflow comment (required when changing status)
+    statusComment: ''
   });
-  
+
   const [newStep, setNewStep] = useState({ description: '', database: '', query: '' });
   const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [existingFiles, setExistingFiles] = useState([]);
 
   useEffect(() => {
     loadLookups();
   }, []);
 
+  useEffect(() => {
+    if (isEditMode) {
+      loadRequest();
+    }
+  }, [requestId]);
+
   const loadLookups = async () => {
     try {
-      const [domainsRes, typesRes] = await Promise.all([
+      const promises = [
         scenarioRequestAPI.getDomains(),
         scenarioRequestAPI.getRequestTypes()
-      ]);
-      setDomains(domainsRes.data || []);
-      setRequestTypes(typesRes.data || []);
-      
-      // Set default request type if available
-      if (typesRes.data && typesRes.data.length > 0) {
-        setFormData(prev => ({ ...prev, requestType: typesRes.data[0].value }));
+      ];
+      // Load statuses for editors in edit mode
+      if (isEditMode && isEditor()) {
+        promises.push(scenarioRequestAPI.getStatuses());
+      }
+
+      const results = await Promise.all(promises);
+      setDomains(results[0].data || []);
+      setRequestTypes(results[1].data || []);
+      if (results[2]) {
+        setStatuses(results[2].data || []);
+      }
+
+      // Set default request type if available (only for new requests)
+      if (!isEditMode && results[1].data && results[1].data.length > 0) {
+        setFormData(prev => ({ ...prev, requestType: results[1].data[0].value }));
       }
     } catch (error) {
       console.error('Failed to load lookups:', error);
+    }
+  };
+
+  const loadRequest = async () => {
+    setLoadingRequest(true);
+    try {
+      const response = await scenarioRequestAPI.get(requestId);
+      const request = response.data;
+      setOriginalRequest(request);
+
+      // Check if user can edit this request
+      const isOwner = request.user_id === user?.user_id;
+      const canEdit = isOwner || isEditor();
+
+      if (!canEdit) {
+        toast.error('You do not have permission to edit this request');
+        navigate('/my-requests');
+        return;
+      }
+
+      // Populate form with existing data
+      setFormData({
+        requestType: request.requestType || 'scenario',
+        dataDomain: request.dataDomain || '',
+        name: request.name || '',
+        description: request.description || '',
+        has_suggestion: request.has_suggestion || false,
+        knows_steps: request.knows_steps || false,
+        steps: request.steps || [],
+        reason: request.reason || '',
+        // Admin fields
+        status: request.status || '',
+        scenarioKey: request.scenarioKey || '',
+        configName: request.configName || '',
+        fulfilmentDate: request.fulfilmentDate ? request.fulfilmentDate.split('T')[0] : ''
+      });
+
+      // Set existing files
+      setExistingFiles(request.files || []);
+    } catch (error) {
+      console.error('Failed to load request:', error);
+      toast.error('Failed to load request');
+      navigate('/my-requests');
+    } finally {
+      setLoadingRequest(false);
     }
   };
 
@@ -272,7 +350,7 @@ function AskScenarioPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.dataDomain) {
       toast.error('Please select a domain');
       return;
@@ -286,36 +364,101 @@ function AskScenarioPage() {
       return;
     }
 
-    setLoading(true);
-    try {
-      // Prepare data for API - remove empty fields
-      const submitData = {
-        requestType: formData.requestType,
-        dataDomain: formData.dataDomain,
-        name: formData.name.trim(),
-        description: formData.description,
-        has_suggestion: formData.has_suggestion,
-        knows_steps: formData.knows_steps,
-        steps: formData.steps.length > 0 ? formData.steps : [],
-        reason: formData.reason || null
-      };
-
-      // Create the scenario request
-      const response = await scenarioRequestAPI.create(submitData);
-      const requestId = response.data.requestId;
-      
-      // Upload files if any
-      for (const file of uploadedFiles) {
-        try {
-          await scenarioRequestAPI.uploadFile(requestId, file);
-        } catch (fileError) {
-          console.error('Failed to upload file:', file.name, fileError);
-          toast.error(`Failed to upload: ${file.name}`);
+    // Validate status change comment for editors
+    if (isEditMode && isEditor() && originalRequest) {
+      if (formData.status && formData.status !== originalRequest.status) {
+        if (!formData.statusComment || !formData.statusComment.trim()) {
+          toast.error('Please provide a comment for the status change');
+          return;
         }
       }
-      
-      toast.success('Scenario request submitted successfully!');
-      navigate('/my-requests');
+    }
+
+    setLoading(true);
+    try {
+      if (isEditMode) {
+        // Update existing request
+        const userUpdateData = {
+          name: formData.name.trim(),
+          description: formData.description,
+          has_suggestion: formData.has_suggestion,
+          knows_steps: formData.knows_steps,
+          steps: formData.steps.length > 0 ? formData.steps : [],
+          reason: formData.reason || null
+        };
+
+        // Use user update endpoint for basic fields
+        await scenarioRequestAPI.update(requestId, userUpdateData);
+
+        // If editor, also update admin fields
+        if (isEditor() && originalRequest) {
+          const adminUpdateData = {};
+
+          // Only include fields that changed
+          if (formData.status && formData.status !== originalRequest.status) {
+            adminUpdateData.status = formData.status;
+            // Include status comment for workflow tracking
+            adminUpdateData.status_comment = formData.statusComment.trim();
+          }
+          if (formData.dataDomain !== originalRequest.dataDomain) {
+            adminUpdateData.dataDomain = formData.dataDomain;
+          }
+          if (formData.scenarioKey !== (originalRequest.scenarioKey || '')) {
+            adminUpdateData.scenarioKey = formData.scenarioKey || null;
+          }
+          if (formData.configName !== (originalRequest.configName || '')) {
+            adminUpdateData.configName = formData.configName || null;
+          }
+          if (formData.fulfilmentDate !== (originalRequest.fulfilmentDate?.split('T')[0] || '')) {
+            adminUpdateData.fulfilmentDate = formData.fulfilmentDate || null;
+          }
+
+          if (Object.keys(adminUpdateData).length > 0) {
+            await scenarioRequestAPI.adminUpdate(requestId, adminUpdateData);
+          }
+        }
+
+        // Upload new files if any
+        for (const file of uploadedFiles) {
+          try {
+            await scenarioRequestAPI.uploadFile(requestId, file);
+          } catch (fileError) {
+            console.error('Failed to upload file:', file.name, fileError);
+            toast.error(`Failed to upload: ${file.name}`);
+          }
+        }
+
+        toast.success('Scenario request updated successfully!');
+        navigate(`/my-requests/${requestId}`);
+      } else {
+        // Create new request
+        const submitData = {
+          requestType: formData.requestType,
+          dataDomain: formData.dataDomain,
+          name: formData.name.trim(),
+          description: formData.description,
+          has_suggestion: formData.has_suggestion,
+          knows_steps: formData.knows_steps,
+          steps: formData.steps.length > 0 ? formData.steps : [],
+          reason: formData.reason || null
+        };
+
+        const response = await scenarioRequestAPI.create(submitData);
+        const newRequestId = response.data.requestId;
+
+        // Upload files if any
+        for (const file of uploadedFiles) {
+          try {
+            await scenarioRequestAPI.uploadFile(newRequestId, file);
+          } catch (fileError) {
+            console.error('Failed to upload file:', file.name, fileError);
+            toast.error(`Failed to upload: ${file.name}`);
+          }
+        }
+
+        toast.success('Scenario request submitted successfully!');
+        navigate('/my-requests');
+      }
     } catch (error) {
       console.error('Submit error:', error.response?.data);
       const errorMsg = error.response?.data?.detail || error.response?.data?.error || 'Failed to submit request';
@@ -325,12 +468,35 @@ function AskScenarioPage() {
     }
   };
 
+  // Show loading state while loading request in edit mode
+  if (isEditMode && loadingRequest) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="animate-spin text-red-600" size={32} />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-5xl mx-auto px-4">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-neutral-900">Ask for a New Scenario</h1>
+        {isEditMode && (
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-neutral-600 hover:text-neutral-900 mb-4"
+          >
+            <ArrowLeft size={18} />
+            Back
+          </button>
+        )}
+        <h1 className="text-2xl font-bold text-neutral-900">
+          {isEditMode ? 'Edit Scenario Request' : 'Ask for a New Scenario'}
+        </h1>
         <p className="text-neutral-600 mt-1">
-          Submit a request for a new scenario or feature. Our team will review and respond.
+          {isEditMode
+            ? `Editing request ${requestId}`
+            : 'Submit a request for a new scenario or feature. Our team will review and respond.'}
         </p>
       </div>
 
@@ -543,6 +709,99 @@ function AskScenarioPage() {
           </div>
         </div>
 
+        {/* Admin Fields - Only for editors in edit mode */}
+        {isEditMode && isEditor() && (
+          <div className="card">
+            <div className="card-header">
+              <h2 className="text-lg font-semibold text-neutral-900">Admin Settings</h2>
+              <p className="text-sm text-neutral-500 mt-1">These fields are only visible to administrators and editors</p>
+            </div>
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="w-full">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900"
+                  >
+                    {statuses.map(status => (
+                      <option key={status.value} value={status.value}>{status.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="w-full">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Target Date
+                  </label>
+                  <input
+                    type="date"
+                    name="fulfilmentDate"
+                    value={formData.fulfilmentDate}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="w-full">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Scenario Key
+                  </label>
+                  <input
+                    type="text"
+                    name="scenarioKey"
+                    value={formData.scenarioKey}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900 placeholder-neutral-400"
+                    placeholder="e.g., SC-001"
+                  />
+                </div>
+
+                <div className="w-full">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Config Name
+                  </label>
+                  <input
+                    type="text"
+                    name="configName"
+                    value={formData.configName}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900 placeholder-neutral-400"
+                    placeholder="Configuration name"
+                  />
+                </div>
+              </div>
+
+              {/* Status Change Comment - Required when status is changed */}
+              {formData.status && originalRequest && formData.status !== originalRequest.status && (
+                <div className="w-full border-t border-neutral-200 pt-5">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Status Change Comment <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    name="statusComment"
+                    value={formData.statusComment}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900 placeholder-neutral-400"
+                    placeholder="Please provide a reason for this status change..."
+                    required
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">
+                    This comment will be recorded in the workflow history.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* File Upload */}
         <div className="card">
           <div className="card-header">
@@ -550,10 +809,30 @@ function AskScenarioPage() {
             <p className="text-sm text-neutral-500 mt-1">Upload sample data files or screenshots to help us understand your requirements</p>
           </div>
           <div>
+            {/* Show existing files in edit mode */}
+            {isEditMode && existingFiles.length > 0 && (
+              <div className="mb-5 space-y-2">
+                <p className="text-sm font-medium text-neutral-700">Existing files:</p>
+                {existingFiles.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded bg-green-100 flex items-center justify-center text-green-600">
+                        <FileUp size={16} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-neutral-800 truncate">{file.file_name || file.name}</p>
+                        <p className="text-xs text-neutral-500">{file.file_type} • v{file.version || 1}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center hover:border-red-300 transition-colors">
               <FileUp className="mx-auto text-neutral-400 mb-3" size={40} />
               <p className="text-sm text-neutral-600 mb-3">
-                Drag and drop files here, or click to browse
+                {isEditMode ? 'Add more files' : 'Drag and drop files here, or click to browse'}
               </p>
               <p className="text-xs text-neutral-400 mb-4">
                 Supported: CSV, Excel, JSON, PDF, PNG, JPG (max 10MB each)
@@ -576,7 +855,7 @@ function AskScenarioPage() {
 
             {uploadedFiles.length > 0 && (
               <div className="mt-5 space-y-2">
-                <p className="text-sm font-medium text-neutral-700">{uploadedFiles.length} file(s) selected:</p>
+                <p className="text-sm font-medium text-neutral-700">{uploadedFiles.length} new file(s) to upload:</p>
                 {uploadedFiles.map((file, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg border border-neutral-200">
                     <div className="flex items-center gap-3 min-w-0">
@@ -606,7 +885,7 @@ function AskScenarioPage() {
         <div className="flex justify-end gap-4 pb-6">
           <button
             type="button"
-            onClick={() => navigate('/dashboard')}
+            onClick={() => isEditMode ? navigate(-1) : navigate('/dashboard')}
             className="btn-secondary px-6"
           >
             Cancel
@@ -618,10 +897,12 @@ function AskScenarioPage() {
           >
             {loading ? (
               <Loader2 className="animate-spin" size={18} />
+            ) : isEditMode ? (
+              <Save size={18} />
             ) : (
               <Send size={18} />
             )}
-            Submit Request
+            {isEditMode ? 'Save Changes' : 'Submit Request'}
           </button>
         </div>
       </form>

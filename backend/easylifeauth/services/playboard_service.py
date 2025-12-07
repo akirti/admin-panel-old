@@ -22,7 +22,7 @@ class PlayboardService:
 
     async def get_all(self) -> List[Dict[str, Any]]:
         """Get all active playboards"""
-        cursor = self.db.easylife_sceneario_playboard.find(
+        cursor = self.db.playboards.find(
             filter={"status": "A"}
         ).sort("order", 1)
         
@@ -36,7 +36,7 @@ class PlayboardService:
         data_domain_key: str
     ) -> List[Dict[str, Any]]:
         """Get all playboards by domain key"""
-        cursor = self.db.easylife_sceneario_playboard.find(
+        cursor = self.db.playboards.find(
             filter={"dataDomain": data_domain_key, "status": "A"}
         ).sort("order", 1)
         
@@ -47,7 +47,7 @@ class PlayboardService:
 
     async def get_playboard_by_key(self, key: str) -> Optional[Dict[str, Any]]:
         """Get playboard by key"""
-        result = await self.db.easylife_sceneario_playboard.find_one(
+        result = await self.db.playboards.find_one(
             filter={"key": key, "status": "A"}
         )
         if result is not None:
@@ -59,7 +59,7 @@ class PlayboardService:
         scenario_key: str
     ) -> Optional[Dict[str, Any]]:
         """Get playboard by scenario key"""
-        result = await self.db.easylife_sceneario_playboard.find_one(
+        result = await self.db.playboards.find_one(
             filter={"scenerioKey": scenario_key, "status": "A"}
         )
         if result is not None:
@@ -79,7 +79,7 @@ class PlayboardService:
                 ]
             }
         
-        result = await self.db.easylife_sceneario_playboard.find_one(filter=query)
+        result = await self.db.playboards.find_one(filter=query)
         if result is not None:
             result["_id"] = str(result["_id"])
         return result
@@ -95,7 +95,7 @@ class PlayboardService:
         update_attributes["row_update_user_id"] = user_id
         update_attributes["row_update_stp"] = datetime.now(timezone.utc)
 
-        result = await self.db.easylife_sceneario_playboard.update_one(
+        result = await self.db.playboards.update_one(
             {"_id": ObjectId(docid)},
             {"$set": update_attributes}
         )
@@ -114,7 +114,7 @@ class PlayboardService:
         if docid is None or status not in ["A", "I"]:
             raise PlayboardBadError("Bad values provided")
         
-        result = await self.db.easylife_sceneario_playboard.update_one(
+        result = await self.db.playboards.update_one(
             {"_id": ObjectId(docid)},
             {"$set": {"status": status}}
         )
@@ -140,10 +140,10 @@ class PlayboardService:
         insertable["row_update_user_id"] = user_id
         insertable["row_update_stp"] = datetime.now(timezone.utc)
 
-        result = await self.db.easylife_sceneario_playboard.insert_one(insertable)
+        result = await self.db.playboards.insert_one(insertable)
         new_doc_id = str(result.inserted_id)
 
-        out_result = await self.db.easylife_sceneario_playboard.find_one(
+        out_result = await self.db.playboards.find_one(
             {"_id": ObjectId(new_doc_id)}
         )
         out_result["_id"] = str(out_result["_id"])
@@ -156,7 +156,7 @@ class PlayboardService:
         else:
             query = {"$or": [{"key": key}, {"scenerioKey": key}]}
         
-        result = await self.db.easylife_sceneario_playboard.update_one(
+        result = await self.db.playboards.update_one(
             query,
             {"$set": {"status": "I", "row_update_stp": datetime.now(timezone.utc)}}
         )

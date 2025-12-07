@@ -5,41 +5,99 @@ import os
 import base64
 import hashlib
 import mimetypes
+import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class FileStorageService:
     """
     File Storage Service - Can work with GCS or local storage
     For GCS, requires google-cloud-storage package and credentials
+    Supports fallback to local storage when GCS is configured but fails
     """
-    
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.enabled = False
         self.storage_type = "local"  # local or gcs
         self.bucket_name = None
         self.base_path = "/tmp/easylife_uploads"
         self.gcs_client = None
-        
+        self._init_error = None
+
         if config:
             self.storage_type = config.get("type", "local")
             self.bucket_name = config.get("bucket_name")
             self.base_path = config.get("base_path", "/tmp/easylife_uploads")
-            
+            credentials_json = config.get("credentials_json")
+
             if self.storage_type == "gcs" and self.bucket_name:
-                try:
-                    from google.cloud import storage
-                    self.gcs_client = storage.Client()
-                    self.enabled = True
-                except ImportError:
-                    print("google-cloud-storage not installed, falling back to local storage")
+                gcs_initialized = self._init_gcs_client(credentials_json)
+
+                # Fallback to local if GCS fails
+                if not gcs_initialized:
+                    logger.warning(f"GCS init failed ({self._init_error}), falling back to local storage")
+                    print(f"⚠ GCS init failed: {self._init_error}, falling back to local storage")
                     self.storage_type = "local"
-                except Exception as e:
-                    print(f"GCS initialization failed: {e}, falling back to local storage")
-                    self.storage_type = "local"
-            
+
             if self.storage_type == "local":
                 os.makedirs(self.base_path, exist_ok=True)
                 self.enabled = True
+
+    def _init_gcs_client(self, credentials_json: Optional[str] = None) -> bool:
+        """Initialize GCS client with optional credentials"""
+        try:
+            from google.cloud import storage
+            from google.oauth2 import service_account
+
+            if credentials_json:
+                # Parse credentials JSON
+                if isinstance(credentials_json, str):
+                    try:
+                        creds_dict = json.loads(credentials_json)
+                    except json.JSONDecodeError as e:
+                        self._init_error = f"Invalid JSON in credentials: {e}"
+                        logger.error(self._init_error)
+                        return False
+                else:
+                    creds_dict = credentials_json
+
+                if creds_dict and "type" in creds_dict:
+                    credentials = service_account.Credentials.from_service_account_info(creds_dict)
+                    self.gcs_client = storage.Client(credentials=credentials)
+                    self.enabled = True
+                    logger.info(f"GCS client initialized with credentials for bucket: {self.bucket_name}")
+                    print(f"✓ File storage: GCS initialized for bucket: {self.bucket_name}")
+                    return True
+                else:
+                    self._init_error = "GCS credentials JSON missing 'type' field"
+                    logger.warning(self._init_error)
+                    return False
+            else:
+                # Try default credentials (ADC)
+                self.gcs_client = storage.Client()
+                self.enabled = True
+                logger.info(f"GCS client initialized with default credentials for bucket: {self.bucket_name}")
+                print(f"✓ File storage: GCS initialized (default credentials) for bucket: {self.bucket_name}")
+                return True
+
+        except ImportError:
+            self._init_error = "google-cloud-storage package not installed"
+            logger.warning(self._init_error)
+            return False
+        except Exception as e:
+            self._init_error = f"GCS initialization failed: {e}"
+            logger.error(self._init_error)
+            return False
+
+    def get_init_error(self) -> Optional[str]:
+        """Get initialization error if any"""
+        return self._init_error
+
+    def is_gcs_configured(self) -> bool:
+        """Check if GCS is properly configured"""
+        return self.storage_type == "gcs" and self.gcs_client is not None
     
     def _generate_file_path(
         self,

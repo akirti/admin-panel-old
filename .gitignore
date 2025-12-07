@@ -30,7 +30,8 @@ public/build/ # If your build output goes here
 .idea/
 .vscode/
 Thumbs.db
-
+credentials.json
+/backend/credentials.json
 # Test coverage reports
 coverage/
 

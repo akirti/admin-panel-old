@@ -16,9 +16,14 @@
           "groups",
           "scenario_requests",
           "feedbacks",
-          "easylife_domain",
-          "easylife_scenerios",
-          "easylife_sceneario_playboard"
+          "domains",
+          "domain_scenarios",
+          "playboards",
+          "configurations",
+          "audit_logs",
+          "customers",
+          "permissions"
+
         ]
       }
     }
@@ -38,6 +43,14 @@
     },
     "auth": {
       "token_timeout": 15
+    },
+    "environment": {
+      "space":"dev",
+      "gcp": {
+        "type": "service_account",
+        "project_id": "sunlit-realm-282803",
+        "credentials_path": "/path/to/your/credentials.json"
+      }
     }
   },
   "cors": {

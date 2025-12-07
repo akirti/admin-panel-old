@@ -15,7 +15,14 @@ import {
   ChevronDown,
   Home,
   MessageSquarePlus,
-  ClipboardList
+  ClipboardList,
+  UsersRound,
+  Activity,
+  Upload,
+  Key,
+  Cog,
+  LayoutGrid,
+  Building2
 } from 'lucide-react';
 
 function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
@@ -34,19 +41,28 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
     if (isAdmin) {
       // Super Admin Panel
       return [
-        { path: '/admin', icon: LayoutDashboard, label: 'Dashboard', exact: true },
-        { path: '/admin/users', icon: Users, label: 'Users Management' },
-        { path: '/admin/roles', icon: Shield, label: 'Roles Management' },
-        { path: '/admin/domains', icon: Layers, label: 'Domains Management' },
-        { path: '/admin/scenarios', icon: FileText, label: 'Scenarios Management' },
+        { path: '/dashboard', icon: Home, label: 'User Dashboard', dividerAfter: true },
+        { path: '/admin', icon: LayoutDashboard, label: 'Admin Dashboard', exact: true },
+        { path: '/admin/users', icon: Users, label: 'Users' },
+        { path: '/admin/roles', icon: Shield, label: 'Roles' },
+        { path: '/admin/groups', icon: UsersRound, label: 'Groups' },
+        { path: '/admin/permissions', icon: Key, label: 'Permissions' },
+        { path: '/admin/customers', icon: Building2, label: 'Customers' },
+        { path: '/admin/domains', icon: Layers, label: 'Domains' },
+        { path: '/admin/scenarios', icon: FileText, label: 'Scenarios' },
+        { path: '/admin/playboards', icon: LayoutGrid, label: 'Playboards' },
+        { path: '/admin/configurations', icon: Cog, label: 'Configurations' },
         { path: '/admin/scenario-requests', icon: ClipboardList, label: 'Scenario Requests' },
+        { path: '/admin/activity-logs', icon: Activity, label: 'Activity Logs' },
+        { path: '/admin/bulk-upload', icon: Upload, label: 'Bulk Upload' },
       ];
     }
 
     if (isGroupAdmin) {
       // Group Admin Panel
       return [
-        { path: '/management', icon: LayoutDashboard, label: 'Dashboard', exact: true },
+        { path: '/dashboard', icon: Home, label: 'User Dashboard', dividerAfter: true },
+        { path: '/management', icon: LayoutDashboard, label: 'Management Dashboard', exact: true },
         { path: '/management/users', icon: Users, label: 'Users Management' },
         { path: '/management/domains', icon: Layers, label: 'Domains' },
         { path: '/management/scenario-requests', icon: ClipboardList, label: 'Scenario Requests' },
@@ -110,7 +126,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path, item.exact);
-              
+
               return (
                 <li key={item.path}>
                   <Link
@@ -120,6 +136,9 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
                     <Icon size={20} />
                     {sidebarOpen && <span>{item.label}</span>}
                   </Link>
+                  {item.dividerAfter && (
+                    <div className="my-3 border-t border-neutral-200"></div>
+                  )}
                 </li>
               );
             })}

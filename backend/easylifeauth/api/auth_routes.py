@@ -9,14 +9,16 @@ from .models import (
 )
 from .dependencies import (
     get_current_user, get_user_service, get_password_service,
-    get_token_manager, get_db
+    get_token_manager, get_db, get_activity_log_service
 )
 from ..services.user_service import UserService
 from ..services.password_service import PasswordResetService
 from ..services.token_manager import TokenManager
+from ..services.activity_log_service import ActivityLogService
 from ..security.access_control import CurrentUser
 from ..errors.auth_error import AuthError
 from ..middleware.csrf import get_csrf_token
+from typing import Optional
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -69,7 +71,8 @@ async def register(
 @router.post("/login", response_model=AuthResponse)
 async def login(
     credentials: UserLogin,
-    user_service: UserService = Depends(get_user_service)
+    user_service: UserService = Depends(get_user_service),
+    activity_log: Optional[ActivityLogService] = Depends(get_activity_log_service)
 ):
     """Login user"""
     try:
@@ -77,8 +80,28 @@ async def login(
             email=credentials.email,
             password=credentials.password
         )
+
+        # Log successful login
+        if activity_log and result.get("user"):
+            await activity_log.log(
+                action="login",
+                entity_type="auth",
+                entity_id=str(result["user"].get("_id", credentials.email)),
+                user_email=credentials.email,
+                details={"success": True}
+            )
+
         return result
     except AuthError as e:
+        # Log failed login attempt
+        if activity_log:
+            await activity_log.log(
+                action="login_failed",
+                entity_type="auth",
+                entity_id=credentials.email,
+                user_email=credentials.email,
+                details={"error": e.message}
+            )
         raise HTTPException(status_code=e.status_code, detail=e.message)
 
 

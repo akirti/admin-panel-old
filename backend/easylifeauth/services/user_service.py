@@ -11,10 +11,87 @@ from ..errors.auth_error import AuthError
 
 class UserService:
     """Async User Management Service"""
-    
+
     def __init__(self, db: DatabaseManager, token_manager: TokenManager):
         self.db = db
         self.token_manager = token_manager
+
+    async def resolve_user_domains(self, user: Dict[str, Any]) -> List[str]:
+        """
+        Resolve all domains a user has access to based on:
+        1. Direct user domains
+        2. Domains from user's roles
+        3. Domains from user's groups
+        """
+        all_domains = set(user.get("domains", []))
+
+        # Get domains from roles
+        user_roles = user.get("roles", [])
+        if user_roles:
+            roles_cursor = self.db.roles.find({
+                "$or": [
+                    {"roleId": {"$in": user_roles}},
+                    {"_id": {"$in": [ObjectId(r) if ObjectId.is_valid(r) else None for r in user_roles]}}
+                ],
+                "status": "active"
+            })
+            async for role in roles_cursor:
+                role_domains = role.get("domains", [])
+                all_domains.update(role_domains)
+
+        # Get domains from groups
+        user_groups = user.get("groups", [])
+        if user_groups:
+            groups_cursor = self.db.groups.find({
+                "$or": [
+                    {"groupId": {"$in": user_groups}},
+                    {"_id": {"$in": [ObjectId(g) if ObjectId.is_valid(g) else None for g in user_groups]}}
+                ],
+                "status": "active"
+            })
+            async for group in groups_cursor:
+                group_domains = group.get("domains", [])
+                all_domains.update(group_domains)
+
+        return list(all_domains)
+
+    async def resolve_user_permissions(self, user: Dict[str, Any]) -> List[str]:
+        """
+        Resolve all permissions a user has based on:
+        1. Permissions from user's roles
+        2. Permissions from user's groups
+        """
+        all_permissions = set()
+
+        # Get permissions from roles
+        user_roles = user.get("roles", [])
+        if user_roles:
+            roles_cursor = self.db.roles.find({
+                "$or": [
+                    {"roleId": {"$in": user_roles}},
+                    {"_id": {"$in": [ObjectId(r) if ObjectId.is_valid(r) else None for r in user_roles]}}
+                ],
+                "status": "active"
+            })
+            async for role in roles_cursor:
+                role_permissions = role.get("permissions", [])
+                all_permissions.update(role_permissions)
+
+        # Get permissions from groups
+        user_groups = user.get("groups", [])
+        if user_groups:
+            groups_cursor = self.db.groups.find({
+                "$or": [
+                    {"groupId": {"$in": user_groups}},
+                    {"_id": {"$in": [ObjectId(g) if ObjectId.is_valid(g) else None for g in user_groups]}}
+                ],
+                "status": "active"
+            })
+            async for group in groups_cursor:
+                group_permissions = group.get("permissions", [])
+                all_permissions.update(group_permissions)
+
+        return list(all_permissions)
 
     async def register_user(
         self,
@@ -87,30 +164,35 @@ class UserService:
         """Login user"""
         if not email or not password:
             raise AuthError("Email and password are required", 400)
-        
+
         # Find user
         user = await self.db.users.find_one({"email": email.lower()})
         if not user:
             raise AuthError("Invalid email or password", 401)
-        
+
         if not user.get("is_active", False):
             raise AuthError("Account is Deactivated", 403)
-        
+
         # Check password
         if not check_password_hash(user["password_hash"], password):
             raise AuthError("Invalid email or password", 401)
-        
+
         await self.db.users.update_one(
             {"_id": user["_id"]},
             {"$set": {"last_login": datetime.now(timezone.utc)}}
         )
+
+        # Resolve all domains from roles and groups
+        resolved_domains = await self.resolve_user_domains(user)
+        # Resolve all permissions from roles and groups
+        resolved_permissions = await self.resolve_user_permissions(user)
 
         tokens = await self.token_manager.generate_tokens(
             user_id=str(user["_id"]),
             email=user["email"],
             roles=user.get("roles", []),
             groups=user.get("groups", []),
-            domains=user.get("domains", [])
+            domains=resolved_domains
         )
 
         return {
@@ -120,7 +202,8 @@ class UserService:
             "full_name": str(user.get("full_name", "")),
             "roles": user.get("roles", []),
             "groups": user.get("groups", []),
-            "domains": user.get("domains", []),
+            "domains": resolved_domains,
+            "permissions": resolved_permissions,
             **tokens
         }
 
@@ -129,6 +212,10 @@ class UserService:
         try:
             user = await self.db.users.find_one({"_id": ObjectId(user_id)})
             if user:
+                # Resolve domains and permissions from roles/groups
+                resolved_domains = await self.resolve_user_domains(user)
+                resolved_permissions = await self.resolve_user_permissions(user)
+
                 # Convert to proper format
                 return {
                     "user_id": str(user["_id"]),
@@ -137,7 +224,8 @@ class UserService:
                     "full_name": user.get("full_name", ""),
                     "roles": user.get("roles", []),
                     "groups": user.get("groups", []),
-                    "domains": user.get("domains", []),
+                    "domains": resolved_domains,
+                    "permissions": resolved_permissions,
                     "is_active": user.get("is_active", True),
                     "created_at": user.get("created_at"),
                     "updated_at": user.get("updated_at"),

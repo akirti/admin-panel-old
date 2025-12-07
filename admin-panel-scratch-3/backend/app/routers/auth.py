@@ -28,6 +28,7 @@ async def login(request: LoginRequest):
     - **email**: User's email address
     - **password**: User's password
     """
+    print(request)
     user = await authenticate_user(request.email, request.password)
     if not user:
         raise HTTPException(

@@ -14,10 +14,21 @@ from .api import (
     admin_router,
     domain_router,
     scenario_router,
+    domain_scenarios_router,
     playboard_router,
     feedback_router,
     scenario_request_router,
-    health_router
+    health_router,
+    bulk_upload_router,
+    activity_log_router,
+    export_router,
+    dashboard_router,
+    users_router,
+    roles_router,
+    groups_router,
+    permissions_router,
+    configurations_router,
+    customers_router,
 )
 from .api.dependencies import init_dependencies
 from .db.db_manager import DatabaseManager
@@ -25,6 +36,8 @@ from .services.token_manager import TokenManager
 from .services.email_service import EmailService
 from .errors.auth_error import AuthError
 from .middleware.csrf import CSRFProtectMiddleware
+from .middleware.rate_limit import RateLimitMiddleware
+from .middleware.security import SecurityHeadersMiddleware
 
 
 def create_app(
@@ -33,18 +46,20 @@ def create_app(
     smtp_config: Optional[Dict[str, Any]] = None,
     jira_config: Optional[Dict[str, Any]] = None,
     file_storage_config: Optional[Dict[str, Any]] = None,
+    gcs_config: Optional[Dict[str, Any]] = None,
     cors_origins: list = None,
     title: str = "EasyLife Auth API",
     description: str = "Authentication and Authorization API for EasyLife"
 ) -> FastAPI:
     """Create and configure FastAPI application
-    
+
     Args:
         db_config: MongoDB configuration
         token_secret: JWT secret key
         smtp_config: SMTP email configuration
         jira_config: Jira integration config (base_url, email, api_token, project_key)
         file_storage_config: File storage config (type: 'local' or 'gcs', bucket_name, base_path)
+        gcs_config: GCS config for bulk operations (credentials_json, bucket_name)
         cors_origins: CORS allowed origins
         title: API title
         description: API description
@@ -90,7 +105,8 @@ def create_app(
                 token_manager,
                 email_service,
                 jira_config=jira_config,
-                file_storage_config=file_storage_config
+                file_storage_config=file_storage_config,
+                gcs_config=gcs_config
             )
             print("✓ Services initialized")
         
@@ -134,9 +150,30 @@ def create_app(
             header_name="X-CSRF-Token",
             cookie_secure=not is_dev,  # False in dev, True in production
             cookie_samesite="lax",
-            exempt_paths={"/api/v1/auth/login", "/api/v1/auth/register"}
+            exempt_paths={
+                "/api/v1/auth/*",  # All auth endpoints are exempt (login, register, refresh, profile, etc.)
+            }
         )
-    
+
+    # Rate limiting middleware
+    import os
+    is_dev = os.environ.get("ENV", "production") == "development"
+    app.add_middleware(
+        RateLimitMiddleware,
+        requests_per_minute=120 if is_dev else 60,  # More lenient in dev
+        requests_per_hour=2000 if is_dev else 1000,
+        auth_requests_per_minute=10 if is_dev else 5,  # Stricter for auth endpoints
+        enabled=not is_dev  # Disabled in dev mode for easier testing
+    )
+
+    # Security headers middleware (enabled in production only)
+    if not is_dev:
+        app.add_middleware(
+            SecurityHeadersMiddleware,
+            enable_hsts=True,
+            enable_csp=True
+        )
+
     # Exception handlers
     @app.exception_handler(AuthError)
     async def auth_error_handler(request: Request, exc: AuthError):
@@ -167,11 +204,22 @@ def create_app(
     app.include_router(admin_router, prefix=API_BASE_ROUTE)
     app.include_router(domain_router, prefix=API_BASE_ROUTE)
     app.include_router(scenario_router, prefix=API_BASE_ROUTE)
+    app.include_router(domain_scenarios_router, prefix=API_BASE_ROUTE)
     app.include_router(playboard_router, prefix=API_BASE_ROUTE)
     app.include_router(feedback_router, prefix=API_BASE_ROUTE)
     app.include_router(scenario_request_router, prefix=API_BASE_ROUTE)
     app.include_router(health_router, prefix=API_BASE_ROUTE)
-    
+    app.include_router(bulk_upload_router, prefix=API_BASE_ROUTE)
+    app.include_router(activity_log_router, prefix=API_BASE_ROUTE)
+    app.include_router(export_router, prefix=API_BASE_ROUTE)
+    app.include_router(dashboard_router, prefix=API_BASE_ROUTE)
+    app.include_router(users_router, prefix=API_BASE_ROUTE)
+    app.include_router(roles_router, prefix=API_BASE_ROUTE)
+    app.include_router(groups_router, prefix=API_BASE_ROUTE)
+    app.include_router(permissions_router, prefix=API_BASE_ROUTE)
+    app.include_router(configurations_router, prefix=API_BASE_ROUTE)
+    app.include_router(customers_router, prefix=API_BASE_ROUTE)
+
     # Root endpoint
     @app.get("/")
     async def root():

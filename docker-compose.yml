@@ -12,7 +12,7 @@ services:
       MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-easylife_auth}
     volumes:
       - mongodb_data:/data/db
-      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - ./mongo-init:/docker-entrypoint-initdb.d:ro
     ports:
       - "${MONGO_PORT:-27017}:27017"
     networks:
@@ -31,6 +31,8 @@ services:
       dockerfile: Dockerfile
     container_name: easylife-backend
     restart: unless-stopped
+    env_file:
+      - ./backend/.env
     environment:
       # Database - simplified env vars
       MONGODB_SCHEME: mongodb
@@ -49,6 +51,13 @@ services:
       WEBAPP_HOST: ${WEBAPP_HOST:-http://localhost:3000/}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
       ENVIRONMENT: ${ENVIRONMENT:-production}
+      # File Storage Configuration
+      # FILE_STORAGE_TYPE: "gcs" or "local" (default: local)
+      FILE_STORAGE_TYPE: ${FILE_STORAGE_TYPE:-local}
+      LOCAL_UPLOAD_PATH: ${LOCAL_UPLOAD_PATH:-/tmp/easylife_uploads}
+      # GCS Configuration (required if FILE_STORAGE_TYPE=gcs)
+      GCS_CREDENTIALS_JSON: ${GCS_CREDENTIALS_JSON:-}
+      GCS_BUCKET_NAME: ${GCS_BUCKET_NAME:-}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:
@@ -96,8 +105,6 @@ services:
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
     networks:
       - easylife-network
-    profiles:
-      - dev
 
   # Mongo Express - Database UI (optional, for development)
   mongo-express:

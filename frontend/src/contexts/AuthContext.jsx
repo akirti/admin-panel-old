@@ -120,6 +120,24 @@ export function AuthProvider({ children }) {
     return user.domains.includes(domain);
   };
 
+  const hasPermission = (permission) => {
+    if (isSuperAdmin()) return true;
+    return user?.permissions?.includes(permission);
+  };
+
+  const hasAnyPermission = (permissions) => {
+    if (isSuperAdmin()) return true;
+    return permissions.some(p => user?.permissions?.includes(p));
+  };
+
+  const getUserDomains = () => {
+    return user?.domains || [];
+  };
+
+  const getUserPermissions = () => {
+    return user?.permissions || [];
+  };
+
   const value = {
     user,
     loading,
@@ -137,6 +155,10 @@ export function AuthProvider({ children }) {
     canManageUsers,
     canManageDomains,
     hasAccessToDomain,
+    hasPermission,
+    hasAnyPermission,
+    getUserDomains,
+    getUserPermissions,
     ROLES,
     ADMIN_ROLES,
     GROUP_ADMIN_ROLES,

@@ -61,8 +61,8 @@ class NewScenarioService:
 
     async def _get_domain_info(self, domain_key: str) -> Optional[Dict[str, Any]]:
         """Get domain information for validation"""
-        domain = await self.db.easylife_domain.find_one(
-            {"key": domain_key, "status": "A"}
+        domain = await self.db.domains.find_one(
+            {"key": domain_key, "status":{"$in":["A","active"]} }
         )
         return domain
 
@@ -384,31 +384,36 @@ class NewScenarioService:
         if "status" in update_data and any(r in roles for r in EDITORS):
             new_status = update_data["status"]
             old_status = current_request.get("status")
-            
+
             if new_status != old_status:
+                # Validate that comment is provided for status change
+                status_comment = update_data.get("status_comment") or update_data.get("workflow_comment")
+                if not status_comment or not status_comment.strip():
+                    raise AuthError("Comment is required when changing status", 400)
+
                 # Validate status transition
                 old_status_enum = None
                 try:
                     old_status_enum = ScenarioRequestStatusTypes(old_status) if old_status else None
                 except ValueError:
                     pass
-                
+
                 valid_transitions = STATUS_TRANSITIONS.get(old_status_enum, list(ScenarioRequestStatusTypes))
-                
+
                 try:
                     new_status_enum = ScenarioRequestStatusTypes(new_status)
                     if new_status_enum in valid_transitions or not valid_transitions:
                         update_fields["status"] = new_status
                         update_fields["statusDescription"] = REQUEST_STATUS_DESC.get(new_status, "Unknown")
                         update_types.append("status_change")
-                        
+
                         # Add workflow entry for status change
                         await self._add_workflow_entry(
                             request_id=request_id,
                             from_status=old_status,
                             to_status=new_status,
                             assigned_by=current_user,
-                            comment=update_data.get("status_comment")
+                            comment=status_comment
                         )
                 except ValueError:
                     pass
@@ -689,8 +694,8 @@ class NewScenarioService:
 
     async def get_domains(self) -> List[Dict[str, Any]]:
         """Get all active domains for dropdown"""
-        cursor = self.db.easylife_domain.find(
-            {"status": "A"},
+        cursor = self.db.domains.find(
+            {"status": {"$in":["A","active"]}},
             {"_id": 0, "key": 1, "name": 1}
         ).sort("order", 1)
         
