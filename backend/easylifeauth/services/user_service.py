@@ -3,10 +3,100 @@ from typing import Dict, Any, List, Optional
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson import ObjectId
 from datetime import datetime, timezone
+import hashlib
+import secrets
 
 from ..db.db_manager import DatabaseManager
 from .token_manager import TokenManager
 from ..errors.auth_error import AuthError
+
+
+def verify_scrypt_password(plain_password: str, hashed_password: str) -> bool:
+    """
+    Verify a password against a scrypt hash (Werkzeug format).
+    Format: scrypt:32768:8:1$salt$hash
+    """
+    try:
+        parts = hashed_password.split("$")
+        if len(parts) != 3:
+            return False
+
+        method_params = parts[0]  # scrypt:32768:8:1
+        salt = parts[1]
+        stored_hash = parts[2]
+
+        # Parse scrypt parameters
+        method_parts = method_params.split(":")
+        if method_parts[0] != "scrypt":
+            return False
+
+        n = int(method_parts[1])  # CPU/memory cost parameter (32768)
+        r = int(method_parts[2])  # Block size (8)
+        p = int(method_parts[3])  # Parallelization parameter (1)
+
+        # Calculate key length from stored hash (hex encoded, so divide by 2)
+        dklen = len(stored_hash) // 2
+
+        # Derive key using scrypt with maxmem parameter to allow higher memory usage
+        maxmem = 128 * n * r * p + 1024 * 1024  # Add 1MB overhead
+
+        derived_key = hashlib.scrypt(
+            plain_password.encode('utf-8'),
+            salt=salt.encode('utf-8'),
+            n=n,
+            r=r,
+            p=p,
+            dklen=dklen,
+            maxmem=maxmem
+        )
+
+        # Compare hashes
+        computed_hash = derived_key.hex()
+        return secrets.compare_digest(computed_hash, stored_hash)
+    except Exception as e:
+        print(f"Scrypt verification error: {e}")
+        return False
+
+
+def verify_bcrypt_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a password against a bcrypt hash."""
+    try:
+        from passlib.context import CryptContext
+        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception as e:
+        print(f"Bcrypt verification error: {e}")
+        return False
+
+
+def verify_password_multi(plain_password: str, hashed_password: str) -> bool:
+    """
+    Verify password supporting multiple hash formats:
+    - pbkdf2 (werkzeug default)
+    - scrypt (werkzeug alternative)
+    - bcrypt (passlib)
+    """
+    if not hashed_password:
+        return False
+
+    # pbkdf2 format (werkzeug default): pbkdf2:sha256:...
+    if hashed_password.startswith("pbkdf2:"):
+        return check_password_hash(hashed_password, plain_password)
+
+    # scrypt format (werkzeug): scrypt:32768:8:1$salt$hash
+    if hashed_password.startswith("scrypt:"):
+        return verify_scrypt_password(plain_password, hashed_password)
+
+    # bcrypt format: $2b$... or $2a$... or $2y$...
+    if hashed_password.startswith("$2"):
+        return verify_bcrypt_password(plain_password, hashed_password)
+
+    # Fallback: try werkzeug check_password_hash
+    try:
+        return check_password_hash(hashed_password, plain_password)
+    except Exception as e:
+        print(f"Password verification fallback error: {e}")
+        return False
 
 
 class UserService:
@@ -173,8 +263,8 @@ class UserService:
         if not user.get("is_active", False):
             raise AuthError("Account is Deactivated", 403)
 
-        # Check password
-        if not check_password_hash(user["password_hash"], password):
+        # Check password (supports bcrypt, pbkdf2, scrypt)
+        if not verify_password_multi(password, user["password_hash"]):
             raise AuthError("Invalid email or password", 401)
 
         await self.db.users.update_one(

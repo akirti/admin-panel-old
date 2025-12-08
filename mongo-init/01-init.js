@@ -292,15 +292,18 @@ try {
 
 // ============================================
 // USERS
-// Password hash is for 'password123' using bcrypt
+// Password hash is for 'password123' using werkzeug scrypt
+// Backend supports: bcrypt ($2b$), pbkdf2 (pbkdf2:), and scrypt (scrypt:)
+// Generated with: python3 -c "from werkzeug.security import generate_password_hash; print(generate_password_hash('password123'))"
+// Email domain: @easylife.local for Mailpit testing
 // ============================================
-var passwordHash = '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.RNGP6vECPdZHGG';
+var passwordHash = 'scrypt:32768:8:1$XY91vHSFfC2BNgR5$70208ea010f35a93f2ecb3169c4201f5d18197372dd6288649e95db200cabbe6cd787e91f6680d996ea9287acf904394b273bfcbd412ec5c5209dc5dea823434';
 
 print('Inserting users...');
 try {
     db.users.insertMany([
   {
-    email: 'admin@example.com',
+    email: 'admin@easylife.local',
     username: 'admin',
     full_name: 'System Administrator',
     name: 'System Administrator',
@@ -316,7 +319,7 @@ try {
     last_login: null
   },
   {
-    email: 'manager@example.com',
+    email: 'manager@easylife.local',
     username: 'manager',
     full_name: 'John Manager',
     name: 'John Manager',
@@ -332,7 +335,7 @@ try {
     last_login: null
   },
   {
-    email: 'editor@example.com',
+    email: 'editor@easylife.local',
     username: 'editor',
     full_name: 'Jane Editor',
     name: 'Jane Editor',
@@ -348,7 +351,7 @@ try {
     last_login: null
   },
   {
-    email: 'viewer@example.com',
+    email: 'viewer@easylife.local',
     username: 'viewer',
     full_name: 'Bob Viewer',
     name: 'Bob Viewer',
@@ -364,7 +367,7 @@ try {
     last_login: null
   },
   {
-    email: 'sales@example.com',
+    email: 'sales@easylife.local',
     username: 'salesuser',
     full_name: 'Sales User',
     name: 'Sales User',
@@ -380,7 +383,7 @@ try {
     last_login: null
   },
   {
-    email: 'inactive@example.com',
+    email: 'inactive@easylife.local',
     username: 'inactive',
     full_name: 'Inactive User',
     name: 'Inactive User',
@@ -608,32 +611,32 @@ var sixDaysAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
 
 db.audit_logs.insertMany([
   // Today's activities
-  { action: 'login', entity_type: 'auth', entity_id: 'admin@example.com', user_id: 'admin@example.com', user_email: 'admin@example.com', changes: {}, timestamp: now },
-  { action: 'create', entity_type: 'users', entity_id: 'test@example.com', user_id: 'admin@example.com', user_email: 'admin@example.com', changes: { email: { new: 'test@example.com' } }, timestamp: now },
-  { action: 'update', entity_type: 'roles', entity_id: 'editor', user_id: 'admin@example.com', user_email: 'admin@example.com', changes: { permissions: { old: 5, new: 7 } }, timestamp: now },
+  { action: 'login', entity_type: 'auth', entity_id: 'admin@easylife.local', user_id: 'admin@easylife.local', user_email: 'admin@easylife.local', changes: {}, timestamp: now },
+  { action: 'create', entity_type: 'users', entity_id: 'test@easylife.local', user_id: 'admin@easylife.local', user_email: 'admin@easylife.local', changes: { email: { new: 'test@easylife.local' } }, timestamp: now },
+  { action: 'update', entity_type: 'roles', entity_id: 'editor', user_id: 'admin@easylife.local', user_email: 'admin@easylife.local', changes: { permissions: { old: 5, new: 7 } }, timestamp: now },
 
   // 1 day ago
-  { action: 'login', entity_type: 'auth', entity_id: 'manager@example.com', user_id: 'manager@example.com', user_email: 'manager@example.com', changes: {}, timestamp: oneDayAgo },
-  { action: 'create', entity_type: 'groups', entity_id: 'test-group', user_id: 'admin@example.com', user_email: 'admin@example.com', changes: { name: { new: 'Test Group' } }, timestamp: oneDayAgo },
+  { action: 'login', entity_type: 'auth', entity_id: 'manager@easylife.local', user_id: 'manager@easylife.local', user_email: 'manager@easylife.local', changes: {}, timestamp: oneDayAgo },
+  { action: 'create', entity_type: 'groups', entity_id: 'test-group', user_id: 'admin@easylife.local', user_email: 'admin@easylife.local', changes: { name: { new: 'Test Group' } }, timestamp: oneDayAgo },
 
   // 2 days ago
-  { action: 'login', entity_type: 'auth', entity_id: 'admin@example.com', user_id: 'admin@example.com', user_email: 'admin@example.com', changes: {}, timestamp: twoDaysAgo },
-  { action: 'login', entity_type: 'auth', entity_id: 'editor@example.com', user_id: 'editor@example.com', user_email: 'editor@example.com', changes: {}, timestamp: twoDaysAgo },
-  { action: 'create', entity_type: 'domains', entity_id: 'test-domain', user_id: 'admin@example.com', user_email: 'admin@example.com', changes: { key: { new: 'test-domain' } }, timestamp: twoDaysAgo },
+  { action: 'login', entity_type: 'auth', entity_id: 'admin@easylife.local', user_id: 'admin@easylife.local', user_email: 'admin@easylife.local', changes: {}, timestamp: twoDaysAgo },
+  { action: 'login', entity_type: 'auth', entity_id: 'editor@easylife.local', user_id: 'editor@easylife.local', user_email: 'editor@easylife.local', changes: {}, timestamp: twoDaysAgo },
+  { action: 'create', entity_type: 'domains', entity_id: 'test-domain', user_id: 'admin@easylife.local', user_email: 'admin@easylife.local', changes: { key: { new: 'test-domain' } }, timestamp: twoDaysAgo },
 
   // 3 days ago
-  { action: 'login', entity_type: 'auth', entity_id: 'admin@example.com', user_id: 'admin@example.com', user_email: 'admin@example.com', changes: {}, timestamp: threeDaysAgo },
-  { action: 'create', entity_type: 'scenarios', entity_id: 'test-scenario', user_id: 'editor@example.com', user_email: 'editor@example.com', changes: { name: { new: 'Test Scenario' } }, timestamp: threeDaysAgo },
+  { action: 'login', entity_type: 'auth', entity_id: 'admin@easylife.local', user_id: 'admin@easylife.local', user_email: 'admin@easylife.local', changes: {}, timestamp: threeDaysAgo },
+  { action: 'create', entity_type: 'scenarios', entity_id: 'test-scenario', user_id: 'editor@easylife.local', user_email: 'editor@easylife.local', changes: { name: { new: 'Test Scenario' } }, timestamp: threeDaysAgo },
 
   // 4 days ago
-  { action: 'login', entity_type: 'auth', entity_id: 'manager@example.com', user_id: 'manager@example.com', user_email: 'manager@example.com', changes: {}, timestamp: fourDaysAgo },
-  { action: 'login', entity_type: 'auth', entity_id: 'sales@example.com', user_id: 'sales@example.com', user_email: 'sales@example.com', changes: {}, timestamp: fourDaysAgo },
+  { action: 'login', entity_type: 'auth', entity_id: 'manager@easylife.local', user_id: 'manager@easylife.local', user_email: 'manager@easylife.local', changes: {}, timestamp: fourDaysAgo },
+  { action: 'login', entity_type: 'auth', entity_id: 'sales@easylife.local', user_id: 'sales@easylife.local', user_email: 'sales@easylife.local', changes: {}, timestamp: fourDaysAgo },
 
   // 5 days ago
-  { action: 'login', entity_type: 'auth', entity_id: 'admin@example.com', user_id: 'admin@example.com', user_email: 'admin@example.com', changes: {}, timestamp: fiveDaysAgo },
+  { action: 'login', entity_type: 'auth', entity_id: 'admin@easylife.local', user_id: 'admin@easylife.local', user_email: 'admin@easylife.local', changes: {}, timestamp: fiveDaysAgo },
 
   // 6 days ago
-  { action: 'login', entity_type: 'auth', entity_id: 'viewer@example.com', user_id: 'viewer@example.com', user_email: 'viewer@example.com', changes: {}, timestamp: sixDaysAgo }
+  { action: 'login', entity_type: 'auth', entity_id: 'viewer@easylife.local', user_id: 'viewer@easylife.local', user_email: 'viewer@easylife.local', changes: {}, timestamp: sixDaysAgo }
 ]);
 
     print('Audit logs inserted: ' + db.audit_logs.countDocuments());
@@ -720,10 +723,12 @@ print('  - configurations: ' + db.configurations.countDocuments());
 print('  - audit_logs: ' + db.audit_logs.countDocuments());
 print('');
 print('Test Users (password: password123):');
-print('  - admin@example.com (Super Admin)');
-print('  - manager@example.com (Admin)');
-print('  - editor@example.com (Editor)');
-print('  - viewer@example.com (Viewer)');
-print('  - sales@example.com (Sales Manager)');
-print('  - inactive@example.com (Inactive)');
+print('  - admin@easylife.local (Super Admin)');
+print('  - manager@easylife.local (Admin)');
+print('  - editor@easylife.local (Editor)');
+print('  - viewer@easylife.local (Viewer)');
+print('  - sales@easylife.local (Sales Manager)');
+print('  - inactive@easylife.local (Inactive)');
+print('');
+print('Mailpit Web UI: http://localhost:8025');
 print('========================================');
