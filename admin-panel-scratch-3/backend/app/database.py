@@ -44,6 +44,7 @@ COLLECTIONS = {
     "playboards": "playboards",
     "configurations": "configurations",
     "audit_logs": "audit_logs",
+    "scenario_requests":"scenario_requests"
 }
 
 

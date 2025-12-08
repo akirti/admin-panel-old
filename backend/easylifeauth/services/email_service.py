@@ -62,7 +62,7 @@ class EmailService:
     ) -> None:
         """Send password reset email"""
         msg = self._prepare_email_template(to_email, reset_token, reset_url)
-        
+
         try:
             if self.use_tls and self.password:
                 await aiosmtplib.send(
@@ -81,6 +81,143 @@ class EmailService:
                 )
         except Exception as e:
             raise EmailError(f"Failed to send email: {str(e)}", 500) from e
+
+    def _prepare_welcome_email_template(
+        self,
+        to_email: str,
+        full_name: str,
+        password: str
+    ) -> MIMEMultipart:
+        """Prepare welcome email with login credentials"""
+        subject = "Welcome to EasyLife - Your Account Details"
+
+        html_content = f"""
+            <html>
+                <body>
+                    <h2>Welcome to EasyLife!</h2>
+                    <p>Hello {full_name},</p>
+                    <p>Your account has been created. Here are your login details:</p>
+                    <ul>
+                        <li><strong>Email:</strong> {to_email}</li>
+                        <li><strong>Password:</strong> {password}</li>
+                    </ul>
+                    <p>Please log in and change your password immediately for security reasons.</p>
+                    <p><a href="http://localhost:3000/login">Login to EasyLife</a></p>
+                    <hr/>
+                    <h3>Contact us:</h3>
+                    <ul>
+                        <li>Email: support@easylife.local</li>
+                        <li>Office Hrs: 8:00 AM - 05:00 PM EST</li>
+                    </ul>
+                    <p>Thank you</p>
+                    <p>Team EasyLife</p>
+                </body>
+            </html>
+        """
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = self.email
+        msg["To"] = to_email
+        msg.attach(MIMEText(html_content, "html"))
+
+        return msg
+
+    async def send_welcome_email(
+        self,
+        to_email: str,
+        full_name: str,
+        password: str
+    ) -> None:
+        """Send welcome email with login credentials"""
+        msg = self._prepare_welcome_email_template(to_email, full_name, password)
+
+        try:
+            if self.use_tls and self.password:
+                await aiosmtplib.send(
+                    msg,
+                    hostname=self.smtp_server,
+                    port=self.smtp_port,
+                    username=self.email,
+                    password=self.password,
+                    start_tls=True
+                )
+            else:
+                await aiosmtplib.send(
+                    msg,
+                    hostname=self.smtp_server,
+                    port=self.smtp_port
+                )
+        except Exception as e:
+            raise EmailError(f"Failed to send welcome email: {str(e)}", 500) from e
+
+    def _prepare_password_reset_email_template(
+        self,
+        to_email: str,
+        full_name: str,
+        reset_token: str
+    ) -> MIMEMultipart:
+        """Prepare password reset email for admin-initiated reset"""
+        subject = "Password Reset - EasyLife"
+        reset_url = "http://localhost:3000/reset-password"
+
+        html_content = f"""
+            <html>
+                <body>
+                    <h2>Password Reset Request</h2>
+                    <p>Hello {full_name},</p>
+                    <p>An administrator has initiated a password reset for your account.</p>
+                    <p>Click the link below to reset your password:</p>
+                    <p><a href="{reset_url}?token={reset_token}">Reset Password</a></p>
+                    <p>This link will expire in 1 hour.</p>
+                    <p>If you did not expect this, please contact support.</p>
+                    <hr/>
+                    <h3>Contact us:</h3>
+                    <ul>
+                        <li>Email: support@easylife.local</li>
+                        <li>Office Hrs: 8:00 AM - 05:00 PM EST</li>
+                    </ul>
+                    <p>Thank you</p>
+                    <p>Team EasyLife</p>
+                </body>
+            </html>
+        """
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = self.email
+        msg["To"] = to_email
+        msg.attach(MIMEText(html_content, "html"))
+
+        return msg
+
+    async def send_password_reset_email(
+        self,
+        to_email: str,
+        full_name: str,
+        reset_token: str
+    ) -> None:
+        """Send password reset email (admin-initiated)"""
+        msg = self._prepare_password_reset_email_template(to_email, full_name, reset_token)
+
+        try:
+            if self.use_tls and self.password:
+                await aiosmtplib.send(
+                    msg,
+                    hostname=self.smtp_server,
+                    port=self.smtp_port,
+                    username=self.email,
+                    password=self.password,
+                    start_tls=True
+                )
+            else:
+                await aiosmtplib.send(
+                    msg,
+                    hostname=self.smtp_server,
+                    port=self.smtp_port
+                )
+        except Exception as e:
+            raise EmailError(f"Failed to send password reset email: {str(e)}", 500) from e
 
     def _prepare_feedback_email_template(
         self,

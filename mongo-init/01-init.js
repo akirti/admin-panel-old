@@ -151,7 +151,7 @@ print('Inserting roles...');
 try {
 db.roles.insertMany([
   {
-    roleId: 'super-admin',
+    roleId: 'super-administrator',
     name: 'Super Administrator',
     description: 'Full system access with all permissions',
     permissions: allPermissions,
@@ -163,7 +163,7 @@ db.roles.insertMany([
     updated_at: new Date()
   },
   {
-    roleId: 'admin',
+    roleId: 'administrator',
     name: 'Administrator',
     description: 'Administrative access',
     permissions: ['users.view', 'users.create', 'users.edit', 'roles.view', 'groups.view', 'domains.view', 'scenarios.view', 'playboards.view', 'configurations.view', 'dashboard.view'],
@@ -308,7 +308,7 @@ try {
     full_name: 'System Administrator',
     name: 'System Administrator',
     password_hash: passwordHash,
-    roles: ['super-admin'],
+    roles: ['super-administrator'],
     groups: ['administrators'],
     customers: ['customer-001', 'customer-002', 'customer-003', 'customer-004', 'customer-005'],
     is_active: true,
@@ -324,7 +324,7 @@ try {
     full_name: 'John Manager',
     name: 'John Manager',
     password_hash: passwordHash,
-    roles: ['admin'],
+    roles: ['administrator'],
     groups: ['managers'],
     customers: ['customer-001', 'customer-002'],
     is_active: true,

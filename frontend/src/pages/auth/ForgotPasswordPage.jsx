@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { authAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
