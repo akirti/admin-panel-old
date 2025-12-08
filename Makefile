@@ -136,5 +136,5 @@ up-with-tools:
 	@echo "Services started with development tools!"
 	@echo "  Frontend:      http://localhost:3000"
 	@echo "  Backend:       http://localhost:8000"
-	@echo "  MailHog:       http://localhost:8025"
+	@echo "  Mailpit:       http://localhost:8025"
 	@echo "  Mongo Express: http://localhost:8081"

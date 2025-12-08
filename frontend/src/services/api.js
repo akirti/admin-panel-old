@@ -15,9 +15,24 @@ const api = axios.create({
 // CSRF token management
 let csrfToken = null;
 
+// Helper to get cookie value by name
+const getCookie = (name) => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+  return null;
+};
+
 const fetchCSRFToken = async () => {
   try {
-    // First call sets the cookie, second call returns the token
+    // First try to read directly from cookie (if not httpOnly)
+    let token = getCookie('csrf_token');
+    if (token) {
+      csrfToken = token;
+      return csrfToken;
+    }
+
+    // Fallback: call the API endpoint to get/set the token
     let response = await axios.get(`${API_BASE_URL}/auth/csrf-token`, {
       withCredentials: true
     });
@@ -27,6 +42,13 @@ const fetchCSRFToken = async () => {
       response = await axios.get(`${API_BASE_URL}/auth/csrf-token`, {
         withCredentials: true
       });
+    }
+
+    // Try reading from cookie again after API call sets it
+    token = getCookie('csrf_token');
+    if (token) {
+      csrfToken = token;
+      return csrfToken;
     }
 
     csrfToken = response.data.csrf_token;
@@ -100,12 +122,23 @@ api.interceptors.response.use(
     }
 
     // Handle 403 CSRF errors - refresh CSRF token and retry
+    const errorDetail = error.response?.data?.detail || error.response?.data?.error || '';
     if (error.response?.status === 403 &&
-        error.response?.data?.error?.includes('CSRF') &&
+        (errorDetail.includes('CSRF') || errorDetail.includes('csrf')) &&
         !originalRequest._csrfRetry) {
       originalRequest._csrfRetry = true;
 
-      // Fetch new CSRF token
+      // Clear existing token to force refresh
+      csrfToken = null;
+
+      // Make a GET request to force backend to issue a new cookie
+      try {
+        await axios.get(`${API_BASE_URL}/auth/csrf-token`, { withCredentials: true });
+      } catch (e) {
+        // Ignore errors, the cookie might still be set
+      }
+
+      // Fetch the new CSRF token from cookie
       await fetchCSRFToken();
 
       // Retry with new token

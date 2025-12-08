@@ -99,6 +99,23 @@ class CSRFProtectMiddleware(BaseHTTPMiddleware):
 
         return False
 
+    def _set_csrf_cookie(self, response: Response) -> str:
+        """Generate and set a new CSRF token cookie, return the signed token"""
+        token = self._generate_token()
+        signed_token = self._sign_token(token)
+
+        response.set_cookie(
+            key=self.cookie_name,
+            value=signed_token,
+            path=self.cookie_path,
+            domain=self.cookie_domain,
+            secure=self.cookie_secure,
+            httponly=False,  # Allow JavaScript to read for header
+            samesite=self.cookie_samesite,
+            max_age=86400  # 24 hours
+        )
+        return signed_token
+
     async def dispatch(self, request: Request, call_next):
         """Process request and apply CSRF protection"""
 
@@ -111,22 +128,9 @@ class CSRFProtectMiddleware(BaseHTTPMiddleware):
             if request.method in {"GET", "HEAD"}:
                 csrf_token_cookie = request.cookies.get(self.cookie_name)
 
-                if not csrf_token_cookie:
-                    # Generate new token
-                    token = self._generate_token()
-                    signed_token = self._sign_token(token)
-
-                    # Set cookie
-                    response.set_cookie(
-                        key=self.cookie_name,
-                        value=signed_token,
-                        path=self.cookie_path,
-                        domain=self.cookie_domain,
-                        secure=self.cookie_secure,
-                        httponly=True,
-                        samesite=self.cookie_samesite,
-                        max_age=86400  # 24 hours
-                    )
+                # Generate new token if missing or invalid signature
+                if not csrf_token_cookie or not self._verify_token(csrf_token_cookie):
+                    self._set_csrf_cookie(response)
 
             return response
 

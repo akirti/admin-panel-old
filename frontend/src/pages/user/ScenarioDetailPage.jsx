@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router';
 import { scenariosAPI, playboardsAPI, domainsAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, Button, Input, Modal, Badge, Select, Toggle, FileUpload } from '../../components/shared';

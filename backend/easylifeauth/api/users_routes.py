@@ -167,8 +167,10 @@ async def create_user(
             await email_service.send_welcome_email(
                 user_data.email, user_data.full_name, user_data.password
             )
-        except Exception:
-            pass  # Don't fail if email fails
+            print(f"Welcome email sent to {user_data.email}")
+        except Exception as e:
+            print(f"Failed to send welcome email to {user_data.email}: {e}")
+            # Don't fail if email fails
 
     # Log activity
     if activity_log:
@@ -337,8 +339,9 @@ async def send_password_reset_email(
                 user.get("full_name", user["email"]),
                 reset_token
             )
-        except Exception:
-            pass
+            print(f"Password reset email sent to {user['email']}")
+        except Exception as e:
+            print(f"Failed to send password reset email to {user['email']}: {e}")
         return {"message": "Password reset email sent"}
     else:
         return {"message": "Password reset token generated", "token": reset_token}
@@ -379,8 +382,9 @@ async def admin_reset_password(
                 user.get("full_name", user["email"]),
                 temp_password
             )
-        except Exception:
-            pass
+            print(f"Password reset email with temp password sent to {user['email']}")
+        except Exception as e:
+            print(f"Failed to send password reset email to {user['email']}: {e}")
         return {"message": "Password reset and email sent"}
     else:
         return {"message": "Password reset", "temp_password": temp_password}
