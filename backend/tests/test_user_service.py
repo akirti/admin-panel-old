@@ -222,12 +222,13 @@ class TestUserService:
 
     @pytest.mark.asyncio
     async def test_logout_user_no_session(self, user_service, mock_db):
-        """Test logout with no active session"""
-        mock_db.tokens.delete_one = AsyncMock(return_value=MagicMock(deleted_count=0))
-        
+        """Test logout with no active session (still returns success)"""
+        mock_db.tokens.delete_many = AsyncMock(return_value=MagicMock(deleted_count=0))
+
         result = await user_service.logout_user(
             "507f1f77bcf86cd799439011",
             "test@example.com"
         )
-        
-        assert result["message"] == "No active session found"
+
+        # Service always returns success regardless of whether tokens existed
+        assert result["message"] == "Logged out successfully"

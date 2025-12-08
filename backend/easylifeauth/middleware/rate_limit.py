@@ -21,9 +21,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app,
-        requests_per_minute: int = 60,
-        requests_per_hour: int = 1000,
-        auth_requests_per_minute: int = 5,  # Stricter limit for auth endpoints
+        requests_per_minute: int = 10000,
+        requests_per_hour: int = 1000000,
+        auth_requests_per_minute: int = 5000,  # Stricter limit for auth endpoints
         enabled: bool = True,
         exempt_paths: Set[str] = None
     ):

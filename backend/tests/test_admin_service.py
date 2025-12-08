@@ -84,15 +84,14 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_update_user_status_not_found(self, admin_service, mock_db):
         """Test updating status of non-existent user"""
-        mock_db.users.update_one = AsyncMock(return_value=MagicMock(matched_count=0))
-        
-        result = await admin_service.update_user_status(
-            "nonexistent",
-            True
-        )
-        
-        # Returns AuthError object instead of raising
-        assert isinstance(result, AuthError)
+        mock_db.users.find_one = AsyncMock(return_value=None)
+
+        with pytest.raises(AuthError) as exc_info:
+            await admin_service.update_user_status(
+                "507f1f77bcf86cd799439099",
+                True
+            )
+        assert exc_info.value.status_code == 404
 
     @pytest.mark.asyncio
     async def test_update_user_role_success(self, admin_service, mock_db):
@@ -120,10 +119,10 @@ class TestAdminService:
     async def test_update_user_role_not_found(self, admin_service, mock_db):
         """Test updating roles of non-existent user"""
         mock_db.users.update_one = AsyncMock(return_value=MagicMock(matched_count=0))
-        
+
         with pytest.raises(AuthError) as exc_info:
             await admin_service.update_user_role(
-                "nonexistent",
+                "507f1f77bcf86cd799439099",
                 ["user"]
             )
         assert exc_info.value.status_code == 404
@@ -144,10 +143,10 @@ class TestAdminService:
     async def test_update_user_groups_not_found(self, admin_service, mock_db):
         """Test updating groups of non-existent user"""
         mock_db.users.update_one = AsyncMock(return_value=MagicMock(matched_count=0))
-        
+
         with pytest.raises(AuthError) as exc_info:
             await admin_service.update_user_groups(
-                "nonexistent",
+                "507f1f77bcf86cd799439099",
                 ["viewer"]
             )
         assert exc_info.value.status_code == 404
@@ -168,10 +167,10 @@ class TestAdminService:
     async def test_update_user_domains_not_found(self, admin_service, mock_db):
         """Test updating domains of non-existent user"""
         mock_db.users.update_one = AsyncMock(return_value=MagicMock(matched_count=0))
-        
+
         with pytest.raises(AuthError) as exc_info:
             await admin_service.update_user_domains(
-                "nonexistent",
+                "507f1f77bcf86cd799439099",
                 ["domain1"]
             )
         assert exc_info.value.status_code == 404

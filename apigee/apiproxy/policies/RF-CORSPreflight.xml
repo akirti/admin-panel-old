@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<RaiseFault async="false" continueOnError="false" enabled="true" name="RF-CORSPreflight">
+    <DisplayName>CORS Preflight Response</DisplayName>
+    <Properties/>
+    <FaultResponse>
+        <Set>
+            <Headers>
+                <Header name="Access-Control-Allow-Origin">{request.header.origin}</Header>
+                <Header name="Access-Control-Allow-Methods">GET, POST, PUT, DELETE, PATCH, OPTIONS</Header>
+                <Header name="Access-Control-Allow-Headers">Origin, X-Requested-With, Content-Type, Accept, Authorization, X-API-Key, X-CSRF-Token</Header>
+                <Header name="Access-Control-Allow-Credentials">true</Header>
+                <Header name="Access-Control-Max-Age">86400</Header>
+            </Headers>
+            <Payload contentType="text/plain"/>
+            <StatusCode>200</StatusCode>
+            <ReasonPhrase>OK</ReasonPhrase>
+        </Set>
+    </FaultResponse>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</RaiseFault>

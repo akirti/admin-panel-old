@@ -59,21 +59,22 @@ class TestFeedbackService:
     async def test_save_email_error(self, feedback_service, mock_db, mock_email_service, sample_feedback_data):
         """Test saving feedback with email error (should not fail)"""
         from easylifeauth.errors.email_error import EmailError
-        
+
         mock_db.feedbacks.insert_one = AsyncMock(
             return_value=MagicMock(inserted_id=ObjectId())
         )
         mock_db.feedbacks.find_one = AsyncMock(return_value=sample_feedback_data)
-        mock_email_service.send_feedback_email = MagicMock(
+        # Use AsyncMock since send_feedback_email is async (uses await)
+        mock_email_service.send_feedback_email = AsyncMock(
             side_effect=EmailError("Email failed")
         )
-        
+
         # Should not raise, just log the error
         result = await feedback_service.save({
             "rating": 5,
             "email": "test@example.com"
         })
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
@@ -100,11 +101,10 @@ class TestFeedbackService:
 
     @pytest.mark.asyncio
     async def test_update_no_valid_fields(self, feedback_service):
-        """Test updating with no valid fields"""
+        """Test updating with only feedback_id and no other fields"""
         with pytest.raises(AuthError) as exc_info:
             await feedback_service.update({
-                "feedback_id": "507f1f77bcf86cd799439016",
-                "invalid_field": "value"
+                "feedback_id": "507f1f77bcf86cd799439016"
             })
         assert exc_info.value.status_code == 400
 
@@ -114,10 +114,10 @@ class TestFeedbackService:
         mock_db.feedbacks.update_one = AsyncMock(
             return_value=MagicMock(matched_count=0)
         )
-        
+
         with pytest.raises(AuthError) as exc_info:
             await feedback_service.update({
-                "feedback_id": "nonexistent",
+                "feedback_id": "507f1f77bcf86cd799439099",
                 "rating": 4
             })
         assert exc_info.value.status_code == 404
@@ -143,7 +143,7 @@ class TestFeedbackService:
     async def test_get_not_found(self, feedback_service, mock_db):
         """Test getting non-existent feedback"""
         mock_db.feedbacks.find_one = AsyncMock(return_value=None)
-        
+
         with pytest.raises(AuthError) as exc_info:
-            await feedback_service.get("nonexistent")
+            await feedback_service.get("507f1f77bcf86cd799439099")
         assert exc_info.value.status_code == 404

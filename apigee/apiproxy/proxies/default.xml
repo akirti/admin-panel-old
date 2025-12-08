@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ProxyEndpoint name="default">
+    <Description>Default Proxy Endpoint for EasyLife Admin API</Description>
+
+    <PreFlow name="PreFlow">
+        <Request>
+            <!-- CORS Preflight handling -->
+            <Step>
+                <Name>RF-CORSPreflight</Name>
+                <Condition>request.verb == "OPTIONS"</Condition>
+            </Step>
+            <!-- Spike Arrest to prevent abuse -->
+            <Step>
+                <Name>SA-RateLimit</Name>
+            </Step>
+            <!-- Verify API Key for non-auth endpoints -->
+            <Step>
+                <Name>VA-VerifyAPIKey</Name>
+                <Condition>!(proxy.pathsuffix MatchesPath "/auth/**") and !(proxy.pathsuffix MatchesPath "/health/**")</Condition>
+            </Step>
+            <!-- Validate JWT Token for protected endpoints -->
+            <Step>
+                <Name>JWT-VerifyAccessToken</Name>
+                <Condition>!(proxy.pathsuffix MatchesPath "/auth/login") and !(proxy.pathsuffix MatchesPath "/auth/register") and !(proxy.pathsuffix MatchesPath "/auth/forgot-password") and !(proxy.pathsuffix MatchesPath "/auth/reset-password") and !(proxy.pathsuffix MatchesPath "/auth/csrf-token") and !(proxy.pathsuffix MatchesPath "/health/**") and request.verb != "OPTIONS"</Condition>
+            </Step>
+            <!-- Quota enforcement -->
+            <Step>
+                <Name>Q-EnforceQuota</Name>
+                <Condition>!(proxy.pathsuffix MatchesPath "/health/**")</Condition>
+            </Step>
+        </Request>
+        <Response>
+            <!-- Add CORS headers -->
+            <Step>
+                <Name>AM-AddCORSHeaders</Name>
+            </Step>
+        </Response>
+    </PreFlow>
+
+    <Flows>
+        <!-- Authentication Endpoints -->
+        <Flow name="Auth-Login">
+            <Description>User login</Description>
+            <Request>
+                <Step>
+                    <Name>JS-ValidateLoginRequest</Name>
+                </Step>
+            </Request>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/auth/login") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="Auth-Register">
+            <Description>User registration</Description>
+            <Request>
+                <Step>
+                    <Name>JS-ValidateRegisterRequest</Name>
+                </Step>
+            </Request>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/auth/register") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="Auth-Refresh">
+            <Description>Token refresh</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/auth/refresh") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="Auth-ForgotPassword">
+            <Description>Forgot password request</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/auth/forgot-password") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <!-- User Management Endpoints -->
+        <Flow name="Users-List">
+            <Description>List all users</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/users") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Users-Create">
+            <Description>Create a new user</Description>
+            <Request>
+                <Step>
+                    <Name>JS-ValidateUserCreate</Name>
+                </Step>
+            </Request>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/users") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="Users-GetById">
+            <Description>Get user by ID</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/users/*") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Users-Update">
+            <Description>Update user</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/users/*") and (request.verb = "PUT")</Condition>
+        </Flow>
+
+        <Flow name="Users-Delete">
+            <Description>Delete user</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/users/*") and (request.verb = "DELETE")</Condition>
+        </Flow>
+
+        <!-- Roles Endpoints -->
+        <Flow name="Roles-CRUD">
+            <Description>Roles management</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/roles") or (proxy.pathsuffix MatchesPath "/roles/*")</Condition>
+        </Flow>
+
+        <!-- Groups Endpoints -->
+        <Flow name="Groups-CRUD">
+            <Description>Groups management</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/groups") or (proxy.pathsuffix MatchesPath "/groups/*")</Condition>
+        </Flow>
+
+        <!-- Domains Endpoints -->
+        <Flow name="Domains-CRUD">
+            <Description>Domains management</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/domains") or (proxy.pathsuffix MatchesPath "/domains/*")</Condition>
+        </Flow>
+
+        <!-- Scenarios Endpoints -->
+        <Flow name="Scenarios-CRUD">
+            <Description>Scenarios management</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/scenarios") or (proxy.pathsuffix MatchesPath "/scenarios/*")</Condition>
+        </Flow>
+
+        <!-- Scenario Requests Endpoints -->
+        <Flow name="ScenarioRequests-CRUD">
+            <Description>Scenario requests management</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/scenario-requests") or (proxy.pathsuffix MatchesPath "/scenario-requests/*")</Condition>
+        </Flow>
+
+        <!-- Playboards Endpoints -->
+        <Flow name="Playboards-CRUD">
+            <Description>Playboards management</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/playboards") or (proxy.pathsuffix MatchesPath "/playboards/*")</Condition>
+        </Flow>
+
+        <!-- Configurations Endpoints -->
+        <Flow name="Configurations-CRUD">
+            <Description>Configurations management</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/configurations") or (proxy.pathsuffix MatchesPath "/configurations/*")</Condition>
+        </Flow>
+
+        <!-- Customers Endpoints -->
+        <Flow name="Customers-CRUD">
+            <Description>Customers management</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/customers") or (proxy.pathsuffix MatchesPath "/customers/*")</Condition>
+        </Flow>
+
+        <!-- Bulk Upload Endpoints -->
+        <Flow name="BulkUpload">
+            <Description>Bulk upload operations</Description>
+            <Request>
+                <Step>
+                    <Name>JS-ValidateBulkUpload</Name>
+                </Step>
+            </Request>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/bulk-upload/**")</Condition>
+        </Flow>
+
+        <!-- Activity Logs Endpoints -->
+        <Flow name="ActivityLogs">
+            <Description>Activity logs</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/activity-logs") or (proxy.pathsuffix MatchesPath "/activity-logs/*")</Condition>
+        </Flow>
+
+        <!-- Health Check Endpoints -->
+        <Flow name="Health">
+            <Description>Health check endpoints</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/health/**")</Condition>
+        </Flow>
+    </Flows>
+
+    <PostFlow name="PostFlow">
+        <Request/>
+        <Response>
+            <!-- Add security headers -->
+            <Step>
+                <Name>AM-AddSecurityHeaders</Name>
+            </Step>
+        </Response>
+    </PostFlow>
+
+    <FaultRules>
+        <FaultRule name="InvalidAPIKey">
+            <Step>
+                <Name>AM-InvalidAPIKeyResponse</Name>
+            </Step>
+            <Condition>(fault.name = "InvalidApiKey") or (fault.name = "InvalidApiKeyForGivenResource")</Condition>
+        </FaultRule>
+        <FaultRule name="InvalidJWT">
+            <Step>
+                <Name>AM-InvalidJWTResponse</Name>
+            </Step>
+            <Condition>(fault.name Matches "*JWT*") or (fault.name Matches "*jwt*")</Condition>
+        </FaultRule>
+        <FaultRule name="QuotaViolation">
+            <Step>
+                <Name>AM-QuotaExceededResponse</Name>
+            </Step>
+            <Condition>(fault.name = "QuotaViolation")</Condition>
+        </FaultRule>
+        <FaultRule name="SpikeArrestViolation">
+            <Step>
+                <Name>AM-RateLimitExceededResponse</Name>
+            </Step>
+            <Condition>(fault.name = "SpikeArrestViolation")</Condition>
+        </FaultRule>
+    </FaultRules>
+
+    <DefaultFaultRule name="DefaultFaultRule">
+        <Step>
+            <Name>AM-DefaultErrorResponse</Name>
+        </Step>
+        <AlwaysEnforce>true</AlwaysEnforce>
+    </DefaultFaultRule>
+
+    <HTTPProxyConnection>
+        <BasePath>/easylife/v1</BasePath>
+        <Properties/>
+        <VirtualHost>secure</VirtualHost>
+        <VirtualHost>default</VirtualHost>
+    </HTTPProxyConnection>
+
+    <RouteRule name="default">
+        <TargetEndpoint>default</TargetEndpoint>
+    </RouteRule>
+    <RouteRule name="noroute">
+        <Condition>request.verb == "OPTIONS"</Condition>
+    </RouteRule>
+</ProxyEndpoint>

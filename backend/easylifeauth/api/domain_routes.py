@@ -220,7 +220,16 @@ async def create_domain(
         )
 
     domain_dict = domain_data.model_dump()
-    domain_dict["subDomains"] = [sd.model_dump() for sd in domain_data.subDomains]
+    # Convert subDomain (list of strings) to subDomains (empty list - full SubDomain objects added later)
+    domain_dict["subDomains"] = []
+    if "subDomain" in domain_dict:
+        del domain_dict["subDomain"]
+    # Ensure type has a default value if None
+    if domain_dict.get("type") is None:
+        domain_dict["type"] = "custom"
+    # Ensure path has a default value if None
+    if domain_dict.get("path") is None:
+        domain_dict["path"] = f"/{domain_dict['key']}"
     domain_dict["created_at"] = datetime.utcnow()
     domain_dict["updated_at"] = datetime.utcnow()
 

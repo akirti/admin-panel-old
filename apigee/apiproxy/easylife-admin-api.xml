@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<APIProxy revision="1" name="easylife-admin-api">
+    <DisplayName>EasyLife Admin API</DisplayName>
+    <Description>API Proxy for EasyLife Admin Panel - Authentication, Authorization, and Administration</Description>
+    <CreatedAt>1733659200000</CreatedAt>
+    <LastModifiedAt>1733659200000</LastModifiedAt>
+    <Basepaths>/easylife/v1</Basepaths>
+    <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+    <Policies/>
+    <ProxyEndpoints>
+        <ProxyEndpoint>default</ProxyEndpoint>
+    </ProxyEndpoints>
+    <Resources/>
+    <TargetServers/>
+    <TargetEndpoints>
+        <TargetEndpoint>default</TargetEndpoint>
+    </TargetEndpoints>
+</APIProxy>

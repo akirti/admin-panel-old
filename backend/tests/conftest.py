@@ -183,7 +183,7 @@ def sample_scenario_request_data() -> Dict[str, Any]:
 def mock_token_manager():
     """Mock token manager"""
     tm = MagicMock()
-    tm.generate_tokens = MagicMock(return_value={
+    tm.generate_tokens = AsyncMock(return_value={
         "access_token": "test_access_token",
         "refresh_token": "test_refresh_token",
         "expires_in": 900
@@ -213,9 +213,9 @@ def mock_token_manager():
 def mock_email_service():
     """Mock email service"""
     es = MagicMock()
-    es.send_reset_email = MagicMock()
-    es.send_feedback_email = MagicMock()
-    es.send_scenario_email = MagicMock()
+    es.send_reset_email = AsyncMock()
+    es.send_feedback_email = AsyncMock()
+    es.send_scenario_email = AsyncMock()
     return es
 
 

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Javascript async="false" continueOnError="false" enabled="true" timeLimit="200" name="JS-ValidateUserCreate">
+    <DisplayName>Validate User Create Request</DisplayName>
+    <Properties/>
+    <ResourceURL>jsc://validateUserCreate.js</ResourceURL>
+</Javascript>
