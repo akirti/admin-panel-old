@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, MessageSquare } from 'lucide-react';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
@@ -97,6 +97,16 @@ function LoginPage() {
         <span className="text-sm text-neutral-500">Don't have an account?</span>{' '}
         <Link to="/register" className="text-sm text-red-600 hover:text-red-700 font-medium">
           Sign up
+        </Link>
+      </div>
+
+      <div className="mt-4 pt-4 border-t border-neutral-200 text-center">
+        <Link
+          to="/feedback"
+          className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-red-600 transition-colors"
+        >
+          <MessageSquare size={16} />
+          Share your feedback
         </Link>
       </div>
     </div>

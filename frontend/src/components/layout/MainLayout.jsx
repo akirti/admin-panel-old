@@ -15,6 +15,7 @@ import {
   ChevronDown,
   Home,
   MessageSquarePlus,
+  MessageSquare,
   ClipboardList,
   UsersRound,
   Activity,
@@ -53,6 +54,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
         { path: '/admin/playboards', icon: LayoutGrid, label: 'Playboards' },
         { path: '/admin/configurations', icon: Cog, label: 'Configurations' },
         { path: '/admin/scenario-requests', icon: ClipboardList, label: 'Scenario Requests' },
+        { path: '/admin/feedback', icon: MessageSquare, label: 'Feedback' },
         { path: '/admin/activity-logs', icon: Activity, label: 'Activity Logs' },
         { path: '/admin/bulk-upload', icon: Upload, label: 'Bulk Upload' },
       ];
@@ -76,6 +78,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
       { path: '/ask-scenario', icon: MessageSquarePlus, label: 'Ask Scenario' },
       { path: '/my-requests', icon: ClipboardList, label: 'My Requests' },
       { path: '/profile', icon: User, label: 'Profile' },
+      { path: '/feedback', icon: MessageSquare, label: 'Feedback' },
     ];
 
     // Add admin link for super admins

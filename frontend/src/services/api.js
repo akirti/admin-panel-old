@@ -334,6 +334,11 @@ export const feedbackAPI = {
   get: (id) => api.get(`/feedback/${id}`),
   create: (data) => api.post('/feedback', data),
   update: (id, data) => api.put(`/feedback/${id}`, data),
+  // Public feedback (no auth required)
+  submitPublic: (data) => api.post('/feedback/public', data),
+  // Admin endpoints
+  getAdminList: (params = {}) => api.get('/feedback/admin/list', { params }),
+  getStats: () => api.get('/feedback/stats'),
 };
 
 // Dashboard API

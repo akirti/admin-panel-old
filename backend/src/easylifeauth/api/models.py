@@ -240,15 +240,51 @@ class FeedbackUpdate(BaseModel):
 
 
 class FeedbackResponse(BaseModel):
+    id: Optional[str] = Field(None, alias="_id")
     rating: Optional[int] = None
     improvements: Optional[str] = None
     suggestions: Optional[str] = None
     email: Optional[str] = None
+    is_public: Optional[bool] = None
+    user_id: Optional[str] = None
     createdAt: Optional[str] = None
     updatedAt: Optional[str] = None
-    
+
     class Config:
         extra = "allow"
+        populate_by_name = True
+
+
+class PublicFeedbackCreate(BaseModel):
+    """Feedback from unauthenticated users - email is required"""
+    rating: Optional[int] = Field(None, ge=1, le=5)
+    improvements: Optional[str] = None
+    suggestions: Optional[str] = None
+    email: str = Field(..., description="Email is required for public feedback")
+
+
+class FeedbackStats(BaseModel):
+    """Feedback statistics for dashboard"""
+    total_feedback: int = 0
+    avg_rating: float = 0.0
+    this_week_count: int = 0
+    rating_distribution: Dict[str, int] = Field(default_factory=dict)
+
+
+class FeedbackPagination(BaseModel):
+    """Pagination metadata"""
+    total: int = 0
+    page: int = 0
+    limit: int = 25
+    pages: int = 0
+    has_next: bool = False
+    has_prev: bool = False
+
+
+class PaginatedFeedbackResponse(BaseModel):
+    """Paginated feedback list response"""
+    data: List[FeedbackResponse] = []
+    pagination: FeedbackPagination
 
 
 # Scenario Request Models

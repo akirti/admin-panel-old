@@ -34,7 +34,9 @@ try {
     db.createCollection('tokens');
     db.createCollection('audit_logs');
     db.createCollection('scenario_requests');
-    db.createCollection('feedback');
+    db.createCollection('feedbacks');
+    db.createCollection('bookmarks');
+    db.createCollection('snapshots');
     print('Collections created successfully');
 } catch (error) {
     print('Error creating collections: ' + error);
@@ -91,6 +93,38 @@ try {
 
   // Dashboard module
   { key: 'dashboard.view', name: 'View Dashboard', module: 'dashboard', description: 'Can view dashboard', actions: ['read'], status: 'active', created_at: new Date(), updated_at: new Date() },
+
+  // Customers module
+  { key: 'customers.view', name: 'View Customers', module: 'customers', description: 'Can view customers', actions: ['read'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'customers.create', name: 'Create Customers', module: 'customers', description: 'Can create customers', actions: ['create'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'customers.edit', name: 'Edit Customers', module: 'customers', description: 'Can edit customers', actions: ['update'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'customers.delete', name: 'Delete Customers', module: 'customers', description: 'Can delete customers', actions: ['delete'], status: 'active', created_at: new Date(), updated_at: new Date() },
+
+  // Scenario Requests module
+  { key: 'scenario_requests.view', name: 'View Scenario Requests', module: 'scenario_requests', description: 'Can view scenario requests', actions: ['read'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'scenario_requests.create', name: 'Create Scenario Requests', module: 'scenario_requests', description: 'Can create scenario requests', actions: ['create'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'scenario_requests.edit', name: 'Edit Scenario Requests', module: 'scenario_requests', description: 'Can edit scenario requests', actions: ['update'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'scenario_requests.delete', name: 'Delete Scenario Requests', module: 'scenario_requests', description: 'Can delete scenario requests', actions: ['delete'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'scenario_requests.approve', name: 'Approve Scenario Requests', module: 'scenario_requests', description: 'Can approve/reject scenario requests', actions: ['approve'], status: 'active', created_at: new Date(), updated_at: new Date() },
+
+  // Bookmarks module
+  { key: 'bookmarks.view', name: 'View Bookmarks', module: 'bookmarks', description: 'Can view bookmarks', actions: ['read'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'bookmarks.create', name: 'Create Bookmarks', module: 'bookmarks', description: 'Can create bookmarks', actions: ['create'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'bookmarks.edit', name: 'Edit Bookmarks', module: 'bookmarks', description: 'Can edit bookmarks', actions: ['update'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'bookmarks.delete', name: 'Delete Bookmarks', module: 'bookmarks', description: 'Can delete bookmarks', actions: ['delete'], status: 'active', created_at: new Date(), updated_at: new Date() },
+
+  // Snapshots module
+  { key: 'snapshots.view', name: 'View Snapshots', module: 'snapshots', description: 'Can view snapshots', actions: ['read'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'snapshots.create', name: 'Create Snapshots', module: 'snapshots', description: 'Can create snapshots', actions: ['create'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'snapshots.edit', name: 'Edit Snapshots', module: 'snapshots', description: 'Can edit snapshots', actions: ['update'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'snapshots.delete', name: 'Delete Snapshots', module: 'snapshots', description: 'Can delete snapshots', actions: ['delete'], status: 'active', created_at: new Date(), updated_at: new Date() },
+
+  // Prevail module
+  { key: 'prevail.view', name: 'View Prevail', module: 'prevail', description: 'Can view prevail data', actions: ['read'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'prevail.create', name: 'Create Prevail', module: 'prevail', description: 'Can create prevail entries', actions: ['create'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'prevail.edit', name: 'Edit Prevail', module: 'prevail', description: 'Can edit prevail entries', actions: ['update'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'prevail.delete', name: 'Delete Prevail', module: 'prevail', description: 'Can delete prevail entries', actions: ['delete'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'prevail.execute', name: 'Execute Prevail', module: 'prevail', description: 'Can execute prevail operations', actions: ['execute'], status: 'active', created_at: new Date(), updated_at: new Date() },
 
   // Admin module
   { key: 'admin.full', name: 'Full Admin Access', module: 'admin', description: 'Full administrative access', actions: ['read', 'create', 'update', 'delete'], status: 'active', created_at: new Date(), updated_at: new Date() }
@@ -646,6 +680,478 @@ db.audit_logs.insertMany([
 }
 
 // ============================================
+// FEEDBACK (Sample Feedback Data)
+// ============================================
+print('Inserting feedback...');
+try {
+    var now = new Date();
+    var oneDayAgo = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000);
+    var twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+    var threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+    var oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    var twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+    function formatDate(date) {
+        var year = date.getFullYear();
+        var month = String(date.getMonth() + 1).padStart(2, '0');
+        var day = String(date.getDate()).padStart(2, '0');
+        var hours = date.getHours();
+        var minutes = String(date.getMinutes()).padStart(2, '0');
+        var seconds = String(date.getSeconds()).padStart(2, '0');
+        var ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        return year + '-' + month + '-' + day + ' ' + String(hours).padStart(2, '0') + ':' + minutes + ':' + seconds + ' ' + ampm;
+    }
+
+    db.feedbacks.insertMany([
+        {
+            email: 'john.doe@example.com',
+            rating: 5,
+            improvements: 'The dashboard is very intuitive and easy to use.',
+            suggestions: 'Would love to see more chart types in the analytics section.',
+            is_public: true,
+            createdAt: formatDate(now)
+        },
+        {
+            email: 'jane.smith@example.com',
+            rating: 4,
+            improvements: 'Navigation could be slightly faster.',
+            suggestions: 'Add keyboard shortcuts for power users.',
+            is_public: true,
+            createdAt: formatDate(oneDayAgo)
+        },
+        {
+            email: 'admin@easylife.local',
+            rating: 5,
+            improvements: 'Great system overall!',
+            suggestions: 'Consider adding dark mode.',
+            is_public: false,
+            user_id: 'admin@easylife.local',
+            createdAt: formatDate(twoDaysAgo)
+        },
+        {
+            email: 'mike.wilson@example.com',
+            rating: 3,
+            improvements: 'Search functionality could be improved.',
+            suggestions: 'Add advanced search filters.',
+            is_public: true,
+            createdAt: formatDate(threeDaysAgo)
+        },
+        {
+            email: 'sarah.johnson@example.com',
+            rating: 4,
+            improvements: 'Documentation is helpful but could be more detailed.',
+            suggestions: 'Video tutorials would be great.',
+            is_public: true,
+            createdAt: formatDate(oneWeekAgo)
+        },
+        {
+            email: 'robert.brown@example.com',
+            rating: 5,
+            improvements: 'Love the export functionality!',
+            suggestions: 'Add scheduled reports feature.',
+            is_public: true,
+            createdAt: formatDate(oneWeekAgo)
+        },
+        {
+            email: 'manager@easylife.local',
+            rating: 4,
+            improvements: 'The user management interface is very clean.',
+            suggestions: 'Bulk operations would save time.',
+            is_public: false,
+            user_id: 'manager@easylife.local',
+            createdAt: formatDate(twoWeeksAgo)
+        },
+        {
+            email: 'alex.martinez@example.com',
+            rating: 2,
+            improvements: 'Mobile responsiveness needs work.',
+            suggestions: 'Please add a mobile app.',
+            is_public: true,
+            createdAt: formatDate(twoWeeksAgo)
+        },
+        {
+            email: 'lisa.anderson@example.com',
+            rating: 5,
+            improvements: 'Best admin panel I have used!',
+            suggestions: 'Integration with Slack would be awesome.',
+            is_public: true,
+            createdAt: formatDate(twoWeeksAgo)
+        },
+        {
+            email: 'editor@easylife.local',
+            rating: 4,
+            improvements: 'Configuration management is straightforward.',
+            suggestions: 'Version comparison tool would help.',
+            is_public: false,
+            user_id: 'editor@easylife.local',
+            createdAt: formatDate(twoWeeksAgo)
+        }
+    ]);
+
+    print('Feedback inserted: ' + db.feedbacks.countDocuments());
+} catch (error) {
+    print('Error inserting feedback: ' + error);
+    throw error;
+}
+
+// ============================================
+// SCENARIO REQUESTS (Sample Requests Data)
+// ============================================
+print('Inserting scenario requests...');
+try {
+    var now = new Date();
+    var oneDayAgo = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000);
+    var twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+    var threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+    var oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    var twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+    db.scenario_requests.insertMany([
+        {
+            title: 'Sales Performance Dashboard',
+            description: 'Need a dashboard showing quarterly sales performance with regional breakdown and YoY comparison.',
+            domain: 'sales',
+            priority: 'high',
+            status: 'submitted',
+            user_id: 'editor@easylife.local',
+            user_email: 'editor@easylife.local',
+            user_name: 'Jane Editor',
+            attachments: [],
+            comments: [],
+            created_at: now,
+            updated_at: now
+        },
+        {
+            title: 'Inventory Reorder Alert System',
+            description: 'Create a scenario that alerts when inventory levels fall below minimum thresholds.',
+            domain: 'inventory',
+            priority: 'medium',
+            status: 'in-progress',
+            user_id: 'manager@easylife.local',
+            user_email: 'manager@easylife.local',
+            user_name: 'John Manager',
+            assigned_to: 'admin@easylife.local',
+            attachments: [],
+            comments: [
+                { user: 'admin@easylife.local', text: 'Working on the threshold configuration', date: oneDayAgo }
+            ],
+            created_at: twoDaysAgo,
+            updated_at: oneDayAgo
+        },
+        {
+            title: 'Employee Attendance Report',
+            description: 'Monthly attendance report with overtime calculations and department-wise breakdown.',
+            domain: 'hr',
+            priority: 'low',
+            status: 'deployed',
+            user_id: 'viewer@easylife.local',
+            user_email: 'viewer@easylife.local',
+            user_name: 'Bob Viewer',
+            assigned_to: 'editor@easylife.local',
+            attachments: [],
+            comments: [
+                { user: 'editor@easylife.local', text: 'Report template created', date: oneWeekAgo },
+                { user: 'admin@easylife.local', text: 'Approved and deployed', date: threeDaysAgo }
+            ],
+            deployed_at: threeDaysAgo,
+            created_at: twoWeeksAgo,
+            updated_at: threeDaysAgo
+        },
+        {
+            title: 'Financial Budget Tracker',
+            description: 'Real-time budget tracking with variance analysis and forecasting capabilities.',
+            domain: 'finance',
+            priority: 'high',
+            status: 'submitted',
+            user_id: 'sales@easylife.local',
+            user_email: 'sales@easylife.local',
+            user_name: 'Sales User',
+            attachments: [],
+            comments: [],
+            created_at: oneDayAgo,
+            updated_at: oneDayAgo
+        },
+        {
+            title: 'Customer Segmentation Analysis',
+            description: 'Scenario to analyze customers by purchase behavior, demographics, and engagement level.',
+            domain: 'analytics',
+            priority: 'medium',
+            status: 'rejected',
+            user_id: 'editor@easylife.local',
+            user_email: 'editor@easylife.local',
+            user_name: 'Jane Editor',
+            assigned_to: 'admin@easylife.local',
+            rejection_reason: 'Similar scenario already exists in the analytics domain. Please use the existing Customer Analytics scenario.',
+            attachments: [],
+            comments: [
+                { user: 'admin@easylife.local', text: 'Reviewing existing scenarios for overlap', date: oneWeekAgo },
+                { user: 'admin@easylife.local', text: 'Found duplicate - rejecting request', date: threeDaysAgo }
+            ],
+            created_at: twoWeeksAgo,
+            updated_at: threeDaysAgo
+        },
+        {
+            title: 'Operations Workflow Automation',
+            description: 'Automate daily operations reporting and task assignment workflow.',
+            domain: 'operations',
+            priority: 'medium',
+            status: 'in-progress',
+            user_id: 'manager@easylife.local',
+            user_email: 'manager@easylife.local',
+            user_name: 'John Manager',
+            assigned_to: 'editor@easylife.local',
+            attachments: [],
+            comments: [
+                { user: 'editor@easylife.local', text: 'Started development', date: twoDaysAgo }
+            ],
+            created_at: oneWeekAgo,
+            updated_at: twoDaysAgo
+        }
+    ]);
+
+    print('Scenario requests inserted: ' + db.scenario_requests.countDocuments());
+} catch (error) {
+    print('Error inserting scenario requests: ' + error);
+    throw error;
+}
+
+// ============================================
+// BOOKMARKS (Sample Bookmarks Data)
+// ============================================
+print('Inserting bookmarks...');
+try {
+    var now = new Date();
+    var oneDayAgo = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000);
+    var oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    db.bookmarks.insertMany([
+        {
+            user_id: 'admin@easylife.local',
+            user_email: 'admin@easylife.local',
+            title: 'Sales Overview Dashboard',
+            description: 'Main sales dashboard for quick access',
+            type: 'scenario',
+            reference_id: 'sales-overview',
+            reference_type: 'domain_scenario',
+            url: '/sales/overview',
+            tags: ['sales', 'dashboard', 'daily'],
+            is_favorite: true,
+            order: 1,
+            created_at: oneWeekAgo,
+            updated_at: oneWeekAgo
+        },
+        {
+            user_id: 'admin@easylife.local',
+            user_email: 'admin@easylife.local',
+            title: 'User Management',
+            description: 'Quick access to user administration',
+            type: 'admin',
+            reference_id: 'users',
+            reference_type: 'admin_page',
+            url: '/admin/users',
+            tags: ['admin', 'users'],
+            is_favorite: true,
+            order: 2,
+            created_at: oneWeekAgo,
+            updated_at: oneWeekAgo
+        },
+        {
+            user_id: 'editor@easylife.local',
+            user_email: 'editor@easylife.local',
+            title: 'Inventory Stock Levels',
+            description: 'Monitor stock levels',
+            type: 'scenario',
+            reference_id: 'inventory-stock',
+            reference_type: 'domain_scenario',
+            url: '/inventory/stock',
+            tags: ['inventory', 'stock'],
+            is_favorite: true,
+            order: 1,
+            created_at: oneDayAgo,
+            updated_at: oneDayAgo
+        },
+        {
+            user_id: 'manager@easylife.local',
+            user_email: 'manager@easylife.local',
+            title: 'HR Employee Directory',
+            description: 'Employee lookup',
+            type: 'scenario',
+            reference_id: 'hr-employees',
+            reference_type: 'domain_scenario',
+            url: '/hr/employees',
+            tags: ['hr', 'employees'],
+            is_favorite: false,
+            order: 1,
+            created_at: now,
+            updated_at: now
+        },
+        {
+            user_id: 'sales@easylife.local',
+            user_email: 'sales@easylife.local',
+            title: 'Sales by Region',
+            description: 'Regional sales breakdown',
+            type: 'scenario',
+            reference_id: 'sales-by-region',
+            reference_type: 'domain_scenario',
+            url: '/sales/by-region',
+            tags: ['sales', 'regional'],
+            is_favorite: true,
+            order: 1,
+            created_at: oneWeekAgo,
+            updated_at: oneWeekAgo
+        }
+    ]);
+
+    print('Bookmarks inserted: ' + db.bookmarks.countDocuments());
+} catch (error) {
+    print('Error inserting bookmarks: ' + error);
+    throw error;
+}
+
+// ============================================
+// SNAPSHOTS (Sample Snapshots Data)
+// ============================================
+print('Inserting snapshots...');
+try {
+    var now = new Date();
+    var oneDayAgo = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000);
+    var oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    var twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+    db.snapshots.insertMany([
+        {
+            snapshot_id: 'snap-001',
+            name: 'Q4 2024 Sales Report',
+            description: 'Quarterly sales snapshot for Q4 2024',
+            type: 'report',
+            scenario_key: 'sales-overview',
+            domain: 'sales',
+            user_id: 'admin@easylife.local',
+            user_email: 'admin@easylife.local',
+            data: {
+                total_sales: 1250000,
+                regions: ['NA', 'EU', 'APAC'],
+                period: 'Q4-2024',
+                generated_at: twoWeeksAgo
+            },
+            filters: {
+                date_range: { start: '2024-10-01', end: '2024-12-31' },
+                region: 'all'
+            },
+            status: 'active',
+            is_shared: true,
+            shared_with: ['manager@easylife.local', 'editor@easylife.local'],
+            created_at: twoWeeksAgo,
+            updated_at: twoWeeksAgo
+        },
+        {
+            snapshot_id: 'snap-002',
+            name: 'December Inventory Check',
+            description: 'Monthly inventory snapshot',
+            type: 'inventory',
+            scenario_key: 'inventory-stock',
+            domain: 'inventory',
+            user_id: 'manager@easylife.local',
+            user_email: 'manager@easylife.local',
+            data: {
+                total_items: 15420,
+                low_stock_alerts: 23,
+                warehouses: 5,
+                generated_at: oneWeekAgo
+            },
+            filters: {
+                warehouse: 'all',
+                category: 'all'
+            },
+            status: 'active',
+            is_shared: false,
+            shared_with: [],
+            created_at: oneWeekAgo,
+            updated_at: oneWeekAgo
+        },
+        {
+            snapshot_id: 'snap-003',
+            name: 'Employee Headcount Report',
+            description: 'Current employee headcount by department',
+            type: 'report',
+            scenario_key: 'hr-employees',
+            domain: 'hr',
+            user_id: 'editor@easylife.local',
+            user_email: 'editor@easylife.local',
+            data: {
+                total_employees: 342,
+                departments: 8,
+                active: 328,
+                on_leave: 14,
+                generated_at: oneDayAgo
+            },
+            filters: {
+                department: 'all',
+                status: 'all'
+            },
+            status: 'active',
+            is_shared: true,
+            shared_with: ['admin@easylife.local'],
+            created_at: oneDayAgo,
+            updated_at: oneDayAgo
+        },
+        {
+            snapshot_id: 'snap-004',
+            name: 'Regional Sales Comparison',
+            description: 'Sales comparison across regions for planning',
+            type: 'analysis',
+            scenario_key: 'sales-by-region',
+            domain: 'sales',
+            user_id: 'sales@easylife.local',
+            user_email: 'sales@easylife.local',
+            data: {
+                NA: 450000,
+                EU: 380000,
+                APAC: 290000,
+                LATAM: 130000,
+                generated_at: now
+            },
+            filters: {
+                date_range: { start: '2024-01-01', end: '2024-12-31' },
+                product_category: 'all'
+            },
+            status: 'active',
+            is_shared: false,
+            shared_with: [],
+            created_at: now,
+            updated_at: now
+        },
+        {
+            snapshot_id: 'snap-005',
+            name: 'Archived Q3 Report',
+            description: 'Q3 2024 archived snapshot',
+            type: 'report',
+            scenario_key: 'sales-overview',
+            domain: 'sales',
+            user_id: 'admin@easylife.local',
+            user_email: 'admin@easylife.local',
+            data: {
+                total_sales: 980000,
+                period: 'Q3-2024'
+            },
+            filters: {},
+            status: 'archived',
+            is_shared: false,
+            shared_with: [],
+            created_at: twoWeeksAgo,
+            updated_at: oneWeekAgo
+        }
+    ]);
+
+    print('Snapshots inserted: ' + db.snapshots.countDocuments());
+} catch (error) {
+    print('Error inserting snapshots: ' + error);
+    throw error;
+}
+
+// ============================================
 // CREATE INDEXES
 // ============================================
 print('Creating indexes...');
@@ -697,6 +1203,25 @@ db.scenario_requests.createIndex({ user_id: 1 });
 db.scenario_requests.createIndex({ status: 1 });
 db.scenario_requests.createIndex({ created_at: -1 });
 
+db.feedbacks.createIndex({ email: 1 });
+db.feedbacks.createIndex({ createdAt: -1 });
+db.feedbacks.createIndex({ is_public: 1 });
+db.feedbacks.createIndex({ rating: 1 });
+
+db.bookmarks.createIndex({ user_id: 1 });
+db.bookmarks.createIndex({ user_email: 1 });
+db.bookmarks.createIndex({ reference_id: 1 });
+db.bookmarks.createIndex({ is_favorite: 1 });
+db.bookmarks.createIndex({ created_at: -1 });
+
+db.snapshots.createIndex({ snapshot_id: 1 }, { unique: true });
+db.snapshots.createIndex({ user_id: 1 });
+db.snapshots.createIndex({ user_email: 1 });
+db.snapshots.createIndex({ scenario_key: 1 });
+db.snapshots.createIndex({ domain: 1 });
+db.snapshots.createIndex({ status: 1 });
+db.snapshots.createIndex({ created_at: -1 });
+
     print('Indexes created successfully');
 } catch (error) {
     print('Error creating indexes: ' + error);
@@ -721,6 +1246,10 @@ print('  - domain_scenarios: ' + db.domain_scenarios.countDocuments());
 print('  - playboards: ' + db.playboards.countDocuments());
 print('  - configurations: ' + db.configurations.countDocuments());
 print('  - audit_logs: ' + db.audit_logs.countDocuments());
+print('  - feedbacks: ' + db.feedbacks.countDocuments());
+print('  - scenario_requests: ' + db.scenario_requests.countDocuments());
+print('  - bookmarks: ' + db.bookmarks.countDocuments());
+print('  - snapshots: ' + db.snapshots.countDocuments());
 print('');
 print('Test Users (password: password123):');
 print('  - admin@easylife.local (Super Admin)');

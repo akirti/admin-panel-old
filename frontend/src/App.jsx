@@ -37,6 +37,10 @@ import PlayboardsManagement from './pages/admin/PlayboardsManagement';
 import ActivityLogsPage from './pages/admin/ActivityLogsPage';
 import BulkUploadPage from './pages/admin/BulkUploadPage';
 import CustomersManagement from './pages/admin/CustomersManagement';
+import FeedbackManagement from './pages/admin/FeedbackManagement';
+
+// Public Pages
+import FeedbackPage from './pages/FeedbackPage';
 
 // Protected Route Component
 function ProtectedRoute({ children, requireAdmin = false, requireGroupAdmin = false }) {
@@ -113,6 +117,9 @@ function App() {
           } />
         </Route>
 
+        {/* Public Feedback Route (no auth required) */}
+        <Route path="/feedback" element={<FeedbackPage />} />
+
         {/* Protected User Routes */}
         <Route element={
           <ProtectedRoute>
@@ -152,6 +159,7 @@ function App() {
           <Route path="customers" element={<CustomersManagement />} />
           <Route path="activity-logs" element={<ActivityLogsPage />} />
           <Route path="bulk-upload" element={<BulkUploadPage />} />
+          <Route path="feedback" element={<FeedbackManagement />} />
         </Route>
 
         {/* Group Admin Routes */}

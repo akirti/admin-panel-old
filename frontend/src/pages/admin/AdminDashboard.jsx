@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
-import { dashboardAPI, scenarioRequestAPI } from '../../services/api';
+import { dashboardAPI, scenarioRequestAPI, feedbackAPI } from '../../services/api';
 import {
   Users, Layers, FileText, Shield, ArrowRight, TrendingUp,
   ClipboardList, Clock, CheckCircle, XCircle, Settings,
-  Upload, Database, Key, Building
+  Upload, Database, Key, Building, MessageSquare, Star
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -23,17 +23,24 @@ function AdminDashboard() {
     rejected: 0,
     recent: []
   });
+  const [feedbackStats, setFeedbackStats] = useState({
+    total_feedback: 0,
+    avg_rating: 0,
+    this_week_count: 0,
+    rating_distribution: {}
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [statsRes, summaryRes, loginsRes, analyticsRes, requestsRes] = await Promise.all([
+        const [statsRes, summaryRes, loginsRes, analyticsRes, requestsRes, feedbackRes] = await Promise.all([
           dashboardAPI.getStats(),
           dashboardAPI.getSummary(),
           dashboardAPI.getRecentLogins(5),
           dashboardAPI.getAnalytics(),
-          scenarioRequestAPI.getStats()
+          scenarioRequestAPI.getStats(),
+          feedbackAPI.getStats().catch(() => ({ data: { total_feedback: 0, avg_rating: 0, this_week_count: 0, rating_distribution: {} } }))
         ]);
         setStats(statsRes.data);
         setSummary(summaryRes.data);
@@ -41,6 +48,9 @@ function AdminDashboard() {
         setAnalytics(analyticsRes.data);
         setRequestStats(requestsRes.data || {
           total: 0, submitted: 0, inProgress: 0, deployed: 0, rejected: 0, recent: []
+        });
+        setFeedbackStats(feedbackRes.data || {
+          total_feedback: 0, avg_rating: 0, this_week_count: 0, rating_distribution: {}
         });
       } catch (error) {
         toast.error('Failed to load dashboard data');
@@ -203,6 +213,65 @@ function AdminDashboard() {
           <div>
             <p className="text-xs text-gray-500">Rejected</p>
             <p className="text-xl font-bold text-red-600">{requestStats.rejected}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Feedback Stats Widget */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Link to="/admin/feedback" className="card p-4 hover:shadow-md transition-all">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Total Feedback</p>
+              <p className="text-2xl font-bold text-gray-900">{feedbackStats.total_feedback}</p>
+            </div>
+            <div className="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center text-amber-600">
+              <MessageSquare size={24} />
+            </div>
+          </div>
+        </Link>
+        <div className="card p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Average Rating</p>
+              <p className="text-2xl font-bold text-amber-600">{feedbackStats.avg_rating.toFixed(1)}</p>
+            </div>
+            <div className="w-12 h-12 bg-yellow-50 rounded-lg flex items-center justify-center text-yellow-600">
+              <Star size={24} />
+            </div>
+          </div>
+          <div className="flex gap-0.5 mt-2">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star
+                key={star}
+                size={14}
+                className={star <= Math.round(feedbackStats.avg_rating) ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}
+              />
+            ))}
+          </div>
+        </div>
+        <div className="card p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">This Week</p>
+              <p className="text-2xl font-bold text-green-600">{feedbackStats.this_week_count}</p>
+            </div>
+            <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center text-green-600">
+              <Clock size={24} />
+            </div>
+          </div>
+        </div>
+        <div className="card p-4">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm text-gray-500">Rating Distribution</p>
+          </div>
+          <div className="flex gap-1">
+            {Object.entries(feedbackStats.rating_distribution).map(([rating, count]) => (
+              <div key={rating} className="flex-1 text-center">
+                <div className="text-xs text-gray-500">{rating}★</div>
+                <div className="text-sm font-semibold text-gray-700">{count}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
