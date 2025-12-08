@@ -9,11 +9,13 @@ from easylifeauth.utils.config import ConfigurationLoader
 
 # Load environment variables from .env file
 # Explicitly specify the path to ensure it works regardless of working directory
-env_path = Path(__file__).parent / ".env"
+# .env is in backend/ (parent of src/)
+env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
 # Try to load from config file first
-config_path = os.environ.get("CONFIG_PATH", str(Path(__file__).parent / "config"))
+# config is in backend/ (parent of src/)
+config_path = os.environ.get("CONFIG_PATH", str(Path(__file__).parent.parent / "config"))
 
 try:
     config_loader = ConfigurationLoader(config_path=config_path, config_file="config.json")
@@ -108,7 +110,7 @@ app = create_app(
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
-        "main:app",
+        "src.main:app",
         host="0.0.0.0",
         port=8000,
         reload=True
