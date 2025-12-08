@@ -18,6 +18,7 @@ from .groups_routes import router as groups_router
 from .permissions_routes import router as permissions_router
 from .configurations_routes import router as configurations_router
 from .customers_routes import router as customers_router
+from .jira_routes import router as jira_router
 
 __all__ = [
     "auth_router",
@@ -39,4 +40,5 @@ __all__ = [
     "permissions_router",
     "configurations_router",
     "customers_router",
+    "jira_router",
 ]

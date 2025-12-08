@@ -29,6 +29,7 @@ from .api import (
     permissions_router,
     configurations_router,
     customers_router,
+    jira_router,
 )
 from .api.dependencies import init_dependencies
 from .db.db_manager import DatabaseManager
@@ -225,6 +226,7 @@ def create_app(
     app.include_router(permissions_router, prefix=API_BASE_ROUTE)
     app.include_router(configurations_router, prefix=API_BASE_ROUTE)
     app.include_router(customers_router, prefix=API_BASE_ROUTE)
+    app.include_router(jira_router, prefix=API_BASE_ROUTE)
 
     # Root endpoint
     @app.get("/")

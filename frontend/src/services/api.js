@@ -493,7 +493,7 @@ export const scenarioRequestAPI = {
     try {
       const response = await api.get('/ask_scenarios/all', { params: { limit: 1000 } });
       const data = response.data?.data || [];
-      
+
       const stats = {
         total: data.length,
         submitted: data.filter(r => r.status === 'submitted').length,
@@ -506,7 +506,52 @@ export const scenarioRequestAPI = {
     } catch (error) {
       return { data: { total: 0, submitted: 0, inProgress: 0, deployed: 0, rejected: 0, recent: [] } };
     }
-  }
+  },
+
+  // Jira link operations
+  addJiraLink: (requestId, jiraLink) => api.put(`/ask_scenarios/${requestId}/admin`, {
+    jira_links: [jiraLink]
+  }),
+  removeJiraLink: (requestId, linkIndex) => api.put(`/ask_scenarios/${requestId}/admin`, {
+    remove_jira_link_index: linkIndex
+  })
+};
+
+// Jira API
+export const jiraAPI = {
+  // Connection status
+  getStatus: () => api.get('/jira/status'),
+
+  // Projects
+  getProjects: () => api.get('/jira/projects'),
+  getLatestProject: () => api.get('/jira/projects/latest'),
+
+  // Tasks
+  getMyTasks: (params = {}) => api.get('/jira/tasks/my', { params }),
+  getTasksByRequest: (requestId, projectKey = null) =>
+    api.get(`/jira/tasks/by-request/${requestId}`, { params: { project_key: projectKey } }),
+
+  // Create/Sync
+  createTask: (scenarioRequestId, projectKey = null, issueType = null) =>
+    api.post('/jira/tasks/create', {
+      scenario_request_id: scenarioRequestId,
+      project_key: projectKey,
+      issue_type: issueType
+    }),
+  syncRequest: (requestId, projectKey = null) =>
+    api.post(`/jira/sync/request/${requestId}`, null, { params: { project_key: projectKey } }),
+
+  // Transitions
+  transitionTask: (ticketKey, status) =>
+    api.post('/jira/tasks/transition', { ticket_key: ticketKey, status }),
+
+  // Attachments
+  addAttachment: (ticketKey, fileUrl, fileName) =>
+    api.post('/jira/attachments/add', { ticket_key: ticketKey, file_url: fileUrl, file_name: fileName }),
+
+  // Lookups
+  getIssueTypes: (projectKey = null) => api.get('/jira/issue-types', { params: { project_key: projectKey } }),
+  getStatuses: (projectKey = null) => api.get('/jira/statuses', { params: { project_key: projectKey } })
 };
 
 export default api;

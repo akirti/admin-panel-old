@@ -20,7 +20,11 @@ import {
   Package,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ExternalLink,
+  Plus,
+  Trash2,
+  Link
 } from 'lucide-react';
 import { scenarioRequestAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -72,6 +76,12 @@ function RequestDetailPage() {
   // Pagination for preview
   const [previewPage, setPreviewPage] = useState(0);
   const ROWS_PER_PAGE = 50;
+
+  // Jira link states
+  const [showAddJiraLinkModal, setShowAddJiraLinkModal] = useState(false);
+  const [newJiraLink, setNewJiraLink] = useState({ ticket_key: '', ticket_url: '', title: '', link_type: 'dependency' });
+  const [addingJiraLink, setAddingJiraLink] = useState(false);
+  const [removingJiraLinkIndex, setRemovingJiraLinkIndex] = useState(null);
 
   useEffect(() => {
     loadRequest();
@@ -172,6 +182,44 @@ function RequestDetailPage() {
     // Check if status is accepted or beyond
     const allowedStatuses = ['ACC', 'accepted', 'in-progress', 'development', 'testing', 'deployed', 'snapshot', 'active'];
     return allowedStatuses.includes(request?.status);
+  };
+
+  const handleAddJiraLink = async () => {
+    if (!newJiraLink.ticket_key.trim()) {
+      toast.error('Jira ticket key is required');
+      return;
+    }
+
+    setAddingJiraLink(true);
+    try {
+      await scenarioRequestAPI.addJiraLink(requestId, {
+        ticket_key: newJiraLink.ticket_key.trim().toUpperCase(),
+        ticket_url: newJiraLink.ticket_url.trim() || null,
+        title: newJiraLink.title.trim() || null,
+        link_type: newJiraLink.link_type
+      });
+      toast.success('Jira link added');
+      setShowAddJiraLinkModal(false);
+      setNewJiraLink({ ticket_key: '', ticket_url: '', title: '', link_type: 'dependency' });
+      loadRequest();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to add Jira link');
+    } finally {
+      setAddingJiraLink(false);
+    }
+  };
+
+  const handleRemoveJiraLink = async (index) => {
+    setRemovingJiraLinkIndex(index);
+    try {
+      await scenarioRequestAPI.removeJiraLink(requestId, index);
+      toast.success('Jira link removed');
+      loadRequest();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to remove Jira link');
+    } finally {
+      setRemovingJiraLinkIndex(null);
+    }
   };
 
   const getStatusBadge = (status) => {
@@ -569,21 +617,98 @@ function RequestDetailPage() {
             </div>
           )}
 
-          {/* Jira Link */}
-          {request.jira && request.jira.ticket_key && (
+          {/* Jira Links Section */}
+          {((request.jira && request.jira.ticket_key) ||
+            (request.jira_integration && request.jira_integration.ticket_key) ||
+            (request.jira_links && request.jira_links.length > 0) ||
+            isEditor()) && (
             <div className="card">
-              <div className="card-header">
-                <h2 className="text-lg font-semibold">Jira Ticket</h2>
+              <div className="card-header flex items-center justify-between">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Link size={18} />
+                  Jira
+                </h2>
+                {isEditor() && (
+                  <button
+                    onClick={() => setShowAddJiraLinkModal(true)}
+                    className="btn btn-sm btn-secondary flex items-center gap-1"
+                    title="Add dependency link"
+                  >
+                    <Plus size={14} />
+                    Add Link
+                  </button>
+                )}
               </div>
-              <div className="card-body">
-                <a
-                  href={request.jira.ticket_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-secondary w-full justify-center"
-                >
-                  {request.jira.ticket_key}
-                </a>
+              <div className="card-body space-y-3">
+                {/* Main Jira Ticket */}
+                {(request.jira?.ticket_key || request.jira_integration?.ticket_key) && (
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-xs text-blue-600 font-medium mb-1">Main Ticket</p>
+                    <a
+                      href={request.jira?.ticket_url || request.jira_integration?.ticket_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-blue-700 hover:text-blue-900 font-medium"
+                    >
+                      {request.jira?.ticket_key || request.jira_integration?.ticket_key}
+                      <ExternalLink size={14} />
+                    </a>
+                  </div>
+                )}
+
+                {/* Dependency Links */}
+                {request.jira_links && request.jira_links.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-neutral-500 font-medium">Dependencies & Related</p>
+                    {request.jira_links.map((link, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-2 bg-neutral-50 rounded-lg border border-neutral-200"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-xs px-1.5 py-0.5 bg-neutral-200 text-neutral-600 rounded capitalize">
+                            {link.link_type || 'dependency'}
+                          </span>
+                          <a
+                            href={link.ticket_url || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm truncate"
+                          >
+                            {link.ticket_key}
+                            <ExternalLink size={12} />
+                          </a>
+                          {link.title && (
+                            <span className="text-xs text-neutral-500 truncate">{link.title}</span>
+                          )}
+                        </div>
+                        {isEditor() && (
+                          <button
+                            onClick={() => handleRemoveJiraLink(index)}
+                            disabled={removingJiraLinkIndex === index}
+                            className="p-1 text-neutral-400 hover:text-red-600 transition-colors"
+                            title="Remove link"
+                          >
+                            {removingJiraLinkIndex === index ? (
+                              <Loader2 className="animate-spin" size={14} />
+                            ) : (
+                              <Trash2 size={14} />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Empty state */}
+                {!request.jira?.ticket_key &&
+                 !request.jira_integration?.ticket_key &&
+                 (!request.jira_links || request.jira_links.length === 0) && (
+                  <p className="text-sm text-neutral-500 text-center py-2">
+                    No Jira tickets linked yet
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -763,6 +888,114 @@ function RequestDetailPage() {
               ) : (
                 <p className="text-neutral-500 text-center py-12">Preview not available for this file type</p>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Jira Link Modal */}
+      {showAddJiraLinkModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg w-full max-w-md">
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                <Link size={18} />
+                Add Jira Link
+              </h3>
+              <button
+                onClick={() => {
+                  setShowAddJiraLinkModal(false);
+                  setNewJiraLink({ ticket_key: '', ticket_url: '', title: '', link_type: 'dependency' });
+                }}
+                className="text-neutral-400 hover:text-neutral-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Ticket Key <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newJiraLink.ticket_key}
+                  onChange={(e) => setNewJiraLink(prev => ({ ...prev, ticket_key: e.target.value }))}
+                  placeholder="e.g., PROJ-123"
+                  className="input w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Ticket URL (Optional)
+                </label>
+                <input
+                  type="url"
+                  value={newJiraLink.ticket_url}
+                  onChange={(e) => setNewJiraLink(prev => ({ ...prev, ticket_url: e.target.value }))}
+                  placeholder="https://your-domain.atlassian.net/browse/PROJ-123"
+                  className="input w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Title (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={newJiraLink.title}
+                  onChange={(e) => setNewJiraLink(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Brief description of the ticket"
+                  className="input w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Link Type
+                </label>
+                <select
+                  value={newJiraLink.link_type}
+                  onChange={(e) => setNewJiraLink(prev => ({ ...prev, link_type: e.target.value }))}
+                  className="input w-full"
+                >
+                  <option value="dependency">Dependency</option>
+                  <option value="related">Related</option>
+                  <option value="blocks">Blocks</option>
+                  <option value="blocked_by">Blocked By</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 px-6 py-4 border-t">
+              <button
+                onClick={() => {
+                  setShowAddJiraLinkModal(false);
+                  setNewJiraLink({ ticket_key: '', ticket_url: '', title: '', link_type: 'dependency' });
+                }}
+                className="btn btn-secondary"
+                disabled={addingJiraLink}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddJiraLink}
+                disabled={!newJiraLink.ticket_key.trim() || addingJiraLink}
+                className="btn btn-primary flex items-center gap-2"
+              >
+                {addingJiraLink ? (
+                  <>
+                    <Loader2 className="animate-spin" size={16} />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <Plus size={16} />
+                    Add Link
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

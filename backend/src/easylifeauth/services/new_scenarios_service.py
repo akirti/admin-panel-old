@@ -1,6 +1,7 @@
 """Async New Scenario Request Service"""
 from typing import Dict, Any, List, Optional
 import re
+import asyncio
 from enum import Enum
 from bson import ObjectId
 from datetime import datetime, timezone
@@ -154,12 +155,23 @@ class NewScenarioService:
                 print(f"Failed to send notification to {email}: {e}")
 
     async def _create_jira_ticket(self, scenario_request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Create Jira ticket for new request"""
+        """Create Jira ticket for new request
+
+        Creates a Jira ticket with:
+        - Title: [RequestID] Request Name
+        - Description: Request description + business reason + steps
+        - Comments: Any comments from the request
+        - Attachments: Any files uploaded with the request
+        """
         if not self.jira_service:
             return None
-        
+
         try:
-            jira_info = await self.jira_service.create_ticket(scenario_request)
+            # Pass file_storage_service to attach files to Jira ticket
+            jira_info = await self.jira_service.create_ticket(
+                scenario_request,
+                file_storage_service=self.file_storage
+            )
             return jira_info
         except Exception as e:
             print(f"Failed to create Jira ticket: {e}")
@@ -168,30 +180,87 @@ class NewScenarioService:
     async def _update_jira_ticket(
         self,
         scenario_request: Dict[str, Any],
-        update_type: str = "general"
+        update_type: str = "general",
+        status_comment: Optional[str] = None,
+        new_target_date: Optional[str] = None
     ):
-        """Update Jira ticket"""
+        """Update Jira ticket based on update type
+
+        Args:
+            scenario_request: The scenario request data
+            update_type: Type of update - "status_change", "comment", "description", "workflow", "file_upload", "general"
+            status_comment: Comment to add when status changes
+            new_target_date: New target date to set on Jira ticket (ISO format or datetime)
+        """
         if not self.jira_service:
             return
-        
-        jira_info = scenario_request.get("jira", {})
+
+        # Check both "jira" and "jira_integration" fields for ticket key
+        jira_info = scenario_request.get("jira_integration") or scenario_request.get("jira", {})
         ticket_key = jira_info.get("ticket_key") if jira_info else None
-        
+
         if not ticket_key:
             return
-        
+
         try:
-            result = await self.jira_service.update_ticket(
-                ticket_key, scenario_request, update_type
-            )
-            
+            result = None
+            jira_field = "jira_integration" if scenario_request.get("jira_integration") else "jira"
+
+            if update_type == "status_change":
+                # Sync status change to Jira transition
+                new_status = scenario_request.get("status")
+                result = await self.jira_service.sync_status_change(
+                    ticket_key,
+                    new_status,
+                    comment=status_comment
+                )
+
+                # Update target date if provided during status change
+                if new_target_date:
+                    from datetime import datetime
+                    if isinstance(new_target_date, str):
+                        try:
+                            target_dt = datetime.fromisoformat(new_target_date.replace('Z', '+00:00'))
+                        except ValueError:
+                            target_dt = datetime.strptime(new_target_date, "%Y-%m-%d")
+                    else:
+                        target_dt = new_target_date
+                    await self.jira_service.update_due_date(ticket_key, target_dt)
+
+            elif update_type == "comment":
+                # Sync new comment to Jira
+                comments = scenario_request.get("comments", [])
+                if comments:
+                    latest = comments[-1] if isinstance(comments, list) else comments
+                    if isinstance(latest, dict):
+                        comment_text = self.jira_service._strip_html(latest.get("comment", ""))
+                        author = latest.get("username", "Unknown")
+                        result = await self.jira_service.add_comment(
+                            ticket_key,
+                            comment_text,
+                            author_name=author
+                        )
+
+            elif update_type == "description":
+                # Update description when name/description/reason/steps change
+                result = await self.jira_service.update_description(
+                    ticket_key,
+                    scenario_request
+                )
+
+            else:
+                # For other update types, use the existing update method
+                result = await self.jira_service.update_ticket(
+                    ticket_key, scenario_request, update_type
+                )
+
             if result:
                 # Update jira info in database
                 await self.db.scenario_requests.update_one(
                     {"requestId": scenario_request["requestId"]},
                     {"$set": {
-                        "jira.last_synced": result.get("last_synced"),
-                        "jira.sync_status": result.get("sync_status")
+                        f"{jira_field}.last_synced": result.get("last_synced"),
+                        f"{jira_field}.sync_status": result.get("sync_status")
                     }}
                 )
         except Exception as e:
@@ -320,19 +389,26 @@ class NewScenarioService:
             {"_id": ObjectId(new_scenario_id)}
         )
         out_result["_id"] = str(out_result["_id"])
-        
-        # Create Jira ticket
-        jira_info = await self._create_jira_ticket(out_result)
-        if jira_info:
-            await self.db.scenario_requests.update_one(
-                {"_id": ObjectId(new_scenario_id)},
-                {"$set": {"jira": jira_info}}
-            )
-            out_result["jira"] = jira_info
-        
-        # Send notifications
-        await self._send_notifications(out_result, "created")
-        
+
+        # Create Jira ticket and send notifications in background (fire-and-forget)
+        # This prevents blocking the API response
+        async def background_tasks():
+            try:
+                jira_info = await self._create_jira_ticket(out_result)
+                if jira_info and jira_info.get("sync_status") != "failed":
+                    await self.db.scenario_requests.update_one(
+                        {"_id": ObjectId(new_scenario_id)},
+                        {"$set": {"jira_integration": jira_info}}
+                    )
+
+                # Send notifications
+                await self._send_notifications(out_result, "created")
+            except Exception as e:
+                print(f"Background task error (create): {e}")
+
+        # Schedule background tasks without blocking
+        asyncio.create_task(background_tasks())
+
         return out_result
 
     async def update(
@@ -362,11 +438,15 @@ class NewScenarioService:
 
         # Get allowed fields
         allowed_fields = self._get_allowed_fields(user_id, roles, current_request)
-        
+
         # Track what was updated
         update_types = []
         update_fields = {}
-        
+
+        # Fields that affect Jira description
+        description_fields = {'name', 'description', 'reason', 'steps'}
+        description_changed = False
+
         # Process each field
         for key, value in update_data.items():
             if key in allowed_fields:
@@ -377,9 +457,20 @@ class NewScenarioService:
                         # Only admins can change toggle fields after initial set
                         if not any(r in roles for r in EDITORS):
                             continue
-                
+
+                # Check if this field affects Jira description
+                if key in description_fields:
+                    # Only mark as changed if value actually differs
+                    current_value = current_request.get(key)
+                    if value != current_value:
+                        description_changed = True
+
                 update_fields[key] = value
         
+        # Variables for Jira sync
+        status_comment_for_jira = None
+        target_date_for_jira = None
+
         # Handle status change
         if "status" in update_data and any(r in roles for r in EDITORS):
             new_status = update_data["status"]
@@ -390,6 +481,12 @@ class NewScenarioService:
                 status_comment = update_data.get("status_comment") or update_data.get("workflow_comment")
                 if not status_comment or not status_comment.strip():
                     raise AuthError("Comment is required when changing status", 400)
+
+                # Store comment for Jira sync
+                status_comment_for_jira = status_comment
+
+                # Get target date if provided for Jira sync
+                target_date_for_jira = update_data.get("target_date") or update_data.get("jira_target_date")
 
                 # Validate status transition
                 old_status_enum = None
@@ -442,7 +539,7 @@ class NewScenarioService:
                 assigned_to = None
                 if wf_data.get("assigned_to"):
                     assigned_to = await self._get_user_info(wf_data["assigned_to"])
-                
+
                 await self._add_workflow_entry(
                     request_id=request_id,
                     from_status=current_request.get("status"),
@@ -452,7 +549,38 @@ class NewScenarioService:
                     comment=wf_data.get("comment")
                 )
                 update_types.append("workflow")
-        
+
+        # Handle jira_links - add new links
+        if "jira_links" in update_data and any(r in roles for r in EDITORS):
+            new_links = update_data["jira_links"]
+            if isinstance(new_links, list) and new_links:
+                # Add user info to each link
+                for link in new_links:
+                    if isinstance(link, dict):
+                        link["added_by"] = current_user.get("email") or current_user.get("username")
+                        link["added_at"] = datetime.now(timezone.utc).isoformat()
+
+                await self.db.scenario_requests.update_one(
+                    {"requestId": request_id},
+                    {"$push": {"jira_links": {"$each": new_links}}}
+                )
+
+        # Handle remove_jira_link_index - remove link by index
+        if "remove_jira_link_index" in update_data and any(r in roles for r in EDITORS):
+            link_index = update_data["remove_jira_link_index"]
+            if isinstance(link_index, int) and link_index >= 0:
+                current_links = current_request.get("jira_links", [])
+                if link_index < len(current_links):
+                    # Remove by setting to null then pulling
+                    await self.db.scenario_requests.update_one(
+                        {"requestId": request_id},
+                        {"$unset": {f"jira_links.{link_index}": 1}}
+                    )
+                    await self.db.scenario_requests.update_one(
+                        {"requestId": request_id},
+                        {"$pull": {"jira_links": None}}
+                    )
+
         # Update timestamp
         update_fields["row_update_stp"] = datetime.now(timezone.utc).isoformat()
         update_fields["row_update_user_id"] = user_id
@@ -467,16 +595,38 @@ class NewScenarioService:
         updated = await self.db.scenario_requests.find_one({"requestId": request_id})
         if updated:
             updated["_id"] = str(updated["_id"])
-        
-        # Update Jira if needed
-        for update_type in update_types:
-            await self._update_jira_ticket(updated, update_type)
-        
-        # Send notifications
-        if update_types:
-            await self._send_notifications(updated, update_types[0])
-        else:
-            await self._send_notifications(updated, "updated")
+
+        # Add description change to update_types if any description fields changed
+        if description_changed and "description" not in update_types:
+            update_types.append("description")
+
+        # Update Jira and send notifications in background (fire-and-forget)
+        # This prevents blocking the API response
+        async def background_tasks():
+            try:
+                # Update Jira if needed
+                for update_type in update_types:
+                    if update_type == "status_change":
+                        # Pass status comment and target date for status changes
+                        await self._update_jira_ticket(
+                            updated,
+                            update_type,
+                            status_comment=status_comment_for_jira,
+                            new_target_date=target_date_for_jira
+                        )
+                    else:
+                        await self._update_jira_ticket(updated, update_type)
+
+                # Send notifications
+                if update_types:
+                    await self._send_notifications(updated, update_types[0])
+                else:
+                    await self._send_notifications(updated, "updated")
+            except Exception as e:
+                print(f"Background task error: {e}")
+
+        # Schedule background tasks without blocking
+        asyncio.create_task(background_tasks())
 
         return updated
 
@@ -548,19 +698,27 @@ class NewScenarioService:
             }
         )
 
-        # Update Jira
+        # Update Jira in background (fire-and-forget)
         updated = await self.db.scenario_requests.find_one({"requestId": request_id})
-        if updated:
-            updated["_id"] = str(updated["_id"])
-            await self._update_jira_ticket(updated, "file_upload")
 
-            # Try to attach file to Jira
-            if self.jira_service and updated.get("jira", {}).get("ticket_key"):
-                await self.jira_service.add_attachment(
-                    updated["jira"]["ticket_key"],
-                    file_content,
-                    file_name
-                )
+        async def background_jira_update():
+            try:
+                if updated:
+                    updated["_id"] = str(updated["_id"])
+                    await self._update_jira_ticket(updated, "file_upload")
+
+                    # Try to attach file to Jira (check both jira_integration and jira fields)
+                    jira_info = updated.get("jira_integration") or updated.get("jira", {})
+                    if self.jira_service and jira_info.get("ticket_key"):
+                        await self.jira_service.add_attachment(
+                            jira_info["ticket_key"],
+                            file_content,
+                            file_name
+                        )
+            except Exception as e:
+                print(f"Background Jira update error (file upload): {e}")
+
+        asyncio.create_task(background_jira_update())
 
         return file_info
 

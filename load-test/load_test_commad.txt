@@ -1,0 +1,7 @@
+locust -f load-test/locustfile.py \     
+--host=http://localhost:8000 \
+--users=1000 \
+--spawn-rate=10 \
+--headless \
+--run-time=5m \
+--html=load-test/report.html

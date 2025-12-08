@@ -94,11 +94,28 @@ elif env_file_storage_type == "local" or not gcs_config:
         "base_path": os.environ.get("LOCAL_UPLOAD_PATH", "/tmp/easylife_uploads")
     }
 
+# Jira configuration from environment variables
+jira_config = None
+env_jira_base_url = os.environ.get("JIRA_BASE_URL")
+env_jira_email = os.environ.get("JIRA_EMAIL")
+env_jira_api_token = os.environ.get("JIRA_API_TOKEN")
+if env_jira_base_url and env_jira_email and env_jira_api_token:
+    jira_config = {
+        "base_url": env_jira_base_url,
+        "email": env_jira_email,
+        "api_token": env_jira_api_token,
+        "project_key": os.environ.get("JIRA_PROJECT_KEY", "SCEN"),
+        "issue_type": os.environ.get("JIRA_ISSUE_TYPE", "Task"),
+        "default_team": os.environ.get("JIRA_DEFAULT_TEAM"),
+        "target_days": int(os.environ.get("JIRA_TARGET_DAYS", "7"))
+    }
+
 # Create app
 app = create_app(
     db_config=db_config,
     token_secret=token_secret,
     smtp_config=smtp_config,
+    jira_config=jira_config,
     file_storage_config=file_storage_config,
     gcs_config=gcs_config,
     cors_origins=cors_origins,

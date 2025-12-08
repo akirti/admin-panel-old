@@ -769,3 +769,88 @@ class DashboardStats(BaseModel):
     total_configurations: int = 0
     total_playboards: int = 0
     recent_activities: List[Dict[str, Any]] = []
+
+
+# ============ Jira Models ============
+class JiraProject(BaseModel):
+    id: str
+    key: str
+    name: str
+    project_type: Optional[str] = "software"
+
+
+class JiraTask(BaseModel):
+    id: str
+    key: str
+    summary: str
+    status: str
+    issue_type: Optional[str] = None
+    priority: Optional[str] = None
+    created: Optional[str] = None
+    updated: Optional[str] = None
+    reporter: Optional[str] = None
+    assignee: Optional[str] = None
+    url: Optional[str] = None
+
+
+class JiraIssueType(BaseModel):
+    id: str
+    name: str
+    description: Optional[str] = None
+
+
+class JiraStatus(BaseModel):
+    id: str
+    name: str
+    category: Optional[str] = None
+
+
+class JiraConnectionStatus(BaseModel):
+    connected: bool
+    user: Optional[str] = None
+    email: Optional[str] = None
+    error: Optional[str] = None
+
+
+class JiraCreateTaskRequest(BaseModel):
+    """Request model for creating a Jira task from scenario request"""
+    scenario_request_id: str
+    project_key: Optional[str] = None
+    issue_type: Optional[str] = None
+
+
+class JiraCreateTaskResponse(BaseModel):
+    ticket_id: Optional[str] = None
+    ticket_key: Optional[str] = None
+    ticket_url: Optional[str] = None
+    project_key: Optional[str] = None
+    created_at: Optional[str] = None
+    sync_status: str = "pending"
+    error: Optional[str] = None
+
+
+class JiraAttachmentRequest(BaseModel):
+    """Request model for attaching file to Jira"""
+    ticket_key: str
+    file_url: str
+    file_name: str
+
+
+class JiraAttachmentResponse(BaseModel):
+    attachment_id: Optional[str] = None
+    filename: str
+    uploaded_at: Optional[str] = None
+    error: Optional[str] = None
+
+
+class JiraTransitionRequest(BaseModel):
+    """Request model for transitioning Jira ticket status"""
+    ticket_key: str
+    status: str
+
+
+class JiraUserTasksRequest(BaseModel):
+    """Request model for getting user tasks"""
+    project_key: Optional[str] = None
+    status: Optional[str] = None
+    max_results: int = 50

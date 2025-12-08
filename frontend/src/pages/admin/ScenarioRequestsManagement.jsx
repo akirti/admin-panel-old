@@ -15,7 +15,8 @@ import {
   TrendingUp,
   FileText,
   Edit,
-  X
+  X,
+  ExternalLink
 } from 'lucide-react';
 import { scenarioRequestAPI } from '../../services/api';
 
@@ -307,6 +308,7 @@ function ScenarioRequestsManagement() {
                     <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Requester</th>
                     <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Domain</th>
                     <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Status</th>
+                    <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Jira</th>
                     <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Created</th>
                     <th className="text-center px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -333,6 +335,41 @@ function ScenarioRequestsManagement() {
                       </td>
                       <td className="px-5 py-4">
                         {getStatusBadge(request.status)}
+                      </td>
+                      <td className="px-5 py-4">
+                        {(request.jira?.ticket_key || request.jira_integration?.ticket_key) ? (
+                          <a
+                            href={request.jira?.ticket_url || request.jira_integration?.ticket_url || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {request.jira?.ticket_key || request.jira_integration?.ticket_key}
+                            <ExternalLink size={12} />
+                          </a>
+                        ) : request.jira_links?.length > 0 ? (
+                          <div className="flex flex-col gap-1">
+                            {request.jira_links.slice(0, 2).map((link, idx) => (
+                              <a
+                                key={idx}
+                                href={link.ticket_url || '#'}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {link.ticket_key}
+                                <ExternalLink size={10} />
+                              </a>
+                            ))}
+                            {request.jira_links.length > 2 && (
+                              <span className="text-xs text-neutral-500">+{request.jira_links.length - 2} more</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-neutral-400 text-sm">-</span>
+                        )}
                       </td>
                       <td className="px-5 py-4 text-sm text-neutral-600">
                         {formatDate(request.row_add_stp)}

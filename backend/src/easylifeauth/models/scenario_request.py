@@ -94,7 +94,20 @@ class JiraTicketInfo(BaseModel):
     created_at: Optional[str] = None
     last_synced: Optional[str] = None
     sync_status: Optional[str] = "pending"  # pending, synced, failed
-    
+
+    class Config:
+        extra = "allow"
+
+
+class JiraLink(BaseModel):
+    """Jira Link for dependency tracking"""
+    ticket_key: str
+    ticket_url: Optional[str] = None
+    title: Optional[str] = None
+    link_type: Optional[str] = "dependency"  # dependency, related, blocks, blocked_by
+    added_by: Optional[str] = None
+    added_at: Optional[str] = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
     class Config:
         extra = "allow"
 
@@ -150,22 +163,26 @@ class ScenarioRequestAdminUpdate(BaseModel):
     files: Optional[List[BucketConfig]] = None
     reason: Optional[str] = None
     new_comment: Optional[ScenarioComments] = None
-    
+
     # Admin only fields
     status: Optional[ScenarioRequestStatusTypes] = None
     scenarioKey: Optional[str] = None
     configName: Optional[str] = None
     fulfilmentDate: Optional[str] = None
-    
+
     # Workflow
     new_workflow: Optional[WorkFlow] = None
-    
+
     # Buckets for file uploads after acceptance
     buckets: Optional[List[BucketConfig]] = None
-    
+
     # Email recipients for notifications
     email_recipients: Optional[List[str]] = None
-    
+
+    # Jira dependency links
+    jira_links: Optional[List[JiraLink]] = None
+    remove_jira_link_index: Optional[int] = None  # Index to remove from jira_links array
+
     class Config:
         extra = "allow"
 
@@ -213,8 +230,10 @@ class ScenarioRequest(ScenarioRequestBase):
     fulfilmentDate: Optional[str] = None
     buckets: Optional[List[BucketConfig]] = []
     jira: Optional[JiraTicketInfo] = None
+    jira_integration: Optional[JiraTicketInfo] = None  # Alternate field for Jira info
+    jira_links: Optional[List[JiraLink]] = []  # Dependency links to other Jira tickets
     email_recipients: Optional[List[str]] = []
-    
+
     class Config:
         extra = "allow"
 
@@ -239,6 +258,8 @@ class ScenarioRequestResponse(BaseModel):
     fulfilmentDate: Optional[str] = None
     buckets: Optional[List[Dict[str, Any]]] = []
     jira: Optional[Dict[str, Any]] = None
+    jira_integration: Optional[Dict[str, Any]] = None
+    jira_links: Optional[List[Dict[str, Any]]] = []
     email_recipients: Optional[List[str]] = []
     user_id: Optional[str] = None
     email: Optional[str] = None
@@ -247,7 +268,7 @@ class ScenarioRequestResponse(BaseModel):
     row_add_stp: Optional[str] = None
     row_update_user_id: Optional[str] = None
     row_update_stp: Optional[str] = None
-    
+
     class Config:
         extra = "allow"
 
@@ -261,7 +282,8 @@ USER_EDITABLE_FIELDS = {
 # Fields that admins/editors can edit (includes user fields)
 ADMIN_EDITABLE_FIELDS = USER_EDITABLE_FIELDS | {
     "dataDomain", "status", "scenarioKey", "configName",
-    "fulfilmentDate", "new_workflow", "buckets", "email_recipients"
+    "fulfilmentDate", "new_workflow", "buckets", "email_recipients",
+    "jira_links", "remove_jira_link_index"
 }
 
 # Fields that only work with toggle (can be set once or toggled)

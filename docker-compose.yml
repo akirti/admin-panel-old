@@ -68,6 +68,12 @@ services:
       # GCS Configuration (required if FILE_STORAGE_TYPE=gcs)
       GCS_CREDENTIALS_JSON: ${GCS_CREDENTIALS_JSON:-}
       GCS_BUCKET_NAME: ${GCS_BUCKET_NAME:-}
+      # Jira Integration (optional)
+      JIRA_BASE_URL: ${JIRA_BASE_URL:-}
+      JIRA_EMAIL: ${JIRA_EMAIL:-}
+      JIRA_API_TOKEN: ${JIRA_API_TOKEN:-}
+      JIRA_PROJECT_KEY: ${JIRA_PROJECT_KEY:-SCEN}
+      JIRA_ISSUE_TYPE: ${JIRA_ISSUE_TYPE:-Task}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:

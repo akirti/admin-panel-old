@@ -126,6 +126,12 @@ try {
   { key: 'prevail.delete', name: 'Delete Prevail', module: 'prevail', description: 'Can delete prevail entries', actions: ['delete'], status: 'active', created_at: new Date(), updated_at: new Date() },
   { key: 'prevail.execute', name: 'Execute Prevail', module: 'prevail', description: 'Can execute prevail operations', actions: ['execute'], status: 'active', created_at: new Date(), updated_at: new Date() },
 
+  // Jira module
+  { key: 'jira.view', name: 'View Jira', module: 'jira', description: 'Can view Jira projects and tasks', actions: ['read'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'jira.create', name: 'Create Jira Tasks', module: 'jira', description: 'Can create Jira tasks', actions: ['create'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'jira.edit', name: 'Edit Jira Tasks', module: 'jira', description: 'Can edit and transition Jira tasks', actions: ['update'], status: 'active', created_at: new Date(), updated_at: new Date() },
+  { key: 'jira.sync', name: 'Sync Jira', module: 'jira', description: 'Can sync scenario requests with Jira', actions: ['sync'], status: 'active', created_at: new Date(), updated_at: new Date() },
+
   // Admin module
   { key: 'admin.full', name: 'Full Admin Access', module: 'admin', description: 'Full administrative access', actions: ['read', 'create', 'update', 'delete'], status: 'active', created_at: new Date(), updated_at: new Date() }
 ]);
@@ -621,6 +627,43 @@ try {
     },
     row_add_stp: new Date(),
     row_update_stp: new Date()
+  },
+  {
+    config_id: 'config-jira-001',
+    key: 'jira-integration',
+    type: 'jira',
+    queries: {},
+    logics: {},
+    operations: {},
+    lookups: {},
+    data: {
+      base_url: 'https://your-domain.atlassian.net',
+      email: 'your-email@example.com',
+      api_token: 'your-jira-api-token',
+      project_key: 'SCEN',
+      issue_type: 'Task',
+      enabled: false,
+      description: 'Jira integration for scenario requests. Update with your Jira credentials to enable.'
+    },
+    row_add_stp: new Date(),
+    row_update_stp: new Date()
+  },
+  {
+    config_id: 'config-jira-sales',
+    key: 'jira-sales-domain',
+    type: 'jira',
+    queries: {},
+    logics: {},
+    operations: {},
+    lookups: {},
+    data: {
+      domain: 'sales',
+      project_key: 'SALES',
+      issue_type: 'Story',
+      description: 'Jira project mapping for Sales domain requests'
+    },
+    row_add_stp: new Date(),
+    row_update_stp: new Date()
   }
 ]);
 
@@ -810,104 +853,349 @@ try {
 
     db.scenario_requests.insertMany([
         {
-            title: 'Sales Performance Dashboard',
-            description: 'Need a dashboard showing quarterly sales performance with regional breakdown and YoY comparison.',
-            domain: 'sales',
-            priority: 'high',
+            requestId: 'REQ-2024-001',
+            requestType: 'scenario',
+            dataDomain: 'sales',
+            name: 'Sales Performance Dashboard',
+            description: '<p>Need a dashboard showing quarterly sales performance with regional breakdown and YoY comparison.</p><ul><li>Regional breakdown by territory</li><li>Year-over-year comparison charts</li><li>Top performers list</li></ul>',
             status: 'submitted',
-            user_id: 'editor@easylife.local',
-            user_email: 'editor@easylife.local',
-            user_name: 'Jane Editor',
-            attachments: [],
+            statusDescription: 'Request has been submitted and is awaiting review',
+            has_suggestion: true,
+            knows_steps: false,
+            steps: [],
+            files: [],
             comments: [],
-            created_at: now,
-            updated_at: now
+            work_flow: [],
+            user_id: 'user-editor-001',
+            email: 'editor@easylife.local',
+            reason: 'Need to track quarterly sales performance for executive reporting.',
+            jira_links: [],
+            email_recipients: [],
+            row_add_user_id: 'user-editor-001',
+            row_add_stp: now.toISOString(),
+            row_update_user_id: 'user-editor-001',
+            row_update_stp: now.toISOString()
         },
         {
-            title: 'Inventory Reorder Alert System',
-            description: 'Create a scenario that alerts when inventory levels fall below minimum thresholds.',
-            domain: 'inventory',
-            priority: 'medium',
+            requestId: 'REQ-2024-002',
+            requestType: 'scenario',
+            dataDomain: 'inventory',
+            name: 'Inventory Reorder Alert System',
+            description: '<p>Create a scenario that alerts when inventory levels fall below minimum thresholds.</p><p>Should include:</p><ul><li>Email notifications</li><li>Dashboard widget</li><li>Historical trend analysis</li></ul>',
             status: 'in-progress',
-            user_id: 'manager@easylife.local',
-            user_email: 'manager@easylife.local',
-            user_name: 'John Manager',
-            assigned_to: 'admin@easylife.local',
-            attachments: [],
-            comments: [
-                { user: 'admin@easylife.local', text: 'Working on the threshold configuration', date: oneDayAgo }
+            statusDescription: 'Request is being worked on',
+            has_suggestion: true,
+            knows_steps: true,
+            steps: [
+                {
+                    description: '<p>Configure threshold parameters for each product category</p>',
+                    database: 'inventory_db',
+                    dbSchema: 'public',
+                    table: 'products',
+                    query: ['SELECT * FROM products WHERE stock_level < min_threshold'],
+                    params: [],
+                    sampleFiles: [],
+                    order: 1
+                }
             ],
-            created_at: twoDaysAgo,
-            updated_at: oneDayAgo
+            files: [],
+            comments: [
+                {
+                    comment: '<p>Working on the threshold configuration. Will have initial version ready by end of week.</p>',
+                    username: 'Admin User',
+                    user_id: 'user-admin-001',
+                    commentDate: oneDayAgo.toISOString(),
+                    order: 1
+                }
+            ],
+            work_flow: [
+                {
+                    assigned_to: 'user-admin-001',
+                    assigned_to_email: 'admin@easylife.local',
+                    assigned_to_name: 'Admin User',
+                    assigned_by: 'user-admin-001',
+                    assigned_by_email: 'admin@easylife.local',
+                    assigned_by_name: 'Admin User',
+                    from_status: 'submitted',
+                    to_status: 'in-progress',
+                    start_date: twoDaysAgo.toISOString(),
+                    comment: '<p>Starting development work</p>',
+                    flowOrder: 1,
+                    create_stp: twoDaysAgo.toISOString(),
+                    update_stp: twoDaysAgo.toISOString()
+                }
+            ],
+            user_id: 'user-manager-001',
+            email: 'manager@easylife.local',
+            reason: 'Reduce stockouts and improve inventory management efficiency.',
+            jira_links: [
+                {
+                    ticket_key: 'INV-123',
+                    ticket_url: 'https://jira.example.com/browse/INV-123',
+                    title: 'Inventory Alert System Design',
+                    link_type: 'related',
+                    added_by: 'admin@easylife.local',
+                    added_at: twoDaysAgo.toISOString()
+                }
+            ],
+            email_recipients: ['admin@easylife.local', 'manager@easylife.local'],
+            row_add_user_id: 'user-manager-001',
+            row_add_stp: twoDaysAgo.toISOString(),
+            row_update_user_id: 'user-admin-001',
+            row_update_stp: oneDayAgo.toISOString()
         },
         {
-            title: 'Employee Attendance Report',
-            description: 'Monthly attendance report with overtime calculations and department-wise breakdown.',
-            domain: 'hr',
-            priority: 'low',
+            requestId: 'REQ-2024-003',
+            requestType: 'scenario',
+            dataDomain: 'hr',
+            name: 'Employee Attendance Report',
+            description: '<p>Monthly attendance report with overtime calculations and department-wise breakdown.</p>',
             status: 'deployed',
-            user_id: 'viewer@easylife.local',
-            user_email: 'viewer@easylife.local',
-            user_name: 'Bob Viewer',
-            assigned_to: 'editor@easylife.local',
-            attachments: [],
+            statusDescription: 'Scenario has been deployed to production',
+            has_suggestion: false,
+            knows_steps: false,
+            steps: [],
+            files: [],
             comments: [
-                { user: 'editor@easylife.local', text: 'Report template created', date: oneWeekAgo },
-                { user: 'admin@easylife.local', text: 'Approved and deployed', date: threeDaysAgo }
+                {
+                    comment: '<p>Report template created and tested.</p>',
+                    username: 'Jane Editor',
+                    user_id: 'user-editor-001',
+                    commentDate: oneWeekAgo.toISOString(),
+                    order: 1
+                },
+                {
+                    comment: '<p>Approved and deployed to production environment.</p>',
+                    username: 'Admin User',
+                    user_id: 'user-admin-001',
+                    commentDate: threeDaysAgo.toISOString(),
+                    order: 2
+                }
             ],
-            deployed_at: threeDaysAgo,
-            created_at: twoWeeksAgo,
-            updated_at: threeDaysAgo
+            work_flow: [
+                {
+                    assigned_to: 'user-editor-001',
+                    assigned_to_email: 'editor@easylife.local',
+                    assigned_to_name: 'Jane Editor',
+                    assigned_by: 'user-admin-001',
+                    assigned_by_email: 'admin@easylife.local',
+                    assigned_by_name: 'Admin User',
+                    from_status: 'submitted',
+                    to_status: 'in-progress',
+                    start_date: twoWeeksAgo.toISOString(),
+                    flowOrder: 1,
+                    create_stp: twoWeeksAgo.toISOString(),
+                    update_stp: twoWeeksAgo.toISOString()
+                },
+                {
+                    assigned_to: 'user-admin-001',
+                    assigned_to_email: 'admin@easylife.local',
+                    assigned_to_name: 'Admin User',
+                    assigned_by: 'user-editor-001',
+                    assigned_by_email: 'editor@easylife.local',
+                    assigned_by_name: 'Jane Editor',
+                    from_status: 'in-progress',
+                    to_status: 'deployed',
+                    start_date: threeDaysAgo.toISOString(),
+                    comment: '<p>Ready for deployment</p>',
+                    flowOrder: 2,
+                    create_stp: threeDaysAgo.toISOString(),
+                    update_stp: threeDaysAgo.toISOString()
+                }
+            ],
+            scenarioKey: 'hr-attendance-report',
+            configName: 'HR Attendance Monthly',
+            fulfilmentDate: threeDaysAgo.toISOString(),
+            buckets: [],
+            user_id: 'user-viewer-001',
+            email: 'viewer@easylife.local',
+            reason: 'HR needs monthly attendance tracking for payroll processing.',
+            jira_integration: {
+                ticket_id: '10001',
+                ticket_key: 'HR-456',
+                ticket_url: 'https://jira.example.com/browse/HR-456',
+                project_key: 'HR',
+                created_at: twoWeeksAgo.toISOString(),
+                last_synced: threeDaysAgo.toISOString(),
+                sync_status: 'synced'
+            },
+            jira_links: [],
+            email_recipients: ['hr@easylife.local'],
+            row_add_user_id: 'user-viewer-001',
+            row_add_stp: twoWeeksAgo.toISOString(),
+            row_update_user_id: 'user-admin-001',
+            row_update_stp: threeDaysAgo.toISOString()
         },
         {
-            title: 'Financial Budget Tracker',
-            description: 'Real-time budget tracking with variance analysis and forecasting capabilities.',
-            domain: 'finance',
-            priority: 'high',
+            requestId: 'REQ-2024-004',
+            requestType: 'enhancement',
+            dataDomain: 'finance',
+            name: 'Financial Budget Tracker',
+            description: '<p>Real-time budget tracking with variance analysis and forecasting capabilities.</p><p><strong>Requirements:</strong></p><ul><li>Real-time data sync</li><li>Variance analysis dashboard</li><li>Budget vs Actual charts</li><li>Forecasting module</li></ul>',
             status: 'submitted',
-            user_id: 'sales@easylife.local',
-            user_email: 'sales@easylife.local',
-            user_name: 'Sales User',
-            attachments: [],
+            statusDescription: 'Request has been submitted and is awaiting review',
+            has_suggestion: false,
+            knows_steps: false,
+            steps: [],
+            files: [],
             comments: [],
-            created_at: oneDayAgo,
-            updated_at: oneDayAgo
+            work_flow: [],
+            user_id: 'user-sales-001',
+            email: 'sales@easylife.local',
+            reason: 'Finance team needs better budget tracking and forecasting tools.',
+            jira_links: [],
+            email_recipients: [],
+            row_add_user_id: 'user-sales-001',
+            row_add_stp: oneDayAgo.toISOString(),
+            row_update_user_id: 'user-sales-001',
+            row_update_stp: oneDayAgo.toISOString()
         },
         {
-            title: 'Customer Segmentation Analysis',
-            description: 'Scenario to analyze customers by purchase behavior, demographics, and engagement level.',
-            domain: 'analytics',
-            priority: 'medium',
+            requestId: 'REQ-2024-005',
+            requestType: 'scenario',
+            dataDomain: 'analytics',
+            name: 'Customer Segmentation Analysis',
+            description: '<p>Scenario to analyze customers by purchase behavior, demographics, and engagement level.</p>',
             status: 'rejected',
-            user_id: 'editor@easylife.local',
-            user_email: 'editor@easylife.local',
-            user_name: 'Jane Editor',
-            assigned_to: 'admin@easylife.local',
-            rejection_reason: 'Similar scenario already exists in the analytics domain. Please use the existing Customer Analytics scenario.',
-            attachments: [],
+            statusDescription: 'Request has been rejected',
+            has_suggestion: true,
+            knows_steps: false,
+            steps: [],
+            files: [],
             comments: [
-                { user: 'admin@easylife.local', text: 'Reviewing existing scenarios for overlap', date: oneWeekAgo },
-                { user: 'admin@easylife.local', text: 'Found duplicate - rejecting request', date: threeDaysAgo }
+                {
+                    comment: '<p>Reviewing existing scenarios for potential overlap with this request.</p>',
+                    username: 'Admin User',
+                    user_id: 'user-admin-001',
+                    commentDate: oneWeekAgo.toISOString(),
+                    order: 1
+                },
+                {
+                    comment: '<p>Found duplicate functionality - this request overlaps with existing Customer Analytics scenario. Please use that instead.</p>',
+                    username: 'Admin User',
+                    user_id: 'user-admin-001',
+                    commentDate: threeDaysAgo.toISOString(),
+                    order: 2
+                }
             ],
-            created_at: twoWeeksAgo,
-            updated_at: threeDaysAgo
+            work_flow: [
+                {
+                    assigned_to: 'user-admin-001',
+                    assigned_to_email: 'admin@easylife.local',
+                    assigned_to_name: 'Admin User',
+                    assigned_by: 'user-admin-001',
+                    assigned_by_email: 'admin@easylife.local',
+                    assigned_by_name: 'Admin User',
+                    from_status: 'submitted',
+                    to_status: 'review',
+                    start_date: oneWeekAgo.toISOString(),
+                    flowOrder: 1,
+                    create_stp: oneWeekAgo.toISOString(),
+                    update_stp: oneWeekAgo.toISOString()
+                },
+                {
+                    assigned_to: 'user-editor-001',
+                    assigned_to_email: 'editor@easylife.local',
+                    assigned_to_name: 'Jane Editor',
+                    assigned_by: 'user-admin-001',
+                    assigned_by_email: 'admin@easylife.local',
+                    assigned_by_name: 'Admin User',
+                    from_status: 'review',
+                    to_status: 'rejected',
+                    start_date: threeDaysAgo.toISOString(),
+                    comment: '<p>Similar scenario already exists in the analytics domain. Please use the existing Customer Analytics scenario.</p>',
+                    flowOrder: 2,
+                    create_stp: threeDaysAgo.toISOString(),
+                    update_stp: threeDaysAgo.toISOString()
+                }
+            ],
+            user_id: 'user-editor-001',
+            email: 'editor@easylife.local',
+            reason: 'Marketing team needs customer segmentation for targeted campaigns.',
+            jira_links: [],
+            email_recipients: [],
+            row_add_user_id: 'user-editor-001',
+            row_add_stp: twoWeeksAgo.toISOString(),
+            row_update_user_id: 'user-admin-001',
+            row_update_stp: threeDaysAgo.toISOString()
         },
         {
-            title: 'Operations Workflow Automation',
-            description: 'Automate daily operations reporting and task assignment workflow.',
-            domain: 'operations',
-            priority: 'medium',
-            status: 'in-progress',
-            user_id: 'manager@easylife.local',
-            user_email: 'manager@easylife.local',
-            user_name: 'John Manager',
-            assigned_to: 'editor@easylife.local',
-            attachments: [],
-            comments: [
-                { user: 'editor@easylife.local', text: 'Started development', date: twoDaysAgo }
+            requestId: 'REQ-2024-006',
+            requestType: 'scenario',
+            dataDomain: 'operations',
+            name: 'Operations Workflow Automation',
+            description: '<p>Automate daily operations reporting and task assignment workflow.</p><p>Key features needed:</p><ul><li>Automated daily report generation</li><li>Task queue management</li><li>SLA tracking</li><li>Escalation rules</li></ul>',
+            status: 'development',
+            statusDescription: 'Request is in development phase',
+            has_suggestion: true,
+            knows_steps: true,
+            steps: [
+                {
+                    description: '<p>Set up automated report scheduler</p>',
+                    order: 1
+                },
+                {
+                    description: '<p>Configure task queue and assignment rules</p>',
+                    order: 2
+                },
+                {
+                    description: '<p>Implement SLA tracking and escalation</p>',
+                    order: 3
+                }
             ],
-            created_at: oneWeekAgo,
-            updated_at: twoDaysAgo
+            files: [],
+            comments: [
+                {
+                    comment: '<p>Started development. Initial framework is ready.</p>',
+                    username: 'Jane Editor',
+                    user_id: 'user-editor-001',
+                    commentDate: twoDaysAgo.toISOString(),
+                    order: 1
+                }
+            ],
+            work_flow: [
+                {
+                    assigned_to: 'user-editor-001',
+                    assigned_to_email: 'editor@easylife.local',
+                    assigned_to_name: 'Jane Editor',
+                    assigned_by: 'user-admin-001',
+                    assigned_by_email: 'admin@easylife.local',
+                    assigned_by_name: 'Admin User',
+                    from_status: 'submitted',
+                    to_status: 'development',
+                    start_date: oneWeekAgo.toISOString(),
+                    comment: '<p>Assigned for development</p>',
+                    flowOrder: 1,
+                    create_stp: oneWeekAgo.toISOString(),
+                    update_stp: oneWeekAgo.toISOString()
+                }
+            ],
+            user_id: 'user-manager-001',
+            email: 'manager@easylife.local',
+            reason: 'Operations team needs automation to improve efficiency and reduce manual work.',
+            jira_links: [
+                {
+                    ticket_key: 'OPS-789',
+                    ticket_url: 'https://jira.example.com/browse/OPS-789',
+                    title: 'Ops Automation Phase 1',
+                    link_type: 'dependency',
+                    added_by: 'editor@easylife.local',
+                    added_at: oneWeekAgo.toISOString()
+                },
+                {
+                    ticket_key: 'OPS-790',
+                    ticket_url: 'https://jira.example.com/browse/OPS-790',
+                    title: 'SLA Module Development',
+                    link_type: 'blocks',
+                    added_by: 'editor@easylife.local',
+                    added_at: twoDaysAgo.toISOString()
+                }
+            ],
+            email_recipients: ['ops@easylife.local', 'manager@easylife.local'],
+            row_add_user_id: 'user-manager-001',
+            row_add_stp: oneWeekAgo.toISOString(),
+            row_update_user_id: 'user-editor-001',
+            row_update_stp: twoDaysAgo.toISOString()
         }
     ]);
 
