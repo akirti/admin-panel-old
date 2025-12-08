@@ -18,6 +18,7 @@ const BulkUploadPage = () => {
     { value: 'groups', label: 'Groups' },
     { value: 'domains', label: 'Domains' },
     { value: 'domain_scenarios', label: 'Domain Scenarios' },
+    { value: 'customers', label: 'Customers' },
   ];
 
   useEffect(() => {

@@ -290,6 +290,7 @@ async def get_customer_users(
     result = []
     for user in users:
         result.append({
+            "_id": str(user.get("_id")),
             "email": user.get("email"),
             "username": user.get("username"),
             "full_name": user.get("full_name"),
@@ -321,11 +322,18 @@ async def assign_users_to_customer(
 
     customer_id_str = customer.get("customerId", customer_id)
 
-    # Add customer to each user
+    # Add customer to each user (support both _id and email lookup)
     updated_count = 0
     for user_id in user_ids:
+        # Try to find user by _id first, then by email
+        user_filter = None
+        try:
+            user_filter = {"_id": ObjectId(user_id)}
+        except:
+            user_filter = {"email": user_id}
+
         result = await db.users.update_one(
-            {"email": user_id},
+            user_filter,
             {"$addToSet": {"customers": customer_id_str}}
         )
         if result.modified_count > 0:
@@ -356,11 +364,18 @@ async def remove_users_from_customer(
 
     customer_id_str = customer.get("customerId", customer_id)
 
-    # Remove customer from each user
+    # Remove customer from each user (support both _id and email lookup)
     removed_count = 0
     for user_id in user_ids:
+        # Try to find user by _id first, then by email
+        user_filter = None
+        try:
+            user_filter = {"_id": ObjectId(user_id)}
+        except:
+            user_filter = {"email": user_id}
+
         result = await db.users.update_one(
-            {"email": user_id},
+            user_filter,
             {"$pull": {"customers": customer_id_str}}
         )
         if result.modified_count > 0:

@@ -37,7 +37,7 @@ from .services.email_service import EmailService
 from .errors.auth_error import AuthError
 from .middleware.csrf import CSRFProtectMiddleware
 from .middleware.rate_limit import RateLimitMiddleware
-from .middleware.security import SecurityHeadersMiddleware
+from .middleware.security import SecurityHeadersMiddleware, RequestValidationMiddleware
 
 
 def create_app(
@@ -127,6 +127,8 @@ def create_app(
         openapi_url=f"{API_BASE_ROUTE}/openapi.json"
     )
     
+    
+    
     # CORS middleware
     if cors_origins is None:
         cors_origins = ["*"]
@@ -139,10 +141,12 @@ def create_app(
         allow_headers=["*"],
     )
 
+    # Determine environment once for all middleware config
+    import os
+    is_dev = os.environ.get("ENV", "production") == "development"
+
     # CSRF Protection middleware
     if token_secret:
-        import os
-        is_dev = os.environ.get("ENV", "production") == "development"
         app.add_middleware(
             CSRFProtectMiddleware,
             secret_key=token_secret,
@@ -156,8 +160,6 @@ def create_app(
         )
 
     # Rate limiting middleware
-    import os
-    is_dev = os.environ.get("ENV", "production") == "development"
     app.add_middleware(
         RateLimitMiddleware,
         requests_per_minute=120 if is_dev else 60,  # More lenient in dev
@@ -173,6 +175,10 @@ def create_app(
             enable_hsts=True,
             enable_csp=True
         )
+        # Add request validation
+        app.add_middleware(RequestValidationMiddleware,
+                            max_body_size=10 * 1024 * 1024)
+
 
     # Exception handlers
     @app.exception_handler(AuthError)

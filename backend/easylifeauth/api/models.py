@@ -363,7 +363,9 @@ class StatusEnum(str, Enum):
 
 class TypeEnum(str, Enum):
     SYSTEM = "system"
-    CUSTOM = "custom"
+    DOMAIN = "domain"
+    BOOKMARK = "bookmark"
+    AUTHENTICATION ="authentication"
 
 
 # ============ Pagination Models ============

@@ -43,10 +43,10 @@ def get_gcs_service() -> Optional[GCSService]:
 
 
 class DbConfigurationTypes(str, Enum):
-    LOOKUP_DATA_TYPE = "lookup_data"
-    PROCESS_TYPE = "process"
-    SNAP_SHOT_TYPE = "snapshot"
-    GCS_DATA_TYPE = "gcs_data"
+    LOOKUP_DATA_TYPE = "lookup-data"
+    PROCESS_TYPE = "process-config"
+    SNAP_SHOT_TYPE = "snapshot-data"
+    GCS_DATA_TYPE = "gcs-data"
 
 
 def generate_config_id() -> str:
@@ -61,6 +61,12 @@ def serialize_config(config: dict) -> dict:
         del config["_id"]
     if not config.get("config_id"):
         config["config_id"] = config.get("id", "")
+
+    # Ensure all fields have proper defaults (not null)
+    for field in ["lookups", "queries", "logics", "operations", "data"]:
+        if config.get(field) is None:
+            config[field] = {}
+
     return config
 
 
@@ -143,10 +149,17 @@ async def get_configuration_types(
 @router.get("/{config_id}", response_model=ConfigurationResponse)
 async def get_configuration(
     config_id: str,
+    source: Optional[str] = Query(None, description="Force source: 'gcs' or 'mongo'"),
     current_user: CurrentUser = Depends(require_super_admin),
     db: DatabaseManager = Depends(get_db)
 ):
-    """Get a specific configuration by ID."""
+    """
+    Get a specific configuration by ID.
+
+    For GCS_DATA_TYPE configurations, GCS copy is given priority.
+    For other types, MongoDB entry is the primary source.
+    Use 'source' query param to force a specific source.
+    """
     # Try to find by config_id first, then by _id
     config = await db.configurations.find_one({"config_id": config_id})
     if not config:
@@ -158,7 +171,103 @@ async def get_configuration(
     if not config:
         raise HTTPException(status_code=404, detail="Configuration not found")
 
+    config_type = config.get("type")
+
+    # Priority loading logic:
+    # - For GCS_DATA_TYPE: GCS is primary (unless source=mongo)
+    # - For other types: MongoDB is primary (GCS is backup/sync copy)
+
+    if config_type == DbConfigurationTypes.GCS_DATA_TYPE.value and source != "mongo":
+        # GCS_DATA_TYPE - GCS file is the primary source
+        # The gcs field contains file metadata, actual content is in the file
+        # No need to load from GCS here as it's binary file content
+        pass
+    elif source == "gcs" and _gcs_service and _gcs_service.is_configured():
+        # Force load from GCS sync copy
+        gcs_sync = config.get("gcs_sync", {})
+        gcs_path = gcs_sync.get("gcs_path") if gcs_sync else None
+
+        if gcs_path:
+            try:
+                file_content = await _gcs_service.download_file(gcs_path)
+                if file_content:
+                    gcs_data = json.loads(file_content.decode("utf-8"))
+                    # Merge GCS data into config (GCS takes priority)
+                    for field in ["lookups", "queries", "logics", "operations", "data"]:
+                        if field in gcs_data:
+                            config[field] = gcs_data[field]
+                    config["_loaded_from"] = "gcs"
+            except Exception as e:
+                print(f"Failed to load config from GCS: {e}")
+                config["_loaded_from"] = "mongo_fallback"
+        else:
+            config["_loaded_from"] = "mongo"
+    else:
+        # MongoDB is primary source
+        config["_loaded_from"] = "mongo"
+
+    # Ensure all fields have proper defaults (not null)
+    for field in ["lookups", "queries", "logics", "operations", "data"]:
+        if config.get(field) is None:
+            config[field] = {}
+
     return serialize_config(config)
+
+
+async def sync_config_to_gcs(config_doc: dict, gcs_service: Optional[GCSService]) -> Optional[dict]:
+    """
+    Sync configuration data to GCS as a JSON file.
+    Returns updated gcs info dict or None if sync failed/not configured.
+    """
+    if not gcs_service or not gcs_service.is_configured():
+        return None
+
+    key = config_doc.get("key", "unknown")
+    config_type = config_doc.get("type", "unknown")
+
+    # Build the data to sync based on type
+    sync_data = {
+        "config_id": config_doc.get("config_id"),
+        "type": config_type,
+        "key": key,
+        "row_update_stp": config_doc.get("row_update_stp"),
+    }
+
+    # Add type-specific data
+    if config_type == DbConfigurationTypes.LOOKUP_DATA_TYPE.value:
+        sync_data["lookups"] = config_doc.get("lookups", {})
+    elif config_type == DbConfigurationTypes.PROCESS_TYPE.value:
+        sync_data["queries"] = config_doc.get("queries", {})
+        sync_data["logics"] = config_doc.get("logics", {})
+        sync_data["operations"] = config_doc.get("operations", {})
+    elif config_type == DbConfigurationTypes.SNAP_SHOT_TYPE.value:
+        sync_data["data"] = config_doc.get("data", {})
+
+    # For GCS_DATA_TYPE, we don't sync the binary file content here
+    # as that's handled separately in upload endpoint
+    if config_type == DbConfigurationTypes.GCS_DATA_TYPE.value:
+        return None
+
+    try:
+        json_content = json.dumps(sync_data, indent=2, default=str).encode("utf-8")
+        gcs_path = f"configurations/{key}/config.json"
+
+        gcs_url = await gcs_service.upload_file(
+            file_content=json_content,
+            destination_path=gcs_path,
+            content_type="application/json"
+        )
+
+        if gcs_url:
+            return {
+                "synced": True,
+                "gcs_path": gcs_path,
+                "sync_date": datetime.now(timezone.utc).isoformat()
+            }
+    except Exception as e:
+        print(f"Failed to sync config to GCS: {e}")
+
+    return None
 
 
 @router.post("", response_model=ConfigurationResponse)
@@ -186,20 +295,27 @@ async def create_configuration(
         "row_update_stp": now,
     }
 
-    # Add type-specific fields
-    if config_data.type == DbConfigurationTypes.LOOKUP_DATA_TYPE.value:
-        config_doc["lookups"] = config_data.lookups or {}
-    elif config_data.type == DbConfigurationTypes.PROCESS_TYPE.value:
-        config_doc["queries"] = config_data.queries or {}
-        config_doc["logics"] = config_data.logics or {}
-        config_doc["operations"] = config_data.operations or {}
-    elif config_data.type == DbConfigurationTypes.SNAP_SHOT_TYPE.value:
-        config_doc["data"] = config_data.data or {}
-    elif config_data.type == DbConfigurationTypes.GCS_DATA_TYPE.value:
-        config_doc["gcs"] = None
+    # Add ALL fields with proper defaults (not null)
+    # This ensures response always has consistent structure
+    config_doc["lookups"] = config_data.lookups if config_data.lookups is not None else {}
+    config_doc["queries"] = config_data.queries if config_data.queries is not None else {}
+    config_doc["logics"] = config_data.logics if config_data.logics is not None else {}
+    config_doc["operations"] = config_data.operations if config_data.operations is not None else {}
+    config_doc["data"] = config_data.data if config_data.data is not None else {}
+    config_doc["gcs"] = None
 
     result = await db.configurations.insert_one(config_doc)
     config_doc["_id"] = result.inserted_id
+
+    # Sync to GCS if configured (for non-GCS_DATA types)
+    if config_data.type != DbConfigurationTypes.GCS_DATA_TYPE.value:
+        gcs_sync_info = await sync_config_to_gcs(config_doc, _gcs_service)
+        if gcs_sync_info:
+            await db.configurations.update_one(
+                {"_id": result.inserted_id},
+                {"$set": {"gcs_sync": gcs_sync_info}}
+            )
+            config_doc["gcs_sync"] = gcs_sync_info
 
     return serialize_config(config_doc)
 
@@ -241,16 +357,32 @@ async def update_configuration(
         update_doc["key"] = config_data.key
     if config_data.type:
         update_doc["type"] = config_data.type
+
+    # Update type-specific fields - use empty dict {} instead of null
     if config_data.lookups is not None:
         update_doc["lookups"] = config_data.lookups
+    elif config.get("lookups") is None:
+        update_doc["lookups"] = {}
+
     if config_data.queries is not None:
         update_doc["queries"] = config_data.queries
+    elif config.get("queries") is None:
+        update_doc["queries"] = {}
+
     if config_data.logics is not None:
         update_doc["logics"] = config_data.logics
+    elif config.get("logics") is None:
+        update_doc["logics"] = {}
+
     if config_data.operations is not None:
         update_doc["operations"] = config_data.operations
+    elif config.get("operations") is None:
+        update_doc["operations"] = {}
+
     if config_data.data is not None:
         update_doc["data"] = config_data.data
+    elif config.get("data") is None:
+        update_doc["data"] = {}
 
     await db.configurations.update_one(
         {"_id": config["_id"]},
@@ -258,6 +390,18 @@ async def update_configuration(
     )
 
     updated_config = await db.configurations.find_one({"_id": config["_id"]})
+
+    # Sync to GCS if configured (for non-GCS_DATA types)
+    config_type = updated_config.get("type", config.get("type"))
+    if config_type != DbConfigurationTypes.GCS_DATA_TYPE.value:
+        gcs_sync_info = await sync_config_to_gcs(updated_config, _gcs_service)
+        if gcs_sync_info:
+            await db.configurations.update_one(
+                {"_id": config["_id"]},
+                {"$set": {"gcs_sync": gcs_sync_info}}
+            )
+            updated_config["gcs_sync"] = gcs_sync_info
+
     return serialize_config(updated_config)
 
 
@@ -280,12 +424,21 @@ async def delete_configuration(
         raise HTTPException(status_code=404, detail="Configuration not found")
 
     # Delete associated GCS files if any
-    if config.get("gcs") and config["gcs"].get("versions") and _gcs_service:
-        for version in config["gcs"]["versions"]:
+    if _gcs_service and _gcs_service.is_configured():
+        # Delete versioned GCS files (for GCS_DATA_TYPE)
+        if config.get("gcs") and config["gcs"].get("versions"):
+            for version in config["gcs"]["versions"]:
+                try:
+                    await _gcs_service.delete_file(version.get("gcs_key"))
+                except Exception as e:
+                    print(f"Failed to delete GCS file: {e}")
+
+        # Delete GCS sync file (for other types)
+        if config.get("gcs_sync") and config["gcs_sync"].get("gcs_path"):
             try:
-                await _gcs_service.delete_file(version.get("gcs_key"))
+                await _gcs_service.delete_file(config["gcs_sync"]["gcs_path"])
             except Exception as e:
-                print(f"Failed to delete GCS file: {e}")
+                print(f"Failed to delete GCS sync file: {e}")
 
     await db.configurations.delete_one({"_id": config["_id"]})
 
@@ -342,12 +495,20 @@ async def upload_configuration_file(
 
         version = 1
 
+        gcs_key = None
+
         if existing_config:
             # Update existing configuration
             update_doc = {
                 "row_update_userid": current_user.email,
                 "row_update_stp": now,
                 "type": determined_type,
+                # Initialize all fields with empty dicts
+                "lookups": {},
+                "queries": {},
+                "logics": {},
+                "operations": {},
+                "data": {},
             }
 
             if determined_type == DbConfigurationTypes.PROCESS_TYPE.value:
@@ -366,10 +527,21 @@ async def upload_configuration_file(
 
             config_id = existing_config.get("config_id", str(existing_config["_id"]))
 
+            # Sync JSON to GCS as well
+            updated_config = await db.configurations.find_one({"_id": existing_config["_id"]})
+            gcs_sync_info = await sync_config_to_gcs(updated_config, _gcs_service)
+            if gcs_sync_info:
+                await db.configurations.update_one(
+                    {"_id": existing_config["_id"]},
+                    {"$set": {"gcs_sync": gcs_sync_info}}
+                )
+                gcs_key = gcs_sync_info.get("gcs_path")
+
             return FileUploadResponse(
                 message="Configuration updated from JSON file",
                 config_id=config_id,
                 key=key,
+                gcs_key=gcs_key,
                 version=version,
                 file_name=file.filename
             )
@@ -384,6 +556,12 @@ async def upload_configuration_file(
                 "row_add_stp": now,
                 "row_update_userid": current_user.email,
                 "row_update_stp": now,
+                # Initialize all fields with empty dicts
+                "lookups": {},
+                "queries": {},
+                "logics": {},
+                "operations": {},
+                "data": {},
             }
 
             if determined_type == DbConfigurationTypes.PROCESS_TYPE.value:
@@ -395,12 +573,23 @@ async def upload_configuration_file(
             elif determined_type == DbConfigurationTypes.SNAP_SHOT_TYPE.value:
                 config_doc["data"] = json_data.get("data", json_data)
 
-            await db.configurations.insert_one(config_doc)
+            result = await db.configurations.insert_one(config_doc)
+
+            # Sync JSON to GCS as well
+            config_doc["_id"] = result.inserted_id
+            gcs_sync_info = await sync_config_to_gcs(config_doc, _gcs_service)
+            if gcs_sync_info:
+                await db.configurations.update_one(
+                    {"_id": result.inserted_id},
+                    {"$set": {"gcs_sync": gcs_sync_info}}
+                )
+                gcs_key = gcs_sync_info.get("gcs_path")
 
             return FileUploadResponse(
                 message="Configuration created from JSON file",
                 config_id=config_id,
                 key=key,
+                gcs_key=gcs_key,
                 version=version,
                 file_name=file.filename
             )

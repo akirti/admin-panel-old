@@ -19,7 +19,7 @@ const ConfigurationsManagement = () => {
   const [pagination, setPagination] = useState({ page: 0, limit: 25, total: 0, pages: 0 });
   const [formData, setFormData] = useState({
     key: '',
-    type: 'process-config',
+    type: 'process-config',  // Backend enum: process-config, lookup-data, snapshot-data, gcs-data
     queries: {},
     logics: {},
     operations: {},
@@ -182,7 +182,7 @@ const ConfigurationsManagement = () => {
   const resetForm = () => {
     setFormData({
       key: '',
-      type: 'process-config',
+      type: 'process-config',  // Backend enum: process-config, lookup-data, snapshot-data, gcs-data
       queries: {},
       logics: {},
       operations: {},
@@ -205,9 +205,9 @@ const ConfigurationsManagement = () => {
       data: item.data || {},
     });
 
-    // Set JSON input based on type
+    // Set JSON input based on type (match backend enum values)
     if (item.type === 'process-config') {
-      setJsonInput(JSON.stringify({ queries: item.queries, logics: item.logics, operations: item.operations }, null, 2));
+      setJsonInput(JSON.stringify({ queries: item.queries || {}, logics: item.logics || {}, operations: item.operations || {} }, null, 2));
     } else if (item.type === 'lookup-data') {
       setJsonInput(JSON.stringify(item.lookups || {}, null, 2));
     } else if (item.type === 'snapshot-data') {
@@ -221,6 +221,7 @@ const ConfigurationsManagement = () => {
     setJsonInput(value);
     try {
       const parsed = JSON.parse(value);
+      // Backend enum: process-config, lookup-data, snapshot-data, gcs-data
       if (formData.type === 'process-config') {
         setFormData({
           ...formData,
@@ -244,6 +245,7 @@ const ConfigurationsManagement = () => {
   };
 
   const getTypeBadgeVariant = (type) => {
+    // Backend enum: process-config, lookup-data, snapshot-data, gcs-data
     switch (type) {
       case 'process-config': return 'primary';
       case 'lookup-data': return 'success';
