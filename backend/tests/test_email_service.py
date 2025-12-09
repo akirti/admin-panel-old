@@ -220,3 +220,228 @@ class TestEmailService:
                     "rowUpdateStp": "2024-01-01"
                 }
             )
+
+    # ===================== Additional Tests for Coverage =====================
+
+    @pytest.fixture
+    def email_service_with_tls(self):
+        """Create email service with TLS enabled"""
+        config = {
+            "smtp_server": "smtp.test.com",
+            "smtp_port": 587,
+            "email": "noreply@test.com",
+            "password": "password123",
+            "use_tls": True
+        }
+        return EmailService(config)
+
+    @pytest.fixture
+    def email_service_no_auth(self):
+        """Create email service without authentication"""
+        config = {
+            "smtp_server": "localhost",
+            "smtp_port": 25,
+            "email": "noreply@test.com",
+        }
+        return EmailService(config)
+
+    def test_prepare_welcome_email_template(self, email_service):
+        """Test preparing welcome email template"""
+        result = email_service._prepare_welcome_email_template(
+            to_email="user@test.com",
+            full_name="Test User",
+            password="temp123456"
+        )
+
+        assert isinstance(result, MIMEMultipart)
+        assert result["To"] == "user@test.com"
+        assert "Welcome" in result["Subject"]
+
+    def test_prepare_password_reset_email_template(self, email_service):
+        """Test preparing password reset email template"""
+        result = email_service._prepare_password_reset_email_template(
+            to_email="user@test.com",
+            full_name="Test User",
+            reset_token="abc123"
+        )
+
+        assert isinstance(result, MIMEMultipart)
+        assert result["To"] == "user@test.com"
+        assert "Password Reset" in result["Subject"]
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    async def test_send_welcome_email_success(self, mock_send, email_service):
+        """Test sending welcome email successfully"""
+        mock_send.return_value = AsyncMock()
+
+        await email_service.send_welcome_email(
+            to_email="user@test.com",
+            full_name="Test User",
+            password="temp123456"
+        )
+
+        mock_send.assert_called_once()
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    async def test_send_welcome_email_failure(self, mock_send, email_service):
+        """Test sending welcome email with failure"""
+        mock_send.side_effect = Exception("SMTP Error")
+
+        with pytest.raises(EmailError):
+            await email_service.send_welcome_email(
+                to_email="user@test.com",
+                full_name="Test User",
+                password="temp123456"
+            )
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    async def test_send_welcome_email_with_tls(self, mock_send, email_service_with_tls):
+        """Test sending welcome email with TLS"""
+        mock_send.return_value = AsyncMock()
+
+        await email_service_with_tls.send_welcome_email(
+            to_email="user@test.com",
+            full_name="Test User",
+            password="temp123456"
+        )
+
+        mock_send.assert_called_once()
+        # Verify TLS params were used
+        call_kwargs = mock_send.call_args[1]
+        assert call_kwargs.get("start_tls") is True
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    async def test_send_password_reset_email_success(self, mock_send, email_service):
+        """Test sending password reset email successfully"""
+        mock_send.return_value = AsyncMock()
+
+        await email_service.send_password_reset_email(
+            to_email="user@test.com",
+            full_name="Test User",
+            reset_token="abc123"
+        )
+
+        mock_send.assert_called_once()
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    async def test_send_password_reset_email_failure(self, mock_send, email_service):
+        """Test sending password reset email with failure"""
+        mock_send.side_effect = Exception("SMTP Error")
+
+        with pytest.raises(EmailError):
+            await email_service.send_password_reset_email(
+                to_email="user@test.com",
+                full_name="Test User",
+                reset_token="abc123"
+            )
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    async def test_send_password_reset_email_with_tls(self, mock_send, email_service_with_tls):
+        """Test sending password reset email with TLS"""
+        mock_send.return_value = AsyncMock()
+
+        await email_service_with_tls.send_password_reset_email(
+            to_email="user@test.com",
+            full_name="Test User",
+            reset_token="abc123"
+        )
+
+        mock_send.assert_called_once()
+        call_kwargs = mock_send.call_args[1]
+        assert call_kwargs.get("start_tls") is True
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    async def test_send_reset_email_with_tls(self, mock_send, email_service_with_tls):
+        """Test sending reset email with TLS"""
+        mock_send.return_value = AsyncMock()
+
+        await email_service_with_tls.send_reset_email(
+            to_email="user@test.com",
+            reset_token="abc123",
+            reset_url="http://example.com/reset"
+        )
+
+        mock_send.assert_called_once()
+        call_kwargs = mock_send.call_args[1]
+        assert call_kwargs.get("start_tls") is True
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    async def test_send_feedback_email_with_tls(self, mock_send, email_service_with_tls):
+        """Test sending feedback email with TLS"""
+        mock_send.return_value = AsyncMock()
+
+        await email_service_with_tls.send_feedback_email(
+            to_email="user@test.com",
+            data={"rating": 5}
+        )
+
+        mock_send.assert_called_once()
+        call_kwargs = mock_send.call_args[1]
+        assert call_kwargs.get("start_tls") is True
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    async def test_send_scenario_email_with_tls(self, mock_send, email_service_with_tls):
+        """Test sending scenario email with TLS"""
+        mock_send.return_value = AsyncMock()
+
+        await email_service_with_tls.send_scenario_email(
+            to_email="user@test.com",
+            data={
+                "requestId": "REQ-SCR-0001",
+                "scenarioName": "Test",
+                "status": "S",
+                "rowUpdateStp": "2024-01-01"
+            }
+        )
+
+        mock_send.assert_called_once()
+        call_kwargs = mock_send.call_args[1]
+        assert call_kwargs.get("start_tls") is True
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    async def test_send_reset_email_no_auth(self, mock_send, email_service_no_auth):
+        """Test sending reset email without authentication"""
+        mock_send.return_value = AsyncMock()
+
+        await email_service_no_auth.send_reset_email(
+            to_email="user@test.com",
+            reset_token="abc123",
+            reset_url="http://example.com/reset"
+        )
+
+        mock_send.assert_called_once()
+        call_kwargs = mock_send.call_args[1]
+        # Should not have TLS or username/password
+        assert "start_tls" not in call_kwargs or call_kwargs.get("start_tls") is None
+
+    def test_generate_scenario_steps_template_non_list(self, email_service):
+        """Test generating steps when steps/queries are not lists"""
+        data = {
+            "steps": "not a list",
+            "stepQueries": "also not a list"
+        }
+
+        result = email_service._generate_scenario_steps_template(data)
+
+        assert "<ol>" in result
+        assert "</ol>" in result
+
+    def test_email_service_default_config(self):
+        """Test email service with default config values"""
+        service = EmailService({})
+
+        assert service.smtp_server == "localhost"
+        assert service.smtp_port == 25
+        assert service.email == "noreply@easylife.local"
+        assert service.password is None
+        assert service.use_tls is False

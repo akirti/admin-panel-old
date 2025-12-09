@@ -252,28 +252,21 @@ async def create_playboard(
 @router.post("/upload", response_model=PlayboardInDB, status_code=status.HTTP_201_CREATED)
 async def upload_playboard_json(
     file: UploadFile = File(...),
-    name: str = Query(..., description="Playboard name"),
-    scenario_key: str = Query(..., description="Parent scenario key"),
+    name: Optional[str] = Query(None, description="Playboard name (auto-detected from JSON if not provided)"),
+    scenario_key: Optional[str] = Query(None, description="Parent scenario key (auto-detected from JSON if not provided)"),
     description: Optional[str] = Query(None, description="Playboard description"),
     current_user: CurrentUser = Depends(require_super_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """
     Upload a JSON file as a playboard document.
+    The JSON structure should match the playboard data format with key, scenarioKey, widgets, etc.
 
     - **file**: JSON file to upload
-    - **name**: Name for the playboard
-    - **scenario_key**: Key of the parent scenario
+    - **name**: Name for the playboard (optional, auto-detected from JSON key field)
+    - **scenario_key**: Key of the parent scenario (optional, auto-detected from JSON scenarioKey field)
     - **description**: Optional description
     """
-    # Verify parent scenario exists
-    scenario = await db.domain_scenarios.find_one({"key": scenario_key})
-    if not scenario:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Parent scenario not found"
-        )
-
     # Validate file type
     if not file.filename.endswith('.json'):
         raise HTTPException(
@@ -296,11 +289,30 @@ async def upload_playboard_json(
             detail=f"Error reading file: {str(e)}"
         )
 
-    # Create playboard document
+    # Extract values from JSON if not provided as query params
+    final_name = name or json_data.get("key") or json_data.get("name") or file.filename.replace(".json", "")
+    final_scenario_key = scenario_key or json_data.get("scenarioKey") or json_data.get("scenerioKey")
+
+    if not final_scenario_key:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Scenario key is required. Provide it as query parameter or include 'scenarioKey' in JSON file."
+        )
+
+    # Verify parent scenario exists
+    scenario = await db.domain_scenarios.find_one({"key": final_scenario_key})
+    if not scenario:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Parent scenario '{final_scenario_key}' not found"
+        )
+
+    # Create playboard document with the same structure as form create
+    # The JSON file content goes directly into the 'data' field
     playboard_dict = {
-        "name": name,
-        "description": description,
-        "scenarioKey": scenario_key,
+        "name": final_name,
+        "description": description or json_data.get("description"),
+        "scenarioKey": final_scenario_key,
         "data": json_data,
         "status": "active",
         "created_at": datetime.utcnow(),

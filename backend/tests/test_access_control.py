@@ -340,3 +340,109 @@ class TestRequireFunctions:
         with pytest.raises(HTTPException) as exc_info:
             require_admin_or_editor(user)
         assert exc_info.value.status_code == 403
+
+
+class TestGetCurrentUser:
+    """Tests for get_current_user functions"""
+
+    @pytest.mark.asyncio
+    async def test_access_control_get_current_user_success(self, mock_token_manager):
+        """Test AccessControl.get_current_user with valid token"""
+        mock_token_manager.verify_token = AsyncMock(return_value={
+            "user_id": "user123",
+            "email": "test@example.com",
+            "roles": ["user", "editor"],
+            "groups": ["team-a"],
+            "domains": ["finance"]
+        })
+        access_control = AccessControl(mock_token_manager)
+
+        # Create mock credentials
+        mock_credentials = MagicMock()
+        mock_credentials.credentials = "valid_token"
+
+        result = await access_control.get_current_user(credentials=mock_credentials)
+
+        assert result.user_id == "user123"
+        assert result.email == "test@example.com"
+        assert "editor" in result.roles
+        assert "team-a" in result.groups
+        assert "finance" in result.domains
+
+    @pytest.mark.asyncio
+    async def test_access_control_get_current_user_invalid_token(self, mock_token_manager):
+        """Test AccessControl.get_current_user with invalid token"""
+        mock_token_manager.verify_token = AsyncMock(side_effect=AuthError("Invalid token", 401))
+        access_control = AccessControl(mock_token_manager)
+
+        mock_credentials = MagicMock()
+        mock_credentials.credentials = "invalid_token"
+
+        with pytest.raises(HTTPException) as exc_info:
+            await access_control.get_current_user(credentials=mock_credentials)
+
+        assert exc_info.value.status_code == 401
+        assert exc_info.value.headers.get("WWW-Authenticate") == "Bearer"
+
+    @pytest.mark.asyncio
+    async def test_standalone_get_current_user_success(self, mock_token_manager):
+        """Test standalone get_current_user function with valid token"""
+        from easylifeauth.security.access_control import get_current_user, set_token_manager
+
+        mock_token_manager.verify_token = AsyncMock(return_value={
+            "user_id": "user456",
+            "email": "standalone@example.com",
+            "roles": ["administrator"],
+            "groups": ["admins"],
+            "domains": ["all"]
+        })
+        set_token_manager(mock_token_manager)
+
+        mock_credentials = MagicMock()
+        mock_credentials.credentials = "valid_token"
+
+        result = await get_current_user(credentials=mock_credentials)
+
+        assert result.user_id == "user456"
+        assert result.email == "standalone@example.com"
+        assert "administrator" in result.roles
+
+    @pytest.mark.asyncio
+    async def test_standalone_get_current_user_invalid_token(self, mock_token_manager):
+        """Test standalone get_current_user function with invalid token"""
+        from easylifeauth.security.access_control import get_current_user, set_token_manager
+
+        mock_token_manager.verify_token = AsyncMock(side_effect=AuthError("Token expired", 401))
+        set_token_manager(mock_token_manager)
+
+        mock_credentials = MagicMock()
+        mock_credentials.credentials = "expired_token"
+
+        with pytest.raises(HTTPException) as exc_info:
+            await get_current_user(credentials=mock_credentials)
+
+        assert exc_info.value.status_code == 401
+        assert "Token expired" in exc_info.value.detail
+
+    @pytest.mark.asyncio
+    async def test_standalone_get_current_user_empty_roles(self, mock_token_manager):
+        """Test standalone get_current_user with empty payload values"""
+        from easylifeauth.security.access_control import get_current_user, set_token_manager
+
+        # Return payload with missing optional fields
+        mock_token_manager.verify_token = AsyncMock(return_value={
+            # Missing user_id, email, roles, groups, domains
+        })
+        set_token_manager(mock_token_manager)
+
+        mock_credentials = MagicMock()
+        mock_credentials.credentials = "partial_token"
+
+        result = await get_current_user(credentials=mock_credentials)
+
+        # Should use defaults
+        assert result.user_id == ""
+        assert result.email == ""
+        assert result.roles == []
+        assert result.groups == []
+        assert result.domains == []

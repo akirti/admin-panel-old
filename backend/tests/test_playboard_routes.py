@@ -375,7 +375,7 @@ class TestPlayboardRoutes:
             files=files
         )
         assert response.status_code == 400
-        assert "Parent scenario not found" in response.json()["detail"]
+        assert "not found" in response.json()["detail"]
 
     def test_update_playboard_success(self, client, mock_db):
         """Test update playboard"""

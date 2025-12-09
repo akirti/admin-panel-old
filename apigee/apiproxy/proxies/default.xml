@@ -16,17 +16,17 @@
             <!-- Verify API Key for non-auth endpoints -->
             <Step>
                 <Name>VA-VerifyAPIKey</Name>
-                <Condition>!(proxy.pathsuffix MatchesPath "/auth/**") and !(proxy.pathsuffix MatchesPath "/health/**")</Condition>
+                <Condition>!(proxy.pathsuffix MatchesPath "/auth/**") and !(proxy.pathsuffix MatchesPath "/health/**") and !(proxy.pathsuffix MatchesPath "/info")</Condition>
             </Step>
             <!-- Validate JWT Token for protected endpoints -->
             <Step>
                 <Name>JWT-VerifyAccessToken</Name>
-                <Condition>!(proxy.pathsuffix MatchesPath "/auth/login") and !(proxy.pathsuffix MatchesPath "/auth/register") and !(proxy.pathsuffix MatchesPath "/auth/forgot-password") and !(proxy.pathsuffix MatchesPath "/auth/reset-password") and !(proxy.pathsuffix MatchesPath "/auth/csrf-token") and !(proxy.pathsuffix MatchesPath "/health/**") and request.verb != "OPTIONS"</Condition>
+                <Condition>!(proxy.pathsuffix MatchesPath "/auth/login") and !(proxy.pathsuffix MatchesPath "/auth/register") and !(proxy.pathsuffix MatchesPath "/auth/forgot_password") and !(proxy.pathsuffix MatchesPath "/auth/reset_password") and !(proxy.pathsuffix MatchesPath "/auth/csrf-token") and !(proxy.pathsuffix MatchesPath "/health/**") and !(proxy.pathsuffix MatchesPath "/info") and !(proxy.pathsuffix MatchesPath "/feedback/public") and request.verb != "OPTIONS"</Condition>
             </Step>
             <!-- Quota enforcement -->
             <Step>
                 <Name>Q-EnforceQuota</Name>
-                <Condition>!(proxy.pathsuffix MatchesPath "/health/**")</Condition>
+                <Condition>!(proxy.pathsuffix MatchesPath "/health/**") and !(proxy.pathsuffix MatchesPath "/info")</Condition>
             </Step>
         </Request>
         <Response>
@@ -38,7 +38,14 @@
     </PreFlow>
 
     <Flows>
-        <!-- Authentication Endpoints -->
+        <!-- ==================== Authentication Endpoints ==================== -->
+        <Flow name="Auth-CSRF">
+            <Description>Get CSRF token</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/auth/csrf-token") and (request.verb = "GET")</Condition>
+        </Flow>
+
         <Flow name="Auth-Login">
             <Description>User login</Description>
             <Request>
@@ -68,19 +75,54 @@
             <Condition>(proxy.pathsuffix MatchesPath "/auth/refresh") and (request.verb = "POST")</Condition>
         </Flow>
 
+        <Flow name="Auth-Profile">
+            <Description>Get or update user profile</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/auth/profile") and (request.verb = "GET" or request.verb = "PUT")</Condition>
+        </Flow>
+
         <Flow name="Auth-ForgotPassword">
             <Description>Forgot password request</Description>
             <Request/>
             <Response/>
-            <Condition>(proxy.pathsuffix MatchesPath "/auth/forgot-password") and (request.verb = "POST")</Condition>
+            <Condition>(proxy.pathsuffix MatchesPath "/auth/forgot_password") and (request.verb = "POST")</Condition>
         </Flow>
 
-        <!-- User Management Endpoints -->
+        <Flow name="Auth-ResetPassword">
+            <Description>Reset password</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/auth/reset_password") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="Auth-UpdatePassword">
+            <Description>Update password</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/auth/update_password") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="Auth-Logout">
+            <Description>User logout</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/auth/logout") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <!-- ==================== User Management Endpoints ==================== -->
         <Flow name="Users-List">
             <Description>List all users</Description>
             <Request/>
             <Response/>
             <Condition>(proxy.pathsuffix MatchesPath "/users") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Users-Count">
+            <Description>Get users count</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/users/count") and (request.verb = "GET")</Condition>
         </Flow>
 
         <Flow name="Users-Create">
@@ -98,7 +140,7 @@
             <Description>Get user by ID</Description>
             <Request/>
             <Response/>
-            <Condition>(proxy.pathsuffix MatchesPath "/users/*") and (request.verb = "GET")</Condition>
+            <Condition>(proxy.pathsuffix MatchesPath "/users/*") and (request.verb = "GET") and !(proxy.pathsuffix MatchesPath "/users/count")</Condition>
         </Flow>
 
         <Flow name="Users-Update">
@@ -115,72 +157,414 @@
             <Condition>(proxy.pathsuffix MatchesPath "/users/*") and (request.verb = "DELETE")</Condition>
         </Flow>
 
-        <!-- Roles Endpoints -->
+        <Flow name="Users-ToggleStatus">
+            <Description>Toggle user status</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/users/*/toggle-status") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="Users-SendPasswordReset">
+            <Description>Send password reset email</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/users/*/send-password-reset") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="Users-ResetPassword">
+            <Description>Admin reset user password</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/users/*/reset-password") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <!-- ==================== Admin Management Endpoints ==================== -->
+        <Flow name="Admin-Management">
+            <Description>Admin management operations</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/admin/management/**")</Condition>
+        </Flow>
+
+        <!-- ==================== Roles Endpoints ==================== -->
+        <Flow name="Roles-List">
+            <Description>List all roles</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/roles") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Roles-Count">
+            <Description>Get roles count</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/roles/count") and (request.verb = "GET")</Condition>
+        </Flow>
+
         <Flow name="Roles-CRUD">
-            <Description>Roles management</Description>
+            <Description>Roles CRUD operations</Description>
             <Request/>
             <Response/>
-            <Condition>(proxy.pathsuffix MatchesPath "/roles") or (proxy.pathsuffix MatchesPath "/roles/*")</Condition>
+            <Condition>(proxy.pathsuffix MatchesPath "/roles/*")</Condition>
         </Flow>
 
-        <!-- Groups Endpoints -->
+        <!-- ==================== Groups Endpoints ==================== -->
+        <Flow name="Groups-List">
+            <Description>List all groups</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/groups") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Groups-Count">
+            <Description>Get groups count</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/groups/count") and (request.verb = "GET")</Condition>
+        </Flow>
+
         <Flow name="Groups-CRUD">
-            <Description>Groups management</Description>
+            <Description>Groups CRUD operations</Description>
             <Request/>
             <Response/>
-            <Condition>(proxy.pathsuffix MatchesPath "/groups") or (proxy.pathsuffix MatchesPath "/groups/*")</Condition>
+            <Condition>(proxy.pathsuffix MatchesPath "/groups/*")</Condition>
         </Flow>
 
-        <!-- Domains Endpoints -->
+        <!-- ==================== Permissions Endpoints ==================== -->
+        <Flow name="Permissions-List">
+            <Description>List all permissions</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/permissions") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Permissions-Modules">
+            <Description>Get permission modules</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/permissions/modules") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Permissions-Count">
+            <Description>Get permissions count</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/permissions/count") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Permissions-CRUD">
+            <Description>Permissions CRUD operations</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/permissions/*")</Condition>
+        </Flow>
+
+        <!-- ==================== Domains Endpoints ==================== -->
+        <Flow name="Domains-All">
+            <Description>Get all domains</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/domains/all") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Domains-AdminAll">
+            <Description>Admin get all domains</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/domains/admin/all") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Domains-List">
+            <Description>List domains with pagination</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/domains") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Domains-Count">
+            <Description>Get domains count</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/domains/count") and (request.verb = "GET")</Condition>
+        </Flow>
+
         <Flow name="Domains-CRUD">
-            <Description>Domains management</Description>
+            <Description>Domains CRUD operations</Description>
             <Request/>
             <Response/>
-            <Condition>(proxy.pathsuffix MatchesPath "/domains") or (proxy.pathsuffix MatchesPath "/domains/*")</Condition>
+            <Condition>(proxy.pathsuffix MatchesPath "/domains/*")</Condition>
         </Flow>
 
-        <!-- Scenarios Endpoints -->
+        <!-- ==================== Domain Scenarios Endpoints ==================== -->
+        <Flow name="DomainScenarios-List">
+            <Description>List domain scenarios</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/domain-scenarios") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="DomainScenarios-Count">
+            <Description>Get domain scenarios count</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/domain-scenarios/count") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="DomainScenarios-CRUD">
+            <Description>Domain scenarios CRUD operations</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/domain-scenarios/*")</Condition>
+        </Flow>
+
+        <!-- ==================== Scenarios Endpoints ==================== -->
+        <Flow name="Scenarios-All">
+            <Description>Get all scenarios</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/scenarios/all") or (proxy.pathsuffix MatchesPath "/scenarios/all/*")</Condition>
+        </Flow>
+
         <Flow name="Scenarios-CRUD">
-            <Description>Scenarios management</Description>
+            <Description>Scenarios CRUD operations</Description>
             <Request/>
             <Response/>
             <Condition>(proxy.pathsuffix MatchesPath "/scenarios") or (proxy.pathsuffix MatchesPath "/scenarios/*")</Condition>
         </Flow>
 
-        <!-- Scenario Requests Endpoints -->
-        <Flow name="ScenarioRequests-CRUD">
-            <Description>Scenario requests management</Description>
+        <!-- ==================== Scenario Requests (Ask Scenarios) Endpoints ==================== -->
+        <Flow name="AskScenarios-Lookups">
+            <Description>Scenario request lookup data</Description>
             <Request/>
             <Response/>
-            <Condition>(proxy.pathsuffix MatchesPath "/scenario-requests") or (proxy.pathsuffix MatchesPath "/scenario-requests/*")</Condition>
+            <Condition>(proxy.pathsuffix MatchesPath "/ask_scenarios/lookup/**")</Condition>
         </Flow>
 
-        <!-- Playboards Endpoints -->
+        <Flow name="AskScenarios-All">
+            <Description>Get all scenario requests</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ask_scenarios/all") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="AskScenarios-CRUD">
+            <Description>Scenario requests CRUD operations</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ask_scenarios") or (proxy.pathsuffix MatchesPath "/ask_scenarios/*")</Condition>
+        </Flow>
+
+        <!-- ==================== Playboards Endpoints ==================== -->
+        <Flow name="Playboards-List">
+            <Description>List playboards</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/playboards") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Playboards-Count">
+            <Description>Get playboards count</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/playboards/count") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Playboards-Upload">
+            <Description>Upload playboard</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/playboards/upload") and (request.verb = "POST")</Condition>
+        </Flow>
+
         <Flow name="Playboards-CRUD">
-            <Description>Playboards management</Description>
+            <Description>Playboards CRUD operations</Description>
             <Request/>
             <Response/>
-            <Condition>(proxy.pathsuffix MatchesPath "/playboards") or (proxy.pathsuffix MatchesPath "/playboards/*")</Condition>
+            <Condition>(proxy.pathsuffix MatchesPath "/playboards/*")</Condition>
         </Flow>
 
-        <!-- Configurations Endpoints -->
+        <!-- ==================== Configurations Endpoints ==================== -->
+        <Flow name="Configurations-List">
+            <Description>List configurations</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/configurations") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Configurations-Count">
+            <Description>Get configurations count</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/configurations/count") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Configurations-Types">
+            <Description>Get configuration types</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/configurations/types") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Configurations-Upload">
+            <Description>Upload configuration file</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/configurations/upload") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="Configurations-GCSStatus">
+            <Description>Get GCS status for configurations</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/configurations/gcs/status") and (request.verb = "GET")</Condition>
+        </Flow>
+
         <Flow name="Configurations-CRUD">
-            <Description>Configurations management</Description>
+            <Description>Configurations CRUD operations</Description>
             <Request/>
             <Response/>
-            <Condition>(proxy.pathsuffix MatchesPath "/configurations") or (proxy.pathsuffix MatchesPath "/configurations/*")</Condition>
+            <Condition>(proxy.pathsuffix MatchesPath "/configurations/*")</Condition>
         </Flow>
 
-        <!-- Customers Endpoints -->
+        <!-- ==================== Customers Endpoints ==================== -->
+        <Flow name="Customers-List">
+            <Description>List customers</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/customers") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Customers-Count">
+            <Description>Get customers count</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/customers/count") and (request.verb = "GET")</Condition>
+        </Flow>
+
         <Flow name="Customers-CRUD">
-            <Description>Customers management</Description>
+            <Description>Customers CRUD operations</Description>
             <Request/>
             <Response/>
-            <Condition>(proxy.pathsuffix MatchesPath "/customers") or (proxy.pathsuffix MatchesPath "/customers/*")</Condition>
+            <Condition>(proxy.pathsuffix MatchesPath "/customers/*")</Condition>
         </Flow>
 
-        <!-- Bulk Upload Endpoints -->
-        <Flow name="BulkUpload">
+        <!-- ==================== Feedback Endpoints ==================== -->
+        <Flow name="Feedback-Public">
+            <Description>Submit public feedback (no auth required)</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/feedback/public") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="Feedback-Stats">
+            <Description>Get feedback statistics</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/feedback/stats") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Feedback-All">
+            <Description>Get all feedback</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/feedback/all") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Feedback-AdminList">
+            <Description>Admin list feedback with pagination</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/feedback/admin/list") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Feedback-CRUD">
+            <Description>Feedback CRUD operations</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/feedback") or (proxy.pathsuffix MatchesPath "/feedback/*")</Condition>
+        </Flow>
+
+        <!-- ==================== Dashboard Endpoints ==================== -->
+        <Flow name="Dashboard-Stats">
+            <Description>Get dashboard statistics</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/dashboard/stats") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Dashboard-Summary">
+            <Description>Get dashboard summary</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/dashboard/summary") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Dashboard-RecentLogins">
+            <Description>Get recent logins</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/dashboard/recent-logins") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Dashboard-Analytics">
+            <Description>Get dashboard analytics</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/dashboard/analytics") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <!-- ==================== Activity Logs Endpoints ==================== -->
+        <Flow name="ActivityLogs-List">
+            <Description>List activity logs</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/activity-logs") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="ActivityLogs-Stats">
+            <Description>Get activity logs statistics</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/activity-logs/stats") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="ActivityLogs-Actions">
+            <Description>Get available actions</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/activity-logs/actions") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="ActivityLogs-EntityTypes">
+            <Description>Get available entity types</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/activity-logs/entity-types") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="ActivityLogs-Cleanup">
+            <Description>Cleanup old activity logs</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/activity-logs/cleanup") and (request.verb = "DELETE")</Condition>
+        </Flow>
+
+        <Flow name="ActivityLogs-ByEntity">
+            <Description>Get activity logs by entity</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/activity-logs/entity/**")</Condition>
+        </Flow>
+
+        <Flow name="ActivityLogs-ByUser">
+            <Description>Get activity logs by user</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/activity-logs/user/*")</Condition>
+        </Flow>
+
+        <!-- ==================== Bulk Upload Endpoints ==================== -->
+        <Flow name="Bulk-Upload">
             <Description>Bulk upload operations</Description>
             <Request>
                 <Step>
@@ -188,23 +572,150 @@
                 </Step>
             </Request>
             <Response/>
-            <Condition>(proxy.pathsuffix MatchesPath "/bulk-upload/**")</Condition>
+            <Condition>(proxy.pathsuffix MatchesPath "/bulk/upload/**") and (request.verb = "POST")</Condition>
         </Flow>
 
-        <!-- Activity Logs Endpoints -->
-        <Flow name="ActivityLogs">
-            <Description>Activity logs</Description>
+        <Flow name="Bulk-Template">
+            <Description>Get bulk upload template</Description>
             <Request/>
             <Response/>
-            <Condition>(proxy.pathsuffix MatchesPath "/activity-logs") or (proxy.pathsuffix MatchesPath "/activity-logs/*")</Condition>
+            <Condition>(proxy.pathsuffix MatchesPath "/bulk/template/**") and (request.verb = "GET")</Condition>
         </Flow>
 
-        <!-- Health Check Endpoints -->
+        <Flow name="Bulk-GCS">
+            <Description>GCS bulk upload operations</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/bulk/gcs/**")</Condition>
+        </Flow>
+
+        <!-- ==================== Export Endpoints ==================== -->
+        <Flow name="Export-Users">
+            <Description>Export users data</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/export/users/**")</Condition>
+        </Flow>
+
+        <Flow name="Export-Roles">
+            <Description>Export roles data</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/export/roles/**")</Condition>
+        </Flow>
+
+        <Flow name="Export-Groups">
+            <Description>Export groups data</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/export/groups/**")</Condition>
+        </Flow>
+
+        <Flow name="Export-Domains">
+            <Description>Export domains data</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/export/domains/**")</Condition>
+        </Flow>
+
+        <Flow name="Export-Scenarios">
+            <Description>Export scenarios data</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/export/scenarios/**")</Condition>
+        </Flow>
+
+        <Flow name="Export-ActivityLogs">
+            <Description>Export activity logs data</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/export/activity-logs/**")</Condition>
+        </Flow>
+
+        <!-- ==================== Jira Integration Endpoints ==================== -->
+        <Flow name="Jira-Status">
+            <Description>Get Jira connection status</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/jira/status") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Jira-Projects">
+            <Description>Get Jira projects</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/jira/projects") or (proxy.pathsuffix MatchesPath "/jira/projects/*")</Condition>
+        </Flow>
+
+        <Flow name="Jira-Tasks">
+            <Description>Jira tasks operations</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/jira/tasks/**")</Condition>
+        </Flow>
+
+        <Flow name="Jira-Attachments">
+            <Description>Jira attachments operations</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/jira/attachments/**")</Condition>
+        </Flow>
+
+        <Flow name="Jira-IssueTypes">
+            <Description>Get Jira issue types</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/jira/issue-types") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Jira-Statuses">
+            <Description>Get Jira statuses</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/jira/statuses") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Jira-Sync">
+            <Description>Sync with Jira</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/jira/sync/**")</Condition>
+        </Flow>
+
+        <!-- ==================== Health Check Endpoints ==================== -->
         <Flow name="Health">
-            <Description>Health check endpoints</Description>
+            <Description>Health check endpoint</Description>
             <Request/>
             <Response/>
-            <Condition>(proxy.pathsuffix MatchesPath "/health/**")</Condition>
+            <Condition>(proxy.pathsuffix MatchesPath "/health")</Condition>
+        </Flow>
+
+        <Flow name="Health-Live">
+            <Description>Liveness probe</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/health/live")</Condition>
+        </Flow>
+
+        <Flow name="Health-Ready">
+            <Description>Readiness probe</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/health/ready")</Condition>
+        </Flow>
+
+        <Flow name="Health-Metrics">
+            <Description>Health metrics</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/health/metrics")</Condition>
+        </Flow>
+
+        <Flow name="Info">
+            <Description>Application info</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/info")</Condition>
         </Flow>
     </Flows>
 

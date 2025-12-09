@@ -55,7 +55,19 @@ const PlayboardsManagement = () => {
           defaultSize: 25
         }
       },
-      pagination: []
+      pagination: [{
+        name: 'pagination_limit',
+        dataKey: 'pagination_limit',
+        displayName: 'Pagination',
+        index: 0,
+        visible: true,
+        attributes: [ 
+          {key: 'type', value: 'dropdown'},
+          {key: 'options', value: '25,50,75,100'},
+          {key: 'defaultValue', value: '25'},
+          {key: 'width', value: '10em'}
+        ]
+      }]
     },
     scenarioDescription: []
   });
@@ -157,17 +169,17 @@ const PlayboardsManagement = () => {
         },
         pagination: [
           {
-            name: 'limit',
-            dataKey: 'limit',
-            displayName: 'Result Size',
-            index: 0,
-            visible: true,
-            attributes: [
-              { key: 'type', value: 'dropdown' },
-              { key: 'options', value: '25,50,75,100' },
-              { key: 'defaultValue', value: '25' },
-              { key: 'width', value: '10em' }
-            ]
+              name: 'pagination_limit',
+              dataKey: 'pagination_limit',
+              displayName: 'Pagination',
+              index: 0,
+              visible: true,
+              attributes: [ 
+                {key: 'type', value: 'dropdown'},
+                {key: 'options', value: '25,50,75,100'},
+                {key: 'defaultValue', value: '25'},
+                {key: 'width', value: '10em'}
+              ]
           }
         ]
       },
@@ -454,13 +466,19 @@ const PlayboardsManagement = () => {
 
   // Row action management
   const addRowAction = () => {
+    // Ensure the nested structure exists
+    const currentEvents = formData.widgets?.grid?.actions?.rowActions?.events || [];
+    const currentRowActions = formData.widgets?.grid?.actions?.rowActions || { renderAs: 'button', attributes: [], events: [] };
+    const currentActions = formData.widgets?.grid?.actions || { rowActions: currentRowActions, headerActions: {} };
+    const currentGrid = formData.widgets?.grid || { actions: currentActions, layout: { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 } };
+
     const newAction = {
       key: currentRowAction.key,
       name: currentRowAction.name,
       path: currentRowAction.path,
       dataDomain: currentRowAction.dataDomain,
       status: currentRowAction.status,
-      order: formData.widgets.grid.actions.rowActions.events.length,
+      order: currentEvents.length,
       filters: currentRowAction.filters
     };
 
@@ -469,12 +487,12 @@ const PlayboardsManagement = () => {
       widgets: {
         ...formData.widgets,
         grid: {
-          ...formData.widgets.grid,
+          ...currentGrid,
           actions: {
-            ...formData.widgets.grid.actions,
+            ...currentActions,
             rowActions: {
-              ...formData.widgets.grid.actions.rowActions,
-              events: [...formData.widgets.grid.actions.rowActions.events, newAction]
+              ...currentRowActions,
+              events: [...currentEvents, newAction]
             }
           }
         }
@@ -493,17 +511,22 @@ const PlayboardsManagement = () => {
   };
 
   const removeRowAction = (index) => {
-    const newEvents = formData.widgets.grid.actions.rowActions.events.filter((_, i) => i !== index);
+    const currentEvents = formData.widgets?.grid?.actions?.rowActions?.events || [];
+    const currentRowActions = formData.widgets?.grid?.actions?.rowActions || { renderAs: 'button', attributes: [], events: [] };
+    const currentActions = formData.widgets?.grid?.actions || { rowActions: currentRowActions, headerActions: {} };
+    const currentGrid = formData.widgets?.grid || { actions: currentActions, layout: { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 } };
+
+    const newEvents = currentEvents.filter((_, i) => i !== index);
     setFormData({
       ...formData,
       widgets: {
         ...formData.widgets,
         grid: {
-          ...formData.widgets.grid,
+          ...currentGrid,
           actions: {
-            ...formData.widgets.grid.actions,
+            ...currentActions,
             rowActions: {
-              ...formData.widgets.grid.actions.rowActions,
+              ...currentRowActions,
               events: newEvents.map((e, i) => ({ ...e, order: i }))
             }
           }
@@ -1029,11 +1052,11 @@ const PlayboardsManagement = () => {
           {activeTab === 'actions' && (
             <div className="space-y-4">
               {/* Existing Actions */}
-              {formData.widgets.grid.actions.rowActions.events.length > 0 && (
+              {(formData.widgets?.grid?.actions?.rowActions?.events?.length || 0) > 0 && (
                 <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <h4 className="font-medium text-gray-900 mb-2">Configured Row Actions ({formData.widgets.grid.actions.rowActions.events.length})</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">Configured Row Actions ({formData.widgets?.grid?.actions?.rowActions?.events?.length || 0})</h4>
                   <div className="space-y-2">
-                    {formData.widgets.grid.actions.rowActions.events.map((action, idx) => (
+                    {(formData.widgets?.grid?.actions?.rowActions?.events || []).map((action, idx) => (
                       <div key={idx} className="bg-white p-3 rounded border">
                         <div className="flex items-center justify-between">
                           <div>
@@ -1172,23 +1195,28 @@ const PlayboardsManagement = () => {
               <div className="grid grid-cols-2 gap-4">
                 <Select
                   label="Row Actions Render As"
-                  value={formData.widgets.grid.actions.rowActions.renderAs}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    widgets: {
-                      ...formData.widgets,
-                      grid: {
-                        ...formData.widgets.grid,
-                        actions: {
-                          ...formData.widgets.grid.actions,
-                          rowActions: {
-                            ...formData.widgets.grid.actions.rowActions,
-                            renderAs: e.target.value
+                  value={formData.widgets?.grid?.actions?.rowActions?.renderAs || 'button'}
+                  onChange={(e) => {
+                    const currentRowActions = formData.widgets?.grid?.actions?.rowActions || { renderAs: 'button', attributes: [], events: [] };
+                    const currentActions = formData.widgets?.grid?.actions || { rowActions: currentRowActions, headerActions: {} };
+                    const currentGrid = formData.widgets?.grid || { actions: currentActions, layout: { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 } };
+                    setFormData({
+                      ...formData,
+                      widgets: {
+                        ...formData.widgets,
+                        grid: {
+                          ...currentGrid,
+                          actions: {
+                            ...currentActions,
+                            rowActions: {
+                              ...currentRowActions,
+                              renderAs: e.target.value
+                            }
                           }
                         }
                       }
-                    }
-                  })}
+                    });
+                  }}
                   options={[
                     { value: 'button', label: 'Buttons' },
                     { value: 'dropdown', label: 'Dropdown Menu' },
@@ -1198,38 +1226,46 @@ const PlayboardsManagement = () => {
                 <Input
                   label="Default Page Size"
                   type="number"
-                  value={formData.widgets.grid.layout.defaultSize}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    widgets: {
-                      ...formData.widgets,
-                      grid: {
-                        ...formData.widgets.grid,
-                        layout: {
-                          ...formData.widgets.grid.layout,
-                          defaultSize: parseInt(e.target.value) || 25
+                  value={formData.widgets?.grid?.layout?.defaultSize || 25}
+                  onChange={(e) => {
+                    const currentLayout = formData.widgets?.grid?.layout || { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 };
+                    const currentGrid = formData.widgets?.grid || { actions: { rowActions: { renderAs: 'button', attributes: [], events: [] }, headerActions: {} }, layout: currentLayout };
+                    setFormData({
+                      ...formData,
+                      widgets: {
+                        ...formData.widgets,
+                        grid: {
+                          ...currentGrid,
+                          layout: {
+                            ...currentLayout,
+                            defaultSize: parseInt(e.target.value) || 25
+                          }
                         }
                       }
-                    }
-                  })}
+                    });
+                  }}
                 />
               </div>
 
               <Toggle
                 enabled={formData.widgets?.grid?.layout?.ispaginated === true}
-                onChange={(val) => setFormData({
-                  ...formData,
-                  widgets: {
-                    ...formData.widgets,
-                    grid: {
-                      ...formData.widgets.grid,
-                      layout: {
-                        ...formData.widgets.grid.layout,
-                        ispaginated: val
+                onChange={(val) => {
+                  const currentLayout = formData.widgets?.grid?.layout || { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 };
+                  const currentGrid = formData.widgets?.grid || { actions: { rowActions: { renderAs: 'button', attributes: [], events: [] }, headerActions: {} }, layout: currentLayout };
+                  setFormData({
+                    ...formData,
+                    widgets: {
+                      ...formData.widgets,
+                      grid: {
+                        ...currentGrid,
+                        layout: {
+                          ...currentLayout,
+                          ispaginated: val
+                        }
                       }
                     }
-                  }
-                })}
+                  });
+                }}
                 label="Enable Pagination"
               />
             </div>

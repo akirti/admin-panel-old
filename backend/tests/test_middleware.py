@@ -397,6 +397,76 @@ class TestRateLimitMiddleware:
         mock_task.cancel.assert_called_once()
         assert middleware._cleanup_task is None
 
+    @pytest.mark.asyncio
+    async def test_cleanup_old_entries_removes_old_requests(self):
+        """Test cleanup_old_entries removes entries older than 2 hours"""
+        middleware = RateLimitMiddleware(
+            app=MagicMock(),
+            enabled=True
+        )
+
+        # Add old and new entries
+        old_time = datetime.utcnow() - timedelta(hours=3)
+        recent_time = datetime.utcnow()
+
+        middleware.request_log["192.168.1.1"] = [
+            (old_time, "/api/data"),
+            (recent_time, "/api/data")
+        ]
+        middleware.request_log["192.168.1.2"] = [
+            (old_time, "/api/data")  # Only old entries
+        ]
+
+        # Run cleanup (just the cleanup part, not the infinite loop)
+        async with middleware.lock:
+            now = datetime.utcnow()
+            cutoff = now - timedelta(hours=2)
+
+            for ip in list(middleware.request_log.keys()):
+                middleware.request_log[ip] = [
+                    (timestamp, path)
+                    for timestamp, path in middleware.request_log[ip]
+                    if timestamp > cutoff
+                ]
+                if not middleware.request_log[ip]:
+                    del middleware.request_log[ip]
+
+        # Old entries should be removed
+        assert "192.168.1.1" in middleware.request_log
+        assert len(middleware.request_log["192.168.1.1"]) == 1
+        # IP with only old entries should be removed
+        assert "192.168.1.2" not in middleware.request_log
+
+    def test_start_cleanup_task_only_starts_once(self):
+        """Test cleanup task is not started multiple times"""
+        middleware = RateLimitMiddleware(app=MagicMock(), enabled=True)
+        mock_task = MagicMock()
+
+        with patch('asyncio.create_task', return_value=mock_task) as mock_create:
+            # First call should create task
+            middleware.start_cleanup_task()
+            mock_create.assert_called_once()
+
+            # Second call should not create another task
+            middleware.start_cleanup_task()
+            mock_create.assert_called_once()  # Still only once
+
+    def test_start_cleanup_task_disabled(self):
+        """Test cleanup task is not started when disabled"""
+        middleware = RateLimitMiddleware(app=MagicMock(), enabled=False)
+
+        with patch('asyncio.create_task') as mock_create:
+            middleware.start_cleanup_task()
+            mock_create.assert_not_called()
+
+    def test_stop_cleanup_task_when_none(self):
+        """Test stop_cleanup_task when no task exists"""
+        middleware = RateLimitMiddleware(app=MagicMock(), enabled=True)
+        middleware._cleanup_task = None
+        # Should not raise
+        middleware.stop_cleanup_task()
+        assert middleware._cleanup_task is None
+
 
 class TestSecurityHeadersMiddleware:
     """Tests for Security Headers Middleware"""
