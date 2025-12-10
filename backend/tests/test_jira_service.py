@@ -876,3 +876,669 @@ class TestJiraServiceClose:
         service = JiraService()
         service.close()
         assert service._executor._shutdown is True
+
+
+class TestJiraServiceSyncStatusChange:
+    """Tests for sync_status_change method"""
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_sync_status_change_disabled(self, mock_jira):
+        """Test sync status when disabled"""
+        from easylifeauth.services.jira_service import JiraService
+        service = JiraService()
+        result = await service.sync_status_change("TEST-1", "approved")
+        assert result is None
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_sync_status_change_no_key(self, mock_jira):
+        """Test sync status without key"""
+        from easylifeauth.services.jira_service import JiraService
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token"
+        })
+        result = await service.sync_status_change("", "approved")
+        assert result is None
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_sync_status_change_success(self, mock_jira):
+        """Test successful status sync with transition"""
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_jira.return_value.transitions.return_value = [
+            {"id": "1", "name": "To Do"},
+            {"id": "2", "name": "Accepted"}
+        ]
+        mock_jira.return_value.transition_issue.return_value = None
+        mock_jira.return_value.add_comment.return_value = None
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token"
+        })
+
+        result = await service.sync_status_change("TEST-1", "accepted", comment="Status updated")
+
+        assert result is not None
+        assert result["sync_status"] == "synced"
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_sync_status_change_transition_not_found(self, mock_jira):
+        """Test status sync when transition not found"""
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_jira.return_value.transitions.return_value = [
+            {"id": "1", "name": "To Do"}
+        ]
+        mock_jira.return_value.add_comment.return_value = None
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token"
+        })
+
+        result = await service.sync_status_change("TEST-1", "unknown-status")
+
+        # Should still sync even if transition not found, just add comment
+        assert result is not None
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_sync_status_change_jira_error(self, mock_jira):
+        """Test status sync with Jira error"""
+        from jira.exceptions import JIRAError
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_jira.return_value.transitions.side_effect = JIRAError("API Error")
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token"
+        })
+
+        result = await service.sync_status_change("TEST-1", "accepted")
+
+        assert result["sync_status"] == "failed"
+
+
+class TestJiraServiceUpdateDescription:
+    """Tests for update_description method"""
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_update_description_disabled(self, mock_jira):
+        """Test update description when disabled"""
+        from easylifeauth.services.jira_service import JiraService
+        service = JiraService()
+        result = await service.update_description("TEST-1", {})
+        assert result is None
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_update_description_success(self, mock_jira):
+        """Test successful description update"""
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_issue = MagicMock()
+        mock_issue.update.return_value = None
+        mock_jira.return_value.issue.return_value = mock_issue
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token"
+        })
+
+        result = await service.update_description("TEST-1", {
+            "requestId": "REQ-001",
+            "description": "Updated description"
+        })
+
+        assert result is not None
+        assert result["sync_status"] == "synced"
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_update_description_jira_error(self, mock_jira):
+        """Test description update with error"""
+        from jira.exceptions import JIRAError
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_jira.return_value.issue.side_effect = JIRAError("Issue not found")
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token"
+        })
+
+        result = await service.update_description("TEST-1", {})
+
+        assert result["sync_status"] == "failed"
+
+
+class TestJiraServiceAddComment:
+    """Tests for add_comment method"""
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_add_comment_disabled(self, mock_jira):
+        """Test add comment when disabled"""
+        from easylifeauth.services.jira_service import JiraService
+        service = JiraService()
+        result = await service.add_comment("TEST-1", "Test comment")
+        assert result is None
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_add_comment_success(self, mock_jira):
+        """Test successful add comment"""
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_jira.return_value.add_comment.return_value = MagicMock()
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token"
+        })
+
+        result = await service.add_comment("TEST-1", "Test comment", author_name="John Doe")
+
+        assert result is not None
+        assert result["sync_status"] == "synced"
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_add_comment_jira_error(self, mock_jira):
+        """Test add comment with error"""
+        from jira.exceptions import JIRAError
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_jira.return_value.add_comment.side_effect = JIRAError("Comment failed")
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token"
+        })
+
+        result = await service.add_comment("TEST-1", "Test comment")
+
+        assert result["sync_status"] == "failed"
+
+
+class TestJiraServiceUpdateDueDate:
+    """Tests for update_due_date method"""
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_update_due_date_disabled(self, mock_jira):
+        """Test update due date when disabled"""
+        from easylifeauth.services.jira_service import JiraService
+        service = JiraService()
+        result = await service.update_due_date("TEST-1", datetime.now())
+        assert result is None
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_update_due_date_success(self, mock_jira):
+        """Test successful due date update"""
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_issue = MagicMock()
+        mock_issue.update.return_value = None
+        mock_jira.return_value.issue.return_value = mock_issue
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token"
+        })
+
+        result = await service.update_due_date("TEST-1", datetime.now())
+
+        assert result is not None
+        assert result["sync_status"] == "synced"
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_update_due_date_jira_error(self, mock_jira):
+        """Test due date update with error"""
+        from jira.exceptions import JIRAError
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_jira.return_value.issue.side_effect = JIRAError("Issue not found")
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token"
+        })
+
+        result = await service.update_due_date("TEST-1", datetime.now())
+
+        assert result["sync_status"] == "failed"
+
+
+class TestJiraServiceStripHtml:
+    """Tests for _strip_html helper method"""
+
+    @patch('easylifeauth.services.jira_service.JIRA')
+    def test_strip_html_basic(self, mock_jira):
+        """Test stripping basic HTML"""
+        from easylifeauth.services.jira_service import JiraService
+        service = JiraService()
+        result = service._strip_html("<p>Hello <b>World</b></p>")
+        assert result == "Hello World"
+
+    @patch('easylifeauth.services.jira_service.JIRA')
+    def test_strip_html_with_br(self, mock_jira):
+        """Test stripping HTML with line breaks"""
+        from easylifeauth.services.jira_service import JiraService
+        service = JiraService()
+        result = service._strip_html("<p>Line 1<br>Line 2</p>")
+        assert "Line 1" in result
+        assert "Line 2" in result
+
+    @patch('easylifeauth.services.jira_service.JIRA')
+    def test_strip_html_empty(self, mock_jira):
+        """Test stripping empty HTML"""
+        from easylifeauth.services.jira_service import JiraService
+        service = JiraService()
+        result = service._strip_html("")
+        assert result == ""
+
+    @patch('easylifeauth.services.jira_service.JIRA')
+    def test_strip_html_no_html(self, mock_jira):
+        """Test stripping plain text"""
+        from easylifeauth.services.jira_service import JiraService
+        service = JiraService()
+        result = service._strip_html("Plain text without HTML")
+        assert result == "Plain text without HTML"
+
+
+class TestJiraServiceInitClient:
+    """Tests for _init_client method"""
+
+    @patch('easylifeauth.services.jira_service.JIRA')
+    def test_init_client_jira_error(self, mock_jira):
+        """Test init client with JiraError"""
+        from jira.exceptions import JIRAError
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_jira.side_effect = JIRAError("Authentication failed")
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "bad_token"
+        })
+
+        # Force initialization
+        service._init_client()
+
+        assert service.enabled is False
+        assert service._client is None
+
+    @patch('easylifeauth.services.jira_service.JIRA')
+    def test_init_client_exception(self, mock_jira):
+        """Test init client with general exception"""
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_jira.side_effect = Exception("Network error")
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token"
+        })
+
+        # Force initialization
+        service._init_client()
+
+        assert service.enabled is False
+        assert service._client is None
+
+
+class TestJiraServiceGetClient:
+    """Tests for _get_client method"""
+
+    @patch('easylifeauth.services.jira_service.JIRA')
+    def test_get_client_disabled(self, mock_jira):
+        """Test get client when disabled"""
+        from easylifeauth.services.jira_service import JiraService
+        service = JiraService()
+        result = service._get_client()
+        assert result is None
+
+    @patch('easylifeauth.services.jira_service.JIRA')
+    def test_get_client_lazy_init(self, mock_jira):
+        """Test get client initializes lazily"""
+        from easylifeauth.services.jira_service import JiraService
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token"
+        })
+
+        assert service._client_initialized is False
+        client = service._get_client()
+        assert service._client_initialized is True
+
+
+class TestJiraServiceSetStartDate:
+    """Tests for _set_start_date method"""
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_set_start_date_disabled(self, mock_jira):
+        """Test set start date when disabled"""
+        from easylifeauth.services.jira_service import JiraService
+        service = JiraService()
+        # Should not raise
+        await service._set_start_date("TEST-1", datetime.now())
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_set_start_date_success(self, mock_jira):
+        """Test set start date success"""
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_issue = MagicMock()
+        mock_issue.update.return_value = None
+        mock_jira.return_value.issue.return_value = mock_issue
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token"
+        })
+
+        # Should not raise
+        await service._set_start_date("TEST-1", datetime.now())
+
+
+class TestJiraServiceAddAttachmentFromUrl:
+    """Tests for add_attachment_from_url method"""
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_add_attachment_from_url_disabled(self, mock_jira):
+        """Test add attachment from URL when disabled"""
+        from easylifeauth.services.jira_service import JiraService
+        service = JiraService()
+        result = await service.add_attachment_from_url("TEST-1", "http://example.com/file.txt", "file.txt")
+        assert result is None
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_add_attachment_from_url_no_key(self, mock_jira):
+        """Test add attachment from URL without key"""
+        from easylifeauth.services.jira_service import JiraService
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token"
+        })
+        result = await service.add_attachment_from_url("", "http://example.com/file.txt", "file.txt")
+        assert result is None
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_add_attachment_from_gcs_url(self, mock_jira):
+        """Test add attachment from GCS URL"""
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_attachment = MagicMock()
+        mock_attachment.id = "att-123"
+        mock_jira.return_value.add_attachment.return_value = mock_attachment
+
+        mock_gcs_client = MagicMock()
+        mock_blob = MagicMock()
+        mock_blob.download_as_bytes.return_value = b"file content"
+        mock_bucket = MagicMock()
+        mock_bucket.blob.return_value = mock_blob
+        mock_gcs_client.bucket.return_value = mock_bucket
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token"
+        })
+
+        result = await service.add_attachment_from_url(
+            "TEST-1",
+            "gs://bucket-name/path/to/file.txt",
+            "file.txt",
+            gcs_client=mock_gcs_client
+        )
+
+        assert result is not None
+        assert result["attachment_id"] == "att-123"
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_add_attachment_from_invalid_url(self, mock_jira):
+        """Test add attachment from invalid URL"""
+        from easylifeauth.services.jira_service import JiraService
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token"
+        })
+
+        result = await service.add_attachment_from_url(
+            "TEST-1",
+            "ftp://invalid.url/file.txt",
+            "file.txt"
+        )
+
+        assert result is None
+
+
+class TestJiraServiceCreateTicketAdvanced:
+    """Advanced tests for create_ticket method"""
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_create_ticket_no_project(self, mock_jira):
+        """Test create ticket when no project available"""
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_jira.return_value.projects.return_value = []
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token",
+            "project_key": None  # No default project
+        })
+
+        result = await service.create_ticket({"requestId": "REQ-001"})
+
+        assert result["sync_status"] == "failed"
+        assert "No project" in result["error"]
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_create_ticket_with_comments(self, mock_jira):
+        """Test create ticket with existing comments"""
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_issue = MagicMock()
+        mock_issue.id = "12345"
+        mock_issue.key = "TEST-1"
+        mock_jira.return_value.create_issue.return_value = mock_issue
+        mock_jira.return_value.add_comment.return_value = MagicMock()
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token",
+            "project_key": "TEST"
+        })
+
+        result = await service.create_ticket({
+            "requestId": "REQ-001",
+            "name": "Test Request",
+            "comments": [
+                {"comment": "First comment", "username": "user1", "commentDate": "2024-01-01"},
+                {"comment": "Second comment", "username": "user2", "commentDate": "2024-01-02"}
+            ]
+        })
+
+        assert result["sync_status"] == "synced"
+        # Should have added comments
+        assert mock_jira.return_value.add_comment.call_count >= 2
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_create_ticket_with_files(self, mock_jira):
+        """Test create ticket with file attachments"""
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_issue = MagicMock()
+        mock_issue.id = "12345"
+        mock_issue.key = "TEST-1"
+        mock_jira.return_value.create_issue.return_value = mock_issue
+        mock_jira.return_value.add_attachment.return_value = MagicMock(id="att-123")
+
+        mock_file_storage = MagicMock()
+        mock_file_storage.download_file = AsyncMock(return_value=(b"file content", "test.txt"))
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token",
+            "project_key": "TEST"
+        })
+
+        result = await service.create_ticket({
+            "requestId": "REQ-001",
+            "name": "Test Request",
+            "files": [
+                {"gcs_path": "path/to/file.txt", "file_name": "test.txt"}
+            ]
+        }, file_storage_service=mock_file_storage)
+
+        assert result["sync_status"] == "synced"
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_create_ticket_with_custom_target_days(self, mock_jira):
+        """Test create ticket with custom target days"""
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_issue = MagicMock()
+        mock_issue.id = "12345"
+        mock_issue.key = "TEST-1"
+        mock_jira.return_value.create_issue.return_value = mock_issue
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token",
+            "project_key": "TEST"
+        })
+
+        result = await service.create_ticket({
+            "requestId": "REQ-001",
+            "name": "Test Request",
+            "row_add_stp": "2024-01-01T00:00:00Z"
+        }, target_days=14)
+
+        assert result["sync_status"] == "synced"
+
+
+class TestJiraServiceGetTasksByRequestIdAdvanced:
+    """Advanced tests for get_tasks_by_request_id method"""
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_get_tasks_with_project_filter(self, mock_jira):
+        """Test get tasks by request ID with project filter"""
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_issue = MagicMock()
+        mock_issue.id = "10001"
+        mock_issue.key = "TEST-1"
+        mock_issue.fields.summary = "[REQ-001] Test"
+        mock_issue.fields.status.name = "Open"
+        mock_jira.return_value.search_issues.return_value = [mock_issue]
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token"
+        })
+
+        result = await service.get_tasks_by_request_id("REQ-001", project_key="TEST")
+
+        assert len(result) == 1
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_get_tasks_jira_error(self, mock_jira):
+        """Test get tasks by request ID with Jira error"""
+        from jira.exceptions import JIRAError
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_jira.return_value.search_issues.side_effect = JIRAError("Search failed")
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token"
+        })
+
+        result = await service.get_tasks_by_request_id("REQ-001")
+
+        assert result == []
+
+
+class TestJiraServiceGetUserTasksAdvanced:
+    """Advanced tests for get_user_tasks"""
+
+    @pytest.mark.asyncio
+    @patch('easylifeauth.services.jira_service.JIRA')
+    async def test_get_user_tasks_no_priority(self, mock_jira):
+        """Test get user tasks when issue has no priority"""
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_issue = MagicMock()
+        mock_issue.id = "10001"
+        mock_issue.key = "TEST-1"
+        mock_issue.fields.summary = "Test Issue"
+        mock_issue.fields.status.name = "Open"
+        mock_issue.fields.issuetype.name = "Task"
+        mock_issue.fields.priority = None  # No priority
+        mock_issue.fields.created = "2024-01-01"
+        mock_issue.fields.updated = "2024-01-02"
+        mock_issue.fields.reporter = None
+        mock_issue.fields.assignee = None
+
+        mock_jira.return_value.search_issues.return_value = [mock_issue]
+
+        service = JiraService({
+            "base_url": "https://test.atlassian.net",
+            "email": "test@example.com",
+            "api_token": "test_token"
+        })
+
+        result = await service.get_user_tasks("user@test.com")
+
+        assert len(result) == 1
+        assert result[0]["priority"] == "Medium"  # Default
+        assert result[0]["reporter"] is None
+        assert result[0]["assignee"] is None

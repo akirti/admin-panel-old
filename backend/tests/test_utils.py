@@ -14,6 +14,16 @@ from easylifeauth.utils.args_util import (
 )
 
 
+class TestDictUtilError:
+    """Tests for DictUtilError"""
+
+    def test_dict_util_error(self):
+        """Test DictUtilError exception"""
+        from easylifeauth.utils.dict_util import DictUtilError
+        error = DictUtilError("Test error")
+        assert str(error) == "Test error"
+
+
 class TestDictUtil:
     """Tests for DictUtil"""
 
@@ -49,6 +59,22 @@ class TestDictUtil:
         """Test getting non-existent value"""
         d = {"a": {"b": "c"}}
         result = dict_util.get_deep_nested_value(d, "a.x.y")
+        assert result is None
+
+    def test_get_deep_nested_value_attribute_error(self, dict_util):
+        """Test handling AttributeError in nested value retrieval"""
+        # This creates an empty list since 1,2,3 don't have .get, filtered out
+        d = {"items": [1, 2, 3]}  # List of non-dicts that won't have .get
+        result = dict_util.get_deep_nested_value(d, "items.value")
+        # Non-dict items in list are filtered out, resulting in empty list
+        assert result == []
+
+    def test_get_deep_nested_value_triggers_attribute_error(self, dict_util):
+        """Test that triggers AttributeError in nested value retrieval"""
+        # Use a non-dict value that will cause AttributeError when .get is called
+        d = {"count": 5}  # int value
+        result = dict_util.get_deep_nested_value(d, "count.nested")
+        # When trying to call .get() on an int, it returns None via AttributeError handler
         assert result is None
 
     def test_merge_dicts_simple(self, dict_util):
@@ -388,3 +414,110 @@ class TestConfigurationLoader:
                 loader = ConfigurationLoader()
                 # _apply_env_vars is called in __init__ and converts EASYLIFE_TEST_KEY to test.key
                 assert loader.configuration.get("test", {}).get("key") == "env_value"
+
+    def test_convert_value_bool_uppercase(self):
+        """Test converting bool value with mixed case"""
+        loader = ConfigurationLoader()
+        assert loader._convert_value("TRUE") is True
+        assert loader._convert_value("FALSE") is False
+
+    def test_convert_value_bool_with_other_cases(self):
+        """Test value that is NOT a bool - just lowercase string"""
+        loader = ConfigurationLoader()
+        # Value that doesn't match 'true' or 'false'
+        result = loader._convert_value("yes")
+        assert result == "yes"
+
+
+class TestConfigValueSimulator:
+    """Tests for ConfigValueSimulator"""
+
+    def test_set_os_environment_simple(self):
+        """Test setting simple environment variables"""
+        from easylifeauth.utils.config import ConfigValueSimulator
+
+        # Clear any existing test env vars
+        test_vars = ["EASYLIFE_SIMPLE_KEY", "EASYLIFE_NESTED_LEVEL1_LEVEL2"]
+        for var in test_vars:
+            os.environ.pop(var, None)
+
+        ConfigValueSimulator.set_os_environment(
+            {"simple_key": "value1"},
+            prefix="EASYLIFE"
+        )
+
+        assert "EASYLIFE_SIMPLE_KEY" in os.environ
+        assert os.environ["EASYLIFE_SIMPLE_KEY"] == "value1"
+
+        # Clean up
+        os.environ.pop("EASYLIFE_SIMPLE_KEY", None)
+
+    def test_set_os_environment_nested(self):
+        """Test setting nested environment variables"""
+        from easylifeauth.utils.config import ConfigValueSimulator
+
+        # Clear any existing test env vars
+        os.environ.pop("EASYLIFE_NESTED_LEVEL1_LEVEL2", None)
+
+        ConfigValueSimulator.set_os_environment(
+            {"nested": {"level1": {"level2": "deep_value"}}},
+            prefix="EASYLIFE"
+        )
+
+        assert "EASYLIFE_NESTED_LEVEL1_LEVEL2" in os.environ
+        assert os.environ["EASYLIFE_NESTED_LEVEL1_LEVEL2"] == "deep_value"
+
+        # Clean up
+        os.environ.pop("EASYLIFE_NESTED_LEVEL1_LEVEL2", None)
+
+    def test_set_os_environment_with_list(self):
+        """Test setting environment variable with list value"""
+        from easylifeauth.utils.config import ConfigValueSimulator
+
+        os.environ.pop("EASYLIFE_ITEMS", None)
+
+        ConfigValueSimulator.set_os_environment(
+            {"items": [1, 2, 3]},
+            prefix="EASYLIFE"
+        )
+
+        assert "EASYLIFE_ITEMS" in os.environ
+        assert os.environ["EASYLIFE_ITEMS"] == "[1, 2, 3]"
+
+        # Clean up
+        os.environ.pop("EASYLIFE_ITEMS", None)
+
+    def test_set_os_environment_with_dict_value(self):
+        """Test setting environment variable with dict value"""
+        from easylifeauth.utils.config import ConfigValueSimulator
+
+        os.environ.pop("EASYLIFE_CONFIG", None)
+
+        ConfigValueSimulator.set_os_environment(
+            {"config": {"key": "value"}},
+            prefix="EASYLIFE"
+        )
+
+        # Dict values should be JSON stringified
+        assert "EASYLIFE_CONFIG_KEY" in os.environ
+        assert os.environ["EASYLIFE_CONFIG_KEY"] == "value"
+
+        # Clean up
+        os.environ.pop("EASYLIFE_CONFIG_KEY", None)
+
+    def test_set_os_environment_custom_prefix(self):
+        """Test setting environment variables with custom prefix"""
+        from easylifeauth.utils.config import ConfigValueSimulator
+
+        os.environ.pop("CUSTOM_TEST_KEY", None)
+
+        ConfigValueSimulator.set_os_environment(
+            {"test_key": "custom_value"},
+            prefix="CUSTOM"
+        )
+
+        assert "CUSTOM_TEST_KEY" in os.environ
+        assert os.environ["CUSTOM_TEST_KEY"] == "custom_value"
+
+        # Clean up
+        os.environ.pop("CUSTOM_TEST_KEY", None)
