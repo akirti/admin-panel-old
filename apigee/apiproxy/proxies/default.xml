@@ -426,6 +426,98 @@
             <Condition>(proxy.pathsuffix MatchesPath "/configurations/*")</Condition>
         </Flow>
 
+        <!-- ==================== API Configurations Endpoints ==================== -->
+        <Flow name="ApiConfigs-List">
+            <Description>List API configurations</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/api-configs") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="ApiConfigs-Create">
+            <Description>Create API configuration</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/api-configs") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="ApiConfigs-Count">
+            <Description>Get API configurations count</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/api-configs/count") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="ApiConfigs-Tags">
+            <Description>Get API configuration tags</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/api-configs/tags") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="ApiConfigs-Test">
+            <Description>Test API configuration</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/api-configs/test") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="ApiConfigs-GCSStatus">
+            <Description>Get GCS status for API configs</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/api-configs/gcs/status") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="ApiConfigs-GetByKey">
+            <Description>Get API configuration by key</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/api-configs/key/*") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="ApiConfigs-GetById">
+            <Description>Get API configuration by ID</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/api-configs/*") and (request.verb = "GET") and !(proxy.pathsuffix MatchesPath "/api-configs/count") and !(proxy.pathsuffix MatchesPath "/api-configs/tags") and !(proxy.pathsuffix MatchesPath "/api-configs/test") and !(proxy.pathsuffix MatchesPath "/api-configs/gcs/*") and !(proxy.pathsuffix MatchesPath "/api-configs/key/*")</Condition>
+        </Flow>
+
+        <Flow name="ApiConfigs-Update">
+            <Description>Update API configuration</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/api-configs/*") and (request.verb = "PUT")</Condition>
+        </Flow>
+
+        <Flow name="ApiConfigs-Delete">
+            <Description>Delete API configuration</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/api-configs/*") and (request.verb = "DELETE")</Condition>
+        </Flow>
+
+        <Flow name="ApiConfigs-ToggleStatus">
+            <Description>Toggle API configuration status</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/api-configs/*/toggle-status") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="ApiConfigs-TestById">
+            <Description>Test API configuration by ID</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/api-configs/*/test") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="ApiConfigs-UploadCert">
+            <Description>Upload certificate for API configuration</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/api-configs/*/upload-cert") and (request.verb = "POST")</Condition>
+        </Flow>
+
         <!-- ==================== Customers Endpoints ==================== -->
         <Flow name="Customers-List">
             <Description>List customers</Description>

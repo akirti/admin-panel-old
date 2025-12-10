@@ -117,6 +117,222 @@ db.easylife_domain.insertMany([
     }
 ]);
 
+// Create api_configs collection and indexes
+db.createCollection('api_configs');
+db.api_configs.createIndex({ "key": 1 }, { unique: true });
+db.api_configs.createIndex({ "status": 1 });
+db.api_configs.createIndex({ "tags": 1 });
+db.api_configs.createIndex({ "auth_type": 1 });
+
+// Insert sample API configurations
+db.api_configs.insertMany([
+    {
+        key: "jsonplaceholder-posts",
+        name: "JSONPlaceholder Posts API",
+        description: "Sample REST API for testing - returns fake posts data",
+        endpoint: "https://jsonplaceholder.typicode.com/posts",
+        method: "GET",
+        headers: {
+            "Accept": "application/json"
+        },
+        params: {},
+        body: {},
+        auth_type: "none",
+        auth_config: {},
+        ssl_verify: true,
+        timeout: 30,
+        retry_count: 0,
+        retry_delay: 1,
+        use_proxy: false,
+        proxy_url: null,
+        ping_endpoint: "https://jsonplaceholder.typicode.com/posts/1",
+        ping_method: "GET",
+        ping_expected_status: 200,
+        ping_timeout: 5,
+        cache_enabled: false,
+        cache_ttl: 300,
+        status: "active",
+        tags: ["sample", "rest", "public"],
+        created_at: new Date(),
+        created_by: "system",
+        updated_at: new Date(),
+        updated_by: "system"
+    },
+    {
+        key: "httpbin-get",
+        name: "HTTPBin GET Test",
+        description: "HTTPBin service for testing HTTP requests",
+        endpoint: "https://httpbin.org/get",
+        method: "GET",
+        headers: {
+            "Accept": "application/json",
+            "X-Custom-Header": "test-value"
+        },
+        params: {
+            "foo": "bar"
+        },
+        body: {},
+        auth_type: "none",
+        auth_config: {},
+        ssl_verify: true,
+        timeout: 30,
+        retry_count: 1,
+        retry_delay: 2,
+        use_proxy: false,
+        proxy_url: null,
+        ping_endpoint: null,
+        ping_method: "GET",
+        ping_expected_status: 200,
+        ping_timeout: 5,
+        cache_enabled: true,
+        cache_ttl: 60,
+        status: "active",
+        tags: ["sample", "testing", "httpbin"],
+        created_at: new Date(),
+        created_by: "system",
+        updated_at: new Date(),
+        updated_by: "system"
+    },
+    {
+        key: "httpbin-post",
+        name: "HTTPBin POST Test",
+        description: "HTTPBin POST endpoint for testing request bodies",
+        endpoint: "https://httpbin.org/post",
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        },
+        params: {},
+        body: {
+            "message": "Hello from EasyLife",
+            "timestamp": "{{timestamp}}"
+        },
+        auth_type: "none",
+        auth_config: {},
+        ssl_verify: true,
+        timeout: 30,
+        retry_count: 0,
+        retry_delay: 1,
+        use_proxy: false,
+        proxy_url: null,
+        ping_endpoint: "https://httpbin.org/get",
+        ping_method: "GET",
+        ping_expected_status: 200,
+        ping_timeout: 5,
+        cache_enabled: false,
+        cache_ttl: 300,
+        status: "active",
+        tags: ["sample", "testing", "httpbin", "post"],
+        created_at: new Date(),
+        created_by: "system",
+        updated_at: new Date(),
+        updated_by: "system"
+    },
+    {
+        key: "httpbin-basic-auth",
+        name: "HTTPBin Basic Auth Test",
+        description: "HTTPBin endpoint for testing Basic Authentication",
+        endpoint: "https://httpbin.org/basic-auth/testuser/testpass",
+        method: "GET",
+        headers: {
+            "Accept": "application/json"
+        },
+        params: {},
+        body: {},
+        auth_type: "basic",
+        auth_config: {
+            "username": "testuser",
+            "password": "testpass"
+        },
+        ssl_verify: true,
+        timeout: 30,
+        retry_count: 0,
+        retry_delay: 1,
+        use_proxy: false,
+        proxy_url: null,
+        ping_endpoint: "https://httpbin.org/get",
+        ping_method: "GET",
+        ping_expected_status: 200,
+        ping_timeout: 5,
+        cache_enabled: false,
+        cache_ttl: 300,
+        status: "active",
+        tags: ["sample", "testing", "httpbin", "auth", "basic"],
+        created_at: new Date(),
+        created_by: "system",
+        updated_at: new Date(),
+        updated_by: "system"
+    },
+    {
+        key: "github-api",
+        name: "GitHub Public API",
+        description: "GitHub REST API - public endpoints (rate limited)",
+        endpoint: "https://api.github.com/users/octocat",
+        method: "GET",
+        headers: {
+            "Accept": "application/vnd.github.v3+json",
+            "User-Agent": "EasyLife-Admin-Panel"
+        },
+        params: {},
+        body: {},
+        auth_type: "none",
+        auth_config: {},
+        ssl_verify: true,
+        timeout: 30,
+        retry_count: 2,
+        retry_delay: 5,
+        use_proxy: false,
+        proxy_url: null,
+        ping_endpoint: "https://api.github.com",
+        ping_method: "GET",
+        ping_expected_status: 200,
+        ping_timeout: 10,
+        cache_enabled: true,
+        cache_ttl: 600,
+        status: "active",
+        tags: ["external", "github", "public"],
+        created_at: new Date(),
+        created_by: "system",
+        updated_at: new Date(),
+        updated_by: "system"
+    },
+    {
+        key: "internal-service-example",
+        name: "Internal Service (Inactive)",
+        description: "Example of an internal service API configuration - currently inactive",
+        endpoint: "http://internal-service:8080/api/health",
+        method: "GET",
+        headers: {
+            "Accept": "application/json"
+        },
+        params: {},
+        body: {},
+        auth_type: "bearer",
+        auth_config: {
+            "token": "your-bearer-token-here"
+        },
+        ssl_verify: false,
+        timeout: 10,
+        retry_count: 3,
+        retry_delay: 1,
+        use_proxy: false,
+        proxy_url: null,
+        ping_endpoint: null,
+        ping_method: "GET",
+        ping_expected_status: 200,
+        ping_timeout: 5,
+        cache_enabled: false,
+        cache_ttl: 300,
+        status: "inactive",
+        tags: ["internal", "service", "example"],
+        created_at: new Date(),
+        created_by: "system",
+        updated_at: new Date(),
+        updated_by: "system"
+    }
+]);
+
 // Insert sample scenarios
 db.easylife_scenerios.insertMany([
     {

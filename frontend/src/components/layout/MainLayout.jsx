@@ -23,7 +23,8 @@ import {
   Key,
   Cog,
   LayoutGrid,
-  Building2
+  Building2,
+  Plug
 } from 'lucide-react';
 
 function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
@@ -53,6 +54,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
         { path: '/admin/scenarios', icon: FileText, label: 'Scenarios' },
         { path: '/admin/playboards', icon: LayoutGrid, label: 'Playboards' },
         { path: '/admin/configurations', icon: Cog, label: 'Configurations' },
+        { path: '/admin/api-configs', icon: Plug, label: 'API Configs' },
         { path: '/admin/scenario-requests', icon: ClipboardList, label: 'Scenario Requests' },
         { path: '/admin/feedback', icon: MessageSquare, label: 'Feedback' },
         { path: '/admin/activity-logs', icon: Activity, label: 'Activity Logs' },

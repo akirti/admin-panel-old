@@ -37,6 +37,7 @@ try {
     db.createCollection('feedbacks');
     db.createCollection('bookmarks');
     db.createCollection('snapshots');
+    db.createCollection('api_configs');
     print('Collections created successfully');
 } catch (error) {
     print('Error creating collections: ' + error);
@@ -482,22 +483,21 @@ try {
     description: 'Main sales dashboard playboard',
     scenarioKey: 'sales-overview',
     status: 'active',
-    data: {
-      dataDomain: 'sales',
-      scenerioKey: 'sales-overview',
-      order: 1,
-      status: 'A',
-      widgets: {
+    data: {},
+    dataDomain: 'sales',
+    scenerioKey: 'sales-overview',
+    order: 1,
+    status: 'A',
+    widgets: {
         filters: [
-          { name: 'dateRange', dataKey: 'date_range', displayName: 'Date Range', type: 'daterange', visible: true, index: 0 },
-          { name: 'region', dataKey: 'region', displayName: 'Region', type: 'select', visible: true, index: 1 }
+            { name: 'dateRange', dataKey: 'date_range', displayName: 'Date Range', type: 'daterange', visible: true, index: 0 },
+            { name: 'region', dataKey: 'region', displayName: 'Region', type: 'select', visible: true, index: 1 }
         ],
         grid: {
-          layout: { columns: ['date', 'region', 'amount', 'quantity'], headers: ['Date', 'Region', 'Amount', 'Quantity'], ispaginated: true, defaultSize: 25 },
-          actions: { rowActions: { renderAs: 'button', attributes: [], events: [] } }
+            layout: { columns: ['date', 'region', 'amount', 'quantity'], headers: ['Date', 'Region', 'Amount', 'Quantity'], ispaginated: true, defaultSize: 25 },
+            actions: { rowActions: { renderAs: 'button', attributes: [], events: [] } }
         },
-        pagination: [{ name: 'limit', dataKey: 'limit', displayName: 'Page Size', index: 0, visible: true }]
-      }
+        pagination: { name: 'limit', dataKey: 'limit', displayName: 'Page Size', index: 0, visible: true }
     },
     created_at: new Date(),
     updated_at: new Date()
@@ -508,22 +508,21 @@ try {
     description: 'Stock levels playboard',
     scenarioKey: 'inventory-stock',
     status: 'active',
-    data: {
-      dataDomain: 'inventory',
-      scenerioKey: 'inventory-stock',
-      order: 1,
-      status: 'A',
-      widgets: {
-        filters: [
-          { name: 'warehouse', dataKey: 'warehouse', displayName: 'Warehouse', type: 'select', visible: true, index: 0 },
-          { name: 'category', dataKey: 'category', displayName: 'Category', type: 'select', visible: true, index: 1 }
-        ],
-        grid: {
-          layout: { columns: ['sku', 'name', 'quantity', 'warehouse'], headers: ['SKU', 'Product Name', 'Quantity', 'Warehouse'], ispaginated: true, defaultSize: 25 },
-          actions: { rowActions: { renderAs: 'button', attributes: [], events: [] } }
-        },
-        pagination: [{ name: 'limit', dataKey: 'limit', displayName: 'Page Size', index: 0, visible: true }]
-      }
+    data: {},
+    dataDomain: 'inventory',
+    scenerioKey: 'inventory-stock',
+    order: 1,
+    status: 'A',
+    widgets: {
+    filters: [
+        { name: 'warehouse', dataKey: 'warehouse', displayName: 'Warehouse', type: 'select', visible: true, index: 0 },
+        { name: 'category', dataKey: 'category', displayName: 'Category', type: 'select', visible: true, index: 1 }
+    ],
+    grid: {
+        layout: { columns: ['sku', 'name', 'quantity', 'warehouse'], headers: ['SKU', 'Product Name', 'Quantity', 'Warehouse'], ispaginated: true, defaultSize: 25 },
+        actions: { rowActions: { renderAs: 'button', attributes: [], events: [] } }
+    },
+    pagination: [{ name: 'limit', dataKey: 'limit', displayName: 'Page Size', index: 0, visible: true }]
     },
     created_at: new Date(),
     updated_at: new Date()
@@ -534,22 +533,21 @@ try {
     description: 'Employee information playboard',
     scenarioKey: 'hr-employees',
     status: 'active',
-    data: {
-      dataDomain: 'hr',
-      scenerioKey: 'hr-employees',
-      order: 1,
-      status: 'A',
-      widgets: {
-        filters: [
-          { name: 'department', dataKey: 'department', displayName: 'Department', type: 'select', visible: true, index: 0 },
-          { name: 'status', dataKey: 'status', displayName: 'Status', type: 'select', visible: true, index: 1 }
-        ],
-        grid: {
-          layout: { columns: ['emp_id', 'name', 'department', 'position', 'status'], headers: ['ID', 'Name', 'Department', 'Position', 'Status'], ispaginated: true, defaultSize: 25 },
-          actions: { rowActions: { renderAs: 'button', attributes: [], events: [] } }
-        },
-        pagination: [{ name: 'limit', dataKey: 'limit', displayName: 'Page Size', index: 0, visible: true }]
-      }
+    data: {},
+    dataDomain: 'hr',
+    scenerioKey: 'hr-employees',
+    order: 1,
+    status: 'A',
+    widgets: {
+    filters: [
+        { name: 'department', dataKey: 'department', displayName: 'Department', type: 'select', visible: true, index: 0 },
+        { name: 'status', dataKey: 'status', displayName: 'Status', type: 'select', visible: true, index: 1 }
+    ],
+    grid: {
+        layout: { columns: ['emp_id', 'name', 'department', 'position', 'status'], headers: ['ID', 'Name', 'Department', 'Position', 'Status'], ispaginated: true, defaultSize: 25 },
+        actions: { rowActions: { renderAs: 'button', attributes: [], events: [] } }
+    },
+    pagination: [{ name: 'limit', dataKey: 'limit', displayName: 'Page Size', index: 0, visible: true }]
     },
     created_at: new Date(),
     updated_at: new Date()
@@ -1439,6 +1437,223 @@ try {
     throw error;
 }
 
+// Create api_configs collection and indexes
+try {
+
+
+    // Insert sample API configurations
+    db.api_configs.insertMany([
+        {
+            key: "jsonplaceholder-posts",
+            name: "JSONPlaceholder Posts API",
+            description: "Sample REST API for testing - returns fake posts data",
+            endpoint: "https://jsonplaceholder.typicode.com/posts",
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            },
+            params: {},
+            body: {},
+            auth_type: "none",
+            auth_config: {},
+            ssl_verify: true,
+            timeout: 30,
+            retry_count: 0,
+            retry_delay: 1,
+            use_proxy: false,
+            proxy_url: null,
+            ping_endpoint: "https://jsonplaceholder.typicode.com/posts/1",
+            ping_method: "GET",
+            ping_expected_status: 200,
+            ping_timeout: 5,
+            cache_enabled: false,
+            cache_ttl: 300,
+            status: "active",
+            tags: ["sample", "rest", "public"],
+            created_at: new Date(),
+            created_by: "system",
+            updated_at: new Date(),
+            updated_by: "system"
+        },
+        {
+            key: "httpbin-get",
+            name: "HTTPBin GET Test",
+            description: "HTTPBin service for testing HTTP requests",
+            endpoint: "https://httpbin.org/get",
+            method: "GET",
+            headers: {
+                "Accept": "application/json",
+                "X-Custom-Header": "test-value"
+            },
+            params: {
+                "foo": "bar"
+            },
+            body: {},
+            auth_type: "none",
+            auth_config: {},
+            ssl_verify: true,
+            timeout: 30,
+            retry_count: 1,
+            retry_delay: 2,
+            use_proxy: false,
+            proxy_url: null,
+            ping_endpoint: null,
+            ping_method: "GET",
+            ping_expected_status: 200,
+            ping_timeout: 5,
+            cache_enabled: true,
+            cache_ttl: 60,
+            status: "active",
+            tags: ["sample", "testing", "httpbin"],
+            created_at: new Date(),
+            created_by: "system",
+            updated_at: new Date(),
+            updated_by: "system"
+        },
+        {
+            key: "httpbin-post",
+            name: "HTTPBin POST Test",
+            description: "HTTPBin POST endpoint for testing request bodies",
+            endpoint: "https://httpbin.org/post",
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            params: {},
+            body: {
+                "message": "Hello from EasyLife",
+                "timestamp": "{{timestamp}}"
+            },
+            auth_type: "none",
+            auth_config: {},
+            ssl_verify: true,
+            timeout: 30,
+            retry_count: 0,
+            retry_delay: 1,
+            use_proxy: false,
+            proxy_url: null,
+            ping_endpoint: "https://httpbin.org/get",
+            ping_method: "GET",
+            ping_expected_status: 200,
+            ping_timeout: 5,
+            cache_enabled: false,
+            cache_ttl: 300,
+            status: "active",
+            tags: ["sample", "testing", "httpbin", "post"],
+            created_at: new Date(),
+            created_by: "system",
+            updated_at: new Date(),
+            updated_by: "system"
+        },
+        {
+            key: "httpbin-basic-auth",
+            name: "HTTPBin Basic Auth Test",
+            description: "HTTPBin endpoint for testing Basic Authentication",
+            endpoint: "https://httpbin.org/basic-auth/testuser/testpass",
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            },
+            params: {},
+            body: {},
+            auth_type: "basic",
+            auth_config: {
+                "username": "testuser",
+                "password": "testpass"
+            },
+            ssl_verify: true,
+            timeout: 30,
+            retry_count: 0,
+            retry_delay: 1,
+            use_proxy: false,
+            proxy_url: null,
+            ping_endpoint: "https://httpbin.org/get",
+            ping_method: "GET",
+            ping_expected_status: 200,
+            ping_timeout: 5,
+            cache_enabled: false,
+            cache_ttl: 300,
+            status: "active",
+            tags: ["sample", "testing", "httpbin", "auth", "basic"],
+            created_at: new Date(),
+            created_by: "system",
+            updated_at: new Date(),
+            updated_by: "system"
+        },
+        {
+            key: "github-api",
+            name: "GitHub Public API",
+            description: "GitHub REST API - public endpoints (rate limited)",
+            endpoint: "https://api.github.com/users/octocat",
+            method: "GET",
+            headers: {
+                "Accept": "application/vnd.github.v3+json",
+                "User-Agent": "EasyLife-Admin-Panel"
+            },
+            params: {},
+            body: {},
+            auth_type: "none",
+            auth_config: {},
+            ssl_verify: true,
+            timeout: 30,
+            retry_count: 2,
+            retry_delay: 5,
+            use_proxy: false,
+            proxy_url: null,
+            ping_endpoint: "https://api.github.com",
+            ping_method: "GET",
+            ping_expected_status: 200,
+            ping_timeout: 10,
+            cache_enabled: true,
+            cache_ttl: 600,
+            status: "active",
+            tags: ["external", "github", "public"],
+            created_at: new Date(),
+            created_by: "system",
+            updated_at: new Date(),
+            updated_by: "system"
+        },
+        {
+            key: "internal-service-example",
+            name: "Internal Service (Inactive)",
+            description: "Example of an internal service API configuration - currently inactive",
+            endpoint: "http://internal-service:8080/api/health",
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            },
+            params: {},
+            body: {},
+            auth_type: "bearer",
+            auth_config: {
+                "token": "your-bearer-token-here"
+            },
+            ssl_verify: false,
+            timeout: 10,
+            retry_count: 3,
+            retry_delay: 1,
+            use_proxy: false,
+            proxy_url: null,
+            ping_endpoint: null,
+            ping_method: "GET",
+            ping_expected_status: 200,
+            ping_timeout: 5,
+            cache_enabled: false,
+            cache_ttl: 300,
+            status: "inactive",
+            tags: ["internal", "service", "example"],
+            created_at: new Date(),
+            created_by: "system",
+            updated_at: new Date(),
+            updated_by: "system"
+        }
+    ]);
+    print('api_configs inserted: ' + db.snapshots.countDocuments());
+} catch (error) {
+    print('Error inserting api_configs: ' + error);
+    throw error;
+}
 // ============================================
 // CREATE INDEXES
 // ============================================
@@ -1509,6 +1724,11 @@ db.snapshots.createIndex({ scenario_key: 1 });
 db.snapshots.createIndex({ domain: 1 });
 db.snapshots.createIndex({ status: 1 });
 db.snapshots.createIndex({ created_at: -1 });
+
+db.api_configs.createIndex({ "key": 1 }, { unique: true });
+db.api_configs.createIndex({ "status": 1 });
+db.api_configs.createIndex({ "tags": 1 });
+db.api_configs.createIndex({ "auth_type": 1 });
 
     print('Indexes created successfully');
 } catch (error) {

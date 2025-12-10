@@ -2,6 +2,7 @@
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 from datetime import datetime
+from enum import Enum
 
 
 # Auth Models
@@ -685,18 +686,198 @@ class DomainScenarioInDB(BaseModel):
 
 
 # ============ Extended Playboard Models ============
+class PaginationAttributeKeyTypes(Enum):
+    TYPE = "type"
+    OPTIONS = "options"
+    DEFAULT_VALUE = "defaultValue"
+    POSITION = "position"
+    PAGE_SIZES = "pageSizes"
+    PAGE_SIZE = "pageSize"
+    TOAL_PAGES = "pages"
+    CURRENT_PAGE = "currentPage"
+
+class WidgetAttributeKeyTypes(Enum):
+    TYPE = "type"
+    OPTIONS = "options"
+    DEFAULT_VALUE = "defaultValue"
+    width = "width"
+    VALIDATE = "validate"
+    REGEX = "regex"
+    FORMAT = "format"
+    MIN = "min"
+    MAX = "max"
+    PLACEHOLDER = "placeholder"
+    MULTISELECT = "multiselect"
+    CLEARABLE = "clearable"
+    SEARCHABLE = "searchable"
+
+
+class PaginationAttributes(BaseModel):
+    name: PaginationAttributeKeyTypes
+    value: Any
+    model_config = {
+            "extra": "allow"
+        }
+    
+class PlayboardPagination(BaseModel):
+    name: str
+    dataKey: str
+    displayName: str
+    enabled: bool = False
+    pageSize: int = 10
+    pageSizes: List[int] = [10, 25, 50, 100]
+    position: str = "bottom"
+    index:int = 0
+    attributes: Optional[list[Dict[str, Any]]] = None
+    model_config = {
+            "extra": "allow"
+        }
+    
+class WidgetDescriptionBase(BaseModel):
+    type: str
+    text: str
+    index:int
+    styleClasses: Optional[List[str]|str] = None
+    status:Optional[str] = "active"
+    model_config = {
+            "extra": "allow"
+        }
+    
+class WidgetDescription(WidgetDescriptionBase):
+    nodes: Optional[List[WidgetDescriptionBase]] = None
+
+
+class FilterAttribute(BaseModel):
+    name: WidgetAttributeKeyTypes
+    value: Any
+
+    model_config = {
+            "extra": "allow"
+        }
+
+class ApiConfig(BaseModel):
+    key: Optional[str] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    endpoint: str
+    method: str = "GET"
+    headers: Optional[Dict[str, str]] = None
+    params: Optional[Dict[str, Any]] = None
+    path_params: Optional[Dict[str, Any]] = None
+    body: Optional[Dict[str, Any]] = None
+    pagination: Optional[Dict[str, Any]] = None
+    authentication: Optional[Dict[str, Any]] = None
+    args_mapping: Optional[Dict[str, str]] = None
+    response_mapping: Optional[Dict[str, str]] = None
+    cached: Optional[bool] = False
+    state: str = "active"
+    timeout: Optional[int] = 30
+    retry: Optional[int] = 0
+    retry_delay: Optional[int] = 0   
+    max_cache_size: Optional[int] = 128
+    response_path: Optional[str] = None
+    content_type: Optional[str] = "application/json"
+    call_auth_service: Optional[bool] = False
+    auth_service_key: Optional[str] = None
+    auth_token_key: Optional[str] = None
+    auth_token_location: Optional[str] = "header"  # header, query, body
+    auth_token_name: Optional[str] = "Authorization"
+    auth_token_prefix: Optional[str] = "Bearer "
+    refresh_token_on_expiry: Optional[bool] = False
+    refresh_token_endpoint: Optional[str] = None
+    refresh_token_method: Optional[str] = "POST"
+    refresh_token_body: Optional[Dict[str, Any]] = None
+    ping_endpoint: Optional[str] = None
+    ping_method: Optional[str] = "GET"
+    ping_expected_status: Optional[int] = 200
+    ping_timeout: Optional[int] = 5
+    headers_mapping: Optional[Dict[str, str]] = None
+    ssl_verify: Optional[bool] = True
+    ssl_cert_path: Optional[str] = None
+    ssl_key_path: Optional[str] = None
+    ssl_ca_path: Optional[str] = None
+    use_proxy: Optional[bool] = False
+    proxy_url: Optional[str] = None
+    proxies: Optional[Dict[str, str]] = None
+
+    model_config = {
+            "extra": "allow"
+        }
+       
+class FilterControls(BaseModel):
+    """controls for filter widgets"""
+    #publisher and subscriber can be used to define event based communication between widgets
+    publisher: Optional[Dict[str, Any]] = None
+    #subscriber to listen to events from other widgets
+    subscriber: Optional[Dict[str, Any]] = None
+    #event handlers for filter widgets
+    events: Optional[Dict[str, Any]] = None
+    #Additional api configuration for dynamic filters
+    api_config: Optional[ApiConfig] = None
+
+    model_config = {
+            "extra": "allow"
+        }
+class WidgetFilter(BaseModel):
+    name: str
+    dataKey: str
+    displayName: str
+    index:int
+    visible: bool = True
+    type: str
+    status: str = "active"
+    inputHint: Optional[str] = None
+    title: Optional[str] = None    
+    attributes: Optional[FilterAttribute] = None
+    validators: Optional[list[dict[str,Any]]] = None
+    description: Optional[list[WidgetDescription]] = None
+    controls:Optional[FilterControls] = None
+
+    model_config = {
+            "extra": "allow"
+        }
+
+class WidgetFilterGroup(BaseModel):
+    name: str
+    index:int
+    displayName: str
+    visible: bool = True
+    status: str = "active"
+    filters: Optional[list[WidgetFilter]] = None
+    model_config = {
+            "extra": "allow"
+        }
+    
+class PlayboardWidget(BaseModel):
+    "filter model for playboard widgets"
+    filters: Optional[list[WidgetFilter]] = None
+    grid: Optional[Dict[str, Any]] = None  
+    pagination: Optional[Dict[str, Any]] = None
+
+
 class PlayboardInDB(BaseModel):
     id: Optional[str] = Field(None, alias="_id")
+    key:str
     name: str
     description: Optional[str] = None
     scenarioKey: str
-    data: Dict[str, Any] = {}
+    dataDomain: str
+    widgets: Optional[PlayboardWidget] = []
+    order: Optional[int] = 0
+    program_key: Optional[str] = None
+    addon_configurations: Optional[list[str]|str] = None
+    scenarioDescription: Optional[list[WidgetDescription]] = None
+    data: Optional[Dict[str, Any]] = None
     status: str = "active"
     created_at: Optional[datetime] = None
+    created_by: Optional[str] = None
     updated_at: Optional[datetime] = None
+    updated_by: Optional[str] = None
 
-    class Config:
-        populate_by_name = True
+    model_config = {
+        "extra": "allow",
+        "populate_by_name": True
+    }
 
 
 # ============ Configuration Models ============
@@ -854,3 +1035,217 @@ class JiraUserTasksRequest(BaseModel):
     project_key: Optional[str] = None
     status: Optional[str] = None
     max_results: int = 50
+
+
+# ============ API Configuration Management Models ============
+class ApiConfigAuthType(str, Enum):
+    """Authentication types for API configurations"""
+    NONE = "none"
+    BASIC = "basic"
+    BEARER = "bearer"
+    API_KEY = "api_key"
+    OAUTH2 = "oauth2"
+    MTLS = "mtls"
+    CUSTOM = "custom"
+
+
+class ApiConfigCreate(BaseModel):
+    """Create a new API configuration"""
+    key: str = Field(..., description="Unique identifier for the API config")
+    name: str = Field(..., description="Display name for the API config")
+    description: Optional[str] = None
+    endpoint: str = Field(..., description="Base URL of the API")
+    method: str = Field(default="GET", description="HTTP method")
+    headers: Optional[Dict[str, str]] = None
+    params: Optional[Dict[str, Any]] = None
+    body: Optional[Dict[str, Any]] = None
+
+    # Authentication settings
+    auth_type: ApiConfigAuthType = ApiConfigAuthType.NONE
+    auth_config: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Authentication configuration (credentials, tokens, etc.)"
+    )
+
+    # SSL/TLS settings
+    ssl_verify: bool = True
+    ssl_cert_gcs_path: Optional[str] = Field(
+        default=None,
+        description="GCS path to client certificate"
+    )
+    ssl_key_gcs_path: Optional[str] = Field(
+        default=None,
+        description="GCS path to client key"
+    )
+    ssl_ca_gcs_path: Optional[str] = Field(
+        default=None,
+        description="GCS path to CA certificate"
+    )
+
+    # Request settings
+    timeout: int = Field(default=30, description="Request timeout in seconds")
+    retry_count: int = Field(default=0, description="Number of retries on failure")
+    retry_delay: int = Field(default=1, description="Delay between retries in seconds")
+
+    # Response handling
+    response_path: Optional[str] = Field(
+        default=None,
+        description="JSONPath to extract data from response"
+    )
+    response_mapping: Optional[Dict[str, str]] = None
+
+    # Proxy settings
+    use_proxy: bool = False
+    proxy_url: Optional[str] = None
+
+    # Health check / ping settings
+    ping_endpoint: Optional[str] = Field(
+        default=None,
+        description="Endpoint to test connectivity (defaults to base endpoint)"
+    )
+    ping_method: str = "GET"
+    ping_expected_status: int = 200
+    ping_timeout: int = 5
+
+    # Caching
+    cache_enabled: bool = False
+    cache_ttl: int = Field(default=300, description="Cache TTL in seconds")
+
+    # Status
+    status: str = "active"
+
+    # Tags for categorization
+    tags: List[str] = []
+
+    model_config = {"extra": "allow"}
+
+
+class ApiConfigUpdate(BaseModel):
+    """Update an existing API configuration"""
+    name: Optional[str] = None
+    description: Optional[str] = None
+    endpoint: Optional[str] = None
+    method: Optional[str] = None
+    headers: Optional[Dict[str, str]] = None
+    params: Optional[Dict[str, Any]] = None
+    body: Optional[Dict[str, Any]] = None
+
+    auth_type: Optional[ApiConfigAuthType] = None
+    auth_config: Optional[Dict[str, Any]] = None
+
+    ssl_verify: Optional[bool] = None
+    ssl_cert_gcs_path: Optional[str] = None
+    ssl_key_gcs_path: Optional[str] = None
+    ssl_ca_gcs_path: Optional[str] = None
+
+    timeout: Optional[int] = None
+    retry_count: Optional[int] = None
+    retry_delay: Optional[int] = None
+
+    response_path: Optional[str] = None
+    response_mapping: Optional[Dict[str, str]] = None
+
+    use_proxy: Optional[bool] = None
+    proxy_url: Optional[str] = None
+
+    ping_endpoint: Optional[str] = None
+    ping_method: Optional[str] = None
+    ping_expected_status: Optional[int] = None
+    ping_timeout: Optional[int] = None
+
+    cache_enabled: Optional[bool] = None
+    cache_ttl: Optional[int] = None
+
+    status: Optional[str] = None
+    tags: Optional[List[str]] = None
+
+    model_config = {"extra": "allow"}
+
+
+class ApiConfigInDB(BaseModel):
+    """API configuration as stored in database"""
+    id: Optional[str] = Field(None, alias="_id")
+    key: str
+    name: str
+    description: Optional[str] = None
+    endpoint: str
+    method: str = "GET"
+    headers: Optional[Dict[str, str]] = None
+    params: Optional[Dict[str, Any]] = None
+    body: Optional[Dict[str, Any]] = None
+
+    auth_type: str = "none"
+    auth_config: Optional[Dict[str, Any]] = None
+
+    ssl_verify: bool = True
+    ssl_cert_gcs_path: Optional[str] = None
+    ssl_key_gcs_path: Optional[str] = None
+    ssl_ca_gcs_path: Optional[str] = None
+
+    timeout: int = 30
+    retry_count: int = 0
+    retry_delay: int = 1
+
+    response_path: Optional[str] = None
+    response_mapping: Optional[Dict[str, str]] = None
+
+    use_proxy: bool = False
+    proxy_url: Optional[str] = None
+
+    ping_endpoint: Optional[str] = None
+    ping_method: str = "GET"
+    ping_expected_status: int = 200
+    ping_timeout: int = 5
+
+    cache_enabled: bool = False
+    cache_ttl: int = 300
+
+    status: str = "active"
+    tags: List[str] = []
+
+    created_at: Optional[datetime] = None
+    created_by: Optional[str] = None
+    updated_at: Optional[datetime] = None
+    updated_by: Optional[str] = None
+
+    model_config = {"extra": "allow", "populate_by_name": True}
+
+
+class ApiConfigTestRequest(BaseModel):
+    """Request to test an API configuration"""
+    config_id: Optional[str] = Field(
+        default=None,
+        description="ID of existing config to test"
+    )
+    config: Optional[ApiConfigCreate] = Field(
+        default=None,
+        description="Inline config to test (if config_id not provided)"
+    )
+    test_params: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Override params for testing"
+    )
+    test_body: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Override body for testing"
+    )
+
+
+class ApiConfigTestResponse(BaseModel):
+    """Response from testing an API configuration"""
+    success: bool
+    status_code: Optional[int] = None
+    response_time_ms: Optional[float] = None
+    response_headers: Optional[Dict[str, str]] = None
+    response_body: Optional[Any] = None
+    error: Optional[str] = None
+    ssl_info: Optional[Dict[str, Any]] = None
+
+
+class ApiConfigCertUploadResponse(BaseModel):
+    """Response from uploading a certificate"""
+    gcs_path: str
+    file_name: str
+    cert_type: str
+    uploaded_at: str
+    expires_at: Optional[str] = None

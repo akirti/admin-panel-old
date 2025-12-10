@@ -517,6 +517,26 @@ export const scenarioRequestAPI = {
   })
 };
 
+// API Configurations API
+export const apiConfigsAPI = {
+  list: (params = {}) => api.get('/api-configs', { params }),
+  count: (params = {}) => api.get('/api-configs/count', { params }),
+  getTags: () => api.get('/api-configs/tags'),
+  get: (id) => api.get(`/api-configs/${id}`),
+  getByKey: (key) => api.get(`/api-configs/key/${key}`),
+  create: (data) => api.post('/api-configs', data),
+  update: (id, data) => api.put(`/api-configs/${id}`, data),
+  delete: (id) => api.delete(`/api-configs/${id}`),
+  toggleStatus: (id) => api.post(`/api-configs/${id}/toggle-status`),
+  test: (data) => api.post('/api-configs/test', data),
+  testById: (id, params = {}) => api.post(`/api-configs/${id}/test`, params),
+  uploadCert: (id, formData) =>
+    api.post(`/api-configs/${id}/upload-cert`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  getGCSStatus: () => api.get('/api-configs/gcs/status'),
+};
+
 // Jira API
 export const jiraAPI = {
   // Connection status
