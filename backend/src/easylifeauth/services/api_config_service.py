@@ -7,7 +7,7 @@ import ssl
 import tempfile
 import time
 from datetime import datetime, timezone
-from typing import Optional, Dict, Any, List, Tuple
+from typing import Optional, Dict, Any, List, Tuple, Union
 import logging
 import httpx
 from cryptography import x509
@@ -284,6 +284,189 @@ class ApiConfigService:
 
         return None
 
+    def _extract_token_from_response(
+        self,
+        response_data: Any,
+        token_path: str
+    ) -> Optional[str]:
+        """
+        Extract token from response using a simple path notation.
+        Supports nested keys like 'data.access_token' or 'result.token'.
+        """
+        if not token_path:
+            return None
+
+        try:
+            keys = token_path.split(".")
+            value = response_data
+            for key in keys:
+                if isinstance(value, dict):
+                    value = value.get(key)
+                else:
+                    return None
+            return str(value) if value else None
+        except Exception as e:
+            logger.error(f"Failed to extract token from path '{token_path}': {e}")
+            return None
+
+    async def _obtain_login_token(
+        self,
+        auth_config: Dict[str, Any],
+        ssl_context: Any,
+        proxy_url: Optional[str],
+        base_timeout: int
+    ) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Obtain a bearer token by calling a login endpoint.
+
+        Auth config should contain:
+        - login_endpoint: URL to call for login
+        - login_method: HTTP method (default POST)
+        - username_field: Field name for username in request body (default 'email')
+        - password_field: Field name for password in request body (default 'password')
+        - username: The username/email to login with
+        - password: The password to login with
+        - extra_body: Optional extra fields to include in login body
+        - token_response_path: Path to extract token from response (default 'access_token')
+        - token_type: Token prefix (default 'Bearer')
+
+        Returns:
+            Tuple of (token, error_message)
+        """
+        login_endpoint = auth_config.get("login_endpoint")
+        if not login_endpoint:
+            return None, "login_endpoint is required for login_token auth"
+
+        login_method = auth_config.get("login_method", "POST")
+        username_field = auth_config.get("username_field", "email")
+        password_field = auth_config.get("password_field", "password")
+        username = auth_config.get("username", "")
+        password = auth_config.get("password", "")
+        extra_body = auth_config.get("extra_body", {})
+        token_path = auth_config.get("token_response_path", "access_token")
+
+        # Build login request body
+        login_body = {
+            username_field: username,
+            password_field: password,
+            **extra_body
+        }
+
+        try:
+            async with httpx.AsyncClient(
+                verify=ssl_context if ssl_context else True,
+                proxy=proxy_url,
+                timeout=base_timeout
+            ) as client:
+                response = await client.request(
+                    method=login_method,
+                    url=login_endpoint,
+                    json=login_body,
+                    headers={"Content-Type": "application/json"}
+                )
+
+                if response.status_code >= 400:
+                    return None, f"Login failed with status {response.status_code}: {response.text[:200]}"
+
+                try:
+                    response_data = response.json()
+                except Exception:
+                    return None, "Login response is not valid JSON"
+
+                token = self._extract_token_from_response(response_data, token_path)
+                if not token:
+                    return None, f"Could not extract token from response using path '{token_path}'"
+
+                return token, None
+
+        except httpx.ConnectTimeout:
+            return None, "Login request timed out"
+        except httpx.ConnectError as e:
+            return None, f"Login connection error: {str(e)}"
+        except Exception as e:
+            return None, f"Login error: {str(e)}"
+
+    async def _obtain_oauth2_token(
+        self,
+        auth_config: Dict[str, Any],
+        ssl_context: Any,
+        proxy_url: Optional[str],
+        base_timeout: int
+    ) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Obtain an OAuth2 token using client credentials flow.
+
+        Auth config should contain:
+        - token_endpoint: OAuth2 token endpoint URL
+        - client_id: Client ID
+        - client_secret: Client secret
+        - scope: Optional scope string
+        - grant_type: Grant type (default 'client_credentials')
+        - audience: Optional audience
+        - extra_params: Optional extra parameters
+        - token_response_path: Path to extract token from response (default 'access_token')
+
+        Returns:
+            Tuple of (token, error_message)
+        """
+        token_endpoint = auth_config.get("token_endpoint")
+        if not token_endpoint:
+            return None, "token_endpoint is required for oauth2 auth"
+
+        client_id = auth_config.get("client_id", "")
+        client_secret = auth_config.get("client_secret", "")
+        scope = auth_config.get("scope", "")
+        grant_type = auth_config.get("grant_type", "client_credentials")
+        audience = auth_config.get("audience", "")
+        extra_params = auth_config.get("extra_params", {})
+        token_path = auth_config.get("token_response_path", "access_token")
+
+        # Build token request body (form-encoded for OAuth2)
+        token_body = {
+            "grant_type": grant_type,
+            "client_id": client_id,
+            "client_secret": client_secret,
+            **extra_params
+        }
+
+        if scope:
+            token_body["scope"] = scope
+        if audience:
+            token_body["audience"] = audience
+
+        try:
+            async with httpx.AsyncClient(
+                verify=ssl_context if ssl_context else True,
+                proxy=proxy_url,
+                timeout=base_timeout
+            ) as client:
+                response = await client.post(
+                    url=token_endpoint,
+                    data=token_body,  # OAuth2 typically uses form-encoded data
+                    headers={"Content-Type": "application/x-www-form-urlencoded"}
+                )
+
+                if response.status_code >= 400:
+                    return None, f"OAuth2 token request failed with status {response.status_code}: {response.text[:200]}"
+
+                try:
+                    response_data = response.json()
+                except Exception:
+                    return None, "OAuth2 token response is not valid JSON"
+
+                token = self._extract_token_from_response(response_data, token_path)
+                if not token:
+                    return None, f"Could not extract token from OAuth2 response using path '{token_path}'"
+
+                return token, None
+
+        except httpx.ConnectTimeout:
+            return None, "OAuth2 token request timed out"
+        except httpx.ConnectError as e:
+            return None, f"OAuth2 connection error: {str(e)}"
+        except Exception as e:
+            return None, f"OAuth2 error: {str(e)}"
+
     async def test_api(
         self,
         config: Dict[str, Any],
@@ -346,7 +529,7 @@ class ApiConfigService:
                     params = params or {}
                     params[key_name] = key_value
 
-            # Build SSL context
+            # Build SSL context (needed before obtaining tokens for login_token and oauth2)
             ssl_context = None
             verify = config.get("ssl_verify", True)
 
@@ -371,6 +554,42 @@ class ApiConfigService:
             proxy_url = None
             if config.get("use_proxy") and config.get("proxy_url"):
                 proxy_url = config["proxy_url"]
+
+            # Handle login_token auth - get token by calling login endpoint
+            if auth_type == "login_token":
+                token, auth_error = await self._obtain_login_token(
+                    auth_config,
+                    ssl_context,
+                    proxy_url,
+                    timeout
+                )
+                if auth_error:
+                    result["error"] = f"Login auth error: {auth_error}"
+                    result["auth_error"] = True
+                    result["response_time_ms"] = round((time.time() - start_time) * 1000, 2)
+                    return result
+
+                token_type = auth_config.get("token_type", "Bearer")
+                header_name = auth_config.get("token_header_name", "Authorization")
+                headers[header_name] = f"{token_type} {token}" if token_type else token
+
+            # Handle OAuth2 client credentials flow
+            elif auth_type == "oauth2":
+                token, auth_error = await self._obtain_oauth2_token(
+                    auth_config,
+                    ssl_context,
+                    proxy_url,
+                    timeout
+                )
+                if auth_error:
+                    result["error"] = f"OAuth2 auth error: {auth_error}"
+                    result["auth_error"] = True
+                    result["response_time_ms"] = round((time.time() - start_time) * 1000, 2)
+                    return result
+
+                token_type = auth_config.get("token_type", "Bearer")
+                header_name = auth_config.get("token_header_name", "Authorization")
+                headers[header_name] = f"{token_type} {token}" if token_type else token
 
             # Make request
             async with httpx.AsyncClient(

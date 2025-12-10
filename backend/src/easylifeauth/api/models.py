@@ -1044,9 +1044,59 @@ class ApiConfigAuthType(str, Enum):
     BASIC = "basic"
     BEARER = "bearer"
     API_KEY = "api_key"
-    OAUTH2 = "oauth2"
+    OAUTH2 = "oauth2"  # OAuth2 client credentials flow
+    LOGIN_TOKEN = "login_token"  # Login endpoint to get bearer token
     MTLS = "mtls"
     CUSTOM = "custom"
+
+
+# Auth config schemas for different auth types:
+#
+# 1. LOGIN_TOKEN - Login to get Bearer token:
+#    auth_config = {
+#        "login_endpoint": "https://api.example.com/auth/login",
+#        "login_method": "POST",
+#        "username_field": "email",          # Field name in request body
+#        "password_field": "password",       # Field name in request body
+#        "username": "user@example.com",
+#        "password": "secret",
+#        "extra_body": {},                   # Optional extra fields in login body
+#        "token_response_path": "access_token",  # JSONPath to extract token from response
+#        "token_type": "Bearer",             # Token prefix (Bearer, Token, etc.)
+#        "token_header_name": "Authorization", # Header name for token
+#    }
+#
+# 2. OAUTH2 - OAuth2 Client Credentials Flow:
+#    auth_config = {
+#        "token_endpoint": "https://auth.example.com/oauth/token",
+#        "client_id": "my-client-id",
+#        "client_secret": "my-client-secret",
+#        "scope": "read write",              # Optional scope
+#        "grant_type": "client_credentials", # Default
+#        "audience": "",                     # Optional audience
+#        "extra_params": {},                 # Optional extra params
+#        "token_response_path": "access_token",
+#        "token_type": "Bearer",
+#        "token_header_name": "Authorization",
+#    }
+#
+# 3. BASIC - Basic Auth:
+#    auth_config = {
+#        "username": "user",
+#        "password": "pass"
+#    }
+#
+# 4. BEARER - Static Bearer Token:
+#    auth_config = {
+#        "token": "my-static-token"
+#    }
+#
+# 5. API_KEY - API Key:
+#    auth_config = {
+#        "key_name": "X-API-Key",
+#        "key_value": "my-api-key",
+#        "key_location": "header"  # header, query
+#    }
 
 
 class ApiConfigCreate(BaseModel):

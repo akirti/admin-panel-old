@@ -8,10 +8,51 @@ const AUTH_TYPES = [
   { value: 'basic', label: 'Basic Auth' },
   { value: 'bearer', label: 'Bearer Token' },
   { value: 'api_key', label: 'API Key' },
-  { value: 'oauth2', label: 'OAuth2' },
+  { value: 'login_token', label: 'Login Token' },
+  { value: 'oauth2', label: 'OAuth2 Client Credentials' },
   { value: 'mtls', label: 'mTLS' },
   { value: 'custom', label: 'Custom' },
 ];
+
+// Helper to get auth config template for each auth type
+const getAuthConfigTemplate = (authType) => {
+  switch (authType) {
+    case 'basic':
+      return { username: '', password: '' };
+    case 'bearer':
+      return { token: '' };
+    case 'api_key':
+      return { key_name: 'X-API-Key', key_value: '', key_location: 'header' };
+    case 'login_token':
+      return {
+        login_endpoint: '',
+        login_method: 'POST',
+        username_field: 'email',
+        password_field: 'password',
+        username: '',
+        password: '',
+        extra_body: {},
+        token_response_path: 'access_token',
+        token_type: 'Bearer',
+        token_header_name: 'Authorization',
+      };
+    case 'oauth2':
+      return {
+        token_endpoint: '',
+        client_id: '',
+        client_secret: '',
+        scope: '',
+        grant_type: 'client_credentials',
+        audience: '',
+        extra_params: {},
+        token_response_path: 'access_token',
+        token_type: 'Bearer',
+        token_header_name: 'Authorization',
+      };
+    default:
+      return {};
+  }
+};
 
 const HTTP_METHODS = [
   { value: 'GET', label: 'GET' },
@@ -595,8 +636,216 @@ const ApiConfigsManagement = () => {
             />
           )}
 
-          {/* Auth Config JSON */}
-          {formData.auth_type !== 'none' && (
+          {/* Auth Config - Login Token */}
+          {formData.auth_type === 'login_token' && (
+            <div className="p-4 bg-blue-50 rounded-lg space-y-4">
+              <h4 className="text-sm font-medium text-blue-800 mb-2">Login Token Configuration</h4>
+              <p className="text-xs text-blue-600 mb-3">
+                System will call the login endpoint to obtain a bearer token, then use it for the main API call.
+              </p>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-2">
+                  <Input
+                    label="Login Endpoint URL"
+                    value={JSON.parse(authConfigJson || '{}').login_endpoint || ''}
+                    onChange={(e) => {
+                      const config = JSON.parse(authConfigJson || '{}');
+                      config.login_endpoint = e.target.value;
+                      setAuthConfigJson(JSON.stringify(config, null, 2));
+                    }}
+                    placeholder="https://api.example.com/auth/login"
+                  />
+                </div>
+                <Select
+                  label="Login Method"
+                  value={JSON.parse(authConfigJson || '{}').login_method || 'POST'}
+                  onChange={(e) => {
+                    const config = JSON.parse(authConfigJson || '{}');
+                    config.login_method = e.target.value;
+                    setAuthConfigJson(JSON.stringify(config, null, 2));
+                  }}
+                  options={HTTP_METHODS}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Username Field Name"
+                  value={JSON.parse(authConfigJson || '{}').username_field || 'email'}
+                  onChange={(e) => {
+                    const config = JSON.parse(authConfigJson || '{}');
+                    config.username_field = e.target.value;
+                    setAuthConfigJson(JSON.stringify(config, null, 2));
+                  }}
+                  placeholder="email"
+                />
+                <Input
+                  label="Password Field Name"
+                  value={JSON.parse(authConfigJson || '{}').password_field || 'password'}
+                  onChange={(e) => {
+                    const config = JSON.parse(authConfigJson || '{}');
+                    config.password_field = e.target.value;
+                    setAuthConfigJson(JSON.stringify(config, null, 2));
+                  }}
+                  placeholder="password"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Username/Email"
+                  value={JSON.parse(authConfigJson || '{}').username || ''}
+                  onChange={(e) => {
+                    const config = JSON.parse(authConfigJson || '{}');
+                    config.username = e.target.value;
+                    setAuthConfigJson(JSON.stringify(config, null, 2));
+                  }}
+                  placeholder="user@example.com"
+                />
+                <Input
+                  label="Password"
+                  type="password"
+                  value={JSON.parse(authConfigJson || '{}').password || ''}
+                  onChange={(e) => {
+                    const config = JSON.parse(authConfigJson || '{}');
+                    config.password = e.target.value;
+                    setAuthConfigJson(JSON.stringify(config, null, 2));
+                  }}
+                  placeholder="••••••••"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <Input
+                  label="Token Response Path"
+                  value={JSON.parse(authConfigJson || '{}').token_response_path || 'access_token'}
+                  onChange={(e) => {
+                    const config = JSON.parse(authConfigJson || '{}');
+                    config.token_response_path = e.target.value;
+                    setAuthConfigJson(JSON.stringify(config, null, 2));
+                  }}
+                  placeholder="access_token or data.token"
+                />
+                <Input
+                  label="Token Type (Prefix)"
+                  value={JSON.parse(authConfigJson || '{}').token_type || 'Bearer'}
+                  onChange={(e) => {
+                    const config = JSON.parse(authConfigJson || '{}');
+                    config.token_type = e.target.value;
+                    setAuthConfigJson(JSON.stringify(config, null, 2));
+                  }}
+                  placeholder="Bearer"
+                />
+                <Input
+                  label="Token Header Name"
+                  value={JSON.parse(authConfigJson || '{}').token_header_name || 'Authorization'}
+                  onChange={(e) => {
+                    const config = JSON.parse(authConfigJson || '{}');
+                    config.token_header_name = e.target.value;
+                    setAuthConfigJson(JSON.stringify(config, null, 2));
+                  }}
+                  placeholder="Authorization"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Auth Config - OAuth2 Client Credentials */}
+          {formData.auth_type === 'oauth2' && (
+            <div className="p-4 bg-purple-50 rounded-lg space-y-4">
+              <h4 className="text-sm font-medium text-purple-800 mb-2">OAuth2 Client Credentials Configuration</h4>
+              <p className="text-xs text-purple-600 mb-3">
+                System will obtain an OAuth2 token using client credentials flow, then use it for the main API call.
+              </p>
+              <Input
+                label="Token Endpoint URL"
+                value={JSON.parse(authConfigJson || '{}').token_endpoint || ''}
+                onChange={(e) => {
+                  const config = JSON.parse(authConfigJson || '{}');
+                  config.token_endpoint = e.target.value;
+                  setAuthConfigJson(JSON.stringify(config, null, 2));
+                }}
+                placeholder="https://auth.example.com/oauth/token"
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Client ID"
+                  value={JSON.parse(authConfigJson || '{}').client_id || ''}
+                  onChange={(e) => {
+                    const config = JSON.parse(authConfigJson || '{}');
+                    config.client_id = e.target.value;
+                    setAuthConfigJson(JSON.stringify(config, null, 2));
+                  }}
+                  placeholder="my-client-id"
+                />
+                <Input
+                  label="Client Secret"
+                  type="password"
+                  value={JSON.parse(authConfigJson || '{}').client_secret || ''}
+                  onChange={(e) => {
+                    const config = JSON.parse(authConfigJson || '{}');
+                    config.client_secret = e.target.value;
+                    setAuthConfigJson(JSON.stringify(config, null, 2));
+                  }}
+                  placeholder="••••••••"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Scope (optional)"
+                  value={JSON.parse(authConfigJson || '{}').scope || ''}
+                  onChange={(e) => {
+                    const config = JSON.parse(authConfigJson || '{}');
+                    config.scope = e.target.value;
+                    setAuthConfigJson(JSON.stringify(config, null, 2));
+                  }}
+                  placeholder="read write"
+                />
+                <Input
+                  label="Audience (optional)"
+                  value={JSON.parse(authConfigJson || '{}').audience || ''}
+                  onChange={(e) => {
+                    const config = JSON.parse(authConfigJson || '{}');
+                    config.audience = e.target.value;
+                    setAuthConfigJson(JSON.stringify(config, null, 2));
+                  }}
+                  placeholder="https://api.example.com"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <Input
+                  label="Token Response Path"
+                  value={JSON.parse(authConfigJson || '{}').token_response_path || 'access_token'}
+                  onChange={(e) => {
+                    const config = JSON.parse(authConfigJson || '{}');
+                    config.token_response_path = e.target.value;
+                    setAuthConfigJson(JSON.stringify(config, null, 2));
+                  }}
+                  placeholder="access_token"
+                />
+                <Input
+                  label="Token Type (Prefix)"
+                  value={JSON.parse(authConfigJson || '{}').token_type || 'Bearer'}
+                  onChange={(e) => {
+                    const config = JSON.parse(authConfigJson || '{}');
+                    config.token_type = e.target.value;
+                    setAuthConfigJson(JSON.stringify(config, null, 2));
+                  }}
+                  placeholder="Bearer"
+                />
+                <Input
+                  label="Token Header Name"
+                  value={JSON.parse(authConfigJson || '{}').token_header_name || 'Authorization'}
+                  onChange={(e) => {
+                    const config = JSON.parse(authConfigJson || '{}');
+                    config.token_header_name = e.target.value;
+                    setAuthConfigJson(JSON.stringify(config, null, 2));
+                  }}
+                  placeholder="Authorization"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Auth Config JSON - For basic, bearer, api_key, mtls, custom */}
+          {formData.auth_type !== 'none' && formData.auth_type !== 'login_token' && formData.auth_type !== 'oauth2' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Auth Configuration JSON
