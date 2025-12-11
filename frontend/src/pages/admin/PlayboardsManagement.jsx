@@ -109,6 +109,9 @@ const PlayboardsManagement = () => {
   // Row action filter input state
   const [actionFilterInput, setActionFilterInput] = useState({ inputKey: '', dataKey: '' });
 
+  // Row action editing state
+  const [editingRowActionIndex, setEditingRowActionIndex] = useState(null);
+
   // Description builder state
   const [currentDescription, setCurrentDescription] = useState({
     index: 0,
@@ -600,40 +603,7 @@ const PlayboardsManagement = () => {
   };
 
   // Row action management
-  const addRowAction = () => {
-    // Ensure the nested structure exists
-    const currentEvents = formData.widgets?.grid?.actions?.rowActions?.events || [];
-    const currentRowActions = formData.widgets?.grid?.actions?.rowActions || { renderAs: 'button', attributes: [], events: [] };
-    const currentActions = formData.widgets?.grid?.actions || { rowActions: currentRowActions, headerActions: {} };
-    const currentGrid = formData.widgets?.grid || { actions: currentActions, layout: { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 } };
-
-    const newAction = {
-      key: currentRowAction.key,
-      name: currentRowAction.name,
-      path: currentRowAction.path,
-      dataDomain: currentRowAction.dataDomain,
-      status: currentRowAction.status,
-      order: currentEvents.length,
-      filters: currentRowAction.filters
-    };
-
-    setFormData({
-      ...formData,
-      widgets: {
-        ...formData.widgets,
-        grid: {
-          ...currentGrid,
-          actions: {
-            ...currentActions,
-            rowActions: {
-              ...currentRowActions,
-              events: [...currentEvents, newAction]
-            }
-          }
-        }
-      }
-    });
-
+  const resetCurrentRowAction = () => {
     setCurrentRowAction({
       key: '',
       name: '',
@@ -643,12 +613,90 @@ const PlayboardsManagement = () => {
       order: 0,
       filters: []
     });
+    setEditingRowActionIndex(null);
+    setActionFilterInput({ inputKey: '', dataKey: '' });
+  };
+
+  const addRowAction = () => {
+    // Ensure the nested structure exists
+    const currentEvents = formData.widgets?.grid?.actions?.rowActions?.events || [];
+    const currentRowActionsObj = formData.widgets?.grid?.actions?.rowActions || { renderAs: 'button', attributes: [], events: [] };
+    const currentActions = formData.widgets?.grid?.actions || { rowActions: currentRowActionsObj, headerActions: {} };
+    const currentGrid = formData.widgets?.grid || { actions: currentActions, layout: { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 } };
+
+    const newAction = {
+      key: currentRowAction.key,
+      name: currentRowAction.name,
+      path: currentRowAction.path,
+      dataDomain: currentRowAction.dataDomain,
+      status: currentRowAction.status,
+      order: editingRowActionIndex !== null ? editingRowActionIndex : currentEvents.length,
+      filters: currentRowAction.filters
+    };
+
+    if (editingRowActionIndex !== null) {
+      // Update existing action
+      const newEvents = [...currentEvents];
+      newEvents[editingRowActionIndex] = newAction;
+      setFormData({
+        ...formData,
+        widgets: {
+          ...formData.widgets,
+          grid: {
+            ...currentGrid,
+            actions: {
+              ...currentActions,
+              rowActions: {
+                ...currentRowActionsObj,
+                events: newEvents
+              }
+            }
+          }
+        }
+      });
+    } else {
+      // Add new action
+      setFormData({
+        ...formData,
+        widgets: {
+          ...formData.widgets,
+          grid: {
+            ...currentGrid,
+            actions: {
+              ...currentActions,
+              rowActions: {
+                ...currentRowActionsObj,
+                events: [...currentEvents, newAction]
+              }
+            }
+          }
+        }
+      });
+    }
+
+    resetCurrentRowAction();
+  };
+
+  const editRowAction = (index) => {
+    const action = formData.widgets?.grid?.actions?.rowActions?.events?.[index];
+    if (!action) return;
+
+    setCurrentRowAction({
+      key: action.key || '',
+      name: action.name || '',
+      path: action.path || '',
+      dataDomain: action.dataDomain || '',
+      status: action.status || 'active',
+      order: action.order || index,
+      filters: action.filters || []
+    });
+    setEditingRowActionIndex(index);
   };
 
   const removeRowAction = (index) => {
     const currentEvents = formData.widgets?.grid?.actions?.rowActions?.events || [];
-    const currentRowActions = formData.widgets?.grid?.actions?.rowActions || { renderAs: 'button', attributes: [], events: [] };
-    const currentActions = formData.widgets?.grid?.actions || { rowActions: currentRowActions, headerActions: {} };
+    const currentRowActionsObj = formData.widgets?.grid?.actions?.rowActions || { renderAs: 'button', attributes: [], events: [] };
+    const currentActions = formData.widgets?.grid?.actions || { rowActions: currentRowActionsObj, headerActions: {} };
     const currentGrid = formData.widgets?.grid || { actions: currentActions, layout: { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 } };
 
     const newEvents = currentEvents.filter((_, i) => i !== index);
@@ -661,13 +709,18 @@ const PlayboardsManagement = () => {
           actions: {
             ...currentActions,
             rowActions: {
-              ...currentRowActions,
+              ...currentRowActionsObj,
               events: newEvents.map((e, i) => ({ ...e, order: i }))
             }
           }
         }
       }
     });
+
+    // If we were editing this action, reset
+    if (editingRowActionIndex === index) {
+      resetCurrentRowAction();
+    }
   };
 
   // Action filter management
@@ -1296,11 +1349,14 @@ const PlayboardsManagement = () => {
                 <div className="bg-gray-50 rounded-lg p-4 mb-4">
                   <h4 className="font-medium text-gray-900 mb-2">Configured Row Actions ({formData.widgets?.grid?.actions?.rowActions?.events?.length || 0})</h4>
                   <div className="space-y-2">
-                    {(formData.widgets?.grid?.actions?.rowActions?.events || []).map((action, idx) => (
-                      <div key={idx} className="bg-white p-3 rounded border">
+                    {(formData.widgets?.grid?.actions?.rowActions?.events || []).map((action, idx) => {
+                      const isEditing = editingRowActionIndex === idx;
+                      return (
+                      <div key={idx} className={`bg-white p-3 rounded border ${isEditing ? 'ring-2 ring-blue-500' : ''}`}>
                         <div className="flex items-center justify-between">
                           <div>
                             <span className="font-medium">{action.name}</span>
+                            <span className="text-gray-500 text-sm ml-2">({action.key})</span>
                             <span className="text-gray-500 text-sm ml-2">-&gt; {action.path}</span>
                             <Badge variant={action.status === 'active' ? 'success' : 'danger'} className="ml-2">
                               {action.status === 'active' ? 'Active' : 'Inactive'}
@@ -1308,16 +1364,32 @@ const PlayboardsManagement = () => {
                             {action.filters && action.filters.length > 0 && (
                               <Badge variant="primary" className="ml-2">{action.filters.length} filters</Badge>
                             )}
+                            {isEditing && (
+                              <Badge variant="warning" className="ml-2">Editing</Badge>
+                            )}
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => removeRowAction(idx)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              type="button"
+                              onClick={() => editRowAction(idx)}
+                              className="text-blue-500 hover:text-blue-700"
+                              title="Edit"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeRowAction(idx)}
+                              className="text-red-500 hover:text-red-700"
+                              title="Delete"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
                         </div>
                         {action.filters && action.filters.length > 0 && (
                           <div className="mt-2 pt-2 border-t text-xs text-gray-500">
@@ -1329,14 +1401,17 @@ const PlayboardsManagement = () => {
                           </div>
                         )}
                       </div>
-                    ))}
+                    );
+                    })}
                   </div>
                 </div>
               )}
 
-              {/* Add New Action */}
-              <div className="border rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 mb-3">Add New Row Action</h4>
+              {/* Add/Edit Action */}
+              <div className={`border rounded-lg p-4 ${editingRowActionIndex !== null ? 'border-blue-500 bg-blue-50' : ''}`}>
+                <h4 className="font-medium text-gray-900 mb-3">
+                  {editingRowActionIndex !== null ? `Edit Row Action: ${currentRowAction.name}` : 'Add New Row Action'}
+                </h4>
                 <div className="grid grid-cols-2 gap-4">
                   <Input
                     label="Key"
@@ -1416,15 +1491,25 @@ const PlayboardsManagement = () => {
                   )}
                 </div>
 
-                <Button
-                  type="button"
-                  onClick={addRowAction}
-                  variant="secondary"
-                  className="mt-4"
-                  disabled={!currentRowAction.key || !currentRowAction.name}
-                >
-                  Add Row Action
-                </Button>
+                <div className="flex space-x-2 mt-4">
+                  <Button
+                    type="button"
+                    onClick={addRowAction}
+                    variant={editingRowActionIndex !== null ? 'primary' : 'secondary'}
+                    disabled={!currentRowAction.key || !currentRowAction.name}
+                  >
+                    {editingRowActionIndex !== null ? 'Update Row Action' : 'Add Row Action'}
+                  </Button>
+                  {editingRowActionIndex !== null && (
+                    <Button
+                      type="button"
+                      onClick={resetCurrentRowAction}
+                      variant="secondary"
+                    >
+                      Cancel Edit
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           )}
