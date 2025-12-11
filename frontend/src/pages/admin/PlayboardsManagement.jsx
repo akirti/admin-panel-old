@@ -1593,6 +1593,141 @@ const PlayboardsManagement = () => {
                 }}
                 label="Enable Pagination"
               />
+
+              {/* Pagination Widget Settings */}
+              <div className="border-t pt-4 mt-4">
+                <h4 className="font-medium text-gray-900 mb-3">Pagination Widget</h4>
+                {(() => {
+                  const paginationItem = formData.widgets?.pagination?.[0] || {
+                    name: 'pagination_limit',
+                    dataKey: 'pagination_limit',
+                    displayName: 'Pagination',
+                    index: 0,
+                    visible: true,
+                    attributes: []
+                  };
+
+                  const getAttrValue = (attrName) => {
+                    const attr = paginationItem.attributes?.find(a => (a.name === attrName || a.key === attrName));
+                    return attr?.value || '';
+                  };
+
+                  const updatePaginationAttr = (attrName, value) => {
+                    const currentAttrs = paginationItem.attributes || [];
+                    const existingIdx = currentAttrs.findIndex(a => (a.name === attrName || a.key === attrName));
+                    let newAttrs;
+                    if (existingIdx >= 0) {
+                      newAttrs = [...currentAttrs];
+                      newAttrs[existingIdx] = { name: attrName, key: attrName, value };
+                    } else {
+                      newAttrs = [...currentAttrs, { name: attrName, key: attrName, value }];
+                    }
+
+                    const newPaginationItem = { ...paginationItem, attributes: newAttrs };
+                    setFormData({
+                      ...formData,
+                      widgets: {
+                        ...formData.widgets,
+                        pagination: [newPaginationItem]
+                      }
+                    });
+                  };
+
+                  const updatePaginationField = (field, value) => {
+                    const newPaginationItem = { ...paginationItem, [field]: value };
+                    setFormData({
+                      ...formData,
+                      widgets: {
+                        ...formData.widgets,
+                        pagination: [newPaginationItem]
+                      }
+                    });
+                  };
+
+                  return (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-3 gap-4">
+                        <Input
+                          label="Name"
+                          value={paginationItem.name || ''}
+                          onChange={(e) => updatePaginationField('name', e.target.value)}
+                          placeholder="pagination_limit"
+                        />
+                        <Input
+                          label="Data Key"
+                          value={paginationItem.dataKey || ''}
+                          onChange={(e) => updatePaginationField('dataKey', e.target.value)}
+                          placeholder="pagination_limit"
+                        />
+                        <Input
+                          label="Display Name"
+                          value={paginationItem.displayName || ''}
+                          onChange={(e) => updatePaginationField('displayName', e.target.value)}
+                          placeholder="Pagination"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <Select
+                          label="Type"
+                          value={getAttrValue('type') || 'dropdown'}
+                          onChange={(e) => updatePaginationAttr('type', e.target.value)}
+                          options={[
+                            { value: 'dropdown', label: 'Dropdown' },
+                            { value: 'input', label: 'Input' },
+                            { value: 'buttons', label: 'Buttons' }
+                          ]}
+                        />
+                        <Input
+                          label="Width"
+                          value={getAttrValue('width') || ''}
+                          onChange={(e) => updatePaginationAttr('width', e.target.value)}
+                          placeholder="10em"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input
+                          label="Options (comma-separated)"
+                          value={getAttrValue('options') || ''}
+                          onChange={(e) => updatePaginationAttr('options', e.target.value)}
+                          placeholder="25,50,75,100"
+                        />
+                        <Input
+                          label="Default Value"
+                          value={getAttrValue('defaultValue') || ''}
+                          onChange={(e) => updatePaginationAttr('defaultValue', e.target.value)}
+                          placeholder="25"
+                        />
+                      </div>
+
+                      <Toggle
+                        enabled={paginationItem.visible !== false}
+                        onChange={(val) => updatePaginationField('visible', val)}
+                        label="Visible"
+                      />
+
+                      {/* Show all pagination attributes */}
+                      {paginationItem.attributes && paginationItem.attributes.length > 0 && (
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">All Attributes</label>
+                          <div className="bg-gray-50 rounded p-2 max-h-32 overflow-y-auto space-y-1">
+                            {paginationItem.attributes.map((attr, idx) => (
+                              <div key={idx} className="flex items-center justify-between bg-white p-2 rounded border text-sm">
+                                <span>
+                                  <span className="font-medium text-gray-700">{attr.name || attr.key}</span>
+                                  <span className="mx-2">:</span>
+                                  <span className="text-gray-600">{typeof attr.value === 'object' ? JSON.stringify(attr.value) : attr.value}</span>
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
           )}
 
