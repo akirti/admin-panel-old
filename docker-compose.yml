@@ -41,6 +41,7 @@ services:
       dockerfile: Dockerfile
     container_name: easylife-backend
     restart: unless-stopped
+    stop_grace_period: 10s
     env_file:
       - ./backend/.env
     environment:
@@ -105,6 +106,7 @@ services:
       dockerfile: Dockerfile
     container_name: easylife-frontend
     restart: unless-stopped
+    stop_grace_period: 5s
     ports:
       - "${FRONTEND_PORT:-3000}:80"
     depends_on:

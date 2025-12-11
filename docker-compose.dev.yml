@@ -15,6 +15,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
+    stop_grace_period: 10s
     environment:
       MONGODB_USERNAME: ""
       MONGODB_PASSWORD: ""
@@ -22,13 +23,14 @@ services:
       CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173
     volumes:
       - ./backend:/app
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--timeout-graceful-shutdown", "5"]
 
   # Frontend with Vite dev server
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
+    stop_grace_period: 5s
     ports:
       - "3000:5173"
     environment:

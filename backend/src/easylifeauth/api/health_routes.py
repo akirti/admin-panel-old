@@ -5,9 +5,12 @@ import time
 import threading
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Query, Request, Depends
 
 import psutil
+
+from easylifeauth.api.dependencies import get_db
+from easylifeauth.db.db_manager import DatabaseManager
 
 router = APIRouter(tags=["Health"])
 
@@ -175,12 +178,50 @@ async def liveness_check():
 
 
 @router.get("/health/ready")
-async def readiness_check():
-    """Readiness probe - checks if application is ready to serve traffic"""
-    return {
-        'status': 'ready',
-        'timestamp': datetime.now(timezone.utc).isoformat()
+async def readiness_check(db: DatabaseManager = Depends(get_db)):
+    """Readiness probe - checks if application is ready to serve traffic
+
+    This endpoint verifies database connectivity and will trigger
+    reconnection if connections are stale (e.g., after system resume).
+    """
+    start_time = time.time()
+
+    # Check database connectivity with auto-reconnect
+    db_status = 'unknown'
+    db_message = None
+
+    if db:
+        try:
+            is_connected = await db.ensure_connected(max_retries=2)
+            if is_connected:
+                db_status = 'connected'
+            else:
+                db_status = 'disconnected'
+                db_message = 'Failed to connect after retries'
+        except Exception as e:
+            db_status = 'error'
+            db_message = str(e)
+    else:
+        db_status = 'not_configured'
+
+    # Determine overall readiness
+    is_ready = db_status in ['connected', 'not_configured']
+
+    response = {
+        'status': 'ready' if is_ready else 'not_ready',
+        'timestamp': datetime.now(timezone.utc).isoformat(),
+        'response_time_ms': round((time.time() - start_time) * 1000, 2),
+        'checks': {
+            'database': {
+                'status': db_status
+            }
+        }
     }
+
+    if db_message:
+        response['checks']['database']['message'] = db_message
+
+    return response
 
 
 @router.get("/health/metrics")

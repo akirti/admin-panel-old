@@ -41,6 +41,7 @@ from .errors.auth_error import AuthError
 from .middleware.csrf import CSRFProtectMiddleware
 from .middleware.rate_limit import RateLimitMiddleware
 from .middleware.security import SecurityHeadersMiddleware, RequestValidationMiddleware
+from .middleware.db_health import DatabaseHealthMiddleware
 
 
 def create_app(
@@ -114,11 +115,15 @@ def create_app(
             print("✓ Services initialized")
         
         yield
-        
-        # Shutdown
+
+        # Shutdown - close database connections gracefully
+        print("Shutting down application...")
         if db_manager:
-            db_manager.close()
-            print("✓ Database connection closed")
+            try:
+                db_manager.close()
+                print("✓ Database connection closed")
+            except Exception as e:
+                print(f"Warning: Error closing database connection: {e}")
     
     app = FastAPI(
         title=title,
@@ -182,6 +187,15 @@ def create_app(
         app.add_middleware(RequestValidationMiddleware,
                             max_body_size=10 * 1024 * 1024)
 
+    # Database health middleware - checks connectivity and auto-reconnects
+    # after system sleep/resume cycles
+    from .api.dependencies import get_db as get_db_dep
+    app.add_middleware(
+        DatabaseHealthMiddleware,
+        db_getter=lambda: get_db_dep() if db_config else None,
+        check_interval=60,  # Check every 60 seconds of inactivity
+        enabled=True
+    )
 
     # Exception handlers
     @app.exception_handler(AuthError)

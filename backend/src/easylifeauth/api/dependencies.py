@@ -120,6 +120,23 @@ def get_db() -> DatabaseManager:
     return _db
 
 
+async def get_db_with_reconnect() -> DatabaseManager:
+    """Get database manager with automatic reconnection check.
+
+    Use this dependency for critical endpoints (like login) that should
+    trigger reconnection if the database connection is stale after system resume.
+    """
+    if _db is None:
+        raise RuntimeError("Database not initialized")
+
+    # Ensure connection is alive, reconnect if needed
+    is_connected = await _db.ensure_connected(max_retries=2)
+    if not is_connected:
+        raise RuntimeError("Database connection failed after reconnection attempts")
+
+    return _db
+
+
 def get_token_manager() -> TokenManager:
     """Get token manager"""
     if _token_manager is None:
@@ -212,6 +229,7 @@ def get_gcs_service() -> Optional[GCSService]:
 __all__ = [
     "init_dependencies",
     "get_db",
+    "get_db_with_reconnect",
     "get_token_manager",
     "get_user_service",
     "get_admin_service",

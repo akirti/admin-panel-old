@@ -9,9 +9,10 @@ ENV PYTHONPATH=/app:/app/src
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including tini for proper signal handling
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
+    tini \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -27,5 +28,11 @@ COPY . .
 # Expose port
 EXPOSE 8000
 
-# Run with hot reload
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Use SIGTERM for graceful shutdown
+STOPSIGNAL SIGTERM
+
+# Use tini as init system for proper signal handling
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+# Run with hot reload and graceful shutdown timeout
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--timeout-graceful-shutdown", "5"]
