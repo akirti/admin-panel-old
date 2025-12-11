@@ -757,7 +757,7 @@ class PlayboardPagination(BaseModel):
     displayName: str
     enabled: bool = False
     pageSize: int = 10
-    pageSizes: List[int] = [10, 25, 50, 100]
+    pageSizes: List[int] = [10, 25, 50, 100,250,500]
     position: str = "bottom"
     index:int = 0
     attributes: Optional[list[Dict[str, Any]]] = None
@@ -780,7 +780,7 @@ class WidgetDescription(WidgetDescriptionBase):
 
 
 class FilterAttribute(BaseModel):
-    name: WidgetAttributeKeyTypes
+    key: WidgetAttributeKeyTypes
     value: Any
 
     model_config = {
@@ -860,7 +860,7 @@ class WidgetFilter(BaseModel):
     status: str = "active"
     inputHint: Optional[str] = None
     title: Optional[str] = None    
-    attributes: Optional[FilterAttribute] = None
+    attributes: Optional[list[FilterAttribute]] = None
     validators: Optional[list[dict[str,Any]]] = None
     description: Optional[list[WidgetDescription]] = None
     controls:Optional[FilterControls] = None

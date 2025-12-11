@@ -31,7 +31,7 @@ const PlayboardsManagement = () => {
     description: '',
     scenarioKey: '',
     dataDomain: '',
-    status: 'A',
+    status: 'active',
     order: 0,
     program_key: '',
     config_type: 'db',
@@ -85,8 +85,15 @@ const PlayboardsManagement = () => {
     type: 'input',
     defaultValue: '',
     regex: '',
-    options: []
+    options: [],
+    attributes: []
   });
+
+  // Filter editing state
+  const [editingFilterIndex, setEditingFilterIndex] = useState(null);
+
+  // Filter attribute input state
+  const [filterAttributeInput, setFilterAttributeInput] = useState({ name: '', value: '' });
 
   // Row action builder state
   const [currentRowAction, setCurrentRowAction] = useState({
@@ -94,7 +101,7 @@ const PlayboardsManagement = () => {
     name: '',
     path: '',
     dataDomain: '',
-    status: 'A',
+    status: 'active',
     order: 0,
     filters: []
   });
@@ -143,7 +150,7 @@ const PlayboardsManagement = () => {
       description: '',
       scenarioKey: '',
       dataDomain: '',
-      status: 'A',
+      status: 'active',
       order: 0,
       program_key: '',
       config_type: 'db',
@@ -196,7 +203,7 @@ const PlayboardsManagement = () => {
         name: formData.name,
         description: formData.description,
         scenarioKey: formData.scenarioKey,
-        status: formData.status === 'A' ? 'active' : 'inactive',
+        status: formData.status === 'active' ? 'active' : 'inactive',
         key: formData.key,
         dataDomain: formData.dataDomain,
         scenarioKey: formData.scenarioKey,
@@ -226,13 +233,12 @@ const PlayboardsManagement = () => {
         name: formData.name,
         description: formData.description,
         scenarioKey: formData.scenarioKey,
-        status: formData.status === 'A' ? 'active' : 'inactive',
+        status: formData.status === 'active' ? 'active' : 'inactive',
         key: formData.key,
         dataDomain: formData.dataDomain,
         scenarioKey: formData.scenarioKey,
         scenerioKey: formData.scenarioKey,
         order: formData.order,
-        status: formData.status,
         program_key: formData.program_key,
         config_type: formData.config_type,
         addon_configurations: formData.addon_configurations,
@@ -321,13 +327,13 @@ const PlayboardsManagement = () => {
       description: item.description || '',
       scenarioKey: item.scenarioKey || data.scenarioKey || '',
       dataDomain: item.dataDomain || data.dataDomain || '',
-      status: data.status || (item.status === 'active' ? 'A' : 'I'),
+      status: data.status || (item.status === 'active' ? 'active' : 'inactive'),
       order: item.order || data.order || 0,
-      program_key: data.program_key || '',
-      config_type: data.config_type || 'db',
-      addon_configurations: data.addon_configurations || [],
+      program_key: item.program_key || data.program_key || '',
+      config_type: item.config_type || data.config_type || 'db',
+      addon_configurations: item.addon_configurations || data.addon_configurations || [],
       widgets: widgets,
-      scenarioDescription: data.scenarioDescription || []
+      scenarioDescription: item.scenarioDescription || data.scenarioDescription || []
     });
     setModalOpen(true);
   };
@@ -406,38 +412,7 @@ const PlayboardsManagement = () => {
   };
 
   // Filter management
-  const addFilter = () => {
-    const newFilter = {
-      name: currentFilter.name,
-      dataKey: currentFilter.dataKey || currentFilter.name,
-      displayName: currentFilter.displayName,
-      index: formData.widgets.filters.length,
-      visible: currentFilter.visible,
-      status: currentFilter.status,
-      inputHint: currentFilter.inputHint,
-      title: currentFilter.title,
-      type: currentFilter.type,
-      attributes: [
-        { key: 'type', value: currentFilter.type },
-        { key: 'defaultValue', value: currentFilter.defaultValue },
-        { key: 'regex', value: currentFilter.regex }
-      ],
-      description: [],
-      validators: []
-    };
-
-    if (currentFilter.type === 'select' && currentFilter.options.length > 0) {
-      newFilter.attributes.push({ key: 'options', value: currentFilter.options });
-    }
-
-    setFormData({
-      ...formData,
-      widgets: {
-        ...formData.widgets,
-        filters: [...formData.widgets.filters, newFilter]
-      }
-    });
-
+  const resetCurrentFilter = () => {
     setCurrentFilter({
       name: '',
       dataKey: '',
@@ -450,8 +425,163 @@ const PlayboardsManagement = () => {
       type: 'input',
       defaultValue: '',
       regex: '',
-      options: []
+      options: [],
+      attributes: []
     });
+    setEditingFilterIndex(null);
+    setFilterAttributeInput({ name: '', value: '' });
+  };
+
+  // Available attribute names from WidgetAttributeKeyTypes enum
+  const attributeNameOptions = [
+    'type', 'options', 'defaultValue', 'width', 'validate', 'regex',
+    'format', 'min', 'max', 'placeholder', 'multiselect', 'clearable', 'searchable'
+  ];
+
+  const addFilterAttribute = () => {
+    if (filterAttributeInput.name && filterAttributeInput.value) {
+      // Check if name already exists
+      const existingIndex = currentFilter.attributes.findIndex(a => a.name === filterAttributeInput.name);
+      if (existingIndex >= 0) {
+        // Update existing attribute (include both name and key for backend compatibility)
+        const newAttrs = [...currentFilter.attributes];
+        newAttrs[existingIndex] = { name: filterAttributeInput.name, key: filterAttributeInput.name, value: filterAttributeInput.value };
+        setCurrentFilter({ ...currentFilter, attributes: newAttrs });
+      } else {
+        // Add new attribute (include both name and key for backend compatibility)
+        setCurrentFilter({
+          ...currentFilter,
+          attributes: [...currentFilter.attributes, { name: filterAttributeInput.name, key: filterAttributeInput.name, value: filterAttributeInput.value }]
+        });
+      }
+      setFilterAttributeInput({ name: '', value: '' });
+    }
+  };
+
+  const removeFilterAttribute = (index) => {
+    setCurrentFilter({
+      ...currentFilter,
+      attributes: currentFilter.attributes.filter((_, i) => i !== index)
+    });
+  };
+
+  const addFilter = () => {
+    // Build attributes array - start with custom attributes (ensure they have both name and key)
+    let attributes = currentFilter.attributes.map(a => ({
+      name: a.name,
+      key: a.key || a.name,
+      value: a.value
+    }));
+
+    // Update or add standard attributes (include both name and key for backend compatibility)
+    const updateOrAddAttr = (attrName, value) => {
+      const existingIdx = attributes.findIndex(a => a.name === attrName);
+      if (existingIdx >= 0) {
+        attributes[existingIdx] = { name: attrName, key: attrName, value };
+      } else if (value !== undefined && value !== '' && value !== null) {
+        attributes.push({ name: attrName, key: attrName, value });
+      }
+    };
+
+    // Always update type from the dedicated field
+    updateOrAddAttr('type', currentFilter.type);
+
+    // Update defaultValue if present in the dedicated field
+    if (currentFilter.defaultValue) {
+      updateOrAddAttr('defaultValue', currentFilter.defaultValue);
+    }
+
+    // Update regex if present in the dedicated field
+    if (currentFilter.regex) {
+      updateOrAddAttr('regex', currentFilter.regex);
+    }
+
+    // Update options for select type
+    if (currentFilter.type === 'select' && currentFilter.options.length > 0) {
+      updateOrAddAttr('options', currentFilter.options);
+    }
+
+    const newFilter = {
+      name: currentFilter.name,
+      dataKey: currentFilter.dataKey || currentFilter.name,
+      displayName: currentFilter.displayName,
+      index: editingFilterIndex !== null ? editingFilterIndex : formData.widgets.filters.length,
+      visible: currentFilter.visible,
+      status: currentFilter.status,
+      inputHint: currentFilter.inputHint,
+      title: currentFilter.title,
+      type: currentFilter.type,
+      attributes: attributes,
+      description: [],
+      validators: []
+    };
+
+    if (editingFilterIndex !== null) {
+      // Update existing filter
+      const newFilters = [...formData.widgets.filters];
+      newFilters[editingFilterIndex] = newFilter;
+      setFormData({
+        ...formData,
+        widgets: {
+          ...formData.widgets,
+          filters: newFilters
+        }
+      });
+    } else {
+      // Add new filter
+      setFormData({
+        ...formData,
+        widgets: {
+          ...formData.widgets,
+          filters: [...formData.widgets.filters, newFilter]
+        }
+      });
+    }
+
+    resetCurrentFilter();
+  };
+
+  const editFilter = (index) => {
+    const filter = formData.widgets.filters[index];
+
+    // Extract values from attributes (support both 'name' and 'key' for backwards compatibility)
+    const getAttrValue = (attrName) => {
+      if (Array.isArray(filter.attributes)) {
+        const attr = filter.attributes.find(a => (a.name === attrName || a.key === attrName));
+        return attr?.value || '';
+      }
+      return '';
+    };
+
+    const filterType = filter.type || getAttrValue('type') || 'input';
+    const options = getAttrValue('options');
+
+    // Get ALL attributes and map them properly (include both name and key)
+    // Show all attributes in the custom attributes section for visibility
+    const allAttributes = Array.isArray(filter.attributes)
+      ? filter.attributes.map(a => ({
+          name: a.name || a.key,
+          key: a.key || a.name,
+          value: a.value
+        }))
+      : [];
+
+    setCurrentFilter({
+      name: filter.name || '',
+      dataKey: filter.dataKey || filter.name || '',
+      displayName: filter.displayName || '',
+      index: filter.index || index,
+      visible: filter.visible !== false,
+      status: filter.status || 'Y',
+      inputHint: filter.inputHint || '',
+      title: filter.title || '',
+      type: filterType,
+      defaultValue: getAttrValue('defaultValue'),
+      regex: getAttrValue('regex'),
+      options: Array.isArray(options) ? options : [],
+      attributes: allAttributes
+    });
+    setEditingFilterIndex(index);
   };
 
   const removeFilter = (index) => {
@@ -463,6 +593,10 @@ const PlayboardsManagement = () => {
         filters: newFilters.map((f, i) => ({ ...f, index: i }))
       }
     });
+    // If we were editing this filter, reset
+    if (editingFilterIndex === index) {
+      resetCurrentFilter();
+    }
   };
 
   // Row action management
@@ -505,7 +639,7 @@ const PlayboardsManagement = () => {
       name: '',
       path: '',
       dataDomain: '',
-      status: 'A',
+      status: 'active',
       order: 0,
       filters: []
     });
@@ -863,8 +997,8 @@ const PlayboardsManagement = () => {
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   options={[
-                    { value: 'A', label: 'Active' },
-                    { value: 'I', label: 'Inactive' }
+                    { value: 'active', label: 'Active' },
+                    { value: 'active', label: 'Inactive' }
                   ]}
                 />
               </div>
@@ -916,35 +1050,59 @@ const PlayboardsManagement = () => {
                   <h4 className="font-medium text-gray-900 mb-2">Configured Filters ({formData.widgets.filters.length})</h4>
                   <div className="space-y-2">
                     {formData.widgets.filters.map((filter, idx) => {
-                      // Handle both array and object formats for attributes
+                      // Handle both array and object formats for attributes (support both 'name' and 'key')
                       const getFilterType = () => {
                         if (filter.type) return filter.type;
                         if (Array.isArray(filter.attributes)) {
-                          return filter.attributes.find(a => a.key === 'type')?.value || 'input';
+                          const typeAttr = filter.attributes.find(a => a.name === 'type' || a.key === 'type');
+                          return typeAttr?.value || 'input';
                         }
                         if (filter.attributes && typeof filter.attributes === 'object') {
                           return filter.attributes.value || filter.attributes.name || 'input';
                         }
                         return 'input';
                       };
+                      const attrCount = Array.isArray(filter.attributes) ? filter.attributes.length : 0;
+                      const isEditing = editingFilterIndex === idx;
                       return (
-                      <div key={idx} className="flex items-center justify-between bg-white p-3 rounded border">
+                      <div key={idx} className={`flex items-center justify-between bg-white p-3 rounded border ${isEditing ? 'ring-2 ring-blue-500' : ''}`}>
                         <div>
                           <span className="font-medium">{filter.displayName}</span>
                           <span className="text-gray-500 text-sm ml-2">({filter.name})</span>
                           <Badge variant="default" className="ml-2">
                             {getFilterType()}
                           </Badge>
+                          {attrCount > 0 && (
+                            <Badge variant="primary" className="ml-2">
+                              {attrCount} attrs
+                            </Badge>
+                          )}
+                          {isEditing && (
+                            <Badge variant="warning" className="ml-2">Editing</Badge>
+                          )}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => removeFilter(idx)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            type="button"
+                            onClick={() => editFilter(idx)}
+                            className="text-blue-500 hover:text-blue-700"
+                            title="Edit"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeFilter(idx)}
+                            className="text-red-500 hover:text-red-700"
+                            title="Delete"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     );
                     })}
@@ -952,9 +1110,11 @@ const PlayboardsManagement = () => {
                 </div>
               )}
 
-              {/* Add New Filter */}
-              <div className="border rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 mb-3">Add New Filter</h4>
+              {/* Add/Edit Filter */}
+              <div className={`border rounded-lg p-4 ${editingFilterIndex !== null ? 'border-blue-500 bg-blue-50' : ''}`}>
+                <h4 className="font-medium text-gray-900 mb-3">
+                  {editingFilterIndex !== null ? `Edit Filter: ${currentFilter.displayName || currentFilter.name}` : 'Add New Filter'}
+                </h4>
                 <div className="grid grid-cols-2 gap-4">
                   <Input
                     label="Name (key)"
@@ -1049,15 +1209,81 @@ const PlayboardsManagement = () => {
                   />
                 </div>
 
-                <Button
-                  type="button"
-                  onClick={addFilter}
-                  variant="secondary"
-                  className="mt-4"
-                  disabled={!currentFilter.name || !currentFilter.displayName}
-                >
-                  Add Filter
-                </Button>
+                {/* Custom Attributes */}
+                <div className="mt-4 border-t pt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Custom Attributes
+                    <span className="text-gray-400 font-normal ml-2">(name-value pairs)</span>
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <div>
+                      <input
+                        list="attribute-names"
+                        type="text"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                        placeholder="Name (e.g., width)"
+                        value={filterAttributeInput.name}
+                        onChange={(e) => setFilterAttributeInput({ ...filterAttributeInput, name: e.target.value })}
+                      />
+                      <datalist id="attribute-names">
+                        {attributeNameOptions.map(opt => (
+                          <option key={opt} value={opt} />
+                        ))}
+                      </datalist>
+                    </div>
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                        placeholder="Value (e.g., 200px)"
+                        value={filterAttributeInput.value}
+                        onChange={(e) => setFilterAttributeInput({ ...filterAttributeInput, value: e.target.value })}
+                      />
+                      <Button type="button" onClick={addFilterAttribute} variant="secondary">Add</Button>
+                    </div>
+                  </div>
+                  {currentFilter.attributes.length > 0 && (
+                    <div className="bg-gray-50 rounded p-2 max-h-32 overflow-y-auto space-y-1">
+                      {currentFilter.attributes.map((attr, idx) => (
+                        <div key={idx} className="flex items-center justify-between bg-white p-2 rounded border text-sm">
+                          <span>
+                            <span className="font-medium text-gray-700">{attr.name}</span>
+                            <span className="mx-2">:</span>
+                            <span className="text-gray-600">{typeof attr.value === 'object' ? JSON.stringify(attr.value) : attr.value}</span>
+                          </span>
+                          <button type="button" onClick={() => removeFilterAttribute(idx)} className="text-red-500 hover:text-red-700">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">
+                    All filter attributes are shown here. Standard attributes (type, defaultValue, regex, options) are also editable via the form fields above.
+                  </p>
+                </div>
+
+                <div className="flex space-x-2 mt-4">
+                  <Button
+                    type="button"
+                    onClick={addFilter}
+                    variant={editingFilterIndex !== null ? 'primary' : 'secondary'}
+                    disabled={!currentFilter.name || !currentFilter.displayName}
+                  >
+                    {editingFilterIndex !== null ? 'Update Filter' : 'Add Filter'}
+                  </Button>
+                  {editingFilterIndex !== null && (
+                    <Button
+                      type="button"
+                      onClick={resetCurrentFilter}
+                      variant="secondary"
+                    >
+                      Cancel Edit
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -1076,8 +1302,8 @@ const PlayboardsManagement = () => {
                           <div>
                             <span className="font-medium">{action.name}</span>
                             <span className="text-gray-500 text-sm ml-2">-&gt; {action.path}</span>
-                            <Badge variant={action.status === 'A' ? 'success' : 'danger'} className="ml-2">
-                              {action.status === 'A' ? 'Active' : 'Inactive'}
+                            <Badge variant={action.status === 'active' ? 'success' : 'danger'} className="ml-2">
+                              {action.status === 'active' ? 'Active' : 'Inactive'}
                             </Badge>
                             {action.filters && action.filters.length > 0 && (
                               <Badge variant="primary" className="ml-2">{action.filters.length} filters</Badge>
@@ -1150,8 +1376,8 @@ const PlayboardsManagement = () => {
                     value={currentRowAction.status}
                     onChange={(e) => setCurrentRowAction({ ...currentRowAction, status: e.target.value })}
                     options={[
-                      { value: 'A', label: 'Active' },
-                      { value: 'I', label: 'Inactive' }
+                      { value: 'active', label: 'Active' },
+                      { value: 'inactive', label: 'Inactive' }
                     ]}
                   />
                 </div>
@@ -1455,8 +1681,8 @@ const PlayboardsManagement = () => {
                   </div>
                   <div>
                     <span className="text-gray-500">Status:</span>{' '}
-                    <Badge variant={jsonPreview.status === 'A' ? 'success' : 'danger'}>
-                      {jsonPreview.status === 'A' ? 'Active' : 'Inactive'}
+                    <Badge variant={jsonPreview.status === 'active' ? 'success' : 'danger'}>
+                      {jsonPreview.status === 'active' ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
                   <div>
