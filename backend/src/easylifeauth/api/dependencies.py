@@ -16,6 +16,7 @@ from ..services.new_scenarios_service import NewScenarioService
 from ..services.jira_service import JiraService
 from ..services.file_storage_service import FileStorageService
 from ..services.activity_log_service import ActivityLogService, init_activity_log_service
+from ..services.error_log_service import ErrorLogService, init_error_log_service
 from ..services.gcs_service import GCSService
 from ..security.access_control import CurrentUser, get_current_user, set_token_manager
 
@@ -35,6 +36,7 @@ _scenario_request_service: Optional[NewScenarioService] = None
 _jira_service: Optional[JiraService] = None
 _file_storage_service: Optional[FileStorageService] = None
 _activity_log_service: Optional[ActivityLogService] = None
+_error_log_service: Optional[ErrorLogService] = None
 _gcs_service: Optional[GCSService] = None
 
 
@@ -51,7 +53,7 @@ def init_dependencies(
     global _password_service, _email_service, _domain_service
     global _scenario_service, _playboard_service, _feedback_service
     global _scenario_request_service, _jira_service, _file_storage_service
-    global _activity_log_service, _gcs_service
+    global _activity_log_service, _error_log_service, _gcs_service
 
     _db = db
     _token_manager = token_manager
@@ -111,6 +113,20 @@ def init_dependencies(
         _gcs_service = GCSService(gcs_config)
         if _gcs_service.is_configured():
             print("✓ GCS service initialized for API configs")
+
+    # Initialize error log service with GCS for archival
+    _error_log_service = init_error_log_service(
+        db=db,
+        gcs_service=_gcs_service,
+        config={
+            "log_dir": "./logs",
+            "max_file_size_mb": 5,
+            "archive_prefix": "error_logs",
+            "mongodb_ttl_days": 30,
+            "compress_archives": True
+        }
+    )
+    print("✓ Error logging service initialized")
 
 
 def get_db() -> DatabaseManager:
@@ -225,6 +241,11 @@ def get_gcs_service() -> Optional[GCSService]:
     return _gcs_service
 
 
+def get_error_log_service() -> Optional[ErrorLogService]:
+    """Get error log service"""
+    return _error_log_service
+
+
 # Re-export get_current_user
 __all__ = [
     "init_dependencies",
@@ -244,5 +265,6 @@ __all__ = [
     "get_file_storage_service",
     "get_activity_log_service",
     "get_gcs_service",
+    "get_error_log_service",
     "get_current_user",
 ]

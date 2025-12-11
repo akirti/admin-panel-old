@@ -21,6 +21,7 @@ from .customers_routes import router as customers_router
 from .jira_routes import router as jira_router
 from .api_config_routes import router as api_config_router
 from .distribution_list_routes import router as distribution_list_router
+from .error_log_routes import router as error_log_router
 
 __all__ = [
     "auth_router",
@@ -45,4 +46,5 @@ __all__ = [
     "jira_router",
     "api_config_router",
     "distribution_list_router",
+    "error_log_router",
 ]

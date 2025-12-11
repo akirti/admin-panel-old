@@ -19,6 +19,7 @@ import {
   ClipboardList,
   UsersRound,
   Activity,
+  AlertTriangle,
   Upload,
   Key,
   Cog,
@@ -59,6 +60,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
         { path: '/admin/scenario-requests', icon: ClipboardList, label: 'Scenario Requests' },
         { path: '/admin/feedback', icon: MessageSquare, label: 'Feedback' },
         { path: '/admin/activity-logs', icon: Activity, label: 'Activity Logs' },
+        { path: '/admin/error-logs', icon: AlertTriangle, label: 'Error Logs' },
         { path: '/admin/bulk-upload', icon: Upload, label: 'Bulk Upload' },
         { path: '/admin/distribution-lists', icon: Mail, label: 'Distribution Lists' },
       ];

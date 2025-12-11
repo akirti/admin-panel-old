@@ -11,21 +11,39 @@ pip install -r requirements.txt
 
 ## Configuration
 
-Before running, update the test credentials in `locustfile.py`:
+### Multi-User Testing (Recommended)
 
-```python
-login_data = {
-    "email": "admin@example.com",  # Update with valid credentials
-    "password": "admin123"
-}
+Create or edit `users.csv` with test user credentials:
+
+```csv
+email,password,role
+admin@easylife.local,password123,super-administrator
+manager@easylife.local,password123,group-admin
+editor@easylife.local,password123,editor
+viewer@easylife.local,password123,viewer
+user1@easylife.local,password123,user
+user2@easylife.local,password123,user
+```
+
+Users are distributed round-robin to simulated users during the test.
+
+### Single User (Fallback)
+
+If no `users.csv` exists, set environment variables:
+
+```bash
+export LOAD_TEST_EMAIL="admin@easylife.local"
+export LOAD_TEST_PASSWORD="password123"
 ```
 
 ## Running Load Tests
 
+Run from the project root directory (`admin-panel-old/`):
+
 ### Web UI Mode (Recommended for first-time)
 
 ```bash
-locust -f locustfile.py --host=http://localhost:8000
+locust -f load-test/locustfile.py --host=http://localhost:8000
 ```
 
 Then open http://localhost:8089 in your browser and configure:
@@ -35,47 +53,25 @@ Then open http://localhost:8089 in your browser and configure:
 ### Headless Mode (100 Concurrent Users)
 
 ```bash
-locust -f locustfile.py \
-    --host=http://localhost:8000 \
-    --users=100 \
-    --spawn-rate=10 \
-    --headless \
-    --run-time=5m
+locust -f load-test/locustfile.py --host=http://localhost:8000 --users=100 --spawn-rate=10 --headless --run-time=5m
 ```
 
 ### Quick Test (10 users for 1 minute)
 
 ```bash
-locust -f locustfile.py \
-    --host=http://localhost:8000 \
-    --users=10 \
-    --spawn-rate=5 \
-    --headless \
-    --run-time=1m
+locust -f load-test/locustfile.py --host=http://localhost:8000 --users=10 --spawn-rate=5 --headless --run-time=1m
 ```
 
 ### Generate HTML Report
 
 ```bash
-locust -f locustfile.py \
-    --host=http://localhost:8000 \
-    --users=100 \
-    --spawn-rate=10 \
-    --headless \
-    --run-time=5m \
-    --html=report.html
+locust -f load-test/locustfile.py --host=http://localhost:8000 --users=100 --spawn-rate=10 --headless --run-time=5m --html=load-test/report.html
 ```
 
 ### Generate CSV Reports
 
 ```bash
-locust -f locustfile.py \
-    --host=http://localhost:8000 \
-    --users=100 \
-    --spawn-rate=10 \
-    --headless \
-    --run-time=5m \
-    --csv=results
+locust -f load-test/locustfile.py --host=http://localhost:8000 --users=100 --spawn-rate=10 --headless --run-time=5m --csv=load-test/results
 ```
 
 This creates:
@@ -89,7 +85,7 @@ The load test includes 3 user types:
 
 | User Class | Weight | Description |
 |------------|--------|-------------|
-| `AdminPanelUser` | 3 | Authenticated admin users (most common) |
+| `AdminPanelUser` | 3 | Authenticated users (most common) |
 | `PublicEndpointUser` | 1 | Anonymous users hitting public endpoints |
 | `WriteOperationsUser` | 1 | Users performing write operations |
 
@@ -112,6 +108,10 @@ The load test includes 3 user types:
 - Configurations (`/api/v1/configurations`)
 - Dashboard (`/api/v1/dashboard`)
 - Activity logs (`/api/v1/activity-logs`)
+- Error logs (`/api/v1/error-logs`)
+- API configs (`/api/v1/api-configs`)
+- Distribution lists (`/api/v1/distribution-lists`)
+- Export (`/api/v1/export`)
 - Feedback (`/api/v1/feedback`)
 
 ## Interpreting Results
@@ -127,8 +127,17 @@ For higher loads, run distributed:
 
 ```bash
 # Start master
-locust -f locustfile.py --master --host=http://localhost:8000
+locust -f load-test/locustfile.py --master --host=http://localhost:8000
 
 # Start workers (run on multiple terminals/machines)
-locust -f locustfile.py --worker --master-host=localhost
+locust -f load-test/locustfile.py --worker --master-host=localhost
+```
+
+## Debugging
+
+If you get "Unknown User(s)" error:
+
+```bash
+# Check if file loads correctly
+locust -f load-test/locustfile.py --host=http://localhost:8000 --loglevel=DEBUG
 ```

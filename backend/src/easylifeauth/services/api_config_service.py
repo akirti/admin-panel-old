@@ -636,6 +636,12 @@ class ApiConfigService:
 
         except httpx.ConnectTimeout:
             result["error"] = "Connection timeout"
+        except httpx.ReadTimeout:
+            result["error"] = "Read timeout - server took too long to respond"
+        except httpx.WriteTimeout:
+            result["error"] = "Write timeout - sending request took too long"
+        except httpx.PoolTimeout:
+            result["error"] = "Connection pool timeout"
         except httpx.ConnectError as e:
             result["error"] = f"Connection error: {str(e)}"
         except httpx.HTTPStatusError as e:

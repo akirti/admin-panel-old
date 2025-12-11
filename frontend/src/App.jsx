@@ -35,6 +35,7 @@ import PermissionsManagement from './pages/admin/PermissionsManagement';
 import ConfigurationsManagement from './pages/admin/ConfigurationsManagement';
 import PlayboardsManagement from './pages/admin/PlayboardsManagement';
 import ActivityLogsPage from './pages/admin/ActivityLogsPage';
+import ErrorLogsPage from './pages/admin/ErrorLogsPage';
 import BulkUploadPage from './pages/admin/BulkUploadPage';
 import CustomersManagement from './pages/admin/CustomersManagement';
 import FeedbackManagement from './pages/admin/FeedbackManagement';
@@ -160,6 +161,7 @@ function App() {
           <Route path="scenario-requests/:requestId/edit" element={<AskScenarioPage />} />
           <Route path="customers" element={<CustomersManagement />} />
           <Route path="activity-logs" element={<ActivityLogsPage />} />
+          <Route path="error-logs" element={<ErrorLogsPage />} />
           <Route path="bulk-upload" element={<BulkUploadPage />} />
           <Route path="feedback" element={<FeedbackManagement />} />
           <Route path="api-configs" element={<ApiConfigsManagement />} />

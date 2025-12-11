@@ -1,0 +1,8 @@
+email,password,role
+admin@easylife.local,password123,super-administrator
+manager@easylife.local,password123,group-admin
+editor@easylife.local,password123,editor
+viewer@easylife.local,password123,viewer
+user1@easylife.local,password123,user
+user2@easylife.local,password123,user
+user3@easylife.local,password123,user

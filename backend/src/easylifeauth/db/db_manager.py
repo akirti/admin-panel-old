@@ -66,6 +66,8 @@ class DatabaseManager:
         self.activity_logs: Optional[AsyncIOMotorCollection] = None
         self.api_configs: Optional[AsyncIOMotorCollection] = None
         self.distribution_lists: Optional[AsyncIOMotorCollection] = None
+        self.error_logs: Optional[AsyncIOMotorCollection] = None
+        self.error_log_archives: Optional[AsyncIOMotorCollection] = None
 
         if config is not None:
             self._initialize(config)
@@ -154,7 +156,9 @@ class DatabaseManager:
             "configurations": "configurations",
             "activity_logs": "activity_logs",
             "api_configs": "api_configs",
-            "distribution_lists": "distribution_lists"
+            "distribution_lists": "distribution_lists",
+            "error_logs": "error_logs",
+            "error_log_archives": "error_log_archives"
         }
 
         for key in config.get("collections", []):

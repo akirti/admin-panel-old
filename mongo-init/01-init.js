@@ -39,6 +39,8 @@ try {
     db.createCollection('snapshots');
     db.createCollection('api_configs');
     db.createCollection('distribution_lists');
+    db.createCollection('error_logs');
+    db.createCollection('error_log_archives');
     print('Collections created successfully');
 } catch (error) {
     print('Error creating collections: ' + error);
@@ -498,7 +500,7 @@ try {
                 index: 0,
                 status: 'active',
                 inputHint: 'Select date range',
-                attributes: { name: 'type', value: 'daterange' }
+                attributes: [{ name: 'type', value: 'daterange' }]
             },
             {
                 name: 'region',
@@ -509,7 +511,7 @@ try {
                 index: 1,
                 status: 'active',
                 inputHint: 'Select region',
-                attributes: { name: 'type', value: 'select' }
+                attributes: [{ name: 'type', value: 'select' }]
             }
         ],
         grid: {
@@ -551,7 +553,8 @@ try {
             enabled: true,
             pageSize: 25,
             pageSizes: [10, 25, 50, 100],
-            position: 'bottom'
+            position: 'bottom',
+            attributes: []
         }
     },
     created_at: new Date(),
@@ -577,7 +580,7 @@ try {
                 index: 0,
                 status: 'active',
                 inputHint: 'Select warehouse',
-                attributes: { name: 'type', value: 'select' }
+                attributes: [{ name: 'type', value: 'select' }]
             },
             {
                 name: 'category',
@@ -588,7 +591,7 @@ try {
                 index: 1,
                 status: 'active',
                 inputHint: 'Select category',
-                attributes: { name: 'type', value: 'select' }
+                attributes: [{ name: 'type', value: 'select' }]
             }
         ],
         grid: {
@@ -603,7 +606,8 @@ try {
             enabled: true,
             pageSize: 25,
             pageSizes: [10, 25, 50, 100],
-            position: 'bottom'
+            position: 'bottom',
+            attributes: []
         }
     },
     created_at: new Date(),
@@ -629,7 +633,7 @@ try {
                 index: 0,
                 status: 'active',
                 inputHint: 'Select department',
-                attributes: { name: 'type', value: 'select' }
+                attributes: [{ name: 'type', value: 'select' }]
             },
             {
                 name: 'status',
@@ -640,7 +644,7 @@ try {
                 index: 1,
                 status: 'active',
                 inputHint: 'Select status',
-                attributes: { name: 'type', value: 'select' }
+                attributes: [{ name: 'type', value: 'select' }]
             }
         ],
         grid: {
@@ -655,7 +659,8 @@ try {
             enabled: true,
             pageSize: 25,
             pageSizes: [10, 25, 50, 100],
-            position: 'bottom'
+            position: 'bottom',
+            attributes: []
         }
     },
     created_at: new Date(),

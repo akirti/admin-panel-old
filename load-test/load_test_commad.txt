@@ -1,7 +1,17 @@
-locust -f load-test/locustfile.py \     
---host=http://localhost:8000 \
---users=1000 \
---spawn-rate=10 \
---headless \
---run-time=5m \
---html=load-test/report.html
+# Run from project root directory (admin-panel-old/)
+
+# 1000 users headless load test
+locust -f load-test/locustfile.py \
+  --host=http://localhost:8000 \
+  --users=1000 \
+  --spawn-rate=10 \
+  --headless \
+  --run-time=5m \
+  --html=load-test/report.html
+
+# Debug mode
+locust -f load-test/locustfile.py --host=http://localhost:8000 --loglevel=DEBUG
+
+# Single line versions (copy-paste friendly):
+locust -f load-test/locustfile.py --host=http://localhost:8000 --users=100 --spawn-rate=10
+locust -f load-test/locustfile.py --host=http://localhost:8000 --users=500 --spawn-rate=10 --headless --run-time=5m --html=load-test/report.html

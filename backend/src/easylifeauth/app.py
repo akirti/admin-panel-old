@@ -6,6 +6,8 @@ from typing import Optional, Dict, Any
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from pydantic import ValidationError
 from contextlib import asynccontextmanager
 
 from . import API_VERSION, API_BASE_ROUTE
@@ -32,6 +34,7 @@ from .api import (
     jira_router,
     api_config_router,
     distribution_list_router,
+    error_log_router,
 )
 from .api.dependencies import init_dependencies
 from .db.db_manager import DatabaseManager
@@ -211,12 +214,76 @@ def create_app(
             status_code=exc.status_code,
             content={"error": exc.detail}
         )
-    
+
+    @app.exception_handler(RequestValidationError)
+    async def request_validation_error_handler(request: Request, exc: RequestValidationError):
+        """Handle FastAPI request validation errors (e.g., invalid query params, body)."""
+        import traceback
+        traceback.print_exc()
+
+        # Log to error log service
+        try:
+            from .api.dependencies import get_error_log_service
+            error_log_service = get_error_log_service()
+            if error_log_service:
+                await error_log_service.log_error(
+                    error=exc,
+                    request=request,
+                    level="WARNING",
+                    additional_data={"validation_errors": exc.errors()}
+                )
+        except Exception as log_error:
+            print(f"Failed to log validation error: {log_error}")
+
+        return JSONResponse(
+            status_code=422,
+            content={"error": "Validation error", "details": exc.errors()}
+        )
+
+    @app.exception_handler(ValidationError)
+    async def pydantic_validation_error_handler(request: Request, exc: ValidationError):
+        """Handle Pydantic validation errors (e.g., model validation in route handlers)."""
+        import traceback
+        traceback.print_exc()
+
+        # Log to error log service
+        try:
+            from .api.dependencies import get_error_log_service
+            error_log_service = get_error_log_service()
+            if error_log_service:
+                await error_log_service.log_error(
+                    error=exc,
+                    request=request,
+                    level="ERROR",
+                    additional_data={"validation_errors": exc.errors()}
+                )
+        except Exception as log_error:
+            print(f"Failed to log validation error: {log_error}")
+
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Data validation error", "details": exc.errors()}
+        )
+
     @app.exception_handler(Exception)
     async def general_exception_handler(request: Request, exc: Exception):
         # Log the error for debugging
         import traceback
         traceback.print_exc()
+
+        # Log to error log service if available
+        try:
+            from .api.dependencies import get_error_log_service
+            error_log_service = get_error_log_service()
+            if error_log_service:
+                await error_log_service.log_error(
+                    error=exc,
+                    request=request,
+                    level="ERROR"
+                )
+        except Exception as log_error:
+            print(f"Failed to log error: {log_error}")
+
         return JSONResponse(
             status_code=500,
             content={"error": "Internal server error"}
@@ -245,6 +312,7 @@ def create_app(
     app.include_router(jira_router, prefix=API_BASE_ROUTE)
     app.include_router(api_config_router, prefix=API_BASE_ROUTE)
     app.include_router(distribution_list_router, prefix=API_BASE_ROUTE)
+    app.include_router(error_log_router, prefix=API_BASE_ROUTE)
 
     # Root endpoint
     @app.get("/")

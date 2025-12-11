@@ -2,6 +2,16 @@
 Locust Load Test for Admin Panel Backend API
 Tests 100 concurrent users against FastAPI backend endpoints
 
+Endpoints covered:
+- Health checks (live, ready, metrics)
+- Authentication (login, refresh, profile, CSRF)
+- Users, Roles, Groups, Permissions
+- Domains, Scenarios, Playboards
+- Scenario Requests, Customers, Configurations
+- Feedback, Activity Logs, Error Logs
+- API Configs, Distribution Lists, Export
+- Dashboard (stats, summary, analytics)
+
 Run with:
     locust -f locustfile.py --host=http://localhost:8000
 
@@ -12,21 +22,56 @@ Headless mode:
     locust -f locustfile.py --host=http://localhost:8000 --users=100 --spawn-rate=10 --headless --run-time=5m
 """
 
+import csv
 import json
 import os
 import random
 import string
+import itertools
+from pathlib import Path
 from locust import HttpUser, task, between, events
 from locust.runners import MasterRunner
 
 # ============================================================================
 # CONFIGURATION - Update these values for your environment
 # ============================================================================
-# Default credentials match seed_database.py users (password: password123)
-# Available test users: admin@example.com, manager@example.com, editor@example.com,
-#                       viewer@example.com, sales@example.com
-TEST_EMAIL = os.environ.get("LOAD_TEST_EMAIL", "admin@example.com")
-TEST_PASSWORD = os.environ.get("LOAD_TEST_PASSWORD", "password123")
+# Default credentials (fallback if no CSV file)
+DEFAULT_EMAIL = os.environ.get("LOAD_TEST_EMAIL", "admin@easylife.local")
+DEFAULT_PASSWORD = os.environ.get("LOAD_TEST_PASSWORD", "password123")
+
+# Load users from CSV file if available
+def load_users_from_csv():
+    """Load test users from CSV file."""
+    csv_path = Path(__file__).parent / "users.csv"
+    users = []
+
+    if csv_path.exists():
+        with open(csv_path, 'r') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                users.append({
+                    "email": row.get("email", "").strip(),
+                    "password": row.get("password", "").strip(),
+                    "role": row.get("role", "user").strip()
+                })
+        print(f"Loaded {len(users)} test users from {csv_path}")
+
+    # Fallback to default user if no CSV or empty
+    if not users:
+        users = [{"email": DEFAULT_EMAIL, "password": DEFAULT_PASSWORD, "role": "admin"}]
+        print(f"Using default test user: {DEFAULT_EMAIL}")
+
+    return users
+
+# Load users once at module level
+TEST_USERS = load_users_from_csv()
+
+# Create a thread-safe iterator for distributing users
+_user_cycle = itertools.cycle(TEST_USERS)
+
+def get_next_user():
+    """Get the next user credentials (round-robin distribution)."""
+    return next(_user_cycle)
 # ============================================================================
 
 
@@ -38,6 +83,7 @@ class AdminPanelUser(HttpUser):
 
     # Wait between 1-3 seconds between tasks (realistic user behavior)
     wait_time = between(1, 3)
+    weight = 3  # Higher weight - most users are authenticated
 
     # Store tokens for authenticated requests
     access_token = None
@@ -45,9 +91,12 @@ class AdminPanelUser(HttpUser):
     csrf_token = None
     user_data = None
     login_failed = False
+    current_user = None  # Store assigned user credentials
 
     def on_start(self):
-        """Called when a simulated user starts. Performs login."""
+        """Called when a simulated user starts. Assigns user and performs login."""
+        # Assign a user to this locust instance (round-robin from CSV)
+        self.current_user = get_next_user()
         self._get_csrf_token()
         self._login()
 
@@ -70,10 +119,10 @@ class AdminPanelUser(HttpUser):
                 response.failure(f"Failed to get CSRF token: {response.status_code}")
 
     def _login(self):
-        """Login to get JWT token."""
+        """Login to get JWT token using assigned user credentials."""
         login_data = {
-            "email": TEST_EMAIL,
-            "password": TEST_PASSWORD
+            "email": self.current_user["email"],
+            "password": self.current_user["password"]
         }
 
         headers = {"Content-Type": "application/json"}
@@ -479,6 +528,165 @@ class AdminPanelUser(HttpUser):
             name="/api/v1/activity-logs/stats"
         )
 
+    @task(1)
+    def get_activity_actions(self):
+        """Get available activity actions."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/activity-logs/actions",
+            headers=self._get_auth_headers(),
+            name="/api/v1/activity-logs/actions"
+        )
+
+    @task(1)
+    def get_activity_entity_types(self):
+        """Get activity entity types."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/activity-logs/entity-types",
+            headers=self._get_auth_headers(),
+            name="/api/v1/activity-logs/entity-types"
+        )
+
+    # ==================== Error Logs Endpoints ====================
+
+    @task(2)
+    def list_error_logs(self):
+        """List error logs with pagination."""
+        if not self._is_authenticated():
+            return
+        page = random.randint(0, 3)
+        level = random.choice([None, "ERROR", "WARNING", "CRITICAL"])
+        params = f"page={page}&limit=25"
+        if level:
+            params += f"&level={level}"
+        self.client.get(
+            f"/api/v1/error-logs?{params}",
+            headers=self._get_auth_headers(),
+            name="/api/v1/error-logs"
+        )
+
+    @task(1)
+    def get_error_log_stats(self):
+        """Get error log statistics."""
+        if not self._is_authenticated():
+            return
+        days = random.choice([7, 30, 90])
+        self.client.get(
+            f"/api/v1/error-logs/stats?days={days}",
+            headers=self._get_auth_headers(),
+            name="/api/v1/error-logs/stats"
+        )
+
+    @task(1)
+    def get_error_log_levels(self):
+        """Get available error log levels."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/error-logs/levels",
+            headers=self._get_auth_headers(),
+            name="/api/v1/error-logs/levels"
+        )
+
+    @task(1)
+    def get_error_log_types(self):
+        """Get error types."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/error-logs/types",
+            headers=self._get_auth_headers(),
+            name="/api/v1/error-logs/types"
+        )
+
+    @task(1)
+    def list_error_log_archives(self):
+        """List archived error log files."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/error-logs/archives",
+            headers=self._get_auth_headers(),
+            name="/api/v1/error-logs/archives"
+        )
+
+    # ==================== API Configs Endpoints ====================
+
+    @task(2)
+    def list_api_configs(self):
+        """List API configurations."""
+        if not self._is_authenticated():
+            return
+        page = random.randint(0, 3)
+        self.client.get(
+            f"/api/v1/api-configs?page={page}&limit=25",
+            headers=self._get_auth_headers(),
+            name="/api/v1/api-configs"
+        )
+
+    @task(1)
+    def get_api_config_tags(self):
+        """Get API config tags."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/api-configs/tags",
+            headers=self._get_auth_headers(),
+            name="/api/v1/api-configs/tags"
+        )
+
+    @task(1)
+    def get_api_config_count(self):
+        """Get API config count."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/api-configs/count",
+            headers=self._get_auth_headers(),
+            name="/api/v1/api-configs/count"
+        )
+
+    # ==================== Distribution Lists Endpoints ====================
+
+    @task(2)
+    def list_distribution_lists(self):
+        """List distribution lists."""
+        if not self._is_authenticated():
+            return
+        page = random.randint(0, 3)
+        self.client.get(
+            f"/api/v1/distribution-lists?page={page}&limit=25",
+            headers=self._get_auth_headers(),
+            name="/api/v1/distribution-lists"
+        )
+
+    @task(1)
+    def get_distribution_list_count(self):
+        """Get distribution list count."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/distribution-lists/count",
+            headers=self._get_auth_headers(),
+            name="/api/v1/distribution-lists/count"
+        )
+
+    # ==================== Export Endpoints ====================
+
+    @task(1)
+    def get_export_formats(self):
+        """Get available export formats."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/export/formats",
+            headers=self._get_auth_headers(),
+            name="/api/v1/export/formats"
+        )
+
     # ==================== Dashboard Endpoints ====================
 
     @task(3)
@@ -586,9 +794,11 @@ class WriteOperationsUser(HttpUser):
     access_token = None
     csrf_token = None
     login_failed = False
+    current_user = None
 
     def on_start(self):
         """Login before performing write operations."""
+        self.current_user = get_next_user()
         self._get_csrf_token()
         self._login()
 
@@ -601,10 +811,10 @@ class WriteOperationsUser(HttpUser):
                 self.csrf_token = response.json().get("csrf_token")
 
     def _login(self):
-        """Login to get JWT token."""
+        """Login to get JWT token using assigned user credentials."""
         login_data = {
-            "email": TEST_EMAIL,
-            "password": TEST_PASSWORD
+            "email": self.current_user["email"],
+            "password": self.current_user["password"]
         }
         headers = {"Content-Type": "application/json"}
         if self.csrf_token:

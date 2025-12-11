@@ -371,6 +371,23 @@ export const activityLogsAPI = {
   getUserActivity: (userEmail, params = {}) => api.get(`/activity-logs/user/${userEmail}`, { params }),
 };
 
+// Error Logs API
+export const errorLogsAPI = {
+  list: (params = {}) => api.get('/error-logs', { params }),
+  getStats: (days = 7) => api.get('/error-logs/stats', { params: { days } }),
+  getLevels: () => api.get('/error-logs/levels'),
+  getTypes: () => api.get('/error-logs/types'),
+  getCurrentFile: (lines = 100) => api.get('/error-logs/current-file', { params: { lines } }),
+
+  // Archives
+  listArchives: () => api.get('/error-logs/archives'),
+  getArchiveDownloadUrl: (archiveId, expirationMinutes = 60) =>
+    api.get(`/error-logs/archives/${archiveId}/download`, { params: { expiration_minutes: expirationMinutes } }),
+  deleteArchive: (archiveId) => api.delete(`/error-logs/archives/${archiveId}`),
+  forceArchive: () => api.post('/error-logs/force-archive'),
+  cleanup: (days = 90) => api.delete('/error-logs/cleanup', { params: { days } }),
+};
+
 // Bulk Upload API
 export const bulkAPI = {
   upload: (entityType, formData, sendPasswordEmails = true) =>

@@ -45,7 +45,7 @@ if env_db_host:
             "users", "tokens", "reset_tokens", "sessions", "roles", "groups",
             "permissions", "customers", "scenario_requests", "feedbacks", "domains",
             "domain_scenarios", "playboards", "configurations", "activity_logs", "api_configs",
-            "distribution_lists"
+            "distribution_lists", "error_logs", "error_log_archives"
         ],
         # MongoDB Connection Pool Settings (for handling idle connections and auto-reconnect)
         "maxPoolSize": os.environ.get("MONGODB_MAX_POOL_SIZE", "50"),
