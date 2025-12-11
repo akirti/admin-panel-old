@@ -537,6 +537,22 @@ export const apiConfigsAPI = {
   getGCSStatus: () => api.get('/api-configs/gcs/status'),
 };
 
+// Distribution Lists API
+export const distributionListsAPI = {
+  list: (params = {}) => api.get('/distribution-lists', { params }),
+  getTypes: () => api.get('/distribution-lists/types'),
+  get: (id) => api.get(`/distribution-lists/${id}`),
+  getByKey: (key) => api.get(`/distribution-lists/by-key/${key}`),
+  getByType: (type) => api.get(`/distribution-lists/by-type/${type}`),
+  getEmails: (key) => api.get(`/distribution-lists/emails/${key}`),
+  create: (data) => api.post('/distribution-lists', data),
+  update: (id, data) => api.put(`/distribution-lists/${id}`, data),
+  delete: (id, hardDelete = false) => api.delete(`/distribution-lists/${id}`, { params: { hard_delete: hardDelete } }),
+  toggleStatus: (id) => api.post(`/distribution-lists/${id}/toggle-status`),
+  addEmail: (id, email) => api.post(`/distribution-lists/${id}/emails`, { email }),
+  removeEmail: (id, email) => api.delete(`/distribution-lists/${id}/emails`, { data: { email } }),
+};
+
 // Jira API
 export const jiraAPI = {
   // Connection status

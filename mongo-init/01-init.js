@@ -38,6 +38,7 @@ try {
     db.createCollection('bookmarks');
     db.createCollection('snapshots');
     db.createCollection('api_configs');
+    db.createCollection('distribution_lists');
     print('Collections created successfully');
 } catch (error) {
     print('Error creating collections: ' + error);
@@ -482,22 +483,76 @@ try {
     name: 'Sales Overview Board',
     description: 'Main sales dashboard playboard',
     scenarioKey: 'sales-overview',
+    dataDomain: 'sales',
+    order: 1,
     status: 'active',
     data: {},
-    dataDomain: 'sales',
-    scenerioKey: 'sales-overview',
-    order: 1,
-    status: 'A',
     widgets: {
         filters: [
-            { name: 'dateRange', dataKey: 'date_range', displayName: 'Date Range', type: 'daterange', visible: true, index: 0 },
-            { name: 'region', dataKey: 'region', displayName: 'Region', type: 'select', visible: true, index: 1 }
+            {
+                name: 'dateRange',
+                dataKey: 'date_range',
+                displayName: 'Date Range',
+                type: 'daterange',
+                visible: true,
+                index: 0,
+                status: 'active',
+                inputHint: 'Select date range',
+                attributes: { name: 'type', value: 'daterange' }
+            },
+            {
+                name: 'region',
+                dataKey: 'region',
+                displayName: 'Region',
+                type: 'select',
+                visible: true,
+                index: 1,
+                status: 'active',
+                inputHint: 'Select region',
+                attributes: { name: 'type', value: 'select' }
+            }
         ],
         grid: {
             layout: { columns: ['date', 'region', 'amount', 'quantity'], headers: ['Date', 'Region', 'Amount', 'Quantity'], ispaginated: true, defaultSize: 25 },
-            actions: { rowActions: { renderAs: 'button', attributes: [], events: [] } }
+            actions: {
+                rowActions: {
+                    renderAs: 'button',
+                    attributes: [],
+                    events: [
+                        {
+                            key: 'view-details',
+                            name: 'View Details',
+                            path: '/sales/details',
+                            dataDomain: 'sales',
+                            status: 'A',
+                            order: 0,
+                            filters: [
+                                { inputKey: 'sale_id', dataKey: 'id' }
+                            ]
+                        },
+                        {
+                            key: 'export-row',
+                            name: 'Export',
+                            path: '/sales/export',
+                            dataDomain: 'sales',
+                            status: 'A',
+                            order: 1,
+                            filters: []
+                        }
+                    ]
+                }
+            }
         },
-        pagination: { name: 'limit', dataKey: 'limit', displayName: 'Page Size', index: 0, visible: true }
+        pagination: {
+            name: 'pagination',
+            dataKey: 'pagination',
+            displayName: 'Pagination',
+            index: 0,
+            enabled: true,
+            pageSize: 25,
+            pageSizes: [10, 25, 50, 100],
+            position: 'bottom'
+        }
     },
     created_at: new Date(),
     updated_at: new Date()
@@ -507,22 +562,49 @@ try {
     name: 'Inventory Stock Board',
     description: 'Stock levels playboard',
     scenarioKey: 'inventory-stock',
+    dataDomain: 'inventory',
+    order: 1,
     status: 'active',
     data: {},
-    dataDomain: 'inventory',
-    scenerioKey: 'inventory-stock',
-    order: 1,
-    status: 'A',
     widgets: {
-    filters: [
-        { name: 'warehouse', dataKey: 'warehouse', displayName: 'Warehouse', type: 'select', visible: true, index: 0 },
-        { name: 'category', dataKey: 'category', displayName: 'Category', type: 'select', visible: true, index: 1 }
-    ],
-    grid: {
-        layout: { columns: ['sku', 'name', 'quantity', 'warehouse'], headers: ['SKU', 'Product Name', 'Quantity', 'Warehouse'], ispaginated: true, defaultSize: 25 },
-        actions: { rowActions: { renderAs: 'button', attributes: [], events: [] } }
-    },
-    pagination: [{ name: 'limit', dataKey: 'limit', displayName: 'Page Size', index: 0, visible: true }]
+        filters: [
+            {
+                name: 'warehouse',
+                dataKey: 'warehouse',
+                displayName: 'Warehouse',
+                type: 'select',
+                visible: true,
+                index: 0,
+                status: 'active',
+                inputHint: 'Select warehouse',
+                attributes: { name: 'type', value: 'select' }
+            },
+            {
+                name: 'category',
+                dataKey: 'category',
+                displayName: 'Category',
+                type: 'select',
+                visible: true,
+                index: 1,
+                status: 'active',
+                inputHint: 'Select category',
+                attributes: { name: 'type', value: 'select' }
+            }
+        ],
+        grid: {
+            layout: { columns: ['sku', 'name', 'quantity', 'warehouse'], headers: ['SKU', 'Product Name', 'Quantity', 'Warehouse'], ispaginated: true, defaultSize: 25 },
+            actions: { rowActions: { renderAs: 'button', attributes: [], events: [] } }
+        },
+        pagination: {
+            name: 'pagination',
+            dataKey: 'pagination',
+            displayName: 'Pagination',
+            index: 0,
+            enabled: true,
+            pageSize: 25,
+            pageSizes: [10, 25, 50, 100],
+            position: 'bottom'
+        }
     },
     created_at: new Date(),
     updated_at: new Date()
@@ -532,22 +614,49 @@ try {
     name: 'Employee Directory Board',
     description: 'Employee information playboard',
     scenarioKey: 'hr-employees',
+    dataDomain: 'hr',
+    order: 1,
     status: 'active',
     data: {},
-    dataDomain: 'hr',
-    scenerioKey: 'hr-employees',
-    order: 1,
-    status: 'A',
     widgets: {
-    filters: [
-        { name: 'department', dataKey: 'department', displayName: 'Department', type: 'select', visible: true, index: 0 },
-        { name: 'status', dataKey: 'status', displayName: 'Status', type: 'select', visible: true, index: 1 }
-    ],
-    grid: {
-        layout: { columns: ['emp_id', 'name', 'department', 'position', 'status'], headers: ['ID', 'Name', 'Department', 'Position', 'Status'], ispaginated: true, defaultSize: 25 },
-        actions: { rowActions: { renderAs: 'button', attributes: [], events: [] } }
-    },
-    pagination: [{ name: 'limit', dataKey: 'limit', displayName: 'Page Size', index: 0, visible: true }]
+        filters: [
+            {
+                name: 'department',
+                dataKey: 'department',
+                displayName: 'Department',
+                type: 'select',
+                visible: true,
+                index: 0,
+                status: 'active',
+                inputHint: 'Select department',
+                attributes: { name: 'type', value: 'select' }
+            },
+            {
+                name: 'status',
+                dataKey: 'employee_status',
+                displayName: 'Status',
+                type: 'select',
+                visible: true,
+                index: 1,
+                status: 'active',
+                inputHint: 'Select status',
+                attributes: { name: 'type', value: 'select' }
+            }
+        ],
+        grid: {
+            layout: { columns: ['emp_id', 'name', 'department', 'position', 'status'], headers: ['ID', 'Name', 'Department', 'Position', 'Status'], ispaginated: true, defaultSize: 25 },
+            actions: { rowActions: { renderAs: 'button', attributes: [], events: [] } }
+        },
+        pagination: {
+            name: 'pagination',
+            dataKey: 'pagination',
+            displayName: 'Pagination',
+            index: 0,
+            enabled: true,
+            pageSize: 25,
+            pageSizes: [10, 25, 50, 100],
+            position: 'bottom'
+        }
     },
     created_at: new Date(),
     updated_at: new Date()
@@ -1942,11 +2051,141 @@ try {
     }
 
     ]);
-    print('api_configs inserted: ' + db.snapshots.countDocuments());
+    print('api_configs inserted: ' + db.api_configs.countDocuments());
 } catch (error) {
     print('Error inserting api_configs: ' + error);
     throw error;
 }
+
+// ============================================
+// DISTRIBUTION LISTS
+// ============================================
+print('Inserting distribution lists...');
+try {
+    db.distribution_lists.insertMany([
+        {
+            key: "scenario-request-notifications",
+            name: "Scenario Request Notifications",
+            description: "Default distribution list for scenario request notifications. All emails in this list will receive notifications when scenario requests are created or updated.",
+            type: "scenario_request",
+            emails: [
+                "admin@easylife.local",
+                "manager@easylife.local"
+            ],
+            is_active: true,
+            created_at: new Date(),
+            created_by: "system",
+            updated_at: new Date(),
+            updated_by: "system"
+        },
+        {
+            key: "feedback-notifications",
+            name: "Feedback Notifications",
+            description: "Distribution list for feedback notifications",
+            type: "feedback",
+            emails: [
+                "admin@easylife.local"
+            ],
+            is_active: true,
+            created_at: new Date(),
+            created_by: "system",
+            updated_at: new Date(),
+            updated_by: "system"
+        },
+        {
+            key: "system-alerts",
+            name: "System Alerts",
+            description: "Distribution list for system alerts and critical notifications",
+            type: "system_alert",
+            emails: [
+                "admin@easylife.local"
+            ],
+            is_active: true,
+            created_at: new Date(),
+            created_by: "system",
+            updated_at: new Date(),
+            updated_by: "system"
+        },
+        {
+            key: "sales-team",
+            name: "Sales Team",
+            description: "Custom distribution list for sales team communications",
+            type: "custom",
+            emails: [
+                "sales@easylife.local",
+                "manager@easylife.local"
+            ],
+            is_active: true,
+            created_at: new Date(),
+            created_by: "system",
+            updated_at: new Date(),
+            updated_by: "system"
+        },
+        {
+            key: "system-notifications",
+            name: "System Notifications",
+            description: "General system notifications for important updates",
+            type: "system_notification",
+            emails: [
+                "admin@easylife.local",
+                "manager@easylife.local"
+            ],
+            is_active: true,
+            created_at: new Date(),
+            created_by: "system",
+            updated_at: new Date(),
+            updated_by: "system"
+        },
+        {
+            key: "configuration-updates",
+            name: "Configuration Updates",
+            description: "Notifications for configuration changes and updates",
+            type: "configuration_update",
+            emails: [
+                "admin@easylife.local"
+            ],
+            is_active: true,
+            created_at: new Date(),
+            created_by: "system",
+            updated_at: new Date(),
+            updated_by: "system"
+        },
+        {
+            key: "no-reply",
+            name: "No Reply Notifications",
+            description: "Automated notifications that do not expect a reply",
+            type: "no_reply",
+            emails: [
+                "admin@easylife.local"
+            ],
+            is_active: true,
+            created_at: new Date(),
+            created_by: "system",
+            updated_at: new Date(),
+            updated_by: "system"
+        },
+        {
+            key: "support-team",
+            name: "Support Team",
+            description: "Support team for handling user queries and issues",
+            type: "support",
+            emails: [
+                "admin@easylife.local",
+                "editor@easylife.local"
+            ],
+            is_active: true,
+            created_at: new Date(),
+            created_by: "system",
+            updated_at: new Date(),
+            updated_by: "system"
+        }
+    ]);
+    print('distribution_lists inserted: ' + db.distribution_lists.countDocuments());
+} catch (error) {
+    print('Error inserting distribution_lists: ' + error);
+    throw error;
+}
+
 // ============================================
 // CREATE INDEXES
 // ============================================
@@ -2023,6 +2262,10 @@ db.api_configs.createIndex({ "status": 1 });
 db.api_configs.createIndex({ "tags": 1 });
 db.api_configs.createIndex({ "auth_type": 1 });
 
+db.distribution_lists.createIndex({ "key": 1 }, { unique: true });
+db.distribution_lists.createIndex({ "type": 1 });
+db.distribution_lists.createIndex({ "is_active": 1 });
+
     print('Indexes created successfully');
 } catch (error) {
     print('Error creating indexes: ' + error);
@@ -2051,6 +2294,8 @@ print('  - feedbacks: ' + db.feedbacks.countDocuments());
 print('  - scenario_requests: ' + db.scenario_requests.countDocuments());
 print('  - bookmarks: ' + db.bookmarks.countDocuments());
 print('  - snapshots: ' + db.snapshots.countDocuments());
+print('  - api_configs: ' + db.api_configs.countDocuments());
+print('  - distribution_lists: ' + db.distribution_lists.countDocuments());
 print('');
 print('Test Users (password: password123):');
 print('  - admin@easylife.local (Super Admin)');

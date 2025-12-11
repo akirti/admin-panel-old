@@ -39,6 +39,7 @@ import BulkUploadPage from './pages/admin/BulkUploadPage';
 import CustomersManagement from './pages/admin/CustomersManagement';
 import FeedbackManagement from './pages/admin/FeedbackManagement';
 import ApiConfigsManagement from './pages/admin/ApiConfigsManagement';
+import DistributionListManagement from './pages/admin/DistributionListManagement';
 
 // Public Pages
 import FeedbackPage from './pages/FeedbackPage';
@@ -162,6 +163,7 @@ function App() {
           <Route path="bulk-upload" element={<BulkUploadPage />} />
           <Route path="feedback" element={<FeedbackManagement />} />
           <Route path="api-configs" element={<ApiConfigsManagement />} />
+          <Route path="distribution-lists" element={<DistributionListManagement />} />
         </Route>
 
         {/* Group Admin Routes */}

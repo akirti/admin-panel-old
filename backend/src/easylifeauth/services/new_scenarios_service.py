@@ -121,29 +121,41 @@ class NewScenarioService:
         """Send email notifications to all relevant parties"""
         if not self.email_service:
             return
-        
+
         recipients = set()
-        
+
         # Add request creator
         if scenario_request.get("email"):
             recipients.add(scenario_request["email"])
-        
-        # Add configured recipients
+
+        # Add configured recipients from the request
         if scenario_request.get("email_recipients"):
             for r in scenario_request["email_recipients"]:
                 recipients.add(r)
-        
+
         # Add additional recipients
         if additional_recipients:
             for r in additional_recipients:
                 recipients.add(r)
-        
+
         # Add workflow assignees
         work_flow = scenario_request.get("work_flow", [])
         for wf in work_flow:
             if isinstance(wf, dict) and wf.get("assigned_to_email"):
                 recipients.add(wf["assigned_to_email"])
-        
+
+        # Fetch emails from distribution lists (scenario_request type)
+        try:
+            dist_lists = await self.db.distribution_lists.find(
+                {"type": "scenario_request", "is_active": True}
+            ).to_list(length=100)
+
+            for dist_list in dist_lists:
+                for email in dist_list.get("emails", []):
+                    recipients.add(email)
+        except Exception as e:
+            print(f"Failed to fetch distribution lists: {e}")
+
         # Send emails
         for email in recipients:
             try:

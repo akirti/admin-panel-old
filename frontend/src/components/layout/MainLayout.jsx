@@ -24,7 +24,8 @@ import {
   Cog,
   LayoutGrid,
   Building2,
-  Plug
+  Plug,
+  Mail
 } from 'lucide-react';
 
 function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
@@ -59,6 +60,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
         { path: '/admin/feedback', icon: MessageSquare, label: 'Feedback' },
         { path: '/admin/activity-logs', icon: Activity, label: 'Activity Logs' },
         { path: '/admin/bulk-upload', icon: Upload, label: 'Bulk Upload' },
+        { path: '/admin/distribution-lists', icon: Mail, label: 'Distribution Lists' },
       ];
     }
 

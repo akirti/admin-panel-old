@@ -44,8 +44,18 @@ if env_db_host:
         "collections": [
             "users", "tokens", "reset_tokens", "sessions", "roles", "groups",
             "permissions", "customers", "scenario_requests", "feedbacks", "domains",
-            "domain_scenarios", "playboards", "configurations", "activity_logs"
-        ]
+            "domain_scenarios", "playboards", "configurations", "activity_logs", "api_configs",
+            "distribution_lists"
+        ],
+        # MongoDB Connection Pool Settings (for handling idle connections and auto-reconnect)
+        "maxPoolSize": os.environ.get("MONGODB_MAX_POOL_SIZE", "50"),
+        "minPoolSize": os.environ.get("MONGODB_MIN_POOL_SIZE", "5"),
+        "maxIdleTimeMS": os.environ.get("MONGODB_MAX_IDLE_TIME_MS", "300000"),
+        "serverSelectionTimeoutMS": os.environ.get("MONGODB_SERVER_SELECTION_TIMEOUT_MS", "30000"),
+        "connectTimeoutMS": os.environ.get("MONGODB_CONNECT_TIMEOUT_MS", "20000"),
+        "socketTimeoutMS": os.environ.get("MONGODB_SOCKET_TIMEOUT_MS", "60000"),
+        "heartbeatFrequencyMS": os.environ.get("MONGODB_HEARTBEAT_FREQUENCY_MS", "10000"),
+        "waitQueueTimeoutMS": os.environ.get("MONGODB_WAIT_QUEUE_TIMEOUT_MS", "10000"),
     }
 
 env_jwt_secret = os.environ.get("JWT_SECRET_KEY") or os.environ.get("EASYLIFE_SPECS_APP_SECRETS_AUTH_SECRET_KEY")

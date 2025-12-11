@@ -230,18 +230,80 @@ async def create_playboard(
     current_user: CurrentUser = Depends(require_super_admin),
     db: DatabaseManager = Depends(get_db)
 ):
-    """Create a new playboard with JSON data."""
+    """
+    Create a new playboard with JSON data.
+
+    Fields can be provided at the top level OR inside the 'data' object.
+    Values in 'data' are used as fallback if not provided at top level.
+    """
+    # Extract data object for fallback values
+    data_obj = playboard_data.data or {}
+
+    # Resolve key: top-level > data.key
+    final_key = playboard_data.key or data_obj.get("key")
+    if not final_key:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Playboard key is required (provide at top level or in data.key)"
+        )
+
+    # Resolve scenarioKey: top-level > data.scenarioKey > data.scenerioKey (typo fallback)
+    final_scenario_key = (
+        playboard_data.scenarioKey or
+        data_obj.get("scenarioKey") or
+        data_obj.get("scenerioKey")
+    )
+    if not final_scenario_key:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Scenario key is required (provide at top level or in data.scenarioKey)"
+        )
+
+    # Check for duplicate key
+    existing = await db.playboards.find_one({"key": final_key})
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Playboard with key '{final_key}' already exists"
+        )
+
     # Verify parent scenario exists
-    scenario = await db.domain_scenarios.find_one({"key": playboard_data.scenarioKey})
+    scenario = await db.domain_scenarios.find_one({"key": final_scenario_key})
     if not scenario:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Parent scenario not found"
+            detail=f"Parent scenario '{final_scenario_key}' not found"
         )
 
-    playboard_dict = playboard_data.model_dump()
-    playboard_dict["created_at"] = datetime.utcnow()
-    playboard_dict["updated_at"] = datetime.utcnow()
+    # Resolve dataDomain: top-level > data.dataDomain > scenario.domainKey
+    final_data_domain = (
+        playboard_data.dataDomain or
+        data_obj.get("dataDomain") or
+        scenario.get("domainKey", "")
+    )
+
+    # Build playboard document with resolved values
+    playboard_dict = {
+        "key": final_key,
+        "name": playboard_data.name,
+        "description": playboard_data.description or data_obj.get("description"),
+        "scenarioKey": final_scenario_key,
+        "dataDomain": final_data_domain,
+        "widgets": playboard_data.widgets or data_obj.get("widgets"),
+        "order": playboard_data.order if playboard_data.order != 0 else data_obj.get("order", 0),
+        "program_key": playboard_data.program_key or data_obj.get("program_key"),
+        "addon_configurations": playboard_data.addon_configurations or data_obj.get("addon_configurations"),
+        "scenarioDescription": playboard_data.scenarioDescription or data_obj.get("scenarioDescription"),
+        "data": data_obj,  # Store the full data object
+        "status": playboard_data.status if playboard_data.status != "active" else data_obj.get("status", "active"),
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow(),
+        "created_by": current_user.email,
+        "updated_by": current_user.email,
+    }
+
+    # Remove None values
+    playboard_dict = {k: v for k, v in playboard_dict.items() if v is not None}
 
     result = await db.playboards.insert_one(playboard_dict)
     playboard_dict["_id"] = str(result.inserted_id)
@@ -252,8 +314,10 @@ async def create_playboard(
 @router.post("/upload", response_model=PlayboardInDB, status_code=status.HTTP_201_CREATED)
 async def upload_playboard_json(
     file: UploadFile = File(...),
+    key: Optional[str] = Query(None, description="Playboard key (auto-detected from JSON if not provided)"),
     name: Optional[str] = Query(None, description="Playboard name (auto-detected from JSON if not provided)"),
     scenario_key: Optional[str] = Query(None, description="Parent scenario key (auto-detected from JSON if not provided)"),
+    data_domain: Optional[str] = Query(None, description="Data domain (auto-detected from scenario if not provided)"),
     description: Optional[str] = Query(None, description="Playboard description"),
     current_user: CurrentUser = Depends(require_super_admin),
     db: DatabaseManager = Depends(get_db)
@@ -263,8 +327,10 @@ async def upload_playboard_json(
     The JSON structure should match the playboard data format with key, scenarioKey, widgets, etc.
 
     - **file**: JSON file to upload
-    - **name**: Name for the playboard (optional, auto-detected from JSON key field)
+    - **key**: Unique key for the playboard (optional, auto-detected from JSON)
+    - **name**: Name for the playboard (optional, auto-detected from JSON)
     - **scenario_key**: Key of the parent scenario (optional, auto-detected from JSON scenarioKey field)
+    - **data_domain**: Data domain (optional, auto-detected from scenario)
     - **description**: Optional description
     """
     # Validate file type
@@ -290,7 +356,8 @@ async def upload_playboard_json(
         )
 
     # Extract values from JSON if not provided as query params
-    final_name = name or json_data.get("key") or json_data.get("name") or file.filename.replace(".json", "")
+    final_key = key or json_data.get("key") or file.filename.replace(".json", "")
+    final_name = name or json_data.get("name") or final_key
     final_scenario_key = scenario_key or json_data.get("scenarioKey") or json_data.get("scenerioKey")
 
     if not final_scenario_key:
@@ -299,7 +366,15 @@ async def upload_playboard_json(
             detail="Scenario key is required. Provide it as query parameter or include 'scenarioKey' in JSON file."
         )
 
-    # Verify parent scenario exists
+    # Check for duplicate key
+    existing = await db.playboards.find_one({"key": final_key})
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Playboard with key '{final_key}' already exists"
+        )
+
+    # Verify parent scenario exists and get domain
     scenario = await db.domain_scenarios.find_one({"key": final_scenario_key})
     if not scenario:
         raise HTTPException(
@@ -307,17 +382,30 @@ async def upload_playboard_json(
             detail=f"Parent scenario '{final_scenario_key}' not found"
         )
 
-    # Create playboard document with the same structure as form create
-    # The JSON file content goes directly into the 'data' field
+    final_data_domain = data_domain or json_data.get("dataDomain") or scenario.get("domainKey", "")
+
+    # Create playboard document matching PlayboardInDB structure
     playboard_dict = {
+        "key": final_key,
         "name": final_name,
         "description": description or json_data.get("description"),
         "scenarioKey": final_scenario_key,
-        "data": json_data,
+        "dataDomain": final_data_domain,
+        "widgets": json_data.get("widgets"),
+        "order": json_data.get("order", 0),
+        "program_key": json_data.get("program_key"),
+        "addon_configurations": json_data.get("addon_configurations"),
+        "scenarioDescription": json_data.get("scenarioDescription"),
+        "data": json_data,  # Store the full JSON data
         "status": "active",
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow(),
+        "created_by": current_user.email,
+        "updated_by": current_user.email,
     }
+
+    # Remove None values
+    playboard_dict = {k: v for k, v in playboard_dict.items() if v is not None}
 
     result = await db.playboards.insert_one(playboard_dict)
     playboard_dict["_id"] = str(result.inserted_id)
@@ -349,6 +437,19 @@ async def update_playboard(
 
     update_data = playboard_data.model_dump(exclude_unset=True)
 
+    # Remove _id from update data if present
+    update_data.pop("id", None)
+    update_data.pop("_id", None)
+
+    # If key is being changed, check for duplicates
+    if "key" in update_data and update_data["key"] != existing.get("key"):
+        duplicate = await db.playboards.find_one({"key": update_data["key"]})
+        if duplicate:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Playboard with key '{update_data['key']}' already exists"
+            )
+
     # Verify parent scenario if being changed
     if "scenarioKey" in update_data:
         scenario = await db.domain_scenarios.find_one({"key": update_data["scenarioKey"]})
@@ -359,6 +460,7 @@ async def update_playboard(
             )
 
     update_data["updated_at"] = datetime.utcnow()
+    update_data["updated_by"] = current_user.email
 
     await db.playboards.update_one(
         {"_id": existing["_id"]},
@@ -374,6 +476,7 @@ async def update_playboard(
 async def update_playboard_json(
     playboard_id: str,
     file: UploadFile = File(...),
+    update_metadata: bool = Query(False, description="Also update metadata (widgets, scenarioDescription, etc.) from JSON"),
     current_user: CurrentUser = Depends(require_super_admin),
     db: DatabaseManager = Depends(get_db)
 ):
@@ -381,6 +484,7 @@ async def update_playboard_json(
     Update a playboard's JSON data by uploading a new file.
 
     - **file**: JSON file to upload
+    - **update_metadata**: If true, also update widgets, scenarioDescription, etc. from the JSON file
     """
     try:
         existing = await db.playboards.find_one({"_id": ObjectId(playboard_id)})
@@ -418,9 +522,32 @@ async def update_playboard_json(
             detail=f"Error reading file: {str(e)}"
         )
 
+    update_fields = {
+        "data": json_data,
+        "updated_at": datetime.utcnow(),
+        "updated_by": current_user.email,
+    }
+
+    # Optionally update metadata from JSON
+    if update_metadata:
+        if "widgets" in json_data:
+            update_fields["widgets"] = json_data["widgets"]
+        if "scenarioDescription" in json_data:
+            update_fields["scenarioDescription"] = json_data["scenarioDescription"]
+        if "name" in json_data:
+            update_fields["name"] = json_data["name"]
+        if "description" in json_data:
+            update_fields["description"] = json_data["description"]
+        if "order" in json_data:
+            update_fields["order"] = json_data["order"]
+        if "addon_configurations" in json_data:
+            update_fields["addon_configurations"] = json_data["addon_configurations"]
+        if "program_key" in json_data:
+            update_fields["program_key"] = json_data["program_key"]
+
     await db.playboards.update_one(
         {"_id": existing["_id"]},
-        {"$set": {"data": json_data, "updated_at": datetime.utcnow()}}
+        {"$set": update_fields}
     )
 
     updated = await db.playboards.find_one({"_id": existing["_id"]})

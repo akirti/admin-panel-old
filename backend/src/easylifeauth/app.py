@@ -31,6 +31,7 @@ from .api import (
     customers_router,
     jira_router,
     api_config_router,
+    distribution_list_router,
 )
 from .api.dependencies import init_dependencies
 from .db.db_manager import DatabaseManager
@@ -229,6 +230,7 @@ def create_app(
     app.include_router(customers_router, prefix=API_BASE_ROUTE)
     app.include_router(jira_router, prefix=API_BASE_ROUTE)
     app.include_router(api_config_router, prefix=API_BASE_ROUTE)
+    app.include_router(distribution_list_router, prefix=API_BASE_ROUTE)
 
     # Root endpoint
     @app.get("/")

@@ -186,43 +186,75 @@ class ScenarioResponse(BaseModel):
         populate_by_name = True
 
 
-# Playboard Models
+# Playboard Models - Updated to match PlayboardInDB structure
 class PlayboardCreate(BaseModel):
-    dataDomain: str
-    scenerioKey: str
-    widgets: Optional[List[Dict[str, Any]]] = []
+    """
+    Create a new playboard.
+    Fields can be provided at top level OR inside the 'data' object.
+    The route will extract values from 'data' if not provided at top level.
+    """
+    key: Optional[str] = None  # Can be extracted from data.key
+    name: str
+    description: Optional[str] = None
+    scenarioKey: Optional[str] = None  # Can be extracted from data.scenarioKey
+    dataDomain: Optional[str] = None  # Can be extracted from data.dataDomain or scenario
+    widgets: Optional[Dict[str, Any]] = None  # PlayboardWidget structure
     order: Optional[int] = 0
     program_key: Optional[str] = None
-    addon_configurations: Optional[Dict[str, Any]] = {}
+    addon_configurations: Optional[List[str]] = None
+    scenarioDescription: Optional[List[Dict[str, Any]]] = None
+    data: Optional[Dict[str, Any]] = None  # Full JSON data (may contain key, scenarioKey, etc.)
+    status: str = "active"
+
+    model_config = {"extra": "allow"}
 
 
 class PlayboardUpdate(BaseModel):
+    """Update playboard - all fields optional"""
     id: Optional[str] = Field(None, alias="_id")
+    key: Optional[str] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    scenarioKey: Optional[str] = None
     dataDomain: Optional[str] = None
-    scenerioKey: Optional[str] = None
-    widgets: Optional[List[Dict[str, Any]]] = None
+    widgets: Optional[Dict[str, Any]] = None
     order: Optional[int] = None
-    status: Optional[str] = None
     program_key: Optional[str] = None
-    addon_configurations: Optional[Dict[str, Any]] = None
-    
-    class Config:
-        populate_by_name = True
+    addon_configurations: Optional[List[str]] = None
+    scenarioDescription: Optional[List[Dict[str, Any]]] = None
+    data: Optional[Dict[str, Any]] = None
+    status: Optional[str] = None
+
+    model_config = {
+        "extra": "allow",
+        "populate_by_name": True
+    }
 
 
 class PlayboardResponse(BaseModel):
+    """Playboard response - matches PlayboardInDB"""
     id: Optional[str] = Field(None, alias="_id")
-    dataDomain: str
-    scenerioKey: str
-    widgets: Optional[List[Dict[str, Any]]] = []
+    key: Optional[str] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    scenarioKey: Optional[str] = None
+    dataDomain: Optional[str] = None
+    widgets: Optional[Dict[str, Any]] = None
     order: Optional[int] = 0
     program_key: Optional[str] = None
-    addon_configurations: Optional[Dict[str, Any]] = {}
-    status: Optional[str] = "A"
-    
-    class Config:
-        extra = "allow"
-        populate_by_name = True
+    addon_configurations: Optional[List[str]] = None
+    scenarioDescription: Optional[List[Dict[str, Any]]] = None
+    data: Optional[Dict[str, Any]] = None
+    status: Optional[str] = "active"
+    created_at: Optional[datetime] = None
+    created_by: Optional[str] = None
+    updated_at: Optional[datetime] = None
+    updated_by: Optional[str] = None
+
+    model_config = {
+        "extra": "allow",
+        "populate_by_name": True
+    }
 
 
 # Feedback Models
@@ -1299,3 +1331,58 @@ class ApiConfigCertUploadResponse(BaseModel):
     cert_type: str
     uploaded_at: str
     expires_at: Optional[str] = None
+
+
+# ============ Distribution List Models ============
+class DistributionListType(str, Enum):
+    """Types of distribution lists"""
+    SCENARIO_REQUEST = "scenario_request"
+    FEEDBACK = "feedback"
+    SYSTEM_ALERT = "system_alert"
+    CUSTOM = "custom"
+
+
+class DistributionListCreate(BaseModel):
+    """Create a new distribution list"""
+    key: str = Field(..., description="Unique identifier for the distribution list")
+    name: str = Field(..., description="Display name for the distribution list")
+    description: Optional[str] = None
+    type: DistributionListType = DistributionListType.CUSTOM
+    emails: List[str] = Field(default_factory=list, description="List of email addresses")
+    is_active: bool = True
+
+
+class DistributionListUpdate(BaseModel):
+    """Update an existing distribution list"""
+    name: Optional[str] = None
+    description: Optional[str] = None
+    type: Optional[DistributionListType] = None
+    emails: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+
+
+class DistributionListInDB(BaseModel):
+    """Distribution list as stored in database"""
+    id: Optional[str] = Field(None, alias="_id")
+    key: str
+    name: str
+    description: Optional[str] = None
+    type: str = "custom"
+    emails: List[str] = []
+    is_active: bool = True
+    created_at: Optional[datetime] = None
+    created_by: Optional[str] = None
+    updated_at: Optional[datetime] = None
+    updated_by: Optional[str] = None
+
+    model_config = {"extra": "allow", "populate_by_name": True}
+
+
+class DistributionListAddEmail(BaseModel):
+    """Add email to distribution list"""
+    email: str = Field(..., description="Email address to add")
+
+
+class DistributionListRemoveEmail(BaseModel):
+    """Remove email from distribution list"""
+    email: str = Field(..., description="Email address to remove")

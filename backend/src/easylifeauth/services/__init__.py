@@ -9,6 +9,7 @@ from .scenario_service import ScenarioService
 from .playboard_service import PlayboardService
 from .feedback_service import FeedbackService
 from .new_scenarios_service import NewScenarioService
+from .distribution_list_service import DistributionListService
 
 __all__ = [
     "TokenManager",
@@ -20,5 +21,6 @@ __all__ = [
     "ScenarioService",
     "PlayboardService",
     "FeedbackService",
-    "NewScenarioService"
+    "NewScenarioService",
+    "DistributionListService"
 ]

@@ -197,19 +197,17 @@ const PlayboardsManagement = () => {
         description: formData.description,
         scenarioKey: formData.scenarioKey,
         status: formData.status === 'A' ? 'active' : 'inactive',
-        data: {
-          key: formData.key,
-          dataDomain: formData.dataDomain,
-          scenarioKey: formData.scenarioKey,
-          scenerioKey: formData.scenarioKey,
-          order: formData.order,
-          status: formData.status,
-          program_key: formData.program_key,
-          config_type: formData.config_type,
-          addon_configurations: formData.addon_configurations,
-          widgets: formData.widgets,
-          scenarioDescription: formData.scenarioDescription
-        }
+        key: formData.key,
+        dataDomain: formData.dataDomain,
+        scenarioKey: formData.scenarioKey,
+        scenerioKey: formData.scenarioKey,
+        order: formData.order,
+        status: formData.status,
+        program_key: formData.program_key,
+        config_type: formData.config_type,
+        addon_configurations: formData.addon_configurations,
+        widgets: formData.widgets,
+        scenarioDescription: formData.scenarioDescription
       };
       await playboardsAPI.create(payload);
       toast.success('Playboard created successfully');
@@ -229,19 +227,18 @@ const PlayboardsManagement = () => {
         description: formData.description,
         scenarioKey: formData.scenarioKey,
         status: formData.status === 'A' ? 'active' : 'inactive',
-        data: {
-          key: formData.key,
-          dataDomain: formData.dataDomain,
-          scenarioKey: formData.scenarioKey,
-          scenerioKey: formData.scenarioKey,
-          order: formData.order,
-          status: formData.status,
-          program_key: formData.program_key,
-          config_type: formData.config_type,
-          addon_configurations: formData.addon_configurations,
-          widgets: formData.widgets,
-          scenarioDescription: formData.scenarioDescription
-        }
+        key: formData.key,
+        dataDomain: formData.dataDomain,
+        scenarioKey: formData.scenarioKey,
+        scenerioKey: formData.scenarioKey,
+        order: formData.order,
+        status: formData.status,
+        program_key: formData.program_key,
+        config_type: formData.config_type,
+        addon_configurations: formData.addon_configurations,
+        widgets: formData.widgets,
+        scenarioDescription: formData.scenarioDescription
+        
       };
       await playboardsAPI.update(editingItem.id || editingItem._id, payload);
       toast.success('Playboard updated successfully');
@@ -291,38 +288,41 @@ const PlayboardsManagement = () => {
       pagination: []
     };
 
-    const widgets = data.widgets ? {
-      filters: data.widgets.filters || [],
+    // Check both item.widgets (direct storage) and data.widgets (nested in data object)
+    const sourceWidgets = item.widgets || data.widgets;
+
+    const widgets = sourceWidgets ? {
+      filters: sourceWidgets.filters || [],
       grid: {
         actions: {
           rowActions: {
-            renderAs: data.widgets.grid?.actions?.rowActions?.renderAs || 'button',
-            attributes: data.widgets.grid?.actions?.rowActions?.attributes || [],
-            events: data.widgets.grid?.actions?.rowActions?.events || []
+            renderAs: sourceWidgets.grid?.actions?.rowActions?.renderAs || 'button',
+            attributes: sourceWidgets.grid?.actions?.rowActions?.attributes || [],
+            events: sourceWidgets.grid?.actions?.rowActions?.events || []
           },
-          headerActions: data.widgets.grid?.actions?.headerActions || {}
+          headerActions: sourceWidgets.grid?.actions?.headerActions || {}
         },
         layout: {
-          colums: data.widgets.grid?.layout?.colums || [],
-          headers: data.widgets.grid?.layout?.headers || [],
-          footer: data.widgets.grid?.layout?.footer || [],
-          ispaginated: data.widgets.grid?.layout?.ispaginated !== undefined
-            ? data.widgets.grid.layout.ispaginated
+          colums: sourceWidgets.grid?.layout?.colums || [],
+          headers: sourceWidgets.grid?.layout?.headers || [],
+          footer: sourceWidgets.grid?.layout?.footer || [],
+          ispaginated: sourceWidgets.grid?.layout?.ispaginated !== undefined
+            ? sourceWidgets.grid.layout.ispaginated
             : true,
-          defaultSize: data.widgets.grid?.layout?.defaultSize || 25
+          defaultSize: sourceWidgets.grid?.layout?.defaultSize || 25
         }
       },
-      pagination: data.widgets.pagination || []
+      pagination: sourceWidgets.pagination || []
     } : defaultWidgets;
 
     setFormData({
-      key: data.key || item.name || '',
+      key: item.key || data.key || item.name || '',
       name: item.name || '',
       description: item.description || '',
       scenarioKey: item.scenarioKey || data.scenarioKey || '',
-      dataDomain: data.dataDomain || '',
+      dataDomain: item.dataDomain || data.dataDomain || '',
       status: data.status || (item.status === 'active' ? 'A' : 'I'),
-      order: data.order || 0,
+      order: item.order || data.order || 0,
       program_key: data.program_key || '',
       config_type: data.config_type || 'db',
       addon_configurations: data.addon_configurations || [],
@@ -416,6 +416,7 @@ const PlayboardsManagement = () => {
       status: currentFilter.status,
       inputHint: currentFilter.inputHint,
       title: currentFilter.title,
+      type: currentFilter.type,
       attributes: [
         { key: 'type', value: currentFilter.type },
         { key: 'defaultValue', value: currentFilter.defaultValue },
@@ -845,7 +846,7 @@ const PlayboardsManagement = () => {
                   options={[
                     { value: 'db', label: 'Database' },
                     { value: 'gcs', label: 'GCS' },
-                    { value: 'db or gcs', label: 'DB or GCS' }
+                    { value: 'db+gcs', label: 'DB+GCS' }
                   ]}
                 />
                 <Input
@@ -914,13 +915,25 @@ const PlayboardsManagement = () => {
                 <div className="bg-gray-50 rounded-lg p-4 mb-4">
                   <h4 className="font-medium text-gray-900 mb-2">Configured Filters ({formData.widgets.filters.length})</h4>
                   <div className="space-y-2">
-                    {formData.widgets.filters.map((filter, idx) => (
+                    {formData.widgets.filters.map((filter, idx) => {
+                      // Handle both array and object formats for attributes
+                      const getFilterType = () => {
+                        if (filter.type) return filter.type;
+                        if (Array.isArray(filter.attributes)) {
+                          return filter.attributes.find(a => a.key === 'type')?.value || 'input';
+                        }
+                        if (filter.attributes && typeof filter.attributes === 'object') {
+                          return filter.attributes.value || filter.attributes.name || 'input';
+                        }
+                        return 'input';
+                      };
+                      return (
                       <div key={idx} className="flex items-center justify-between bg-white p-3 rounded border">
                         <div>
                           <span className="font-medium">{filter.displayName}</span>
                           <span className="text-gray-500 text-sm ml-2">({filter.name})</span>
                           <Badge variant="default" className="ml-2">
-                            {filter.attributes?.find(a => a.key === 'type')?.value || 'input'}
+                            {getFilterType()}
                           </Badge>
                         </div>
                         <button
@@ -933,7 +946,8 @@ const PlayboardsManagement = () => {
                           </svg>
                         </button>
                       </div>
-                    ))}
+                    );
+                    })}
                   </div>
                 </div>
               )}
