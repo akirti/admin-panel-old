@@ -97,6 +97,7 @@ class AdminPanelUser(HttpUser):
         """Called when a simulated user starts. Assigns user and performs login."""
         # Assign a user to this locust instance (round-robin from CSV)
         self.current_user = get_next_user()
+        print(f"[AdminPanelUser] Starting with user: {self.current_user['email']} (role: {self.current_user['role']})")
         self._get_csrf_token()
         self._login()
 
@@ -145,8 +146,8 @@ class AdminPanelUser(HttpUser):
                 response.success()
             else:
                 self.login_failed = True
-                # Report the actual error instead of hiding it
-                response.failure(f"Login failed: {response.status_code} - {response.text[:200]}")
+                print(f"[AdminPanelUser] Login FAILED for {self.current_user['email']}: {response.status_code} - {response.text[:200]}")
+                response.failure(f"Login failed for {self.current_user['email']}: {response.status_code}")
 
     def _get_auth_headers(self):
         """Get headers with authentication token."""

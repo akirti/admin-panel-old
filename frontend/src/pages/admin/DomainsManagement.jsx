@@ -18,7 +18,14 @@ function DomainsManagement() {
     path: '',
     icon: '',
     order: 0,
+    type: 'custom',
+    dataDomain: '',
+    status: 'active',
+    defaultSelected: false,
+    subDomains: [],
   });
+  const [newSubDomain, setNewSubDomain] = useState({ key: '', name: '', path: '' });
+  const [domainTypes, setDomainTypes] = useState([]);
   const [saving, setSaving] = useState(false);
 
   const fetchDomains = async () => {
@@ -33,8 +40,18 @@ function DomainsManagement() {
     }
   };
 
+  const fetchDomainTypes = async () => {
+    try {
+      const response = await domainAPI.getTypes();
+      setDomainTypes(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch domain types:', error);
+    }
+  };
+
   useEffect(() => {
     fetchDomains();
+    fetchDomainTypes();
   }, []);
 
   const handleChange = (e) => {
@@ -54,7 +71,13 @@ function DomainsManagement() {
       path: '',
       icon: '',
       order: 0,
+      type: domainTypes.length > 0 ? domainTypes[0].value : 'custom',
+      dataDomain: '',
+      status: 'active',
+      defaultSelected: false,
+      subDomains: [],
     });
+    setNewSubDomain({ key: '', name: '', path: '' });
     setModalOpen(true);
   };
 
@@ -67,7 +90,13 @@ function DomainsManagement() {
       path: domain.path || '',
       icon: domain.icon || '',
       order: domain.order || 0,
+      type: domain.type || 'custom',
+      dataDomain: domain.dataDomain || '',
+      status: domain.status === 'active' ? 'active' : (domain.status || 'active'),
+      defaultSelected: domain.defaultSelected || false,
+      subDomains: domain.subDomains || [],
     });
+    setNewSubDomain({ key: '', name: '', path: '' });
     setModalOpen(true);
   };
 
@@ -81,7 +110,30 @@ function DomainsManagement() {
       path: '',
       icon: '',
       order: 0,
+      type: 'custom',
+      dataDomain: '',
+      status: 'active',
+      defaultSelected: false,
+      subDomains: [],
     });
+    setNewSubDomain({ key: '', name: '', path: '' });
+  };
+
+  const addSubDomain = () => {
+    if (newSubDomain.key && newSubDomain.name && newSubDomain.path) {
+      setFormData(prev => ({
+        ...prev,
+        subDomains: [...prev.subDomains, { ...newSubDomain, status: 'active', order: prev.subDomains.length }],
+      }));
+      setNewSubDomain({ key: '', name: '', path: '' });
+    }
+  };
+
+  const removeSubDomain = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      subDomains: prev.subDomains.filter((_, i) => i !== index),
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -215,12 +267,12 @@ function DomainsManagement() {
                     <td className="py-3 px-4">
                       <span
                         className={`px-2 py-1 text-xs rounded-full ${
-                          domain.status === 'A'
+                          domain.status === 'active'
                             ? 'bg-green-100 text-green-800'
                             : 'bg-gray-100 text-gray-800'
                         }`}
                       >
-                        {domain.status === 'A' ? 'Active' : 'Inactive'}
+                        {domain.status === 'active' ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td className="py-3 px-4">
@@ -251,8 +303,8 @@ function DomainsManagement() {
 
       {/* Create/Edit Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto py-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6 my-auto max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">
                 {editingDomain ? 'Edit Domain' : 'Create Domain'}
@@ -335,6 +387,140 @@ function DomainsManagement() {
                     min={0}
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Type
+                  </label>
+                  <select
+                    name="type"
+                    value={formData.type}
+                    onChange={handleChange}
+                    className="input-field"
+                  >
+                    {domainTypes.length > 0 ? (
+                      domainTypes.map((t) => (
+                        <option key={t.value} value={t.value}>
+                          {t.label}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="authentication">Authentication</option>
+                        <option value="custom">Custom</option>
+                        <option value="system">System</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Data Domain
+                  </label>
+                  <input
+                    type="text"
+                    name="dataDomain"
+                    value={formData.dataDomain}
+                    onChange={handleChange}
+                    className="input-field"
+                    placeholder="data-domain-key"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleChange}
+                    className="input-field"
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+                <div className="flex items-center pt-6">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="defaultSelected"
+                      checked={formData.defaultSelected}
+                      onChange={(e) => setFormData(prev => ({ ...prev, defaultSelected: e.target.checked }))}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm font-medium text-gray-700">Default Selected</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* SubDomains Section */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Sub Domains
+                </label>
+
+                {/* Add SubDomain Form */}
+                <div className="bg-gray-50 p-3 rounded-lg mb-2">
+                  <div className="grid grid-cols-3 gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={newSubDomain.key}
+                      onChange={(e) => setNewSubDomain(prev => ({ ...prev, key: e.target.value }))}
+                      className="input-field text-sm"
+                      placeholder="Key"
+                    />
+                    <input
+                      type="text"
+                      value={newSubDomain.name}
+                      onChange={(e) => setNewSubDomain(prev => ({ ...prev, name: e.target.value }))}
+                      className="input-field text-sm"
+                      placeholder="Name"
+                    />
+                    <input
+                      type="text"
+                      value={newSubDomain.path}
+                      onChange={(e) => setNewSubDomain(prev => ({ ...prev, path: e.target.value }))}
+                      className="input-field text-sm"
+                      placeholder="Path"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addSubDomain}
+                    disabled={!newSubDomain.key || !newSubDomain.name || !newSubDomain.path}
+                    className="btn-secondary text-sm py-1 px-3 flex items-center gap-1"
+                  >
+                    <Plus size={14} /> Add SubDomain
+                  </button>
+                </div>
+
+                {/* SubDomains List */}
+                {formData.subDomains.length > 0 && (
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {formData.subDomains.map((sub, index) => (
+                      <div key={index} className="flex items-center justify-between bg-blue-50 px-3 py-2 rounded">
+                        <div className="text-sm">
+                          <span className="font-medium">{sub.name}</span>
+                          <span className="text-gray-500 ml-2">({sub.key})</span>
+                          <span className="text-gray-400 ml-2">{sub.path}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeSubDomain(index)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 pt-4">

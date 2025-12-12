@@ -10,7 +10,7 @@ import math
 from easylifeauth.api.models import RoleCreate, RoleUpdate, RoleInDB, PaginationMeta
 from easylifeauth.db.db_manager import DatabaseManager
 from easylifeauth.api.dependencies import get_db, get_email_service
-from easylifeauth.security.access_control import CurrentUser, require_super_admin
+from easylifeauth.security.access_control import CurrentUser, require_super_admin, require_group_admin
 from easylifeauth.services.email_service import EmailService
 
 router = APIRouter(prefix="/roles", tags=["Roles"])
@@ -52,10 +52,10 @@ async def list_roles(
     limit: int = Query(25, ge=1, le=100, description="Items per page"),
     status_filter: Optional[str] = Query(None, alias="status"),
     search: Optional[str] = None,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
-    """List all roles with pagination and filtering."""
+    """List all roles with pagination and filtering. Accessible by super-admins and administrators."""
     query = {}
     if status_filter:
         query["status"] = status_filter
@@ -85,10 +85,10 @@ async def list_roles(
 @router.get("/count")
 async def count_roles(
     status_filter: Optional[str] = Query(None, alias="status"),
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
-    """Get total count of roles."""
+    """Get total count of roles. Accessible by super-admins and administrators."""
     query = {}
     if status_filter:
         query["status"] = status_filter
@@ -99,7 +99,7 @@ async def count_roles(
 @router.get("/{role_id}", response_model=RoleInDB)
 async def get_role(
     role_id: str,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """Get a specific role by ID or roleId."""
@@ -121,7 +121,7 @@ async def get_role(
 @router.post("", response_model=RoleInDB, status_code=status.HTTP_201_CREATED)
 async def create_role(
     role_data: RoleCreate,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """Create a new role."""
@@ -147,7 +147,7 @@ async def create_role(
 async def update_role(
     role_id: str,
     role_data: RoleUpdate,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db),
     email_service: Optional[EmailService] = Depends(get_email_service)
 ):
@@ -189,7 +189,7 @@ async def update_role(
 @router.delete("/{role_id}")
 async def delete_role(
     role_id: str,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """Delete a role."""
@@ -223,7 +223,7 @@ async def delete_role(
 @router.post("/{role_id}/toggle-status")
 async def toggle_role_status(
     role_id: str,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db),
     email_service: Optional[EmailService] = Depends(get_email_service)
 ):
@@ -259,7 +259,7 @@ async def toggle_role_status(
 @router.get("/{role_id}/users", response_model=List[dict])
 async def get_role_users(
     role_id: str,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """Get all users with a specific role."""

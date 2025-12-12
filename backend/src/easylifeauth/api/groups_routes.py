@@ -9,8 +9,9 @@ import math
 
 from easylifeauth.api.models import GroupCreate, GroupUpdate, GroupInDB, PaginationMeta
 from easylifeauth.db.db_manager import DatabaseManager
+from easylifeauth.db.lookup import GroupTypes
 from easylifeauth.api.dependencies import get_db, get_email_service
-from easylifeauth.security.access_control import CurrentUser, require_super_admin
+from easylifeauth.security.access_control import CurrentUser, require_super_admin, require_group_admin
 from easylifeauth.services.email_service import EmailService
 
 router = APIRouter(prefix="/groups", tags=["Groups"])
@@ -52,7 +53,7 @@ async def list_groups(
     limit: int = Query(25, ge=1, le=100, description="Items per page"),
     status_filter: Optional[str] = Query(None, alias="status"),
     search: Optional[str] = None,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """List all groups with pagination and filtering."""
@@ -85,7 +86,7 @@ async def list_groups(
 @router.get("/count")
 async def count_groups(
     status_filter: Optional[str] = Query(None, alias="status"),
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """Get total count of groups."""
@@ -96,10 +97,18 @@ async def count_groups(
     return {"count": count}
 
 
+@router.get("/types")
+async def get_group_types(
+    current_user: CurrentUser = Depends(require_group_admin)
+):
+    """Get available group types from GroupTypes enum."""
+    return [{"value": t.value, "label": t.value.title()} for t in GroupTypes]
+
+
 @router.get("/{group_id}", response_model=GroupInDB)
 async def get_group(
     group_id: str,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """Get a specific group by ID or groupId."""
@@ -121,7 +130,7 @@ async def get_group(
 @router.post("", response_model=GroupInDB, status_code=status.HTTP_201_CREATED)
 async def create_group(
     group_data: GroupCreate,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """Create a new group."""
@@ -147,7 +156,7 @@ async def create_group(
 async def update_group(
     group_id: str,
     group_data: GroupUpdate,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db),
     email_service: Optional[EmailService] = Depends(get_email_service)
 ):
@@ -189,7 +198,7 @@ async def update_group(
 @router.delete("/{group_id}")
 async def delete_group(
     group_id: str,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """Delete a group."""
@@ -228,7 +237,7 @@ async def delete_group(
 @router.post("/{group_id}/toggle-status")
 async def toggle_group_status(
     group_id: str,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db),
     email_service: Optional[EmailService] = Depends(get_email_service)
 ):
@@ -264,7 +273,7 @@ async def toggle_group_status(
 @router.get("/{group_id}/users", response_model=List[dict])
 async def get_group_users(
     group_id: str,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """Get all users in a specific group."""

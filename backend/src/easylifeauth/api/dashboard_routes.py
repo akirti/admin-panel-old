@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 from easylifeauth.db.db_manager import DatabaseManager
 from easylifeauth.api.dependencies import get_db
-from easylifeauth.security.access_control import CurrentUser, require_super_admin
+from easylifeauth.security.access_control import CurrentUser, require_group_admin
 from easylifeauth.api.models import DashboardStats
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
@@ -15,10 +15,10 @@ router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 @router.get("/stats", response_model=DashboardStats)
 async def get_dashboard_stats(
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
-    """Get dashboard statistics."""
+    """Get dashboard statistics. Accessible by super-admins and group-admins."""
     # Count all entities
     total_users = await db.users.count_documents({})
     active_users = await db.users.count_documents({"is_active": True})
@@ -64,10 +64,10 @@ async def get_dashboard_stats(
 
 @router.get("/summary")
 async def get_summary(
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ) -> Dict[str, Any]:
-    """Get detailed summary of all entities."""
+    """Get detailed summary of all entities. Accessible by super-admins and group-admins."""
     # Users summary
     users_by_status = {
         "active": await db.users.count_documents({"is_active": True}),
@@ -150,10 +150,10 @@ async def get_summary(
 @router.get("/recent-logins")
 async def get_recent_logins(
     limit: int = Query(10, ge=1, le=50),
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ) -> Dict[str, List[Dict[str, Any]]]:
-    """Get recent user logins."""
+    """Get recent user logins. Accessible by super-admins and group-admins."""
     cursor = db.users.find(
         {"last_login": {"$ne": None}},
         {"password_hash": 0}
@@ -173,10 +173,10 @@ async def get_recent_logins(
 
 @router.get("/analytics")
 async def get_analytics(
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ) -> Dict[str, Any]:
-    """Get dashboard analytics and trends."""
+    """Get dashboard analytics and trends. Accessible by super-admins and group-admins."""
     thirty_days_ago = datetime.utcnow() - timedelta(days=30)
     seven_days_ago = datetime.utcnow() - timedelta(days=7)
 

@@ -25,6 +25,7 @@ const GroupsManagement = () => {
   const [groups, setGroups] = useState([]);
   const [permissions, setPermissions] = useState([]);
   const [domains, setDomains] = useState([]);
+  const [groupTypes, setGroupTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -46,7 +47,7 @@ const GroupsManagement = () => {
     groupId: '',
     name: '',
     description: '',
-    type: 'custom',
+    type: 'domain',
     permissions: [],
     domains: [],
     status: 'active',
@@ -89,15 +90,17 @@ const GroupsManagement = () => {
     }
   }, [page, limit, debouncedSearch]);
 
-  // Fetch permissions and domains for the form
+  // Fetch permissions, domains, and group types for the form
   const fetchFormData = useCallback(async () => {
     try {
-      const [permRes, domRes] = await Promise.all([
+      const [permRes, domRes, typesRes] = await Promise.all([
         permissionsAPI.list({ limit: 1000 }),
         domainsAPI.list({ limit: 1000 }),
+        groupsAPI.getTypes(),
       ]);
       setPermissions(permRes.data.data || []);
       setDomains(domRes.data.data || []);
+      setGroupTypes(typesRes.data || []);
     } catch (err) {
       console.error('Failed to fetch form data:', err);
     }
@@ -192,7 +195,7 @@ const GroupsManagement = () => {
       groupId: '',
       name: '',
       description: '',
-      type: 'custom',
+      type: groupTypes.length > 0 ? groupTypes[0].value : 'domain',
       permissions: [],
       domains: [],
       status: 'active',
@@ -653,8 +656,20 @@ const GroupsManagement = () => {
                     value={formData.type}
                     onChange={handleInputChange}
                   >
-                    <option value="custom">Custom</option>
-                    <option value="system">System</option>
+                    {groupTypes.length > 0 ? (
+                      groupTypes.map((t) => (
+                        <option key={t.value} value={t.value}>
+                          {t.label}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="domain">Domain</option>
+                        <option value="authentication">Authentication</option>
+                        <option value="bookmark">Bookmark</option>
+                        <option value="system">System</option>
+                      </>
+                    )}
                   </select>
                 </div>
                 <div>

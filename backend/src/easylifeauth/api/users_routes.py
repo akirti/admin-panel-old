@@ -28,7 +28,7 @@ def create_password_reset_token(email: str) -> str:
     """Create a password reset token."""
     return secrets.token_urlsafe(32)
 from easylifeauth.api.dependencies import get_db, get_email_service, get_activity_log_service
-from easylifeauth.security.access_control import CurrentUser, require_super_admin
+from easylifeauth.security.access_control import CurrentUser, require_super_admin, require_group_admin
 from easylifeauth.services.email_service import EmailService
 from easylifeauth.services.activity_log_service import ActivityLogService
 
@@ -54,11 +54,12 @@ async def list_users(
     limit: int = Query(25, ge=1, le=1000, description="Items per page"),
     is_active: Optional[bool] = None,
     search: Optional[str] = None,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """
     List all users with pagination and filtering.
+    Accessible by super-admins and administrators.
     """
     query = {}
     if is_active is not None:
@@ -91,10 +92,10 @@ async def list_users(
 @router.get("/count")
 async def count_users(
     is_active: Optional[bool] = None,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
-    """Get total count of users."""
+    """Get total count of users. Accessible by super-admins and administrators."""
     query = {}
     if is_active is not None:
         query["is_active"] = is_active
@@ -105,10 +106,10 @@ async def count_users(
 @router.get("/{user_id}", response_model=UserResponseFull)
 async def get_user(
     user_id: str,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
-    """Get a specific user by ID."""
+    """Get a specific user by ID. Accessible by super-admins and administrators."""
     try:
         user = await db.users.find_one({"_id": ObjectId(user_id)})
     except:
@@ -128,12 +129,12 @@ async def get_user(
 @router.post("", response_model=UserResponseFull, status_code=status.HTTP_201_CREATED)
 async def create_user(
     user_data: UserCreate,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db),
     email_service: Optional[EmailService] = Depends(get_email_service),
     activity_log: Optional[ActivityLogService] = Depends(get_activity_log_service)
 ):
-    """Create a new user."""
+    """Create a new user. Accessible by super-admins and administrators."""
     # Check if email already exists
     existing = await db.users.find_one({"email": user_data.email})
     if existing:
@@ -190,11 +191,11 @@ async def create_user(
 async def update_user(
     user_id: str,
     user_data: UserUpdate,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db),
     activity_log: Optional[ActivityLogService] = Depends(get_activity_log_service)
 ):
-    """Update a user."""
+    """Update a user. Accessible by super-admins and administrators."""
     try:
         existing = await db.users.find_one({"_id": ObjectId(user_id)})
     except:
@@ -235,11 +236,11 @@ async def update_user(
 @router.delete("/{user_id}")
 async def delete_user(
     user_id: str,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db),
     activity_log: Optional[ActivityLogService] = Depends(get_activity_log_service)
 ):
-    """Delete a user."""
+    """Delete a user. Accessible by super-admins and administrators."""
     # Get user info before deleting for logging
     try:
         user = await db.users.find_one({"_id": ObjectId(user_id)})
@@ -275,11 +276,11 @@ async def delete_user(
 @router.post("/{user_id}/toggle-status")
 async def toggle_user_status(
     user_id: str,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db),
     activity_log: Optional[ActivityLogService] = Depends(get_activity_log_service)
 ):
-    """Enable or disable a user."""
+    """Enable or disable a user. Accessible by super-admins and administrators."""
     try:
         user = await db.users.find_one({"_id": ObjectId(user_id)})
     except:
@@ -314,11 +315,11 @@ async def toggle_user_status(
 async def send_password_reset_email(
     user_id: str,
     send_email: bool = Query(True, description="Whether to send the reset email"),
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db),
     email_service: Optional[EmailService] = Depends(get_email_service)
 ):
-    """Send password reset email to a user."""
+    """Send password reset email to a user. Accessible by super-admins and administrators."""
     try:
         user = await db.users.find_one({"_id": ObjectId(user_id)})
     except:
@@ -351,11 +352,11 @@ async def send_password_reset_email(
 async def admin_reset_password(
     user_id: str,
     send_email: bool = Query(True, description="Whether to send email with new password"),
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db),
     email_service: Optional[EmailService] = Depends(get_email_service)
 ):
-    """Admin reset user's password."""
+    """Admin reset user's password. Accessible by super-admins and administrators."""
     try:
         user = await db.users.find_one({"_id": ObjectId(user_id)})
     except:

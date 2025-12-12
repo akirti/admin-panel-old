@@ -6,11 +6,16 @@ class GroupTypes(str, Enum):
     domain = "domain"
     authentication = "authentication"
     bookmark = "bookmark"
+    system = "system"
 
+class DomainTypes(str, Enum):
+    authentication = "authentication"
+    custom = "custom"
+    system = "system"
 
 class StatusTypes(str, Enum):
-    active = "A"
-    inactive = "I"
+    active = "active"
+    inactive = "inactive"
 
 
 class SharingTypes(str, Enum):

@@ -12,8 +12,9 @@ from easylifeauth.api.models import (
 )
 from easylifeauth.db.db_manager import DatabaseManager
 from easylifeauth.api.dependencies import get_db, get_user_service
-from easylifeauth.security.access_control import CurrentUser, require_super_admin, get_current_user
+from easylifeauth.security.access_control import CurrentUser, require_super_admin, require_group_admin, get_current_user
 from easylifeauth.services.user_service import UserService
+from easylifeauth.db.lookup import DomainTypes
 
 router = APIRouter(prefix="/domains", tags=["Domains"])
 
@@ -55,7 +56,15 @@ def create_pagination_meta(total: int, page: int, limit: int) -> PaginationMeta:
     )
 
 
-# IMPORTANT: /all route must come BEFORE /{domain_id} route
+# IMPORTANT: Static routes (/all, /types) must come BEFORE /{domain_id} route
+@router.get("/types")
+async def get_domain_types(
+    current_user: CurrentUser = Depends(require_group_admin)
+):
+    """Get available domain types from DomainTypes enum."""
+    return [{"value": t.value, "label": t.value.title()} for t in DomainTypes]
+
+
 @router.get("/all")
 async def get_all_domains(
     current_user: CurrentUser = Depends(get_current_user),
@@ -220,13 +229,15 @@ async def create_domain(
         )
 
     domain_dict = domain_data.model_dump()
-    # Convert subDomain (list of strings) to subDomains (empty list - full SubDomain objects added later)
-    domain_dict["subDomains"] = []
-    if "subDomain" in domain_dict:
-        del domain_dict["subDomain"]
+    # Ensure subDomains is a list (use provided value or default to empty list)
+    if domain_dict.get("subDomains") is None:
+        domain_dict["subDomains"] = []
     # Ensure type has a default value if None
     if domain_dict.get("type") is None:
         domain_dict["type"] = "custom"
+    # Ensure status has a default value if None
+    if domain_dict.get("status") is None:
+        domain_dict["status"] = "active"
     # Ensure path has a default value if None
     if domain_dict.get("path") is None:
         domain_dict["path"] = f"/{domain_dict['key']}"

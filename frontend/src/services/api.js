@@ -233,6 +233,7 @@ export const customersAPI = {
 export const domainAPI = {
   getAll: () => api.get('/domains/all'),  // Returns user-accessible domains only
   getAllAdmin: () => api.get('/domains/admin/all'),  // Returns all domains (admin only)
+  getTypes: () => api.get('/domains/types'),  // Returns domain types from DomainTypes enum
   get: (key) => api.get(`/domains/${key}`),
   create: (data) => api.post('/domains', data),
   update: (key, data) => api.put(`/domains/${key}`, data),
@@ -353,6 +354,7 @@ export const dashboardAPI = {
 export const groupsAPI = {
   list: (params = {}) => api.get('/groups', { params }),
   count: (params = {}) => api.get('/groups/count', { params }),
+  getTypes: () => api.get('/groups/types'),
   get: (id) => api.get(`/groups/${id}`),
   create: (data) => api.post('/groups', data),
   update: (id, data) => api.put(`/groups/${id}`, data),

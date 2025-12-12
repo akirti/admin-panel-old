@@ -101,7 +101,9 @@ class DomainCreate(BaseModel):
     defaultSelected: Optional[bool] = False
     actions: Optional[List[str]] = []
     type: Optional[str] = None
-    subDomain: Optional[List[str]] = []
+    status: Optional[str] = "active"
+    dataDomain: Optional[str] = None
+    subDomains: Optional[List[Dict[str, Any]]] = []
 
 
 class DomainUpdate(BaseModel):
@@ -113,7 +115,10 @@ class DomainUpdate(BaseModel):
     order: Optional[int] = None
     defaultSelected: Optional[bool] = None
     status: Optional[str] = None
-    
+    type: Optional[str] = None
+    dataDomain: Optional[str] = None
+    subDomains: Optional[List[Dict[str, Any]]] = None
+
     class Config:
         populate_by_name = True
 

@@ -10,7 +10,7 @@ import math
 from pydantic import BaseModel, Field
 from easylifeauth.db.db_manager import DatabaseManager
 from easylifeauth.api.dependencies import get_db
-from easylifeauth.security.access_control import CurrentUser, require_super_admin
+from easylifeauth.security.access_control import CurrentUser, require_super_admin, require_group_admin
 
 router = APIRouter(prefix="/customers", tags=["Customers"])
 
@@ -73,7 +73,7 @@ async def list_customers(
     limit: int = Query(25, ge=1, le=1000),
     search: Optional[str] = None,
     status: Optional[str] = None,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """List all customers with pagination and filtering."""
@@ -106,7 +106,7 @@ async def list_customers(
 async def count_customers(
     search: Optional[str] = None,
     status: Optional[str] = None,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """Get total customer count."""
@@ -126,7 +126,7 @@ async def count_customers(
 @router.get("/{customer_id}", response_model=CustomerInDB)
 async def get_customer(
     customer_id: str,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """Get a single customer by ID."""
@@ -148,7 +148,7 @@ async def get_customer(
 @router.post("", response_model=CustomerInDB, status_code=status.HTTP_201_CREATED)
 async def create_customer(
     customer_data: CustomerCreate,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """Create a new customer."""
@@ -174,7 +174,7 @@ async def create_customer(
 async def update_customer(
     customer_id: str,
     customer_data: CustomerUpdate,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """Update a customer."""
@@ -205,7 +205,7 @@ async def update_customer(
 @router.delete("/{customer_id}")
 async def delete_customer(
     customer_id: str,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """Delete a customer and remove from all users."""
@@ -238,7 +238,7 @@ async def delete_customer(
 @router.post("/{customer_id}/toggle-status")
 async def toggle_customer_status(
     customer_id: str,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """Toggle customer status between active and inactive."""
@@ -265,7 +265,7 @@ async def toggle_customer_status(
 @router.get("/{customer_id}/users")
 async def get_customer_users(
     customer_id: str,
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """Get all users assigned to a customer."""
@@ -304,7 +304,7 @@ async def get_customer_users(
 async def assign_users_to_customer(
     customer_id: str,
     user_ids: List[str],
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """Assign users to a customer."""
@@ -346,7 +346,7 @@ async def assign_users_to_customer(
 async def remove_users_from_customer(
     customer_id: str,
     user_ids: List[str],
-    current_user: CurrentUser = Depends(require_super_admin),
+    current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
     """Remove users from a customer."""
