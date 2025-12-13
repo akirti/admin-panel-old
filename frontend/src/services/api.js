@@ -219,6 +219,7 @@ export const permissionsAPI = {
 export const customersAPI = {
   list: (params = {}) => api.get('/customers', { params }),
   count: (params = {}) => api.get('/customers/count', { params }),
+  getFilters: () => api.get('/customers/filters'),
   get: (id) => api.get(`/customers/${id}`),
   create: (data) => api.post('/customers', data),
   update: (id, data) => api.put(`/customers/${id}`, data),

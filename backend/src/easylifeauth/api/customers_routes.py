@@ -73,6 +73,9 @@ async def list_customers(
     limit: int = Query(25, ge=1, le=1000),
     search: Optional[str] = None,
     status: Optional[str] = None,
+    tag: Optional[str] = None,
+    location: Optional[str] = None,
+    unit: Optional[str] = None,
     current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
@@ -88,6 +91,15 @@ async def list_customers(
 
     if status:
         query["status"] = status
+
+    if tag:
+        query["tags"] = tag
+
+    if location:
+        query["location"] = {"$regex": f"^{location}$", "$options": "i"}
+
+    if unit:
+        query["unit"] = {"$regex": f"^{unit}$", "$options": "i"}
 
     total = await db.customers.count_documents(query)
     cursor = db.customers.find(query).skip(page * limit).limit(limit).sort("created_at", -1)
@@ -121,6 +133,39 @@ async def count_customers(
 
     count = await db.customers.count_documents(query)
     return {"count": count}
+
+
+@router.get("/filters")
+async def get_customer_filters(
+    current_user: CurrentUser = Depends(require_group_admin),
+    db: DatabaseManager = Depends(get_db)
+):
+    """Get distinct tags, locations, and units for filtering."""
+    # Get distinct tags (unwind the array and get unique values)
+    tags_pipeline = [
+        {"$unwind": "$tags"},
+        {"$group": {"_id": "$tags"}},
+        {"$sort": {"_id": 1}}
+    ]
+    tags_cursor = db.customers.aggregate(tags_pipeline)
+    tags_result = await tags_cursor.to_list(length=None)
+    tags = [t["_id"] for t in tags_result if t["_id"]]
+
+    # Get distinct locations
+    locations = await db.customers.distinct("location")
+    locations = [loc for loc in locations if loc]  # Filter out None/empty
+    locations.sort()
+
+    # Get distinct units
+    units = await db.customers.distinct("unit")
+    units = [u for u in units if u]  # Filter out None/empty
+    units.sort()
+
+    return {
+        "tags": tags,
+        "locations": locations,
+        "units": units
+    }
 
 
 @router.get("/{customer_id}", response_model=CustomerInDB)

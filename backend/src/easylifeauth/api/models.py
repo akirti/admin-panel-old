@@ -558,6 +558,12 @@ class CustomerBase(BaseModel):
     description: Optional[str] = None
     status: str = "active"
     settings: Dict[str, Any] = {}
+    tags: List[str] = []
+    unit: Optional[str] = None
+    sales: Optional[str] = None
+    division: Optional[str] = None
+    channel: Optional[str] = None
+    location: Optional[str] = None
 
 
 class CustomerCreate(CustomerBase):
@@ -569,6 +575,12 @@ class CustomerUpdate(BaseModel):
     description: Optional[str] = None
     status: Optional[str] = None
     settings: Optional[Dict[str, Any]] = None
+    tags: Optional[List[str]] = None
+    unit: Optional[str] = None
+    sales: Optional[str] = None
+    division: Optional[str] = None
+    channel: Optional[str] = None
+    location: Optional[str] = None
 
 
 class CustomerInDB(CustomerBase):

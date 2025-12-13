@@ -16,6 +16,7 @@ import {
   AlertCircle,
   CheckCircle,
   Shield,
+  Filter,
 } from 'lucide-react';
 
 const GroupsManagement = () => {
@@ -39,6 +40,8 @@ const GroupsManagement = () => {
   // Search and filter state
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [filterDomain, setFilterDomain] = useState('');
+  const [filterPermission, setFilterPermission] = useState('');
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -75,6 +78,8 @@ const GroupsManagement = () => {
       setLoading(true);
       const params = { page, limit };
       if (debouncedSearch) params.search = debouncedSearch;
+      if (filterDomain) params.domain = filterDomain;
+      if (filterPermission) params.permission = filterPermission;
 
       const response = await groupsAPI.list(params);
       setGroups(response.data.data || []);
@@ -88,7 +93,7 @@ const GroupsManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, debouncedSearch, filterDomain, filterPermission]);
 
   // Fetch permissions, domains, and group types for the form
   const fetchFormData = useCallback(async () => {
@@ -377,10 +382,10 @@ const GroupsManagement = () => {
         </div>
       )}
 
-      {/* Search */}
+      {/* Search and Filters */}
       <div className="card">
-        <div className="flex gap-4">
-          <div className="relative flex-1">
+        <div className="flex flex-wrap gap-4">
+          <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input
               type="text"
@@ -389,6 +394,51 @@ const GroupsManagement = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter size={18} className="text-gray-400" />
+            <select
+              className="input min-w-[150px]"
+              value={filterDomain}
+              onChange={(e) => {
+                setFilterDomain(e.target.value);
+                setPage(0);
+              }}
+            >
+              <option value="">All Domains</option>
+              {domains.map((domain) => (
+                <option key={domain.key || domain._id} value={domain.key || domain._id}>
+                  {domain.name}
+                </option>
+              ))}
+            </select>
+            <select
+              className="input min-w-[150px]"
+              value={filterPermission}
+              onChange={(e) => {
+                setFilterPermission(e.target.value);
+                setPage(0);
+              }}
+            >
+              <option value="">All Permissions</option>
+              {permissions.map((perm) => (
+                <option key={perm.key} value={perm.key}>
+                  {perm.name || perm.key}
+                </option>
+              ))}
+            </select>
+            {(filterDomain || filterPermission) && (
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => {
+                  setFilterDomain('');
+                  setFilterPermission('');
+                  setPage(0);
+                }}
+              >
+                Clear Filters
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -562,26 +612,29 @@ const GroupsManagement = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="px-4 py-3 border-t flex items-center justify-between">
-            <div className="text-sm text-gray-500">
-              Page {page + 1} of {totalPages} ({total} groups)
-            </div>
-            <div className="flex gap-2">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-200">
+            <p className="text-sm text-neutral-500">
+              Showing {page * limit + 1} to{' '}
+              {Math.min((page + 1) * limit, total)} of{' '}
+              {total} groups
+            </p>
+            <div className="flex items-center gap-2">
               <button
-                className="btn btn-secondary btn-sm"
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
+                className="p-2 rounded-lg hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-600"
               >
-                <ChevronLeft size={16} />
-                Previous
+                <ChevronLeft size={20} />
               </button>
+              <span className="text-sm text-neutral-600">
+                Page {page + 1} of {totalPages}
+              </span>
               <button
-                className="btn btn-secondary btn-sm"
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
+                className="p-2 rounded-lg hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-600"
               >
-                Next
-                <ChevronRight size={16} />
+                <ChevronRight size={20} />
               </button>
             </div>
           </div>

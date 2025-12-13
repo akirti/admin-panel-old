@@ -41,7 +41,7 @@ class BulkUploadService:
         "roles": ["roleId", "name", "description", "permissions", "domains", "status", "priority", "type"],
         "groups": ["groupId", "name", "description", "permissions", "domains", "status", "priority", "type"],
         "permissions": ["key", "name", "description", "module", "actions"],
-        "customers": ["customerId", "name", "description", "status"],
+        "customers": ["customerId", "name", "description", "status", "tags", "unit", "sales", "division", "channel", "location"],
         "domains": ["key", "name", "description", "path", "dataDomain", "status", "defaultSelected", "order", "icon", "type"],
         "domain_scenarios": ["key", "name", "description", "path", "dataDomain", "status", "defaultSelected", "order", "icon", "type", "domainKey"],
     }
@@ -413,6 +413,12 @@ class BulkUploadService:
                     "name": name,
                     "description": str(row.get("description", "")).strip() if pd.notna(row.get("description")) else None,
                     "status": str(row.get("status", "active")).lower(),
+                    "tags": self._parse_list_field(row.get("tags")),
+                    "unit": str(row.get("unit", "")).strip() if pd.notna(row.get("unit")) else None,
+                    "sales": str(row.get("sales", "")).strip() if pd.notna(row.get("sales")) else None,
+                    "division": str(row.get("division", "")).strip() if pd.notna(row.get("division")) else None,
+                    "channel": str(row.get("channel", "")).strip() if pd.notna(row.get("channel")) else None,
+                    "location": str(row.get("location", "")).strip() if pd.notna(row.get("location")) else None,
                     "updated_at": datetime.utcnow(),
                 }
 

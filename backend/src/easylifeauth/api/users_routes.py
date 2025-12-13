@@ -54,6 +54,8 @@ async def list_users(
     limit: int = Query(25, ge=1, le=1000, description="Items per page"),
     is_active: Optional[bool] = None,
     search: Optional[str] = None,
+    role: Optional[str] = None,
+    group: Optional[str] = None,
     current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
@@ -70,6 +72,10 @@ async def list_users(
             {"username": {"$regex": search, "$options": "i"}},
             {"full_name": {"$regex": search, "$options": "i"}}
         ]
+    if role:
+        query["roles"] = role
+    if group:
+        query["groups"] = group
 
     # Get total count
     total = await db.users.count_documents(query)

@@ -3,7 +3,7 @@ import { usersAPI, rolesAPI, groupsAPI, customersAPI, exportAPI } from '../../se
 import toast from 'react-hot-toast';
 import {
   Users, Search, ChevronLeft, ChevronRight, Plus, Edit2,
-  Power, Trash2, X, Key, Download, FileDown
+  Power, Trash2, X, Key, Download, FileDown, Filter
 } from 'lucide-react';
 
 const UsersManagement = () => {
@@ -13,6 +13,8 @@ const UsersManagement = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [filterRole, setFilterRole] = useState('');
+  const [filterGroup, setFilterGroup] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [pagination, setPagination] = useState({ page: 0, limit: 25, total: 0, pages: 0 });
@@ -31,8 +33,13 @@ const UsersManagement = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      const params = { page: pagination.page, limit: pagination.limit };
+      if (search) params.search = search;
+      if (filterRole) params.role = filterRole;
+      if (filterGroup) params.group = filterGroup;
+
       const [usersRes, rolesRes, groupsRes, customersRes] = await Promise.all([
-        usersAPI.list({ search: search || undefined, page: pagination.page, limit: pagination.limit }),
+        usersAPI.list(params),
         rolesAPI.list({ limit: 100 }),
         groupsAPI.list({ limit: 100 }),
         customersAPI.list({ limit: 100 }),
@@ -47,7 +54,7 @@ const UsersManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, pagination.page, pagination.limit]);
+  }, [search, filterRole, filterGroup, pagination.page, pagination.limit]);
 
   useEffect(() => {
     fetchData();
@@ -225,17 +232,64 @@ const UsersManagement = () => {
         </div>
       </div>
 
-      {/* Search */}
+      {/* Search and Filters */}
       <div className="card p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPagination(prev => ({ ...prev, page: 0 })); }}
-            placeholder="Search by email, username, or name..."
-            className="input-field pl-10 w-full"
-          />
+        <div className="flex flex-wrap gap-4">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPagination(prev => ({ ...prev, page: 0 })); }}
+              placeholder="Search by email, username, or name..."
+              className="input-field pl-10 w-full"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter size={18} className="text-neutral-400" />
+            <select
+              className="input-field min-w-[150px]"
+              value={filterRole}
+              onChange={(e) => {
+                setFilterRole(e.target.value);
+                setPagination(prev => ({ ...prev, page: 0 }));
+              }}
+            >
+              <option value="">All Roles</option>
+              {roles.map((role) => (
+                <option key={role.roleId} value={role.roleId}>
+                  {role.name}
+                </option>
+              ))}
+            </select>
+            <select
+              className="input-field min-w-[150px]"
+              value={filterGroup}
+              onChange={(e) => {
+                setFilterGroup(e.target.value);
+                setPagination(prev => ({ ...prev, page: 0 }));
+              }}
+            >
+              <option value="">All Groups</option>
+              {groups.map((group) => (
+                <option key={group.groupId} value={group.groupId}>
+                  {group.name}
+                </option>
+              ))}
+            </select>
+            {(filterRole || filterGroup) && (
+              <button
+                className="btn-secondary text-sm py-2 px-3"
+                onClick={() => {
+                  setFilterRole('');
+                  setFilterGroup('');
+                  setPagination(prev => ({ ...prev, page: 0 }));
+                }}
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

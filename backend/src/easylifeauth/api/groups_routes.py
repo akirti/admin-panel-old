@@ -53,6 +53,8 @@ async def list_groups(
     limit: int = Query(25, ge=1, le=100, description="Items per page"),
     status_filter: Optional[str] = Query(None, alias="status"),
     search: Optional[str] = None,
+    domain: Optional[str] = None,
+    permission: Optional[str] = None,
     current_user: CurrentUser = Depends(require_group_admin),
     db: DatabaseManager = Depends(get_db)
 ):
@@ -65,6 +67,10 @@ async def list_groups(
             {"name": {"$regex": search, "$options": "i"}},
             {"groupId": {"$regex": search, "$options": "i"}}
         ]
+    if domain:
+        query["domains"] = domain
+    if permission:
+        query["permissions"] = permission
 
     # Get total count
     total = await db.groups.count_documents(query)

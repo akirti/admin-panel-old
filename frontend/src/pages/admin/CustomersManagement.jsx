@@ -19,6 +19,7 @@ import {
   Shield,
   UserPlus,
   UserMinus,
+  Filter,
 } from 'lucide-react';
 
 const CustomersManagement = () => {
@@ -37,9 +38,15 @@ const CustomersManagement = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [total, setTotal] = useState(0);
 
-  // Search state
+  // Search and filter state
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [filterTag, setFilterTag] = useState('');
+  const [filterLocation, setFilterLocation] = useState('');
+  const [filterUnit, setFilterUnit] = useState('');
+  const [availableTags, setAvailableTags] = useState([]);
+  const [availableLocations, setAvailableLocations] = useState([]);
+  const [availableUnits, setAvailableUnits] = useState([]);
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -52,7 +59,14 @@ const CustomersManagement = () => {
     contactPhone: '',
     address: '',
     status: 'active',
+    tags: [],
+    unit: '',
+    sales: '',
+    division: '',
+    channel: '',
+    location: '',
   });
+  const [newTag, setNewTag] = useState('');
 
   // Users modal state
   const [usersModalOpen, setUsersModalOpen] = useState(false);
@@ -76,6 +90,9 @@ const CustomersManagement = () => {
       setLoading(true);
       const params = { page, limit };
       if (debouncedSearch) params.search = debouncedSearch;
+      if (filterTag) params.tag = filterTag;
+      if (filterLocation) params.location = filterLocation;
+      if (filterUnit) params.unit = filterUnit;
 
       const response = await customersAPI.list(params);
       setCustomers(response.data.data || []);
@@ -89,7 +106,19 @@ const CustomersManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, debouncedSearch, filterTag, filterLocation, filterUnit]);
+
+  // Fetch filter options (tags, locations, units)
+  const fetchFilterOptions = useCallback(async () => {
+    try {
+      const response = await customersAPI.getFilters();
+      setAvailableTags(response.data.tags || []);
+      setAvailableLocations(response.data.locations || []);
+      setAvailableUnits(response.data.units || []);
+    } catch (err) {
+      console.error('Failed to fetch filter options:', err);
+    }
+  }, []);
 
   // Fetch all users for assignment
   const fetchAllUsers = useCallback(async () => {
@@ -105,8 +134,9 @@ const CustomersManagement = () => {
     if (isSuperAdmin()) {
       fetchCustomers();
       fetchAllUsers();
+      fetchFilterOptions();
     }
-  }, [fetchCustomers, fetchAllUsers, isSuperAdmin]);
+  }, [fetchCustomers, fetchAllUsers, fetchFilterOptions, isSuperAdmin]);
 
   // Clear messages after timeout
   useEffect(() => {
@@ -125,6 +155,29 @@ const CustomersManagement = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Tag management
+  const handleAddTag = () => {
+    const tag = newTag.trim();
+    if (tag && !formData.tags.includes(tag)) {
+      setFormData((prev) => ({ ...prev, tags: [...prev.tags, tag] }));
+      setNewTag('');
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove) => {
+    setFormData((prev) => ({
+      ...prev,
+      tags: prev.tags.filter((tag) => tag !== tagToRemove),
+    }));
+  };
+
+  const handleTagKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddTag();
+    }
+  };
+
   // Open create modal
   const openCreateModal = () => {
     setEditingCustomer(null);
@@ -136,7 +189,14 @@ const CustomersManagement = () => {
       contactPhone: '',
       address: '',
       status: 'active',
+      tags: [],
+      unit: '',
+      sales: '',
+      division: '',
+      channel: '',
+      location: '',
     });
+    setNewTag('');
     setModalOpen(true);
   };
 
@@ -151,7 +211,14 @@ const CustomersManagement = () => {
       contactPhone: customer.contactPhone || '',
       address: customer.address || '',
       status: customer.status || 'active',
+      tags: customer.tags || [],
+      unit: customer.unit || '',
+      sales: customer.sales || '',
+      division: customer.division || '',
+      channel: customer.channel || '',
+      location: customer.location || '',
     });
+    setNewTag('');
     setModalOpen(true);
   };
 
@@ -348,10 +415,10 @@ const CustomersManagement = () => {
         </div>
       )}
 
-      {/* Search */}
+      {/* Search and Filters */}
       <div className="card">
-        <div className="flex gap-4">
-          <div className="relative flex-1">
+        <div className="flex flex-wrap gap-4">
+          <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input
               type="text"
@@ -360,6 +427,51 @@ const CustomersManagement = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter size={18} className="text-gray-400" />
+            <select
+              className="input min-w-[150px]"
+              value={filterLocation}
+              onChange={(e) => {
+                setFilterLocation(e.target.value);
+                setPage(0);
+              }}
+            >
+              <option value="">All Locations</option>
+              {availableLocations.map((loc) => (
+                <option key={loc} value={loc}>
+                  {loc}
+                </option>
+              ))}
+            </select>
+            <select
+              className="input min-w-[150px]"
+              value={filterUnit}
+              onChange={(e) => {
+                setFilterUnit(e.target.value);
+                setPage(0);
+              }}
+            >
+              <option value="">All Units</option>
+              {availableUnits.map((unit) => (
+                <option key={unit} value={unit}>
+                  {unit}
+                </option>
+              ))}
+            </select>
+            {(filterLocation || filterUnit) && (
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => {
+                  setFilterLocation('');
+                  setFilterUnit('');
+                  setPage(0);
+                }}
+              >
+                Clear Filters
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -388,6 +500,24 @@ const CustomersManagement = () => {
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Unit
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Sales
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Division
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Channel
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Location
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Tags
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Created
@@ -439,6 +569,40 @@ const CustomersManagement = () => {
                       >
                         {customer.status || 'active'}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-gray-600">{customer.unit || '-'}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-gray-600">{customer.sales || '-'}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-gray-600">{customer.division || '-'}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-gray-600">{customer.channel || '-'}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-gray-600">{customer.location || '-'}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1 max-w-xs">
+                        {customer.tags && customer.tags.length > 0 ? (
+                          customer.tags.slice(0, 3).map((tag, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs"
+                            >
+                              {tag}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                        {customer.tags && customer.tags.length > 3 && (
+                          <span className="text-gray-500 text-xs">+{customer.tags.length - 3}</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-sm text-gray-500">
@@ -496,26 +660,29 @@ const CustomersManagement = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="px-4 py-3 border-t flex items-center justify-between">
-            <div className="text-sm text-gray-500">
-              Page {page + 1} of {totalPages} ({total} customers)
-            </div>
-            <div className="flex gap-2">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-200">
+            <p className="text-sm text-neutral-500">
+              Showing {page * limit + 1} to{' '}
+              {Math.min((page + 1) * limit, total)} of{' '}
+              {total} customers
+            </p>
+            <div className="flex items-center gap-2">
               <button
-                className="btn btn-secondary btn-sm"
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
+                className="p-2 rounded-lg hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-600"
               >
-                <ChevronLeft size={16} />
-                Previous
+                <ChevronLeft size={20} />
               </button>
+              <span className="text-sm text-neutral-600">
+                Page {page + 1} of {totalPages}
+              </span>
               <button
-                className="btn btn-secondary btn-sm"
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
+                className="p-2 rounded-lg hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-600"
               >
-                Next
-                <ChevronRight size={16} />
+                <ChevronRight size={20} />
               </button>
             </div>
           </div>
@@ -640,6 +807,109 @@ const CustomersManagement = () => {
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                   </select>
+                </div>
+
+                {/* Business Attributes */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+                    <input
+                      type="text"
+                      name="unit"
+                      className="input w-full"
+                      value={formData.unit}
+                      onChange={handleInputChange}
+                      placeholder="Business unit..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Sales</label>
+                    <input
+                      type="text"
+                      name="sales"
+                      className="input w-full"
+                      value={formData.sales}
+                      onChange={handleInputChange}
+                      placeholder="Sales region/team..."
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Division</label>
+                    <input
+                      type="text"
+                      name="division"
+                      className="input w-full"
+                      value={formData.division}
+                      onChange={handleInputChange}
+                      placeholder="Division..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Channel</label>
+                    <input
+                      type="text"
+                      name="channel"
+                      className="input w-full"
+                      value={formData.channel}
+                      onChange={handleInputChange}
+                      placeholder="Channel..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <input
+                      type="text"
+                      name="location"
+                      className="input w-full"
+                      value={formData.location}
+                      onChange={handleInputChange}
+                      placeholder="Location..."
+                    />
+                  </div>
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      className="input flex-1"
+                      value={newTag}
+                      onChange={(e) => setNewTag(e.target.value)}
+                      onKeyDown={handleTagKeyDown}
+                      placeholder="Add a tag and press Enter..."
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={handleAddTag}
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {formData.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {formData.tags.map((tag, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
+                        >
+                          {tag}
+                          <button
+                            type="button"
+                            className="hover:text-blue-900"
+                            onClick={() => handleRemoveTag(tag)}
+                          >
+                            <X size={14} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 

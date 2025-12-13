@@ -178,6 +178,12 @@ function AdminDashboard() {
       </div>
 
       {/* Request Stats Row */}
+      <div>
+        <h4 className="text-l font-bold text-gray-900">
+          Scenario Request Statistics
+        </h4>
+        <p className="text-gray-500 mt-1">Overview of reaquested scenarios</p>
+      </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="card p-4 flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
