@@ -132,14 +132,37 @@ admin-panel/
 
 | Feature | Super Admin | Admin | Group Admin | Editor | User | Viewer |
 |---------|-------------|-------|-------------|--------|------|--------|
+| **Panels** |
 | Admin Panel (`/admin`) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Management Panel (`/management`) | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **User Management** |
 | Manage All Users | ✅ | ✅* | ❌ | ❌ | ❌ | ❌ |
 | Manage Group Users | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Manage Roles | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Manage Groups | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Manage Permissions | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Content Management** |
 | Create/Edit Domains | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
 | Create/Edit Scenarios | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Create/Edit Playboards | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Manage Configurations | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Manage API Configs | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Customer & Communication** |
+| Manage Customers | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Manage Distribution Lists | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| View/Manage Feedback | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **Scenario Requests** |
+| Submit Scenario Request | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| View All Requests | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| View Own Requests | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Monitoring** |
+| View Activity Logs | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| View Error Logs | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Bulk Upload | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **User Features** |
 | View Domains | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Edit Profile | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Submit Feedback | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 *Admin cannot manage super-administrators
 
