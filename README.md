@@ -1,13 +1,13 @@
 # EasyLife Admin Panel
 
-A comprehensive admin panel with FastAPI backend and React frontend, featuring role-based access control.
+A comprehensive admin panel with FastAPI backend and React frontend, featuring role-based access control, playboard management with advanced widget configuration, and email distribution lists.
 
 ## Project Structure
 
 ```
 admin-panel/
 ├── backend/
-│   ├── easylifeauth/          # Main authentication package
+│   ├── src/easylifeauth/      # Main authentication package
 │   │   ├── api/               # FastAPI route handlers
 │   │   │   ├── auth_routes.py
 │   │   │   ├── admin_routes.py
@@ -17,6 +17,16 @@ admin-panel/
 │   │   │   ├── feedback_routes.py
 │   │   │   ├── scenario_request_routes.py
 │   │   │   ├── health_routes.py
+│   │   │   ├── users_routes.py
+│   │   │   ├── roles_routes.py
+│   │   │   ├── groups_routes.py
+│   │   │   ├── permissions_routes.py
+│   │   │   ├── configurations_routes.py
+│   │   │   ├── customers_routes.py
+│   │   │   ├── jira_routes.py
+│   │   │   ├── api_config_routes.py
+│   │   │   ├── distribution_list_routes.py
+│   │   │   ├── error_log_routes.py
 │   │   │   ├── models.py
 │   │   │   └── dependencies.py
 │   │   ├── db/                # Database management
@@ -32,7 +42,15 @@ admin-panel/
 │   │   │   ├── scenario_service.py
 │   │   │   ├── playboard_service.py
 │   │   │   ├── feedback_service.py
-│   │   │   └── new_scenarios_service.py
+│   │   │   ├── new_scenarios_service.py
+│   │   │   ├── jira_service.py
+│   │   │   ├── distribution_list_service.py
+│   │   │   └── error_log_service.py
+│   │   ├── middleware/        # Custom middleware
+│   │   │   ├── csrf.py
+│   │   │   ├── rate_limit.py
+│   │   │   ├── security.py
+│   │   │   └── db_health.py
 │   │   ├── security/          # Access control
 │   │   │   └── access_control.py
 │   │   ├── errors/            # Custom exceptions
@@ -46,9 +64,16 @@ admin-panel/
 └── frontend/
     ├── src/
     │   ├── components/
-    │   │   └── layout/
-    │   │       ├── MainLayout.jsx
-    │   │       └── AuthLayout.jsx
+    │   │   ├── layout/
+    │   │   │   ├── MainLayout.jsx
+    │   │   │   └── AuthLayout.jsx
+    │   │   └── shared/        # Reusable UI components
+    │   │       ├── Input.jsx
+    │   │       ├── Select.jsx
+    │   │       ├── Modal.jsx
+    │   │       ├── Toggle.jsx
+    │   │       ├── Button.jsx
+    │   │       └── Badge.jsx
     │   ├── contexts/
     │   │   └── AuthContext.jsx
     │   ├── pages/
@@ -66,8 +91,19 @@ admin-panel/
     │   │       ├── AdminDashboard.jsx
     │   │       ├── UsersManagement.jsx
     │   │       ├── RolesManagement.jsx
+    │   │       ├── GroupsManagement.jsx
+    │   │       ├── PermissionsManagement.jsx
     │   │       ├── DomainsManagement.jsx
-    │   │       └── ScenariosManagement.jsx
+    │   │       ├── ScenariosManagement.jsx
+    │   │       ├── PlayboardsManagement.jsx
+    │   │       ├── ConfigurationsManagement.jsx
+    │   │       ├── CustomersManagement.jsx
+    │   │       ├── ApiConfigsManagement.jsx
+    │   │       ├── DistributionListManagement.jsx
+    │   │       ├── FeedbackManagement.jsx
+    │   │       ├── ActivityLogsPage.jsx
+    │   │       ├── ErrorLogsPage.jsx
+    │   │       └── BulkUploadPage.jsx
     │   ├── services/
     │   │   └── api.js
     │   ├── App.jsx
@@ -163,6 +199,40 @@ admin-panel/
 - `GET /{request_id}` - Get request by ID
 - `POST /` - Create scenario request
 - `PUT /{request_id}` - Update scenario request
+
+### Distribution Lists (`/api/v1/distribution-lists`)
+- `GET /` - Get all distribution lists (paginated)
+- `GET /types` - Get available list types
+- `GET /{list_id}` - Get distribution list by ID
+- `POST /` - Create distribution list
+- `PUT /{list_id}` - Update distribution list
+- `DELETE /{list_id}` - Delete distribution list
+- `PATCH /{list_id}/toggle` - Toggle list active status
+
+### API Configurations (`/api/v1/api-configs`)
+- `GET /` - Get all API configurations
+- `GET /{config_id}` - Get API config by ID
+- `POST /` - Create API configuration
+- `PUT /{config_id}` - Update API configuration
+- `DELETE /{config_id}` - Delete API configuration
+
+### Customers (`/api/v1/customers`)
+- `GET /` - Get all customers
+- `GET /{customer_id}` - Get customer by ID
+- `POST /` - Create customer
+- `PUT /{customer_id}` - Update customer
+- `DELETE /{customer_id}` - Delete customer
+
+### Error Logs (`/api/v1/error-logs`)
+- `GET /` - Get error logs (paginated, filterable)
+- `GET /{log_id}` - Get error log by ID
+- `GET /stats` - Get error statistics
+- `DELETE /{log_id}` - Delete error log
+
+### Jira Integration (`/api/v1/jira`)
+- `POST /create-issue` - Create Jira issue from scenario request
+- `GET /issue/{issue_key}` - Get Jira issue details
+- `POST /sync/{request_id}` - Sync scenario request with Jira
 
 ### Health (`/api/v1`)
 - `GET /health` - Comprehensive health check
@@ -335,17 +405,66 @@ npm run build
 | `/profile` | ProfilePage | Authenticated |
 | `/domains` | DomainsPage | Authenticated |
 | `/domains/:key` | DomainDetailPage | Authenticated |
+| `/ask-scenario` | AskScenarioPage | Authenticated |
+| `/my-requests` | MyRequestsPage | Authenticated |
+| `/feedback` | FeedbackPage | Authenticated |
 | `/admin` | AdminDashboard | Super Admin |
 | `/admin/users` | UsersManagement | Super Admin |
 | `/admin/roles` | RolesManagement | Super Admin |
+| `/admin/groups` | GroupsManagement | Super Admin |
+| `/admin/permissions` | PermissionsManagement | Super Admin |
+| `/admin/customers` | CustomersManagement | Super Admin |
 | `/admin/domains` | DomainsManagement | Super Admin |
 | `/admin/scenarios` | ScenariosManagement | Super Admin |
+| `/admin/playboards` | PlayboardsManagement | Super Admin |
+| `/admin/configurations` | ConfigurationsManagement | Super Admin |
+| `/admin/api-configs` | ApiConfigsManagement | Super Admin |
+| `/admin/scenario-requests` | ScenarioRequestsManagement | Super Admin |
+| `/admin/feedback` | FeedbackManagement | Super Admin |
+| `/admin/activity-logs` | ActivityLogsPage | Super Admin |
+| `/admin/error-logs` | ErrorLogsPage | Super Admin |
+| `/admin/bulk-upload` | BulkUploadPage | Super Admin |
+| `/admin/distribution-lists` | DistributionListManagement | Super Admin |
 | `/management` | AdminDashboard | Group Admin+ |
 | `/management/users` | UsersManagement | Group Admin+ |
 | `/management/domains` | DomainsManagement | Group Admin+ |
+| `/management/scenario-requests` | ScenarioRequestsManagement | Group Admin+ |
+
+## Playboard Widget Configuration
+
+Playboards support advanced widget configuration with the following features:
+
+### Filters
+- **Basic Properties**: name, dataKey, displayName, index, visible, status
+- **Filter Types**: input, select, date, daterange, number
+- **Attributes**: type, defaultValue, regex, options, width, placeholder, min, max, etc.
+- **Custom Attributes**: Autocomplete from WidgetAttributeKeyTypes enum
+
+### Row Actions
+- **Properties**: key, name, path, dataDomain, status, order
+- **Filters**: Map row data to navigation params (inputKey -> dataKey)
+- **Render Options**: button, dropdown, icons
+
+### Grid Settings
+- **Layout**: pagination, default page size
+- **Row Actions Render As**: button, dropdown, icons
+
+### Pagination Widget
+- **Properties**: name, dataKey, displayName, visible
+- **Attributes**: type (dropdown/input/buttons), options, defaultValue, width
+
+## Distribution Lists
+
+Email distribution lists for notifications with the following types:
+- `scenario_request` - Scenario request notifications
+- `feedback` - Feedback notifications
+- `system_alert` - System alerts
+- `system_notification` - System notifications
+- `configuration_update` - Configuration updates
+- `no_reply` - No-reply emails
+- `support` - Support requests
+- `custom` - Custom lists
 
 ## License
 
 MIT
-
-## OLD DEP fix

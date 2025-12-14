@@ -1,3 +1,0 @@
-"""
-Admin Panel Backend Application
-"""
