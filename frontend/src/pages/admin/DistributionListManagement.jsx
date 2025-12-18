@@ -284,27 +284,27 @@ const DistributionListManagement = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-1">
                         <button
-                          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                          className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           onClick={() => openEditModal(item)}
                           title="Edit"
                         >
-                          <Edit2 size={16} />
+                          <Edit2 size={18} />
                         </button>
                         <button
-                          className={`p-2 rounded ${item.is_active ? 'text-gray-500 hover:text-orange-600 hover:bg-orange-50' : 'text-gray-500 hover:text-green-600 hover:bg-green-50'}`}
+                          className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${item.is_active ? 'text-gray-500 hover:text-orange-600 hover:bg-orange-50' : 'text-gray-500 hover:text-green-600 hover:bg-green-50'}`}
                           onClick={() => handleToggleStatus(item)}
                           title={item.is_active ? 'Disable' : 'Enable'}
                         >
-                          {item.is_active ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+                          {item.is_active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
                         </button>
                         <button
-                          className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                          className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           onClick={() => handleDelete(item)}
                           title="Delete"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </td>

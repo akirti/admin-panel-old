@@ -22,25 +22,38 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('access_token');
-    
-    if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
-      // Verify token is still valid
-      authAPI.getProfile()
-        .then(response => {
+    const initAuth = async () => {
+      const storedUser = localStorage.getItem('user');
+      const token = localStorage.getItem('access_token');
+
+      if (storedUser && token) {
+        try {
+          // Temporarily set user from localStorage while verifying
+          setUser(JSON.parse(storedUser));
+
+          // Verify token is still valid with a timeout
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+          const response = await authAPI.getProfile({ signal: controller.signal });
+          clearTimeout(timeoutId);
+
           const userData = response.data;
           setUser(userData);
           localStorage.setItem('user', JSON.stringify(userData));
-        })
-        .catch(() => {
-          logout();
-        })
-        .finally(() => setLoading(false));
-    } else {
+        } catch (error) {
+          console.error('Auth verification failed:', error);
+          // Clear auth state on any error
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('user');
+          setUser(null);
+        }
+      }
       setLoading(false);
-    }
+    };
+
+    initAuth();
   }, []);
 
   const login = async (email, password) => {

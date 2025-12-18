@@ -335,34 +335,34 @@ const UsersManagement = () => {
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
                           <button
                             onClick={() => openEditModal(user)}
-                            className="p-2 text-neutral-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="Edit"
                           >
-                            <Edit2 size={16} />
+                            <Edit2 size={18} />
                           </button>
                           <button
                             onClick={() => handleToggleStatus(user)}
-                            className={`p-2 rounded-lg transition-colors ${user.is_active ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50' : 'text-green-500 hover:text-green-600 hover:bg-green-50'}`}
+                            className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${user.is_active ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50' : 'text-green-500 hover:text-green-600 hover:bg-green-50'}`}
                             title={user.is_active ? 'Disable' : 'Enable'}
                           >
-                            <Power size={16} />
+                            <Power size={18} />
                           </button>
                           <button
                             onClick={() => handleSendPasswordReset(user)}
-                            className="p-2 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="w-9 h-9 flex items-center justify-center text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="Send Password Reset"
                           >
-                            <Key size={16} />
+                            <Key size={18} />
                           </button>
                           <button
                             onClick={() => handleDelete(user)}
-                            className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="w-9 h-9 flex items-center justify-center text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="Delete"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={18} />
                           </button>
                         </div>
                       </td>

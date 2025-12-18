@@ -566,21 +566,21 @@ const GroupsManagement = () => {
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
                         <button
-                          className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                          className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           onClick={() => showUsers(group)}
                           title="View Users"
                         >
-                          <Users size={16} />
+                          <Users size={18} />
                         </button>
                         <button
-                          className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                          className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           onClick={() => openEditModal(group)}
                           title="Edit"
                         >
-                          <Edit2 size={16} />
+                          <Edit2 size={18} />
                         </button>
                         <button
-                          className={`p-1.5 rounded ${
+                          className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${
                             group.status === 'active'
                               ? 'text-green-600 hover:bg-green-50'
                               : 'text-gray-400 hover:bg-gray-50'
@@ -589,17 +589,17 @@ const GroupsManagement = () => {
                           title={group.status === 'active' ? 'Deactivate' : 'Activate'}
                         >
                           {group.status === 'active' ? (
-                            <ToggleRight size={16} />
+                            <ToggleRight size={18} />
                           ) : (
-                            <ToggleLeft size={16} />
+                            <ToggleLeft size={18} />
                           )}
                         </button>
                         <button
-                          className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                          className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           onClick={() => handleDelete(group)}
                           title="Delete"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </td>

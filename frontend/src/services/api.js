@@ -90,6 +90,11 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Don't retry if the request was aborted (e.g., by AbortController timeout)
+    if (error.code === 'ERR_CANCELED' || error.name === 'CanceledError') {
+      return Promise.reject(error);
+    }
+
     // Handle 401 Unauthorized - refresh JWT token
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
@@ -103,7 +108,8 @@ api.interceptors.response.use(
             headers: {
               Authorization: `Bearer ${localStorage.getItem('access_token')}`
             },
-            withCredentials: true
+            withCredentials: true,
+            timeout: 10000 // 10s timeout for refresh
           });
 
           const { access_token, refresh_token } = response.data;
@@ -114,10 +120,16 @@ api.interceptors.response.use(
           return api(originalRequest);
         }
       } catch (refreshError) {
+        // Clear auth state
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+
+        // Only redirect if we're not already on the login page
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+        return Promise.reject(refreshError);
       }
     }
 

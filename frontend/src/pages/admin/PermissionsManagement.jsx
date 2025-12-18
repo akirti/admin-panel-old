@@ -464,25 +464,25 @@ const PermissionsManagement = () => {
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
                         <button
-                          className="p-1.5 text-purple-500 hover:text-purple-700 hover:bg-purple-50 rounded"
+                          className="w-9 h-9 flex items-center justify-center text-purple-500 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
                           onClick={() => showRelationships(permission)}
                           title="View Roles & Groups"
                         >
-                          <Link2 size={16} />
+                          <Link2 size={18} />
                         </button>
                         <button
-                          className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                          className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           onClick={() => openEditModal(permission)}
                           title="Edit"
                         >
-                          <Edit2 size={16} />
+                          <Edit2 size={18} />
                         </button>
                         <button
-                          className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                          className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           onClick={() => handleDelete(permission)}
                           title="Delete"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </td>

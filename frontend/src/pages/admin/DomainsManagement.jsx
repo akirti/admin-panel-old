@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { domainAPI } from '../../services/api';
 import toast from 'react-hot-toast';
-import { Layers, Plus, Edit2, Trash2, X, Search } from 'lucide-react';
+import { Layers, Plus, Edit2, Trash2, X, Search, Image } from 'lucide-react';
+import LucideIconPicker from '../../components/shared/LucideIconPicker';
 
 function DomainsManagement() {
   const { isEditor } = useAuth();
@@ -11,6 +12,7 @@ function DomainsManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingDomain, setEditingDomain] = useState(null);
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const [formData, setFormData] = useState({
     key: '',
     name: '',
@@ -240,8 +242,23 @@ function DomainsManagement() {
                   <tr key={domain.key} className="border-b hover:bg-gray-50">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <Layers className="text-blue-600" size={20} />
+                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center overflow-hidden">
+                          {domain.icon ? (
+                            <img
+                              src={domain.icon}
+                              alt={domain.name}
+                              className="w-6 h-6 object-contain"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'block';
+                              }}
+                            />
+                          ) : null}
+                          <Layers
+                            className="text-blue-600"
+                            size={20}
+                            style={{ display: domain.icon ? 'none' : 'block' }}
+                          />
                         </div>
                         <div>
                           <p className="font-medium text-gray-800">{domain.name}</p>
@@ -276,17 +293,17 @@ function DomainsManagement() {
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <button
                           onClick={() => openEditModal(domain)}
-                          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                          className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="Edit"
                         >
                           <Edit2 size={18} />
                         </button>
                         <button
                           onClick={() => handleDelete(domain)}
-                          className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                          className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete"
                         >
                           <Trash2 size={18} />
@@ -358,6 +375,63 @@ function DomainsManagement() {
                   rows={3}
                   placeholder="Domain description..."
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Icon
+                </label>
+                <div className="flex gap-3 items-start">
+                  <div className="flex-1">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        name="icon"
+                        value={formData.icon}
+                        onChange={handleChange}
+                        className="input-field flex-1"
+                        placeholder="Icon data URI or URL"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setIconPickerOpen(true)}
+                        className="btn-secondary flex items-center gap-2 whitespace-nowrap"
+                      >
+                        <Image size={16} />
+                        Select Icon
+                      </button>
+                      {formData.icon && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, icon: '' }))}
+                          className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                          title="Clear icon"
+                        >
+                          <X size={18} />
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Click "Select Icon" to choose from Lucide icons, or paste a URL/data URI
+                    </p>
+                  </div>
+                  {formData.icon && (
+                    <div className="w-12 h-12 border rounded-lg flex items-center justify-center bg-gray-50 flex-shrink-0">
+                      <img
+                        src={formData.icon}
+                        alt="Icon preview"
+                        className="max-w-full max-h-full object-contain"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                      <div className="hidden items-center justify-center text-gray-400 text-xs">
+                        Invalid
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -534,6 +608,15 @@ function DomainsManagement() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Icon Picker Modal */}
+      {iconPickerOpen && (
+        <LucideIconPicker
+          value={formData.icon}
+          onChange={(iconDataUri) => setFormData(prev => ({ ...prev, icon: iconDataUri }))}
+          onClose={() => setIconPickerOpen(false)}
+        />
       )}
     </div>
   );

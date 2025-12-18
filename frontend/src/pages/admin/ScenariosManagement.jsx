@@ -247,17 +247,17 @@ function ScenariosManagement() {
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <button
                           onClick={() => openEditModal(scenario)}
-                          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                          className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="Edit"
                         >
                           <Edit2 size={18} />
                         </button>
                         <button
                           onClick={() => handleDelete(scenario)}
-                          className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                          className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete"
                         >
                           <Trash2 size={18} />

@@ -60,7 +60,7 @@ services:
       SMTP_EMAIL: ${SMTP_EMAIL:-noreply@easylife.local}
       # App
       WEBAPP_HOST: ${WEBAPP_HOST:-http://localhost:3000/}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      # CORS_ORIGINS is loaded from backend/.env file via env_file
       ENVIRONMENT: ${ENVIRONMENT:-production}
       # File Storage Configuration
       # FILE_STORAGE_TYPE: "gcs" or "local" (default: local)
@@ -93,13 +93,13 @@ services:
     mem_swappiness: 60
     memswap_limit: 2G
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/live')"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "python", "-c", "import urllib.request; r=urllib.request.urlopen('http://localhost:8000/api/v1/health/ready', timeout=10); exit(0 if b'ready' in r.read() else 1)"]
+      interval: 15s
+      timeout: 15s
       retries: 3
-      start_period: 10s
+      start_period: 20s
 
-  # Frontend (React + Nginx)
+  # Frontend - Admin Panel (React + Nginx)
   frontend:
     build:
       context: ./frontend
@@ -123,6 +123,41 @@ services:
           memory: 256M
     mem_swappiness: 60
     memswap_limit: 2G
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # EasyLife Dashboard (React + Nginx)
+  easylife-dashboard:
+    build:
+      context: ./easylife-dashboard
+      dockerfile: Dockerfile
+    container_name: easylife-dashboard
+    restart: unless-stopped
+    stop_grace_period: 5s
+    ports:
+      - "${DASHBOARD_PORT:-3001}:80"
+    depends_on:
+      - backend
+    networks:
+      - easylife-network
+    environment:
+      # Runtime environment config (can be overridden)
+      - MFE_BASE_URL=${MFE_BASE_URL:-http://localhost:3000/}
+      - APIGEE_BASE_URL=${APIGEE_BASE_URL:-http://localhost:8000}
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    mem_swappiness: 60
+    memswap_limit: 1G
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
       interval: 30s
@@ -168,6 +203,8 @@ services:
 networks:
   easylife-network:
     driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 1400
 
 volumes:
   mongodb_data:

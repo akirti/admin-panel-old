@@ -196,14 +196,25 @@ async def get_playboard(
     db: DatabaseManager = Depends(get_db),
     user_service: UserService = Depends(get_user_service)
 ):
-    """Get a specific playboard by ID (if user has domain access)."""
+    """
+    Get a specific playboard by ID or scenarioKey (if user has domain access).
+
+    - If playboard_id is a valid ObjectId, search by _id
+    - Otherwise, search by scenarioKey
+    """
+    playboard = None
+
+    # Try to find by ObjectId first
     try:
-        playboard = await db.playboards.find_one({"_id": ObjectId(playboard_id)})
-    except:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid playboard ID"
-        )
+        obj_id = ObjectId(playboard_id)
+        playboard = await db.playboards.find_one({"_id": obj_id})
+    except Exception:
+        # Not a valid ObjectId, will search by scenarioKey below
+        pass
+
+    # If not found by ObjectId, search by scenarioKey
+    if not playboard:
+        playboard = await db.playboards.find_one({"scenarioKey": playboard_id})
 
     if not playboard:
         raise HTTPException(
