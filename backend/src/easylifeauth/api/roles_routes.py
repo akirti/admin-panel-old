@@ -16,6 +16,64 @@ from easylifeauth.services.email_service import EmailService
 router = APIRouter(prefix="/roles", tags=["Roles"])
 
 
+async def resolve_permissions(db: DatabaseManager, permission_refs: List[str]) -> List[str]:
+    """
+    Resolve permission references (IDs or keys) to permission keys.
+    Accepts either ObjectId strings or permissionId keys.
+    Returns list of valid permissionId keys.
+    """
+    if not permission_refs:
+        return []
+
+    resolved_keys = []
+    for ref in permission_refs:
+        # Try as ObjectId first
+        if ObjectId.is_valid(ref):
+            permission = await db.permissions.find_one({"_id": ObjectId(ref)})
+            if permission:
+                resolved_keys.append(permission.get("permissionId", ref))
+                continue
+
+        # Try as permissionId key
+        permission = await db.permissions.find_one({"permissionId": ref})
+        if permission:
+            resolved_keys.append(permission.get("permissionId", ref))
+        else:
+            # Keep the original value if not found (allows for flexibility)
+            resolved_keys.append(ref)
+
+    return resolved_keys
+
+
+async def resolve_domains(db: DatabaseManager, domain_refs: List[str]) -> List[str]:
+    """
+    Resolve domain references (IDs or keys) to domain keys.
+    Accepts either ObjectId strings or domainId keys.
+    Returns list of valid domainId keys.
+    """
+    if not domain_refs:
+        return []
+
+    resolved_keys = []
+    for ref in domain_refs:
+        # Try as ObjectId first
+        if ObjectId.is_valid(ref):
+            domain = await db.data_domains.find_one({"_id": ObjectId(ref)})
+            if domain:
+                resolved_keys.append(domain.get("domainId", ref))
+                continue
+
+        # Try as domainId key
+        domain = await db.data_domains.find_one({"domainId": ref})
+        if domain:
+            resolved_keys.append(domain.get("domainId", ref))
+        else:
+            # Keep the original value if not found (allows for flexibility)
+            resolved_keys.append(ref)
+
+    return resolved_keys
+
+
 def create_pagination_meta(total: int, page: int, limit: int) -> PaginationMeta:
     """Create pagination metadata."""
     pages = math.ceil(total / limit) if limit > 0 else 0
@@ -140,6 +198,13 @@ async def create_role(
         )
 
     role_dict = role_data.model_dump()
+
+    # Resolve permission and domain references (IDs or keys) to keys
+    if role_dict.get("permissions"):
+        role_dict["permissions"] = await resolve_permissions(db, role_dict["permissions"])
+    if role_dict.get("domains"):
+        role_dict["domains"] = await resolve_domains(db, role_dict["domains"])
+
     role_dict["created_at"] = datetime.utcnow()
     role_dict["updated_at"] = datetime.utcnow()
 
@@ -172,6 +237,13 @@ async def update_role(
     # Track changes
     changes = {}
     update_data = role_data.model_dump(exclude_unset=True)
+
+    # Resolve permission and domain references (IDs or keys) to keys
+    if "permissions" in update_data and update_data["permissions"] is not None:
+        update_data["permissions"] = await resolve_permissions(db, update_data["permissions"])
+    if "domains" in update_data and update_data["domains"] is not None:
+        update_data["domains"] = await resolve_domains(db, update_data["domains"])
+
     update_data["updated_at"] = datetime.utcnow()
 
     for key, value in update_data.items():

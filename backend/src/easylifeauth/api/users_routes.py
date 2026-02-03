@@ -35,6 +35,64 @@ from easylifeauth.services.activity_log_service import ActivityLogService
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
+async def resolve_roles(db: DatabaseManager, role_refs: List[str]) -> List[str]:
+    """
+    Resolve role references (IDs or keys) to role keys.
+    Accepts either ObjectId strings or roleId keys.
+    Returns list of valid roleId keys.
+    """
+    if not role_refs:
+        return []
+
+    resolved_keys = []
+    for ref in role_refs:
+        # Try as ObjectId first
+        if ObjectId.is_valid(ref):
+            role = await db.roles.find_one({"_id": ObjectId(ref)})
+            if role:
+                resolved_keys.append(role.get("roleId", ref))
+                continue
+
+        # Try as roleId key
+        role = await db.roles.find_one({"roleId": ref})
+        if role:
+            resolved_keys.append(role.get("roleId", ref))
+        else:
+            # Keep the original value if not found (allows for flexibility)
+            resolved_keys.append(ref)
+
+    return resolved_keys
+
+
+async def resolve_groups(db: DatabaseManager, group_refs: List[str]) -> List[str]:
+    """
+    Resolve group references (IDs or keys) to group keys.
+    Accepts either ObjectId strings or groupId keys.
+    Returns list of valid groupId keys.
+    """
+    if not group_refs:
+        return []
+
+    resolved_keys = []
+    for ref in group_refs:
+        # Try as ObjectId first
+        if ObjectId.is_valid(ref):
+            group = await db.groups.find_one({"_id": ObjectId(ref)})
+            if group:
+                resolved_keys.append(group.get("groupId", ref))
+                continue
+
+        # Try as groupId key
+        group = await db.groups.find_one({"groupId": ref})
+        if group:
+            resolved_keys.append(group.get("groupId", ref))
+        else:
+            # Keep the original value if not found (allows for flexibility)
+            resolved_keys.append(ref)
+
+    return resolved_keys
+
+
 def create_pagination_meta(total: int, page: int, limit: int) -> PaginationMeta:
     """Create pagination metadata."""
     pages = math.ceil(total / limit) if limit > 0 else 0
@@ -159,6 +217,13 @@ async def create_user(
 
     # Create user document
     user_dict = user_data.model_dump(exclude={"password", "send_password_email"})
+
+    # Resolve role and group references (IDs or keys) to keys
+    if user_dict.get("roles"):
+        user_dict["roles"] = await resolve_roles(db, user_dict["roles"])
+    if user_dict.get("groups"):
+        user_dict["groups"] = await resolve_groups(db, user_dict["groups"])
+
     user_dict["password_hash"] = get_password_hash(user_data.password)
     user_dict["created_at"] = datetime.utcnow()
     user_dict["updated_at"] = datetime.utcnow()
@@ -214,6 +279,13 @@ async def update_user(
         )
 
     update_data = user_data.model_dump(exclude_unset=True)
+
+    # Resolve role and group references (IDs or keys) to keys
+    if "roles" in update_data and update_data["roles"] is not None:
+        update_data["roles"] = await resolve_roles(db, update_data["roles"])
+    if "groups" in update_data and update_data["groups"] is not None:
+        update_data["groups"] = await resolve_groups(db, update_data["groups"])
+
     update_data["updated_at"] = datetime.utcnow()
 
     # Update user

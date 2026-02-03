@@ -166,11 +166,26 @@ const UsersManagement = () => {
     setModalOpen(true);
   };
 
-  // Select All / Clear All handlers
+  // Helper to check if a role is selected (by _id or roleId key)
+  const isRoleSelected = (role) => {
+    return formData.roles.includes(role._id) || formData.roles.includes(role.roleId);
+  };
+
+  // Helper to check if a group is selected (by _id or groupId key)
+  const isGroupSelected = (group) => {
+    return formData.groups.includes(group._id) || formData.groups.includes(group.groupId);
+  };
+
+  // Helper to check if a customer is selected (by _id or customerId key)
+  const isCustomerSelected = (customer) => {
+    return formData.customers.includes(customer._id) || formData.customers.includes(customer.customerId);
+  };
+
+  // Select All / Clear All handlers - use _id for API
   const selectAllRoles = () => {
     setFormData(prev => ({
       ...prev,
-      roles: roles.map(r => r.roleId)
+      roles: roles.map(r => r._id)
     }));
   };
 
@@ -181,7 +196,7 @@ const UsersManagement = () => {
   const selectAllGroups = () => {
     setFormData(prev => ({
       ...prev,
-      groups: groups.map(g => g.groupId)
+      groups: groups.map(g => g._id)
     }));
   };
 
@@ -192,7 +207,7 @@ const UsersManagement = () => {
   const selectAllCustomers = () => {
     setFormData(prev => ({
       ...prev,
-      customers: customers.map(c => c.customerId)
+      customers: customers.map(c => c._id)
     }));
   };
 
@@ -486,21 +501,21 @@ const UsersManagement = () => {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     {roles.map((role) => (
                       <label
-                        key={role.roleId}
+                        key={role._id || role.roleId}
                         className={`flex items-center p-2 rounded-lg border cursor-pointer transition-colors ${
-                          formData.roles.includes(role.roleId)
+                          isRoleSelected(role)
                             ? 'bg-red-50 border-red-300'
                             : 'bg-white border-neutral-200 hover:border-neutral-300'
                         }`}
                       >
                         <input
                           type="checkbox"
-                          checked={formData.roles.includes(role.roleId)}
+                          checked={isRoleSelected(role)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setFormData({ ...formData, roles: [...formData.roles, role.roleId] });
+                              setFormData({ ...formData, roles: [...formData.roles, role._id] });
                             } else {
-                              setFormData({ ...formData, roles: formData.roles.filter(r => r !== role.roleId) });
+                              setFormData({ ...formData, roles: formData.roles.filter(r => r !== role._id && r !== role.roleId) });
                             }
                           }}
                           className="h-4 w-4 text-red-600 rounded"
@@ -534,21 +549,21 @@ const UsersManagement = () => {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     {groups.map((group) => (
                       <label
-                        key={group.groupId}
+                        key={group._id || group.groupId}
                         className={`flex items-center p-2 rounded-lg border cursor-pointer transition-colors ${
-                          formData.groups.includes(group.groupId)
+                          isGroupSelected(group)
                             ? 'bg-green-50 border-green-300'
                             : 'bg-white border-neutral-200 hover:border-neutral-300'
                         }`}
                       >
                         <input
                           type="checkbox"
-                          checked={formData.groups.includes(group.groupId)}
+                          checked={isGroupSelected(group)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setFormData({ ...formData, groups: [...formData.groups, group.groupId] });
+                              setFormData({ ...formData, groups: [...formData.groups, group._id] });
                             } else {
-                              setFormData({ ...formData, groups: formData.groups.filter(g => g !== group.groupId) });
+                              setFormData({ ...formData, groups: formData.groups.filter(g => g !== group._id && g !== group.groupId) });
                             }
                           }}
                           className="h-4 w-4 text-green-600 rounded"
@@ -582,21 +597,21 @@ const UsersManagement = () => {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     {customers.map((customer) => (
                       <label
-                        key={customer.customerId}
+                        key={customer._id || customer.customerId}
                         className={`flex items-center p-2 rounded-lg border cursor-pointer transition-colors ${
-                          formData.customers.includes(customer.customerId)
+                          isCustomerSelected(customer)
                             ? 'bg-blue-50 border-blue-300'
                             : 'bg-white border-neutral-200 hover:border-neutral-300'
                         }`}
                       >
                         <input
                           type="checkbox"
-                          checked={formData.customers.includes(customer.customerId)}
+                          checked={isCustomerSelected(customer)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setFormData({ ...formData, customers: [...formData.customers, customer.customerId] });
+                              setFormData({ ...formData, customers: [...formData.customers, customer._id] });
                             } else {
-                              setFormData({ ...formData, customers: formData.customers.filter(c => c !== customer.customerId) });
+                              setFormData({ ...formData, customers: formData.customers.filter(c => c !== customer._id && c !== customer.customerId) });
                             }
                           }}
                           className="h-4 w-4 text-blue-600 rounded"

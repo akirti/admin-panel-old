@@ -143,50 +143,69 @@ const RolesManagement = () => {
     }));
   };
 
-  // Handle permission toggle - use permission key, not ID
-  const handlePermissionToggle = (permKey) => {
+  // Helper to check if permission is selected (by _id or key)
+  const isPermissionSelected = (perm) => {
+    return formData.permissions.includes(perm._id) ||
+           formData.permissions.includes(perm.permissionId) ||
+           formData.permissions.includes(perm.key);
+  };
+
+  // Helper to check if domain is selected (by _id or key)
+  const isDomainSelected = (domain) => {
+    return formData.domains.includes(domain._id) ||
+           formData.domains.includes(domain.domainId) ||
+           formData.domains.includes(domain.domainKey) ||
+           formData.domains.includes(domain.key);
+  };
+
+  // Handle permission toggle - use _id for API
+  const handlePermissionToggle = (perm) => {
+    const isSelected = isPermissionSelected(perm);
     setFormData((prev) => ({
       ...prev,
-      permissions: prev.permissions.includes(permKey)
-        ? prev.permissions.filter((p) => p !== permKey)
-        : [...prev.permissions, permKey],
+      permissions: isSelected
+        ? prev.permissions.filter((p) => p !== perm._id && p !== perm.permissionId && p !== perm.key)
+        : [...prev.permissions, perm._id],
     }));
   };
 
-  // Handle domain toggle
-  const handleDomainToggle = (domainKey) => {
+  // Handle domain toggle - use _id for API
+  const handleDomainToggle = (domain) => {
+    const isSelected = isDomainSelected(domain);
     setFormData((prev) => ({
       ...prev,
-      domains: prev.domains.includes(domainKey)
-        ? prev.domains.filter((d) => d !== domainKey)
-        : [...prev.domains, domainKey],
+      domains: isSelected
+        ? prev.domains.filter((d) => d !== domain._id && d !== domain.domainId && d !== domain.domainKey && d !== domain.key)
+        : [...prev.domains, domain._id],
     }));
   };
 
-  // Select/clear all permissions for a module - use permission key
+  // Select/clear all permissions for a module - use _id for API
   const handleSelectAllModule = (module, selected) => {
-    const modulePermKeys = groupedPermissions[module].map((p) => p.key);
+    const modulePerms = groupedPermissions[module];
+    const modulePermIds = modulePerms.map((p) => p._id);
+    const modulePermKeys = modulePerms.map((p) => p.key);
     setFormData((prev) => ({
       ...prev,
       permissions: selected
-        ? [...new Set([...prev.permissions, ...modulePermKeys])]
-        : prev.permissions.filter((p) => !modulePermKeys.includes(p)),
+        ? [...new Set([...prev.permissions, ...modulePermIds])]
+        : prev.permissions.filter((p) => !modulePermIds.includes(p) && !modulePermKeys.includes(p)),
     }));
   };
 
-  // Select/clear all domains
+  // Select/clear all domains - use _id for API
   const handleSelectAllDomains = (selected) => {
     setFormData((prev) => ({
       ...prev,
-      domains: selected ? domains.map((d) => d.domainKey || d.key || d._id) : [],
+      domains: selected ? domains.map((d) => d._id) : [],
     }));
   };
 
-  // Select/clear all permissions - use permission key
+  // Select/clear all permissions - use _id for API
   const handleSelectAllPermissions = (selected) => {
     setFormData((prev) => ({
       ...prev,
-      permissions: selected ? permissions.map((p) => p.key) : [],
+      permissions: selected ? permissions.map((p) => p._id) : [],
     }));
   };
 
@@ -785,25 +804,22 @@ const RolesManagement = () => {
                           </div>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                          {perms.map((perm) => {
-                            const permKey = perm.key;
-                            return (
+                          {perms.map((perm) => (
                               <label
-                                key={permKey}
+                                key={perm._id || perm.key}
                                 className="flex items-center gap-2 text-sm cursor-pointer"
                               >
                                 <input
                                   type="checkbox"
-                                  checked={formData.permissions.includes(permKey)}
-                                  onChange={() => handlePermissionToggle(permKey)}
+                                  checked={isPermissionSelected(perm)}
+                                  onChange={() => handlePermissionToggle(perm)}
                                   className="rounded border-gray-300"
                                 />
                                 <span className="truncate" title={perm.description}>
-                                  {perm.name || permKey}
+                                  {perm.name || perm.key}
                                 </span>
                               </label>
-                            );
-                          })}
+                            ))}
                         </div>
                       </div>
                     ))
@@ -839,25 +855,22 @@ const RolesManagement = () => {
                     <p className="text-sm text-gray-500">No domains available</p>
                   ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {domains.map((domain) => {
-                        const domKey = domain.domainKey || domain.key || domain._id;
-                        return (
+                      {domains.map((domain) => (
                           <label
-                            key={domKey}
+                            key={domain._id || domain.domainId || domain.key}
                             className="flex items-center gap-2 text-sm cursor-pointer"
                           >
                             <input
                               type="checkbox"
-                              checked={formData.domains.includes(domKey)}
-                              onChange={() => handleDomainToggle(domKey)}
+                              checked={isDomainSelected(domain)}
+                              onChange={() => handleDomainToggle(domain)}
                               className="rounded border-gray-300"
                             />
                             <span className="truncate" title={domain.description}>
-                              {domain.name || domKey}
+                              {domain.name || domain.domainId || domain.key}
                             </span>
                           </label>
-                        );
-                      })}
+                        ))}
                     </div>
                   )}
                 </div>
