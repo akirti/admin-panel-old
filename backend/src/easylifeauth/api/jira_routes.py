@@ -257,6 +257,40 @@ async def get_statuses(
     return [JiraStatus(**s) for s in statuses]
 
 
+@router.get("/boards")
+async def get_boards(
+    project_key: Optional[str] = Query(None, description="Project key to filter boards"),
+    current_user: CurrentUser = Depends(get_current_user),
+    jira_service: JiraService = Depends(get_jira_service)
+):
+    """Get Jira boards (teams) for a project"""
+    if not jira_service or not jira_service.enabled:
+        raise HTTPException(status_code=503, detail="Jira service not configured")
+
+    boards = await jira_service.get_boards(project_key)
+    return boards
+
+
+@router.get("/assignable-users")
+async def get_assignable_users(
+    project_key: Optional[str] = Query(None, description="Project key"),
+    q: Optional[str] = Query(None, description="Search query for user name/email"),
+    max_results: int = Query(50, ge=1, le=100),
+    current_user: CurrentUser = Depends(get_current_user),
+    jira_service: JiraService = Depends(get_jira_service)
+):
+    """Get users assignable to issues in a project"""
+    if not jira_service or not jira_service.enabled:
+        raise HTTPException(status_code=503, detail="Jira service not configured")
+
+    users = await jira_service.get_assignable_users(
+        project_key=project_key,
+        query=q,
+        max_results=max_results
+    )
+    return users
+
+
 @router.post("/sync/request/{request_id}", response_model=JiraCreateTaskResponse)
 async def sync_request_to_jira(
     request_id: str,

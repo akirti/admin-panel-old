@@ -384,6 +384,15 @@ class NewScenarioService:
             ScenarioRequestStatusTypes.SUBMITTED.value, "Submitted"
         )
         
+        # Apply default team and assignee from Jira config if not provided
+        if self.jira_service:
+            if not ask_scenario.get("team") and self.jira_service.default_team:
+                ask_scenario["team"] = self.jira_service.default_team
+            if not ask_scenario.get("assignee") and self.jira_service.default_assignee:
+                ask_scenario["assignee"] = self.jira_service.default_assignee
+            if not ask_scenario.get("assignee_name") and self.jira_service.default_assignee_name:
+                ask_scenario["assignee_name"] = self.jira_service.default_assignee_name
+
         # Initialize empty arrays
         ask_scenario.setdefault("steps", [])
         ask_scenario.setdefault("comments", [])

@@ -117,6 +117,8 @@ if env_jira_base_url and env_jira_email and env_jira_api_token:
         "project_key": os.environ.get("JIRA_PROJECT_KEY", "SCEN"),
         "issue_type": os.environ.get("JIRA_ISSUE_TYPE", "Task"),
         "default_team": os.environ.get("JIRA_DEFAULT_TEAM"),
+        "default_assignee": os.environ.get("JIRA_DEFAULT_ASSIGNEE"),
+        "default_assignee_name": os.environ.get("JIRA_DEFAULT_ASSIGNEE_NAME"),
         "target_days": int(os.environ.get("JIRA_TARGET_DAYS", "7"))
     }
 

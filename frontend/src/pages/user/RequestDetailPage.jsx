@@ -579,6 +579,18 @@ function RequestDetailPage() {
                   <p className="font-mono text-sm bg-neutral-100 px-2 py-1 rounded">{request.scenarioKey}</p>
                 </div>
               )}
+              {request.team && (
+                <div>
+                  <p className="text-sm text-neutral-500">Team</p>
+                  <p className="font-medium">{request.team}</p>
+                </div>
+              )}
+              {request.assignee_name && (
+                <div>
+                  <p className="text-sm text-neutral-500">Assignee</p>
+                  <p className="font-medium">{request.assignee_name}</p>
+                </div>
+              )}
             </div>
           </div>
 

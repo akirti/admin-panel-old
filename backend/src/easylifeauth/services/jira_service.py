@@ -42,6 +42,8 @@ class JiraService:
         self.project_key = None
         self.issue_type = "Task"
         self.default_team = None
+        self.default_assignee = None
+        self.default_assignee_name = None
         self._client: Optional[JIRA] = None
         self._client_initialized = False
         self._executor = ThreadPoolExecutor(max_workers=3)
@@ -53,6 +55,8 @@ class JiraService:
             self.project_key = config.get("project_key", "SCEN")
             self.issue_type = config.get("issue_type", "Task")
             self.default_team = config.get("default_team")
+            self.default_assignee = config.get("default_assignee")
+            self.default_assignee_name = config.get("default_assignee_name")
             self.target_days = config.get("target_days", DEFAULT_TARGET_DAYS)
 
             if self.base_url and self.email and self.api_token:
@@ -890,6 +894,80 @@ class JiraService:
         except Exception as e:
             print(f"Jira sync status error: {e}")
             return {"sync_status": "failed", "error": str(e)}
+
+    async def get_boards(self, project_key: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get Scrum/Kanban boards (teams) for a project"""
+        client = self._get_client()
+        if not self.enabled or not client:
+            return []
+
+        try:
+            if project_key:
+                boards = await self._run_sync(
+                    client.boards,
+                    projectKeyOrID=project_key
+                )
+            else:
+                boards = await self._run_sync(client.boards)
+
+            result = []
+            for board in boards:
+                result.append({
+                    "id": board.id,
+                    "name": board.name,
+                    "type": getattr(board, 'type', 'scrum')
+                })
+            return result
+        except JIRAError as e:
+            print(f"Error fetching boards: {e}")
+            return []
+        except Exception as e:
+            print(f"Error fetching boards: {e}")
+            return []
+
+    async def get_assignable_users(
+        self,
+        project_key: Optional[str] = None,
+        query: Optional[str] = None,
+        max_results: int = 50
+    ) -> List[Dict[str, Any]]:
+        """Get users assignable to issues in a project"""
+        client = self._get_client()
+        if not self.enabled or not client:
+            return []
+
+        try:
+            target_project = project_key or self.project_key
+            if not target_project:
+                return []
+
+            users = await self._run_sync(
+                client.search_assignable_users_for_projects,
+                username=query or '',
+                projectKeys=target_project,
+                maxResults=max_results
+            )
+
+            result = []
+            for user in users:
+                account_id = getattr(user, 'accountId', None)
+                display_name = getattr(user, 'displayName', '')
+                email = getattr(user, 'emailAddress', '')
+                active = getattr(user, 'active', True)
+                if active:
+                    result.append({
+                        "accountId": account_id,
+                        "displayName": display_name,
+                        "emailAddress": email,
+                        "avatarUrl": getattr(user, 'avatarUrls', {}).get('48x48', '') if hasattr(user, 'avatarUrls') else ''
+                    })
+            return result
+        except JIRAError as e:
+            print(f"Error fetching assignable users: {e}")
+            return []
+        except Exception as e:
+            print(f"Error fetching assignable users: {e}")
+            return []
 
     def close(self):
         """Close the thread pool executor"""

@@ -308,6 +308,8 @@ function ScenarioRequestsManagement() {
                     <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Requester</th>
                     <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Domain</th>
                     <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Status</th>
+                    <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Team</th>
+                    <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Assignee</th>
                     <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Jira</th>
                     <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Created</th>
                     <th className="text-center px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Actions</th>
@@ -335,6 +337,12 @@ function ScenarioRequestsManagement() {
                       </td>
                       <td className="px-5 py-4">
                         {getStatusBadge(request.status)}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="text-sm text-neutral-700">{request.team || '-'}</span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="text-sm text-neutral-700">{request.assignee_name || '-'}</span>
                       </td>
                       <td className="px-5 py-4">
                         {(request.jira?.ticket_key || request.jira_integration?.ticket_key) ? (

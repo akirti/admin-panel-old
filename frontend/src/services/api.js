@@ -469,6 +469,7 @@ export const scenarioRequestAPI = {
   getStatuses: () => api.get('/ask_scenarios/lookup/statuses'),
   getRequestTypes: () => api.get('/ask_scenarios/lookup/request_types'),
   getDomains: () => api.get('/ask_scenarios/lookup/domains'),
+  getDefaults: () => api.get('/ask_scenarios/lookup/defaults'),
   searchUsers: (query) => api.get('/ask_scenarios/lookup/users', { params: { q: query } }),
   
   // Comments and Workflow
@@ -619,7 +620,12 @@ export const jiraAPI = {
 
   // Lookups
   getIssueTypes: (projectKey = null) => api.get('/jira/issue-types', { params: { project_key: projectKey } }),
-  getStatuses: (projectKey = null) => api.get('/jira/statuses', { params: { project_key: projectKey } })
+  getStatuses: (projectKey = null) => api.get('/jira/statuses', { params: { project_key: projectKey } }),
+
+  // Boards (teams) and assignable users
+  getBoards: (projectKey = null) => api.get('/jira/boards', { params: { project_key: projectKey } }),
+  getAssignableUsers: (projectKey = null, query = null, maxResults = 50) =>
+    api.get('/jira/assignable-users', { params: { project_key: projectKey, q: query, max_results: maxResults } })
 };
 
 export default api;

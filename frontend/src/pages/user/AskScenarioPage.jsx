@@ -18,7 +18,7 @@ import {
   ArrowLeft,
   Save
 } from 'lucide-react';
-import { scenarioRequestAPI } from '../../services/api';
+import { scenarioRequestAPI, jiraAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 // Simple Rich Text Editor Component
@@ -192,6 +192,9 @@ function AskScenarioPage() {
   const [requestTypes, setRequestTypes] = useState([]);
   const [statuses, setStatuses] = useState([]);
   const [originalRequest, setOriginalRequest] = useState(null);
+  const [jiraBoards, setJiraBoards] = useState([]);
+  const [jiraUsers, setJiraUsers] = useState([]);
+  const [loadingJiraUsers, setLoadingJiraUsers] = useState(false);
 
   const [formData, setFormData] = useState({
     requestType: 'scenario',
@@ -202,6 +205,10 @@ function AskScenarioPage() {
     knows_steps: false,
     steps: [],
     reason: '',
+    // Team and assignee
+    team: '',
+    assignee: '',
+    assignee_name: '',
     // Admin fields (only editable by editors)
     status: '',
     scenarioKey: '',
@@ -229,7 +236,8 @@ function AskScenarioPage() {
     try {
       const promises = [
         scenarioRequestAPI.getDomains(),
-        scenarioRequestAPI.getRequestTypes()
+        scenarioRequestAPI.getRequestTypes(),
+        scenarioRequestAPI.getDefaults()
       ];
       // Load statuses for editors in edit mode
       if (isEditMode && isEditor()) {
@@ -239,16 +247,52 @@ function AskScenarioPage() {
       const results = await Promise.all(promises);
       setDomains(results[0].data || []);
       setRequestTypes(results[1].data || []);
-      if (results[2]) {
-        setStatuses(results[2].data || []);
+      const defaults = results[2].data || {};
+      if (results[3]) {
+        setStatuses(results[3].data || []);
       }
 
       // Set default request type if available (only for new requests)
       if (!isEditMode && results[1].data && results[1].data.length > 0) {
-        setFormData(prev => ({ ...prev, requestType: results[1].data[0].value }));
+        setFormData(prev => ({
+          ...prev,
+          requestType: results[1].data[0].value,
+          team: defaults.team || '',
+          assignee: defaults.assignee || '',
+          assignee_name: defaults.assignee_name || ''
+        }));
       }
+
+      // Load Jira boards and assignable users
+      loadJiraData();
     } catch (error) {
       console.error('Failed to load lookups:', error);
+    }
+  };
+
+  const loadJiraData = async () => {
+    try {
+      const [boardsRes, usersRes] = await Promise.all([
+        jiraAPI.getBoards().catch(() => ({ data: [] })),
+        jiraAPI.getAssignableUsers().catch(() => ({ data: [] }))
+      ]);
+      setJiraBoards(boardsRes.data || []);
+      setJiraUsers(usersRes.data || []);
+    } catch (error) {
+      console.error('Failed to load Jira data:', error);
+    }
+  };
+
+  const searchJiraUsers = async (query) => {
+    if (!query || query.length < 1) return;
+    setLoadingJiraUsers(true);
+    try {
+      const res = await jiraAPI.getAssignableUsers(null, query);
+      setJiraUsers(res.data || []);
+    } catch (error) {
+      console.error('Failed to search Jira users:', error);
+    } finally {
+      setLoadingJiraUsers(false);
     }
   };
 
@@ -279,6 +323,10 @@ function AskScenarioPage() {
         knows_steps: request.knows_steps || false,
         steps: request.steps || [],
         reason: request.reason || '',
+        // Team and assignee
+        team: request.team || '',
+        assignee: request.assignee || '',
+        assignee_name: request.assignee_name || '',
         // Admin fields
         status: request.status || '',
         scenarioKey: request.scenarioKey || '',
@@ -384,7 +432,10 @@ function AskScenarioPage() {
           has_suggestion: formData.has_suggestion,
           knows_steps: formData.knows_steps,
           steps: formData.steps.length > 0 ? formData.steps : [],
-          reason: formData.reason || null
+          reason: formData.reason || null,
+          team: formData.team || null,
+          assignee: formData.assignee || null,
+          assignee_name: formData.assignee_name || null
         };
 
         // Use user update endpoint for basic fields
@@ -440,7 +491,10 @@ function AskScenarioPage() {
           has_suggestion: formData.has_suggestion,
           knows_steps: formData.knows_steps,
           steps: formData.steps.length > 0 ? formData.steps : [],
-          reason: formData.reason || null
+          reason: formData.reason || null,
+          team: formData.team || null,
+          assignee: formData.assignee || null,
+          assignee_name: formData.assignee_name || null
         };
 
         const response = await scenarioRequestAPI.create(submitData);
@@ -585,6 +639,58 @@ function AskScenarioPage() {
                 placeholder="Why do you need this scenario? What business problem does it solve? (optional)"
                 rows={4}
               />
+            </div>
+
+            {/* Team and Assignee - editable by all users */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-3 border-t border-neutral-200">
+              <div className="w-full">
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Team
+                </label>
+                <select
+                  name="team"
+                  value={formData.team}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900"
+                >
+                  <option value="">Select a team...</option>
+                  {jiraBoards.map(board => (
+                    <option key={board.id} value={board.name}>{board.name}</option>
+                  ))}
+                  {formData.team && !jiraBoards.find(b => b.name === formData.team) && (
+                    <option value={formData.team}>{formData.team}</option>
+                  )}
+                </select>
+              </div>
+
+              <div className="w-full">
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Assignee
+                </label>
+                <select
+                  name="assignee"
+                  value={formData.assignee}
+                  onChange={(e) => {
+                    const selectedUser = jiraUsers.find(u => u.accountId === e.target.value);
+                    setFormData(prev => ({
+                      ...prev,
+                      assignee: e.target.value,
+                      assignee_name: selectedUser ? selectedUser.displayName : ''
+                    }));
+                  }}
+                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900"
+                >
+                  <option value="">Select an assignee...</option>
+                  {jiraUsers.map(jUser => (
+                    <option key={jUser.accountId} value={jUser.accountId}>
+                      {jUser.displayName}{jUser.emailAddress ? ` (${jUser.emailAddress})` : ''}
+                    </option>
+                  ))}
+                  {formData.assignee && !jiraUsers.find(u => u.accountId === formData.assignee) && (
+                    <option value={formData.assignee}>{formData.assignee_name || formData.assignee}</option>
+                  )}
+                </select>
+              </div>
             </div>
           </div>
         </div>

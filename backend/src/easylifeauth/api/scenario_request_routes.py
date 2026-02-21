@@ -8,8 +8,9 @@ from ..models.scenario_request import (
     ScenarioRequestCreate, ScenarioRequestUpdate, ScenarioRequestAdminUpdate,
     ScenarioRequestResponse
 )
-from .dependencies import get_current_user, get_scenario_request_service
+from .dependencies import get_current_user, get_scenario_request_service, get_jira_service
 from ..services.new_scenarios_service import NewScenarioService
+from ..services.jira_service import JiraService
 from ..security.access_control import CurrentUser, require_admin_or_editor
 from ..db.constants import EDITORS
 from ..db.lookup import ScenarioRequestStatusTypes, RequestType, REQUEST_STATUS_DESC
@@ -74,6 +75,24 @@ async def get_domain_options(
         return domains
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/lookup/defaults")
+async def get_defaults(
+    current_user: CurrentUser = Depends(get_current_user),
+    jira_service: JiraService = Depends(get_jira_service)
+) -> Dict[str, Any]:
+    """Get default team and assignee for new scenario requests"""
+    defaults = {
+        "team": None,
+        "assignee": None,
+        "assignee_name": None
+    }
+    if jira_service and jira_service.enabled:
+        defaults["team"] = jira_service.default_team
+        defaults["assignee"] = jira_service.default_assignee
+        defaults["assignee_name"] = jira_service.default_assignee_name
+    return defaults
 
 
 @router.get("/lookup/users")
