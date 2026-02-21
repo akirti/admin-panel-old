@@ -1,6 +1,6 @@
 """Async Access Control for FastAPI"""
 from typing import Optional, List, Dict, Any
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
@@ -9,7 +9,7 @@ from ..db.constants import EDITORS, ADMIN_ROLES, GROUP_ADMIN_ROLES
 from ..errors.auth_error import AuthError
 
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
 class CurrentUser(BaseModel):
@@ -29,11 +29,21 @@ class AccessControl:
 
     async def get_current_user(
         self,
-        credentials: HTTPAuthorizationCredentials = Depends(security)
+        request: Request,
+        credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
     ) -> CurrentUser:
-        """Get current user from JWT token"""
-        token = credentials.credentials
-        
+        """Get current user from httpOnly cookie or JWT token"""
+        token = request.cookies.get("access_token")
+        if not token and credentials:
+            token = credentials.credentials
+
+        if not token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not authenticated",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
+
         try:
             payload = await self.token_manager.verify_token(token)
             return CurrentUser(
@@ -110,12 +120,24 @@ def get_token_manager() -> TokenManager:
 
 # Async dependency functions for FastAPI routes
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ) -> CurrentUser:
-    """Dependency to get current user"""
-    token = credentials.credentials
+    """Dependency to get current user from httpOnly cookie or Authorization header"""
+    # Try httpOnly cookie first, then fall back to Authorization header
+    token = request.cookies.get("access_token")
+    if not token and credentials:
+        token = credentials.credentials
+
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
     token_manager = get_token_manager()
-    
+
     try:
         payload = await token_manager.verify_token(token)
         return CurrentUser(

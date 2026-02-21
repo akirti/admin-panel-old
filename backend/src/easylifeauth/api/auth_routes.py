@@ -1,6 +1,7 @@
 """Async Authentication Routes"""
-from typing import Dict
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+import os
+from typing import Dict, Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 
 from .models import (
     UserRegister, UserLogin, UserProfileUpdate,
@@ -18,9 +19,39 @@ from ..services.activity_log_service import ActivityLogService
 from ..security.access_control import CurrentUser
 from ..errors.auth_error import AuthError
 from ..middleware.csrf import get_csrf_token
-from typing import Optional
+
+_is_dev = os.environ.get("ENV", "development").lower() in ("development", "dev")
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+def _set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
+    """Set httpOnly auth cookies on the response."""
+    secure = not _is_dev
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=secure,
+        samesite="lax",
+        max_age=900,  # 15 minutes
+        path="/",
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=secure,
+        samesite="lax",
+        max_age=86400,  # 24 hours
+        path="/api/v1/auth/refresh",
+    )
+
+
+def _clear_auth_cookies(response: Response) -> None:
+    """Clear httpOnly auth cookies."""
+    response.delete_cookie(key="access_token", path="/")
+    response.delete_cookie(key="refresh_token", path="/api/v1/auth/refresh")
 
 
 @router.get("/csrf-token")
@@ -50,6 +81,7 @@ async def csrf_token(request: Request) -> Dict[str, str]:
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def register(
     user_data: UserRegister,
+    response: Response,
     user_service: UserService = Depends(get_user_service)
 ):
     """Register a new user"""
@@ -63,6 +95,10 @@ async def register(
             groups=user_data.groups,
             domains=user_data.domains
         )
+
+        # Set httpOnly cookies
+        _set_auth_cookies(response, result["access_token"], result["refresh_token"])
+
         return result
     except AuthError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message)
@@ -71,6 +107,7 @@ async def register(
 @router.post("/login", response_model=AuthResponse)
 async def login(
     credentials: UserLogin,
+    response: Response,
     user_service: UserService = Depends(get_user_service),
     activity_log: Optional[ActivityLogService] = Depends(get_activity_log_service)
 ):
@@ -80,6 +117,9 @@ async def login(
             email=credentials.email,
             password=credentials.password
         )
+
+        # Set httpOnly cookies
+        _set_auth_cookies(response, result["access_token"], result["refresh_token"])
 
         # Log successful login
         if activity_log and result.get("user"):
@@ -107,13 +147,27 @@ async def login(
 
 @router.post("/refresh", response_model=AuthResponse)
 async def refresh_token(
-    data: RefreshToken,
+    request: Request,
+    response: Response,
+    data: Optional[RefreshToken] = None,
     token_manager: TokenManager = Depends(get_token_manager)
 ):
-    """Refresh JWT Token using refresh_token (no auth required - access token may be expired)"""
+    """Refresh JWT Token using refresh_token from cookie or body (no auth required)"""
     try:
+        # Try cookie first, then request body
+        refresh = request.cookies.get("refresh_token")
+        if not refresh and data:
+            refresh = data.refresh_token
+
+        if not refresh:
+            raise AuthError("No refresh token provided", 401)
+
         db = get_db()
-        result = await token_manager.refresh_access_token(data.refresh_token, db)
+        result = await token_manager.refresh_access_token(refresh, db)
+
+        # Set new httpOnly cookies
+        _set_auth_cookies(response, result["access_token"], result["refresh_token"])
+
         return result
     except AuthError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message)
@@ -182,6 +236,7 @@ async def reset_password(
 @router.post("/update_password", response_model=AuthResponse)
 async def update_password(
     data: PasswordUpdate,
+    response: Response,
     current_user: CurrentUser = Depends(get_current_user),
     password_service: PasswordResetService = Depends(get_password_service)
 ):
@@ -192,6 +247,11 @@ async def update_password(
             password=data.password,
             new_password=data.new_password
         )
+
+        # Set new httpOnly cookies with updated tokens
+        if result.get("access_token") and result.get("refresh_token"):
+            _set_auth_cookies(response, result["access_token"], result["refresh_token"])
+
         return result
     except AuthError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message)
@@ -199,12 +259,15 @@ async def update_password(
 
 @router.post("/logout", response_model=MessageResponse)
 async def logout(
+    response: Response,
     current_user: CurrentUser = Depends(get_current_user),
     user_service: UserService = Depends(get_user_service)
 ):
     """Logout user"""
     try:
         result = await user_service.logout_user(current_user.user_id, current_user.email)
+        # Clear httpOnly auth cookies
+        _clear_auth_cookies(response)
         return result
     except AuthError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message)

@@ -26,7 +26,8 @@ import {
   LayoutGrid,
   Building2,
   Plug,
-  Mail
+  Mail,
+  Compass
 } from 'lucide-react';
 
 function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
@@ -45,7 +46,8 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
     if (isAdmin) {
       // Super Admin Panel
       return [
-        { path: '/dashboard', icon: Home, label: 'User Dashboard', dividerAfter: true },
+        { path: '/dashboard', icon: Home, label: 'User Dashboard' },
+        { path: null, icon: Compass, label: 'Explorer', external: true, href: 'http://localhost:3001', dividerAfter: true },
         { path: '/admin', icon: LayoutDashboard, label: 'Admin Dashboard', exact: true },
         { path: '/admin/users', icon: Users, label: 'Users' },
         { path: '/admin/roles', icon: Shield, label: 'Roles' },
@@ -69,7 +71,8 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
     if (isGroupAdmin) {
       // Group Admin Panel
       return [
-        { path: '/dashboard', icon: Home, label: 'User Dashboard', dividerAfter: true },
+        { path: '/dashboard', icon: Home, label: 'User Dashboard' },
+        { path: null, icon: Compass, label: 'Explorer', external: true, href: 'http://localhost:3001', dividerAfter: true },
         { path: '/management', icon: LayoutDashboard, label: 'Management Dashboard', exact: true },
         { path: '/management/users', icon: Users, label: 'Users Management' },
         { path: '/management/domains', icon: Layers, label: 'Domains' },
@@ -83,6 +86,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
       { path: '/domains', icon: Layers, label: 'My Domains' },
       { path: '/ask-scenario', icon: MessageSquarePlus, label: 'Ask Scenario' },
       { path: '/my-requests', icon: ClipboardList, label: 'My Requests' },
+      { path: null, icon: Compass, label: 'Explorer', external: true, href: 'http://localhost:3001' },
       { path: '/profile', icon: User, label: 'Profile' },
       { path: '/feedback', icon: MessageSquare, label: 'Feedback' },
     ];
@@ -134,17 +138,29 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
           <ul className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const active = isActive(item.path, item.exact);
+              const active = item.path ? isActive(item.path, item.exact) : false;
 
               return (
-                <li key={item.path}>
-                  <Link
-                    to={item.path}
-                    className={`sidebar-link ${active ? 'active' : ''}`}
-                  >
-                    <Icon size={20} />
-                    {sidebarOpen && <span>{item.label}</span>}
-                  </Link>
+                <li key={item.path || item.label}>
+                  {item.external ? (
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="sidebar-link"
+                    >
+                      <Icon size={20} />
+                      {sidebarOpen && <span>{item.label}</span>}
+                    </a>
+                  ) : (
+                    <Link
+                      to={item.path}
+                      className={`sidebar-link ${active ? 'active' : ''}`}
+                    >
+                      <Icon size={20} />
+                      {sidebarOpen && <span>{item.label}</span>}
+                    </Link>
+                  )}
                   {item.dividerAfter && (
                     <div className="my-3 border-t border-neutral-200"></div>
                   )}

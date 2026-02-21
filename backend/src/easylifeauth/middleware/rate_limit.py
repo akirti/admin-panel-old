@@ -72,6 +72,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Record this request
         async with self.lock:
             now = datetime.utcnow()
+            # Guard against unbounded growth from many unique IPs
+            if len(self.request_log) > 10000:
+                oldest_ip = next(iter(self.request_log))
+                del self.request_log[oldest_ip]
             self.request_log[client_ip].append((now, path))
 
         # Process request
@@ -108,12 +112,19 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             now = datetime.utcnow()
             requests = self.request_log.get(client_ip, [])
 
+            # Prune entries older than 1 hour (the max relevant window)
+            hour_ago = now - timedelta(hours=1)
+            self.request_log[client_ip] = [r for r in requests if r[0] > hour_ago]
+            requests = self.request_log[client_ip]
+
+            # Remove empty IP entries to prevent key accumulation
+            if not requests:
+                del self.request_log[client_ip]
+                return
+
             # Filter requests within time windows
             minute_ago = now - timedelta(minutes=1)
-            hour_ago = now - timedelta(hours=1)
-
             recent_minute = [r for r in requests if r[0] > minute_ago]
-            recent_hour = [r for r in requests if r[0] > hour_ago]
 
             # Determine which limit to use based on endpoint
             if "/auth/" in path:
@@ -129,7 +140,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 )
 
             # Check hour limit
-            if len(recent_hour) >= self.requests_per_hour:
+            if len(requests) >= self.requests_per_hour:
                 raise HTTPException(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                     detail=f"Rate limit exceeded: Maximum {self.requests_per_hour} requests per hour"

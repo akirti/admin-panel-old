@@ -77,16 +77,12 @@ async def bulk_upload(
             detail=f"Invalid entity type. Must be one of: {', '.join(valid_types)}"
         )
 
-    # Validate file extension
-    filename = file.filename.lower()
-    if not any(filename.endswith(ext) for ext in ['.csv', '.xlsx', '.xls']):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File must be CSV, XLS, or XLSX format"
-        )
+    # Validate file extension, MIME type, and magic bytes
+    from ..utils.file_validation import validate_upload
+    content = await file.read()
+    validate_upload(file, {".csv", ".xlsx", ".xls"}, content=content)
 
     try:
-        content = await file.read()
         result = await bulk_service.process_entity(
             entity_type,
             content,

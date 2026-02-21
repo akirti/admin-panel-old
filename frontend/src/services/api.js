@@ -59,14 +59,10 @@ const fetchCSRFToken = async () => {
   }
 };
 
-// Request interceptor for auth token and CSRF token
+// Request interceptor for CSRF token (auth tokens are sent via httpOnly cookies)
 api.interceptors.request.use(
   async (config) => {
-    // Add auth token
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // Auth tokens are sent automatically as httpOnly cookies (withCredentials: true)
 
     // Add CSRF token for state-changing requests
     const needsCSRF = ['post', 'put', 'delete', 'patch'].includes(config.method?.toLowerCase());
@@ -95,36 +91,20 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Handle 401 Unauthorized - refresh JWT token
+    // Handle 401 Unauthorized - refresh JWT token via httpOnly cookie
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refresh_token');
-        if (refreshToken) {
-          const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-            refresh_token: refreshToken
-          }, {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('access_token')}`
-            },
-            withCredentials: true,
-            timeout: 10000 // 10s timeout for refresh
-          });
+        // Refresh token is sent automatically via httpOnly cookie
+        await axios.post(`${API_BASE_URL}/auth/refresh`, {}, {
+          withCredentials: true,
+          timeout: 10000
+        });
 
-          const { access_token, refresh_token } = response.data;
-          localStorage.setItem('access_token', access_token);
-          localStorage.setItem('refresh_token', refresh_token);
-
-          originalRequest.headers.Authorization = `Bearer ${access_token}`;
-          return api(originalRequest);
-        }
+        // New tokens are set as httpOnly cookies by the backend
+        return api(originalRequest);
       } catch (refreshError) {
-        // Clear auth state
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
-
         // Only redirect if we're not already on the login page
         if (!window.location.pathname.includes('/login')) {
           window.location.href = '/login';

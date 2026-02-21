@@ -8,6 +8,7 @@ from bson import ObjectId
 from datetime import datetime, timezone
 from enum import Enum
 import json
+import os
 import uuid
 import math
 
@@ -456,18 +457,13 @@ async def upload_configuration_file(
     """Upload a configuration file (JSON, XLSX, CSV)."""
     now = datetime.now(timezone.utc).isoformat()
 
-    # Validate file type
-    allowed_extensions = {".json", ".xlsx", ".xls", ".csv"}
-    file_ext = "." + file.filename.split(".")[-1].lower() if "." in file.filename else ""
-
-    if file_ext not in allowed_extensions:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid file type. Allowed types: {', '.join(allowed_extensions)}"
-        )
-
-    # Read file content
+    # Validate file type, MIME type, and magic bytes
+    from ..utils.file_validation import validate_upload
     file_content = await file.read()
+    allowed_extensions = {".json", ".xlsx", ".xls", ".csv"}
+    validate_upload(file, allowed_extensions, content=file_content)
+
+    file_ext = os.path.splitext(file.filename)[1].lower() if file.filename else ""
     file_size = len(file_content)
 
     # Check if configuration with this key exists

@@ -34,12 +34,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         self.enable_csp = enable_csp
         self.csp_directives = csp_directives or (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+            "script-src 'self'; "
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data: https:; "
             "font-src 'self' data:; "
             "connect-src 'self'; "
-            "frame-ancestors 'none';"
+            "frame-ancestors 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self';"
         )
 
     async def dispatch(self, request: Request, call_next):

@@ -23,32 +23,19 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const initAuth = async () => {
-      const storedUser = localStorage.getItem('user');
-      const token = localStorage.getItem('access_token');
+      try {
+        // Verify session via httpOnly cookie (no localStorage token needed)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-      if (storedUser && token) {
-        try {
-          // Temporarily set user from localStorage while verifying
-          setUser(JSON.parse(storedUser));
+        const response = await authAPI.getProfile();
+        clearTimeout(timeoutId);
 
-          // Verify token is still valid with a timeout
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-
-          const response = await authAPI.getProfile({ signal: controller.signal });
-          clearTimeout(timeoutId);
-
-          const userData = response.data;
-          setUser(userData);
-          localStorage.setItem('user', JSON.stringify(userData));
-        } catch (error) {
-          console.error('Auth verification failed:', error);
-          // Clear auth state on any error
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          localStorage.removeItem('user');
-          setUser(null);
-        }
+        const userData = response.data;
+        setUser(userData);
+      } catch (error) {
+        // No valid session - user needs to log in
+        setUser(null);
       }
       setLoading(false);
     };
@@ -59,11 +46,8 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     const response = await authAPI.login(email, password);
     const { access_token, refresh_token, ...userData } = response.data;
-    
-    localStorage.setItem('access_token', access_token);
-    localStorage.setItem('refresh_token', refresh_token);
-    localStorage.setItem('user', JSON.stringify(userData));
-    
+
+    // Tokens are now set as httpOnly cookies by the backend
     setUser(userData);
     return userData;
   };
@@ -71,11 +55,8 @@ export function AuthProvider({ children }) {
   const register = async (data) => {
     const response = await authAPI.register(data);
     const { access_token, refresh_token, ...userData } = response.data;
-    
-    localStorage.setItem('access_token', access_token);
-    localStorage.setItem('refresh_token', refresh_token);
-    localStorage.setItem('user', JSON.stringify(userData));
-    
+
+    // Tokens are now set as httpOnly cookies by the backend
     setUser(userData);
     return userData;
   };
@@ -84,11 +65,8 @@ export function AuthProvider({ children }) {
     try {
       await authAPI.logout();
     } catch (error) {
-      // Ignore logout errors
+      // Ignore logout errors - cookies are cleared server-side
     } finally {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('user');
       setUser(null);
     }
   };
@@ -97,7 +75,6 @@ export function AuthProvider({ children }) {
     const response = await authAPI.updateProfile(data);
     const userData = response.data;
     setUser(prev => ({ ...prev, ...userData }));
-    localStorage.setItem('user', JSON.stringify({ ...user, ...userData }));
     return userData;
   };
 
@@ -128,7 +105,7 @@ export function AuthProvider({ children }) {
 
   const hasAccessToDomain = (domain) => {
     if (isAdmin()) return true;
-    if (!user?.domains || user.domains.length === 0) return true;
+    if (!user?.domains || user.domains.length === 0) return false;
     if (user.domains.includes('all')) return true;
     return user.domains.includes(domain);
   };

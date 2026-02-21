@@ -13,6 +13,12 @@ export default defineConfig({
         secure: false,
         cookieDomainRewrite: '',
         cookiePathRewrite: '/'
+      },
+      '/explorer': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/explorer/, ''),
       }
     }
   },

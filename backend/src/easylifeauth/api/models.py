@@ -783,9 +783,9 @@ class PlayboardPagination(BaseModel):
         }
     
 class WidgetDescriptionBase(BaseModel):
-    type: str
-    text: str
-    index:int
+    type: Optional[str] = None
+    text: Optional[str] = None
+    index: Optional[int] = None
     styleClasses: Optional[List[str]|str] = None
     status:Optional[str] = "active"
     model_config = {
@@ -910,7 +910,7 @@ class PlayboardInDB(BaseModel):
     name: str
     description: Optional[str] = None
     scenarioKey: str
-    dataDomain: str
+    dataDomain: Optional[str] = None
     widgets: Optional[PlayboardWidget] = []
     order: Optional[int] = 0
     program_key: Optional[str] = None

@@ -167,11 +167,11 @@ class TokenManager:
             valid = False
             if payload["user_id"] == backend_payload["user_id"] and payload["email"] == backend_payload["email"]:
                 if token == backend_payload["token_hash"] and payload.get("type") == token_type:
-                    if payload["exp"] <= int(backend_payload["expires_at"].timestamp() * 1000):
+                    if payload["exp"] <= int(backend_payload["expires_at"].timestamp()):
                         valid = True
                 
                 if token == backend_payload["refresh_token_hash"] and payload.get("type") == token_type:
-                    if payload["exp"] >= int(datetime.now(timezone.utc).timestamp() * 1000):
+                    if payload["exp"] >= int(datetime.now(timezone.utc).timestamp()):
                         valid = True
             
             if valid:

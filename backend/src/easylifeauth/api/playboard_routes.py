@@ -344,16 +344,13 @@ async def upload_playboard_json(
     - **data_domain**: Data domain (optional, auto-detected from scenario)
     - **description**: Optional description
     """
-    # Validate file type
-    if not file.filename.endswith('.json'):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only JSON files are allowed"
-        )
+    # Validate file type, MIME type, and magic bytes
+    from ..utils.file_validation import validate_upload
+    content = await file.read()
+    validate_upload(file, {".json"}, content=content)
 
-    # Read and parse JSON
+    # Parse JSON
     try:
-        content = await file.read()
         json_data = json.loads(content.decode('utf-8'))
     except json.JSONDecodeError as e:
         raise HTTPException(
@@ -511,16 +508,13 @@ async def update_playboard_json(
             detail="Playboard not found"
         )
 
-    # Validate file type
-    if not file.filename.endswith('.json'):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only JSON files are allowed"
-        )
+    # Validate file type, MIME type, and magic bytes
+    from ..utils.file_validation import validate_upload
+    content = await file.read()
+    validate_upload(file, {".json"}, content=content)
 
-    # Read and parse JSON
+    # Parse JSON
     try:
-        content = await file.read()
         json_data = json.loads(content.decode('utf-8'))
     except json.JSONDecodeError as e:
         raise HTTPException(

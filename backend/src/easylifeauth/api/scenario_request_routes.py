@@ -226,7 +226,9 @@ async def upload_user_file(
 ) -> Dict[str, Any]:
     """Upload a sample file (user files)"""
     try:
+        from ..utils.file_validation import validate_upload
         content = await file.read()
+        validate_upload(file, {".csv", ".xlsx", ".xls", ".json", ".pdf", ".png", ".jpg", ".jpeg"}, content=content)
         file_info = await scenario_request_service.upload_file(
             request_id=request_id,
             file_name=file.filename,
@@ -249,7 +251,9 @@ async def upload_bucket_file(
 ) -> Dict[str, Any]:
     """Upload a bucket file (admin only, after acceptance)"""
     try:
+        from ..utils.file_validation import validate_upload
         content = await file.read()
+        validate_upload(file, {".csv", ".xlsx", ".xls", ".json", ".pdf", ".png", ".jpg", ".jpeg"}, content=content)
         file_info = await scenario_request_service.upload_file(
             request_id=request_id,
             file_name=file.filename,
