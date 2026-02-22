@@ -23,6 +23,11 @@ import AskScenarioPage from './pages/user/AskScenarioPage';
 import MyRequestsPage from './pages/user/MyRequestsPage';
 import RequestDetailPage from './pages/user/RequestDetailPage';
 
+// Explorer Pages
+import V1ExplorerLayout from './components/explorer/v1_ExplorerLayout';
+import V1ExplorerDomainPage from './pages/explorer/v1_ExplorerDomainPage';
+import V1ExplorerReportPage from './pages/explorer/v1_ExplorerReportPage';
+
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UsersManagement from './pages/admin/UsersManagement';
@@ -139,6 +144,12 @@ function App() {
           <Route path="/my-requests" element={<MyRequestsPage />} />
           <Route path="/my-requests/:requestId" element={<RequestDetailPage />} />
           <Route path="/my-requests/:requestId/edit" element={<AskScenarioPage />} />
+
+          {/* Explorer Routes */}
+          <Route path="/explorer" element={<V1ExplorerLayout />}>
+            <Route path=":dataDomain" element={<V1ExplorerDomainPage />} />
+            <Route path=":dataDomain/:scenarioKey" element={<V1ExplorerReportPage />} />
+          </Route>
         </Route>
 
         {/* Admin Routes - Super Admin Only */}

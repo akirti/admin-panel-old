@@ -47,7 +47,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
       // Super Admin Panel
       return [
         { path: '/dashboard', icon: Home, label: 'User Dashboard' },
-        { path: null, icon: Compass, label: 'Explorer', external: true, href: 'http://localhost:3001', dividerAfter: true },
+        { path: '/explorer', icon: Compass, label: 'Explorer', dividerAfter: true },
         { path: '/admin', icon: LayoutDashboard, label: 'Admin Dashboard', exact: true },
         { path: '/admin/users', icon: Users, label: 'Users' },
         { path: '/admin/roles', icon: Shield, label: 'Roles' },
@@ -72,7 +72,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
       // Group Admin Panel
       return [
         { path: '/dashboard', icon: Home, label: 'User Dashboard' },
-        { path: null, icon: Compass, label: 'Explorer', external: true, href: 'http://localhost:3001', dividerAfter: true },
+        { path: '/explorer', icon: Compass, label: 'Explorer', dividerAfter: true },
         { path: '/management', icon: LayoutDashboard, label: 'Management Dashboard', exact: true },
         { path: '/management/users', icon: Users, label: 'Users Management' },
         { path: '/management/domains', icon: Layers, label: 'Domains' },
@@ -86,7 +86,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
       { path: '/domains', icon: Layers, label: 'My Domains' },
       { path: '/ask-scenario', icon: MessageSquarePlus, label: 'Ask Scenario' },
       { path: '/my-requests', icon: ClipboardList, label: 'My Requests' },
-      { path: null, icon: Compass, label: 'Explorer', external: true, href: 'http://localhost:3001' },
+      { path: '/explorer', icon: Compass, label: 'Explorer' },
       { path: '/profile', icon: User, label: 'Profile' },
       { path: '/feedback', icon: MessageSquare, label: 'Feedback' },
     ];
