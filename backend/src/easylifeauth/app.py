@@ -35,6 +35,7 @@ from .api import (
     api_config_router,
     distribution_list_router,
     error_log_router,
+    prevail_router,
 )
 from .api.dependencies import init_dependencies
 from .db.db_manager import DatabaseManager
@@ -313,6 +314,7 @@ def create_app(
     app.include_router(api_config_router, prefix=API_BASE_ROUTE)
     app.include_router(distribution_list_router, prefix=API_BASE_ROUTE)
     app.include_router(error_log_router, prefix=API_BASE_ROUTE)
+    app.include_router(prevail_router, prefix=API_BASE_ROUTE)
 
     # Root endpoint
     @app.get("/")

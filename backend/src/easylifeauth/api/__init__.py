@@ -22,6 +22,7 @@ from .jira_routes import router as jira_router
 from .api_config_routes import router as api_config_router
 from .distribution_list_routes import router as distribution_list_router
 from .error_log_routes import router as error_log_router
+from .prevail_routes import router as prevail_router
 
 __all__ = [
     "auth_router",
@@ -47,4 +48,5 @@ __all__ = [
     "api_config_router",
     "distribution_list_router",
     "error_log_router",
+    "prevail_router",
 ]
