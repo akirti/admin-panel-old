@@ -71,12 +71,13 @@ async def execute_prevail_query(
             detail="Invalid JSON payload.",
         )
 
-    # Forward the logged-in user's Bearer token to the Prevail service
-    auth_header = request.headers.get("authorization", "")
-    token = auth_header.replace("Bearer ", "", 1) if auth_header.startswith("Bearer ") else auth_header
+    # Extract the logged-in user's token (cookie first, then Authorization header)
+    token = request.cookies.get("access_token", "").strip()
+    if not token:
+        auth_header = request.headers.get("authorization", "")
+        token = auth_header.replace("Bearer ", "", 1).strip() if auth_header.startswith("Bearer ") else auth_header.strip()
 
     # Use the api_config_service test_api infrastructure to make the call
-    # Override auth_type to "bearer" so the user's token is forwarded
     call_config = {
         **config,
         "endpoint": target_url,
@@ -84,9 +85,12 @@ async def execute_prevail_query(
         "body": payload,
         "ping_endpoint": None,  # force test_api to use endpoint
         "timeout": config.get("timeout", 120),
-        "auth_type": "bearer",
-        "auth_config": {"token": token},
     }
+
+    # Only override auth with user's token if a real token exists
+    if token:
+        call_config["auth_type"] = "bearer"
+        call_config["auth_config"] = {"token": token}
 
     result = await service.test_api(call_config)
 
