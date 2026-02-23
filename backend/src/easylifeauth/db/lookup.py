@@ -7,6 +7,7 @@ class GroupTypes(str, Enum):
     authentication = "authentication"
     bookmark = "bookmark"
     system = "system"
+    customers = "customers"
 
 class DomainTypes(str, Enum):
     authentication = "authentication"

@@ -28,7 +28,7 @@ def create_password_reset_token(email: str) -> str:
     """Create a password reset token."""
     return secrets.token_urlsafe(32)
 from easylifeauth.api.dependencies import get_db, get_email_service, get_activity_log_service
-from easylifeauth.security.access_control import CurrentUser, require_super_admin, require_group_admin
+from easylifeauth.security.access_control import CurrentUser, get_current_user, require_super_admin, require_group_admin
 from easylifeauth.services.email_service import EmailService
 from easylifeauth.services.activity_log_service import ActivityLogService
 
@@ -165,6 +165,118 @@ async def count_users(
         query["is_active"] = is_active
     count = await db.users.count_documents(query)
     return {"count": count}
+
+
+@router.get("/me/assigned-customers")
+async def get_assigned_customers(
+    search: Optional[str] = Query(None, description="Search by customerId or name"),
+    tag: Optional[str] = Query(None, description="Filter by tag"),
+    current_user: CurrentUser = Depends(get_current_user),
+    db: DatabaseManager = Depends(get_db)
+):
+    """Get all customers assigned to the current user (direct + via groups)."""
+    import re
+
+    # Collect all assigned customerIds with their source
+    customer_source_map = {}  # customerId -> source label
+
+    # 1. Direct assignments
+    user = await db.users.find_one({"_id": ObjectId(current_user.user_id)})
+    direct_customer_ids = user.get("customers", []) if user else []
+    for cid in direct_customer_ids:
+        customer_source_map[cid] = "direct"
+
+    # 2. Group assignments - find groups of type "customers" that user belongs to
+    user_groups = user.get("groups", []) if user else []
+    if user_groups:
+        cursor = db.groups.find({
+            "groupId": {"$in": user_groups},
+            "type": "customers",
+            "status": "active"
+        })
+        async for group in cursor:
+            group_name = group.get("name", group.get("groupId", "Group"))
+            for cid in group.get("customers", []):
+                if cid not in customer_source_map:
+                    customer_source_map[cid] = group_name
+
+    if not customer_source_map:
+        return {"customers": [], "total": 0}
+
+    # Build query to fetch customer details
+    customer_ids = list(customer_source_map.keys())
+    base_filter = {"customerId": {"$in": customer_ids}, "status": "active"}
+
+    if search:
+        search_regex = {"$regex": re.escape(search), "$options": "i"}
+        # Must match assigned customer ids AND search term
+        base_filter = {
+            "$and": [
+                {"customerId": {"$in": customer_ids}},
+                {"status": "active"},
+                {"$or": [
+                    {"customerId": search_regex},
+                    {"name": search_regex}
+                ]}
+            ]
+        }
+
+    if tag:
+        base_filter["tags"] = tag
+
+    query = base_filter
+
+    cursor = db.customers.find(query).sort("customerId", 1)
+    customers = []
+    async for cust in cursor:
+        customers.append({
+            "customerId": cust.get("customerId"),
+            "name": cust.get("name", ""),
+            "tags": cust.get("tags", []),
+            "unit": cust.get("unit"),
+            "source": customer_source_map.get(cust.get("customerId"), "direct")
+        })
+
+    return {"customers": customers, "total": len(customers)}
+
+
+@router.get("/me/customer-tags")
+async def get_customer_tags(
+    current_user: CurrentUser = Depends(get_current_user),
+    db: DatabaseManager = Depends(get_db)
+):
+    """Get distinct tags from all customers assigned to the current user."""
+    # Collect all assigned customerIds
+    user = await db.users.find_one({"_id": ObjectId(current_user.user_id)})
+    customer_ids = list(user.get("customers", [])) if user else []
+
+    user_groups = user.get("groups", []) if user else []
+    if user_groups:
+        cursor = db.groups.find({
+            "groupId": {"$in": user_groups},
+            "type": "customers",
+            "status": "active"
+        })
+        async for group in cursor:
+            for cid in group.get("customers", []):
+                if cid not in customer_ids:
+                    customer_ids.append(cid)
+
+    if not customer_ids:
+        return {"tags": []}
+
+    # Get distinct tags from these customers
+    pipeline = [
+        {"$match": {"customerId": {"$in": customer_ids}, "status": "active"}},
+        {"$unwind": "$tags"},
+        {"$group": {"_id": "$tags"}},
+        {"$sort": {"_id": 1}}
+    ]
+    tags = []
+    async for doc in db.customers.aggregate(pipeline):
+        tags.append(doc["_id"])
+
+    return {"tags": tags}
 
 
 @router.get("/{user_id}", response_model=UserResponseFull)

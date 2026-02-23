@@ -5,8 +5,9 @@ import React, {
   useCallback,
   useRef,
 } from 'react';
-import { ChevronDown, ChevronUp, Filter, RotateCcw } from 'lucide-react';
+import { ChevronDown, ChevronUp, Filter, RotateCcw, Users } from 'lucide-react';
 import V1DynamicFilterControl from './v1_DynamicFilterControl';
+import useAssignedCustomers from '../../hooks/useAssignedCustomers';
 import {
   getAttrValue,
   parseCurrentDateString,
@@ -16,6 +17,15 @@ import {
   trimCellValue,
 } from '../../utils/v1_reportUtils';
 import { validateFilter } from '../../utils/v1_filterValidators';
+
+const CUSTOMER_DATAKEY_PATTERN = /^(query_)?customer[s_]?/i;
+const CUSTOMER_DISPLAY_PATTERN = /customer\s*[#\d]/i;
+
+const isCustomerFilter = (filter) => {
+  if (CUSTOMER_DATAKEY_PATTERN.test(filter.dataKey)) return true;
+  const display = filter.displayName || '';
+  return CUSTOMER_DISPLAY_PATTERN.test(display);
+};
 
 const V1FilterSection = ({
   onSubmit,
@@ -32,6 +42,15 @@ const V1FilterSection = ({
   const [form, setForm] = useState({});
   const [errorMsg, setErrorMsg] = useState('');
   const [autoSubmitted, setAutoSubmitted] = useState(false);
+  const [useCustomerSuggest, setUseCustomerSuggest] = useState(true);
+
+  // Customer autocomplete hook
+  const customerData = useAssignedCustomers();
+
+  // Detect if any filter has a customer-type dataKey
+  const hasCustomerFilter = useMemo(() => {
+    return filterConfig.some((f) => isCustomerFilter(f));
+  }, [filterConfig]);
 
   // Reset autoSubmitted if initialFilterValues changed (deep compare)
   useEffect(() => {
@@ -271,12 +290,32 @@ const V1FilterSection = ({
               Filters
             </h5>
           </div>
-          <div className="text-gray-400">
-            {show ? (
-              <ChevronUp className="w-5 h-5" />
-            ) : (
-              <ChevronDown className="w-5 h-5" />
+          <div className="flex items-center gap-3">
+            {/* Customer preference toggle */}
+            {hasCustomerFilter && customerData.hasAssigned && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setUseCustomerSuggest((prev) => !prev);
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
+                  useCustomerSuggest
+                    ? 'bg-red-50 border-red-300 text-red-700'
+                    : 'bg-gray-50 border-gray-300 text-gray-500'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                {useCustomerSuggest ? 'Assigned Customers' : 'No Preference'}
+              </button>
             )}
+            <div className="text-gray-400">
+              {show ? (
+                <ChevronUp className="w-5 h-5" />
+              ) : (
+                <ChevronDown className="w-5 h-5" />
+              )}
+            </div>
           </div>
         </div>
 
@@ -332,6 +371,8 @@ const V1FilterSection = ({
                               allFilters={filterConfig}
                               form={form}
                               placeholder={inputPlaceholder}
+                              customerData={customerData}
+                              useCustomerSuggest={useCustomerSuggest}
                             />
                           );
                         })()}

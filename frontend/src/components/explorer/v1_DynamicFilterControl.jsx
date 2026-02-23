@@ -3,6 +3,7 @@ import V1CustomDropdown from './v1_CustomDropdown';
 import V1MultiSelectDropdown from './v1_MultiSelectDropdown';
 import V1RadioButtonDropdown from './v1_RadioButtonDropdown';
 import V1ToggleButtonDropdown from './v1_ToggleButtonDropdown';
+import V1CustomerSuggestInput from './v1_CustomerSuggestInput';
 import {
   getAttrValue,
   formatApiDateForInput,
@@ -11,6 +12,20 @@ import {
   handleArray,
 } from '../../utils/v1_reportUtils';
 
+const CUSTOMER_DATAKEY_PATTERN = /^(query_)?customer[s_]?/i;
+const CUSTOMER_DISPLAY_PATTERN = /customer\s*[#\d]/i;
+
+/**
+ * Detect whether a filter represents a customer input field.
+ * Matches by dataKey (query_customer, query_customers, customer_number, etc.)
+ * OR by displayName containing "Customer#" or "Customer #".
+ */
+const isCustomerFilter = (filter) => {
+  if (CUSTOMER_DATAKEY_PATTERN.test(filter.dataKey)) return true;
+  const display = filter.displayName || '';
+  return CUSTOMER_DISPLAY_PATTERN.test(display);
+};
+
 const V1DynamicFilterControl = ({
   filter,
   value,
@@ -18,6 +33,8 @@ const V1DynamicFilterControl = ({
   allFilters = [],
   form = {},
   placeholder,
+  customerData,
+  useCustomerSuggest = false,
   ...props
 }) => {
   const attrs = filter.attributes || [];
@@ -339,6 +356,27 @@ const V1DynamicFilterControl = ({
           className="border border-gray-300 rounded-md h-10 px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition-colors hover:border-gray-400"
         />
       </div>
+    );
+  }
+
+  // Customer suggest input for customer-type fields
+  const isCustomerField = isCustomerFilter(filter);
+  if (type === 'input' && isCustomerField && useCustomerSuggest && customerData?.hasAssigned) {
+    return (
+      <V1CustomerSuggestInput
+        value={value || ''}
+        onChange={(val) => onChange(filter.dataKey, val)}
+        customers={customerData.customers}
+        tags={customerData.tags}
+        loading={customerData.loading}
+        onSearch={customerData.search}
+        onFilterByTag={customerData.filterByTag}
+        placeholder={
+          (!value || value === '') && filter.inputHint
+            ? filter.inputHint
+            : placeholder || 'Type customer # or name...'
+        }
+      />
     );
   }
 

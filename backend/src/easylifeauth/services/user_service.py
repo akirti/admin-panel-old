@@ -292,6 +292,7 @@ class UserService:
             "full_name": str(user.get("full_name", "")),
             "roles": user.get("roles", []),
             "groups": user.get("groups", []),
+            "customers": user.get("customers", []),
             "domains": resolved_domains,
             "permissions": resolved_permissions,
             **tokens
@@ -314,6 +315,7 @@ class UserService:
                     "full_name": user.get("full_name", ""),
                     "roles": user.get("roles", []),
                     "groups": user.get("groups", []),
+                    "customers": user.get("customers", []),
                     "domains": resolved_domains,
                     "permissions": resolved_permissions,
                     "is_active": user.get("is_active", True),

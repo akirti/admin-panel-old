@@ -180,6 +180,8 @@ export const usersAPI = {
     api.post(`/users/${id}/send-password-reset`, null, { params: { send_email: sendEmail } }),
   adminResetPassword: (id, sendEmail = true) =>
     api.post(`/users/${id}/reset-password`, null, { params: { send_email: sendEmail } }),
+  getAssignedCustomers: (params = {}) => api.get('/users/me/assigned-customers', { params }),
+  getCustomerTags: () => api.get('/users/me/customer-tags'),
 };
 
 // Roles API (scratch-3 compatible)

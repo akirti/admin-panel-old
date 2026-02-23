@@ -277,6 +277,12 @@ async def delete_customer(
         {"$pull": {"customers": customer_id_str}}
     )
 
+    # Remove customer from all groups
+    await db.groups.update_many(
+        {"customers": customer_id_str},
+        {"$pull": {"customers": customer_id_str}}
+    )
+
     return {"message": "Customer deleted successfully"}
 
 

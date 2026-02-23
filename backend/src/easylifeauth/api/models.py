@@ -54,6 +54,7 @@ class UserResponse(BaseModel):
     roles: List[str] = []
     groups: List[str] = []
     domains: List[str] = []
+    customers: List[str] = []
     is_active: bool = True
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -524,6 +525,7 @@ class GroupBase(BaseModel):
     description: Optional[str] = None
     permissions: List[str] = []
     domains: List[str] = []
+    customers: List[str] = []
     status: str = "active"
     priority: int = 0
 
@@ -538,6 +540,7 @@ class GroupUpdate(BaseModel):
     description: Optional[str] = None
     permissions: Optional[List[str]] = None
     domains: Optional[List[str]] = None
+    customers: Optional[List[str]] = None
     status: Optional[str] = None
     priority: Optional[int] = None
 

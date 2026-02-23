@@ -59,17 +59,45 @@ async def resolve_domains(db: DatabaseManager, domain_refs: List[str]) -> List[s
     for ref in domain_refs:
         # Try as ObjectId first
         if ObjectId.is_valid(ref):
-            domain = await db.data_domains.find_one({"_id": ObjectId(ref)})
+            domain = await db.domains.find_one({"_id": ObjectId(ref)})
             if domain:
                 resolved_keys.append(domain.get("domainId", ref))
                 continue
 
         # Try as domainId key
-        domain = await db.data_domains.find_one({"domainId": ref})
+        domain = await db.domains.find_one({"domainId": ref})
         if domain:
             resolved_keys.append(domain.get("domainId", ref))
         else:
             # Keep the original value if not found (allows for flexibility)
+            resolved_keys.append(ref)
+
+    return resolved_keys
+
+
+async def resolve_customers(db: DatabaseManager, customer_refs: List[str]) -> List[str]:
+    """
+    Resolve customer references (IDs or keys) to customer keys.
+    Accepts either ObjectId strings or customerId keys.
+    Returns list of valid customerId keys.
+    """
+    if not customer_refs:
+        return []
+
+    resolved_keys = []
+    for ref in customer_refs:
+        # Try as ObjectId first
+        if ObjectId.is_valid(ref):
+            customer = await db.customers.find_one({"_id": ObjectId(ref)})
+            if customer:
+                resolved_keys.append(customer.get("customerId", ref))
+                continue
+
+        # Try as customerId key
+        customer = await db.customers.find_one({"customerId": ref})
+        if customer:
+            resolved_keys.append(customer.get("customerId", ref))
+        else:
             resolved_keys.append(ref)
 
     return resolved_keys
@@ -213,6 +241,8 @@ async def create_group(
         group_dict["permissions"] = await resolve_permissions(db, group_dict["permissions"])
     if group_dict.get("domains"):
         group_dict["domains"] = await resolve_domains(db, group_dict["domains"])
+    if group_dict.get("customers"):
+        group_dict["customers"] = await resolve_customers(db, group_dict["customers"])
 
     group_dict["created_at"] = datetime.utcnow()
     group_dict["updated_at"] = datetime.utcnow()
@@ -252,6 +282,8 @@ async def update_group(
         update_data["permissions"] = await resolve_permissions(db, update_data["permissions"])
     if "domains" in update_data and update_data["domains"] is not None:
         update_data["domains"] = await resolve_domains(db, update_data["domains"])
+    if "customers" in update_data and update_data["customers"] is not None:
+        update_data["customers"] = await resolve_customers(db, update_data["customers"])
 
     update_data["updated_at"] = datetime.utcnow()
 

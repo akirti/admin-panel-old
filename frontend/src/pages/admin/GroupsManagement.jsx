@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { groupsAPI, permissionsAPI, domainsAPI, exportAPI } from '../../services/api';
+import { groupsAPI, permissionsAPI, domainsAPI, customersAPI, exportAPI } from '../../services/api';
 import {
   Users,
   Plus,
@@ -26,6 +26,8 @@ const GroupsManagement = () => {
   const [groups, setGroups] = useState([]);
   const [permissions, setPermissions] = useState([]);
   const [domains, setDomains] = useState([]);
+  const [allCustomers, setAllCustomers] = useState([]);
+  const [customerSearch, setCustomerSearch] = useState('');
   const [groupTypes, setGroupTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -53,6 +55,7 @@ const GroupsManagement = () => {
     type: 'domain',
     permissions: [],
     domains: [],
+    customers: [],
     status: 'active',
     priority: 0,
   });
@@ -98,14 +101,16 @@ const GroupsManagement = () => {
   // Fetch permissions, domains, and group types for the form
   const fetchFormData = useCallback(async () => {
     try {
-      const [permRes, domRes, typesRes] = await Promise.all([
+      const [permRes, domRes, typesRes, custRes] = await Promise.all([
         permissionsAPI.list({ limit: 1000 }),
         domainsAPI.list({ limit: 1000 }),
         groupsAPI.getTypes(),
+        customersAPI.list({ limit: 1000 }),
       ]);
       setPermissions(permRes.data.data || []);
       setDomains(domRes.data.data || []);
       setGroupTypes(typesRes.data || []);
+      setAllCustomers(custRes.data.data || []);
     } catch (err) {
       console.error('Failed to fetch form data:', err);
     }
@@ -196,6 +201,41 @@ const GroupsManagement = () => {
     }));
   };
 
+  // Helper to check if customer is selected (by customerId)
+  const isCustomerSelected = (customer) => {
+    return formData.customers.includes(customer.customerId) ||
+           formData.customers.includes(customer._id);
+  };
+
+  // Handle customer toggle
+  const handleCustomerToggle = (customer) => {
+    const isSelected = isCustomerSelected(customer);
+    setFormData((prev) => ({
+      ...prev,
+      customers: isSelected
+        ? prev.customers.filter((c) => c !== customer.customerId && c !== customer._id)
+        : [...prev.customers, customer.customerId],
+    }));
+  };
+
+  // Select/clear all customers
+  const handleSelectAllCustomers = (selected) => {
+    setFormData((prev) => ({
+      ...prev,
+      customers: selected ? filteredCustomers.map((c) => c.customerId) : [],
+    }));
+  };
+
+  // Filter customers by search
+  const filteredCustomers = allCustomers.filter((c) => {
+    if (!customerSearch.trim()) return true;
+    const term = customerSearch.toLowerCase();
+    return (
+      (c.customerId || '').toLowerCase().includes(term) ||
+      (c.name || '').toLowerCase().includes(term)
+    );
+  });
+
   // Select/clear all domains - use _id for API
   const handleSelectAllDomains = (selected) => {
     setFormData((prev) => ({
@@ -222,9 +262,11 @@ const GroupsManagement = () => {
       type: groupTypes.length > 0 ? groupTypes[0].value : 'domain',
       permissions: [],
       domains: [],
+      customers: [],
       status: 'active',
       priority: 0,
     });
+    setCustomerSearch('');
     setModalOpen(true);
   };
 
@@ -238,9 +280,11 @@ const GroupsManagement = () => {
       type: group.type || 'custom',
       permissions: group.permissions || [],
       domains: group.domains || [],
+      customers: group.customers || [],
       status: group.status || 'active',
       priority: group.priority || 0,
     });
+    setCustomerSearch('');
     setModalOpen(true);
   };
 
@@ -491,6 +535,9 @@ const GroupsManagement = () => {
                     Domains
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Customers
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Priority
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -564,6 +611,26 @@ const GroupsManagement = () => {
                           </span>
                         )}
                         {(group.domains || []).length === 0 && (
+                          <span className="text-xs text-gray-400">None</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1 max-w-xs">
+                        {(group.customers || []).slice(0, 3).map((cust, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2 py-0.5 text-xs bg-orange-100 text-orange-700 rounded"
+                          >
+                            {cust}
+                          </span>
+                        ))}
+                        {(group.customers || []).length > 3 && (
+                          <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
+                            +{group.customers.length - 3} more
+                          </span>
+                        )}
+                        {(group.customers || []).length === 0 && (
                           <span className="text-xs text-gray-400">None</span>
                         )}
                       </div>
@@ -890,6 +957,94 @@ const GroupsManagement = () => {
                   )}
                 </div>
               </div>
+
+              {/* Customers Section - shown when type is "customers" */}
+              {formData.type === 'customers' && (
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Customers ({formData.customers.length} selected)
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        className="text-xs text-blue-600 hover:underline"
+                        onClick={() => handleSelectAllCustomers(true)}
+                      >
+                        Select All
+                      </button>
+                      <button
+                        type="button"
+                        className="text-xs text-gray-600 hover:underline"
+                        onClick={() => handleSelectAllCustomers(false)}
+                      >
+                        Clear All
+                      </button>
+                    </div>
+                  </div>
+                  {/* Customer search */}
+                  <div className="relative mb-3">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                    <input
+                      type="text"
+                      placeholder="Search customers by ID or name..."
+                      className="input pl-9 w-full text-sm"
+                      value={customerSearch}
+                      onChange={(e) => setCustomerSearch(e.target.value)}
+                    />
+                  </div>
+                  {/* Selected customers chips */}
+                  {formData.customers.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {formData.customers.map((cid) => {
+                        const cust = allCustomers.find((c) => c.customerId === cid);
+                        return (
+                          <span
+                            key={cid}
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-orange-100 text-orange-700 rounded"
+                          >
+                            {cid}{cust?.name ? ` — ${cust.name}` : ''}
+                            <button
+                              type="button"
+                              onClick={() => handleCustomerToggle({ customerId: cid })}
+                              className="text-orange-500 hover:text-orange-700"
+                            >
+                              <X size={12} />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-gray-50">
+                    {filteredCustomers.length === 0 ? (
+                      <p className="text-sm text-gray-500">No customers found</p>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {filteredCustomers.map((customer) => (
+                          <label
+                            key={customer._id || customer.customerId}
+                            className="flex items-center gap-2 text-sm cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isCustomerSelected(customer)}
+                              onChange={() => handleCustomerToggle(customer)}
+                              className="rounded border-gray-300"
+                            />
+                            <span className="truncate" title={`${customer.customerId} — ${customer.name}`}>
+                              <span className="font-medium">{customer.customerId}</span>
+                              {customer.name && (
+                                <span className="text-gray-500 ml-1">— {customer.name}</span>
+                              )}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Form Actions */}
               <div className="flex justify-end gap-3 pt-4 border-t">
