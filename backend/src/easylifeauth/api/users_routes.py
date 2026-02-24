@@ -577,7 +577,7 @@ async def admin_reset_password(
         {"$set": {"password_hash": new_hash, "updated_at": datetime.utcnow()}}
     )
 
-    if send_email and email_service:
+    if email_service:
         try:
             await email_service.send_welcome_email(
                 user["email"],
@@ -585,8 +585,9 @@ async def admin_reset_password(
                 temp_password
             )
             print(f"Password reset email with temp password sent to {user['email']}")
+            return {"message": "Password reset and email sent"}
         except Exception as e:
             print(f"Failed to send password reset email to {user['email']}: {e}")
-        return {"message": "Password reset and email sent"}
+            return {"message": "Password reset but email delivery failed"}
     else:
-        return {"message": "Password reset", "temp_password": temp_password}
+        return {"message": "Password reset. Email service not configured."}
