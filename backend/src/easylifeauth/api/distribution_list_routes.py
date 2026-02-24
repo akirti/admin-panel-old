@@ -15,7 +15,7 @@ from easylifeauth.api.models import (
 )
 from easylifeauth.db.db_manager import DatabaseManager
 from easylifeauth.api.dependencies import get_db
-from easylifeauth.security.access_control import CurrentUser, require_super_admin, get_current_user
+from easylifeauth.security.access_control import CurrentUser, require_super_admin, require_group_admin, get_current_user
 from easylifeauth.services.distribution_list_service import DistributionListService
 
 router = APIRouter(prefix="/distribution-lists", tags=["Distribution Lists"])
@@ -92,7 +92,7 @@ async def list_distribution_lists(
 
 @router.get("/types")
 async def get_distribution_list_types(
-    current_user: CurrentUser = Depends(get_current_user)
+    current_user: CurrentUser = Depends(require_group_admin)
 ):
     """Get available distribution list types."""
     return {
@@ -112,7 +112,7 @@ async def get_distribution_list_types(
 @router.get("/by-key/{key}")
 async def get_distribution_list_by_key(
     key: str,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_group_admin),
     service: DistributionListService = Depends(get_distribution_list_service)
 ):
     """Get a distribution list by its key."""
@@ -128,7 +128,7 @@ async def get_distribution_list_by_key(
 @router.get("/by-type/{list_type}")
 async def get_distribution_lists_by_type(
     list_type: str,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_group_admin),
     service: DistributionListService = Depends(get_distribution_list_service)
 ):
     """Get all distribution lists of a specific type."""
@@ -139,7 +139,7 @@ async def get_distribution_lists_by_type(
 @router.get("/emails/{key}")
 async def get_emails_by_key(
     key: str,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_group_admin),
     service: DistributionListService = Depends(get_distribution_list_service)
 ):
     """Get email addresses from a distribution list by key."""
@@ -150,7 +150,7 @@ async def get_emails_by_key(
 @router.get("/{list_id}", response_model=DistributionListInDB)
 async def get_distribution_list(
     list_id: str,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_group_admin),
     service: DistributionListService = Depends(get_distribution_list_service)
 ):
     """Get a specific distribution list by ID."""
