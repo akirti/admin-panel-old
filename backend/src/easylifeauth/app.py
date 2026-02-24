@@ -143,7 +143,12 @@ def create_app(
     
     # CORS middleware
     if cors_origins is None:
-        cors_origins = ["*"]
+        import os
+        cors_env = os.environ.get("CORS_ORIGINS", "")
+        if cors_env:
+            cors_origins = [o.strip() for o in cors_env.split(",") if o.strip()]
+        else:
+            cors_origins = ["http://localhost:3000", "http://localhost:5173"]
     
     app.add_middleware(
         CORSMiddleware,
