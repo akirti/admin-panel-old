@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router';
+import DOMPurify from 'dompurify';
 import toast from 'react-hot-toast';
 import {
   ArrowLeft,
@@ -309,7 +310,7 @@ function RequestDetailPage() {
             <div className="card-body">
               <div
                 className="prose prose-sm max-w-none break-words overflow-wrap-anywhere"
-                dangerouslySetInnerHTML={{ __html: request.description || '<p class="text-neutral-500">No description</p>' }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(request.description || '<p class="text-neutral-500">No description</p>') }}
               />
 
               {request.reason && (
@@ -317,7 +318,7 @@ function RequestDetailPage() {
                   <h3 className="text-sm font-medium text-neutral-700 mb-2">Business Justification</h3>
                   <div
                     className="prose prose-sm max-w-none break-words overflow-wrap-anywhere text-neutral-600"
-                    dangerouslySetInnerHTML={{ __html: request.reason }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(request.reason) }}
                   />
                 </div>
               )}
@@ -340,7 +341,7 @@ function RequestDetailPage() {
                       <div className="flex-1 min-w-0">
                         <div
                           className="prose prose-sm max-w-none text-neutral-800 break-words"
-                          dangerouslySetInnerHTML={{ __html: step.description }}
+                          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(step.description) }}
                         />
                         {step.database && (
                           <p className="text-sm text-neutral-500 mt-2">
@@ -506,7 +507,7 @@ function RequestDetailPage() {
                         </div>
                         <div 
                           className="text-sm text-neutral-700"
-                          dangerouslySetInnerHTML={{ __html: comment.comment }}
+                          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(comment.comment) }}
                         />
                       </div>
                     </div>
