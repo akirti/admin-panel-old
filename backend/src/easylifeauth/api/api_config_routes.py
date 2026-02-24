@@ -35,7 +35,7 @@ async def list_api_configs(
     status: Optional[str] = Query(None),
     tags: Optional[str] = Query(None, description="Comma-separated list of tags"),
     search: Optional[str] = Query(None),
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_super_admin),
     service: ApiConfigService = Depends(get_api_config_service)
 ):
     """List all API configurations with pagination and filtering."""
@@ -67,7 +67,7 @@ async def list_api_configs(
 @router.get("/count")
 async def get_api_configs_count(
     status: Optional[str] = Query(None),
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_super_admin),
     service: ApiConfigService = Depends(get_api_config_service)
 ):
     """Get count of API configurations."""
@@ -77,7 +77,7 @@ async def get_api_configs_count(
 
 @router.get("/tags")
 async def get_api_config_tags(
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_super_admin),
     service: ApiConfigService = Depends(get_api_config_service)
 ):
     """Get all unique tags used across API configurations."""
@@ -88,7 +88,7 @@ async def get_api_config_tags(
 @router.get("/{config_id}", response_model=ApiConfigInDB)
 async def get_api_config(
     config_id: str,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_super_admin),
     service: ApiConfigService = Depends(get_api_config_service)
 ):
     """Get API configuration by ID."""
@@ -104,7 +104,7 @@ async def get_api_config(
 @router.get("/key/{key}", response_model=ApiConfigInDB)
 async def get_api_config_by_key(
     key: str,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_super_admin),
     service: ApiConfigService = Depends(get_api_config_service)
 ):
     """Get API configuration by key."""
