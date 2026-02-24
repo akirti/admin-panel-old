@@ -118,11 +118,7 @@ function App() {
               <ForgotPasswordPage />
             </PublicRoute>
           } />
-          <Route path="/reset-password" element={
-            <PublicRoute>
-              <ResetPasswordPage />
-            </PublicRoute>
-          } />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Route>
 
         {/* Public Feedback Route (no auth required) */}

@@ -105,8 +105,8 @@ api.interceptors.response.use(
         // New tokens are set as httpOnly cookies by the backend
         return api(originalRequest);
       } catch (refreshError) {
-        // Only redirect if we're not already on the login page
-        if (!window.location.pathname.includes('/login')) {
+        // Only redirect if not on a public auth page
+        const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password']; const isPublicPage = publicPaths.some(p => window.location.pathname.startsWith(p)); if (!isPublicPage) {
           window.location.href = '/login';
         }
         return Promise.reject(refreshError);
