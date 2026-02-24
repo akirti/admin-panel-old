@@ -166,13 +166,11 @@ class TokenManager:
             
             valid = False
             if payload["user_id"] == backend_payload["user_id"] and payload["email"] == backend_payload["email"]:
-                if token == backend_payload["token_hash"] and payload.get("type") == token_type:
-                    if payload["exp"] <= int(backend_payload["expires_at"].timestamp()):
-                        valid = True
-                
-                if token == backend_payload["refresh_token_hash"] and payload.get("type") == token_type:
-                    if payload["exp"] >= int(datetime.now(timezone.utc).timestamp()):
-                        valid = True
+                # Match token hash based on type (PyJWT already validates expiry)
+                if token_type == "access" and token == backend_payload["token_hash"] and payload.get("type") == token_type:
+                    valid = True
+                elif token_type == "refresh" and token == backend_payload["refresh_token_hash"] and payload.get("type") == token_type:
+                    valid = True
             
             if valid:
                 return payload
