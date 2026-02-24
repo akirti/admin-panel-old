@@ -340,7 +340,7 @@ function DashboardPage() {
                 </span>
               )) : (
                 <span className="badge badge-neutral">
-                  All
+                  {user?.roles?.some(r => ['super-administrator', 'administrator'].includes(r)) ? 'All' : 'None'}
                 </span>
               )}
             </div>

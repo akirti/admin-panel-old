@@ -188,7 +188,7 @@ function ProfilePage() {
                 </span>
               )) : (
                 <span className="badge badge-neutral">
-                  All Domains
+                  {user?.roles?.some(r => ['super-administrator', 'administrator'].includes(r)) ? 'All Domains' : 'No Domains Assigned'}
                 </span>
               )}
             </div>

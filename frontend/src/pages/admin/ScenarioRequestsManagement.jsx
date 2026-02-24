@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 import toast from 'react-hot-toast';
 import {
   Eye,
@@ -42,6 +42,8 @@ const REJECTED_STATUSES = ['rejected', 'inactive'];
 
 function ScenarioRequestsManagement() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const basePath = location.pathname.startsWith('/management') ? '/management' : '/admin';
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -385,7 +387,7 @@ function ScenarioRequestsManagement() {
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-center gap-2">
                           <button
-                            onClick={() => navigate(`/admin/scenario-requests/${request.requestId}`)}
+                            onClick={() => navigate(`${basePath}/scenario-requests/${request.requestId}`)}
                             className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-600 transition-colors"
                             title="View"
                           >
