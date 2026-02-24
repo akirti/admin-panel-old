@@ -1,6 +1,7 @@
 """
 Customer management API routes - Full CRUD from admin-panel-scratch-3.
 """
+import re
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional
 from datetime import datetime
@@ -83,10 +84,11 @@ async def list_customers(
     query = {}
 
     if search:
+        safe_search = re.escape(search)
         query["$or"] = [
-            {"customerId": {"$regex": search, "$options": "i"}},
-            {"name": {"$regex": search, "$options": "i"}},
-            {"description": {"$regex": search, "$options": "i"}}
+            {"customerId": {"$regex": safe_search, "$options": "i"}},
+            {"name": {"$regex": safe_search, "$options": "i"}},
+            {"description": {"$regex": safe_search, "$options": "i"}}
         ]
 
     if status:
@@ -96,10 +98,10 @@ async def list_customers(
         query["tags"] = tag
 
     if location:
-        query["location"] = {"$regex": f"^{location}$", "$options": "i"}
+        query["location"] = {"$regex": f"^{re.escape(location)}$", "$options": "i"}
 
     if unit:
-        query["unit"] = {"$regex": f"^{unit}$", "$options": "i"}
+        query["unit"] = {"$regex": f"^{re.escape(unit)}$", "$options": "i"}
 
     total = await db.customers.count_documents(query)
     cursor = db.customers.find(query).skip(page * limit).limit(limit).sort("created_at", -1)
@@ -124,9 +126,10 @@ async def count_customers(
     """Get total customer count."""
     query = {}
     if search:
+        safe_search = re.escape(search)
         query["$or"] = [
-            {"customerId": {"$regex": search, "$options": "i"}},
-            {"name": {"$regex": search, "$options": "i"}}
+            {"customerId": {"$regex": safe_search, "$options": "i"}},
+            {"name": {"$regex": safe_search, "$options": "i"}}
         ]
     if status:
         query["status"] = status

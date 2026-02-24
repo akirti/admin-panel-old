@@ -7,6 +7,7 @@ Features:
 - Provides admin API for viewing, downloading, and managing logs
 """
 import os
+import re
 import gzip
 import json
 import uuid
@@ -431,12 +432,13 @@ class ErrorLogService:
             if filters.get("level"):
                 query["level"] = filters["level"].upper()
             if filters.get("error_type"):
-                query["error_type"] = {"$regex": filters["error_type"], "$options": "i"}
+                query["error_type"] = {"$regex": re.escape(filters["error_type"]), "$options": "i"}
             if filters.get("search"):
+                safe_search = re.escape(filters["search"])
                 query["$or"] = [
-                    {"message": {"$regex": filters["search"], "$options": "i"}},
-                    {"error_type": {"$regex": filters["search"], "$options": "i"}},
-                    {"stack_trace": {"$regex": filters["search"], "$options": "i"}}
+                    {"message": {"$regex": safe_search, "$options": "i"}},
+                    {"error_type": {"$regex": safe_search, "$options": "i"}},
+                    {"stack_trace": {"$regex": safe_search, "$options": "i"}}
                 ]
             if filters.get("start_date"):
                 query["timestamp"] = {"$gte": filters["start_date"]}

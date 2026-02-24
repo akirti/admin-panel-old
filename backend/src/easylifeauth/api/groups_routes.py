@@ -1,6 +1,7 @@
 """
 Group management API routes - Full CRUD from admin-panel-scratch-3.
 """
+import re
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional
 from datetime import datetime
@@ -149,9 +150,10 @@ async def list_groups(
     if status_filter:
         query["status"] = status_filter
     if search:
+        safe_search = re.escape(search)
         query["$or"] = [
-            {"name": {"$regex": search, "$options": "i"}},
-            {"groupId": {"$regex": search, "$options": "i"}}
+            {"name": {"$regex": safe_search, "$options": "i"}},
+            {"groupId": {"$regex": safe_search, "$options": "i"}}
         ]
     if domain:
         query["domains"] = domain

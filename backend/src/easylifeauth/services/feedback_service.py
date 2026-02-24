@@ -1,4 +1,5 @@
 """Async Feedback Service"""
+import re
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone, timedelta
 from bson import ObjectId
@@ -154,7 +155,7 @@ class FeedbackService:
 
         # Search by email
         if search:
-            query["email"] = {"$regex": search, "$options": "i"}
+            query["email"] = {"$regex": re.escape(search), "$options": "i"}
 
         # Filter by rating
         if rating is not None:

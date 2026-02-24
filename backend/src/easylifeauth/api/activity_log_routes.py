@@ -1,6 +1,7 @@
 """
 Activity Logs / Audit Trail API routes.
 """
+import re
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timedelta
@@ -60,7 +61,7 @@ async def list_activity_logs(
         query["action"] = action
 
     if user_email:
-        query["user_email"] = {"$regex": user_email, "$options": "i"}
+        query["user_email"] = {"$regex": re.escape(user_email), "$options": "i"}
 
     if entity_id:
         query["entity_id"] = entity_id

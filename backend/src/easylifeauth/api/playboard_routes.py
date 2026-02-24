@@ -1,6 +1,7 @@
 """
 Playboard management API routes - Full CRUD with JSON file upload from admin-panel-scratch-3.
 """
+import re
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from typing import List, Optional
 from datetime import datetime
@@ -124,7 +125,7 @@ async def list_playboards(
         query["scenarioKey"] = scenario_key
 
     if search:
-        query["name"] = {"$regex": search, "$options": "i"}
+        query["name"] = {"$regex": re.escape(search), "$options": "i"}
 
     # Get total count
     total = await db.playboards.count_documents(query)
