@@ -323,6 +323,12 @@ async def delete_domain(
         {"$pull": {"domains": domain_key}}
     )
 
+    # Remove domain from all users
+    await db.users.update_many(
+        {"domains": domain_key},
+        {"$pull": {"domains": domain_key}}
+    )
+
     # Delete associated scenarios
     await db.domain_scenarios.delete_many({"domainKey": domain_key})
 

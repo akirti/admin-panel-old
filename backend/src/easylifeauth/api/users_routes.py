@@ -29,7 +29,7 @@ def create_password_reset_token(email: str) -> str:
     """Create a password reset token."""
     return secrets.token_urlsafe(32)
 from easylifeauth.api.dependencies import get_db, get_email_service, get_activity_log_service
-from easylifeauth.security.access_control import CurrentUser, get_current_user, require_super_admin, require_group_admin
+from easylifeauth.security.access_control import CurrentUser, get_current_user, require_super_admin, require_admin, require_group_admin
 from easylifeauth.services.email_service import EmailService
 from easylifeauth.services.activity_log_service import ActivityLogService
 
@@ -553,7 +553,7 @@ async def send_password_reset_email(
 async def admin_reset_password(
     user_id: str,
     send_email: bool = Query(True, description="Whether to send email with new password"),
-    current_user: CurrentUser = Depends(require_group_admin),
+    current_user: CurrentUser = Depends(require_admin),
     db: DatabaseManager = Depends(get_db),
     email_service: Optional[EmailService] = Depends(get_email_service)
 ):
