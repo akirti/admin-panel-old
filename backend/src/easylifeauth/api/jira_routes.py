@@ -24,7 +24,7 @@ from .models import (
     MessageResponse
 )
 from ..services.jira_service import JiraService
-from ..security.access_control import CurrentUser
+from ..security.access_control import CurrentUser, require_admin_or_editor
 from ..db.db_manager import DatabaseManager
 
 router = APIRouter(prefix="/jira", tags=["jira"])
@@ -110,7 +110,7 @@ async def get_tasks_by_request(
 @router.post("/tasks/create", response_model=JiraCreateTaskResponse)
 async def create_task_from_request(
     request: JiraCreateTaskRequest,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_admin_or_editor),
     jira_service: JiraService = Depends(get_jira_service),
     db: DatabaseManager = Depends(get_db),
     file_storage_service: FileStorageService = Depends(get_file_storage_service)
@@ -185,7 +185,7 @@ async def create_task_from_request(
 @router.post("/tasks/transition", response_model=MessageResponse)
 async def transition_task(
     request: JiraTransitionRequest,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_admin_or_editor),
     jira_service: JiraService = Depends(get_jira_service)
 ):
     """Transition a Jira ticket to a new status"""
@@ -206,7 +206,7 @@ async def transition_task(
 @router.post("/attachments/add", response_model=JiraAttachmentResponse)
 async def add_attachment(
     request: JiraAttachmentRequest,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_admin_or_editor),
     jira_service: JiraService = Depends(get_jira_service)
 ):
     """Add an attachment to a Jira ticket from a URL"""
@@ -295,7 +295,7 @@ async def get_assignable_users(
 async def sync_request_to_jira(
     request_id: str,
     project_key: Optional[str] = Query(None, description="Override project key"),
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_admin_or_editor),
     jira_service: JiraService = Depends(get_jira_service),
     db: DatabaseManager = Depends(get_db),
     file_storage_service: FileStorageService = Depends(get_file_storage_service)
