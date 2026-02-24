@@ -395,6 +395,15 @@ async def update_user(
     # Resolve role and group references (IDs or keys) to keys
     if "roles" in update_data and update_data["roles"] is not None:
         update_data["roles"] = await resolve_roles(db, update_data["roles"])
+        # Prevent privilege escalation: non-super-admins cannot assign admin/super-admin roles
+        admin_roles = {"super-administrator", "administrator"}
+        if "super-administrator" not in current_user.roles:
+            requested_admin = admin_roles.intersection(set(update_data["roles"]))
+            if requested_admin:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Insufficient permissions to assign roles: {requested_admin}"
+                )
     if "groups" in update_data and update_data["groups"] is not None:
         update_data["groups"] = await resolve_groups(db, update_data["groups"])
 
@@ -426,7 +435,7 @@ async def update_user(
 @router.delete("/{user_id}")
 async def delete_user(
     user_id: str,
-    current_user: CurrentUser = Depends(require_group_admin),
+    current_user: CurrentUser = Depends(require_super_admin),
     db: DatabaseManager = Depends(get_db),
     activity_log: Optional[ActivityLogService] = Depends(get_activity_log_service)
 ):

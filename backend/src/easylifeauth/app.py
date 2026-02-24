@@ -167,7 +167,12 @@ def create_app(
             cookie_secure=not is_dev,  # False in dev, True in production
             cookie_samesite="lax",
             exempt_paths={
-                "/api/v1/auth/*",  # All auth endpoints are exempt (login, register, refresh, profile, etc.)
+                "/api/v1/auth/login",
+                "/api/v1/auth/register",
+                "/api/v1/auth/refresh",
+                "/api/v1/auth/csrf-token",
+                "/api/v1/auth/forgot_password",
+                "/api/v1/auth/reset_password",
             }
         )
 

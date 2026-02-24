@@ -91,9 +91,9 @@ async def register(
             username=user_data.username,
             password=user_data.password,
             full_name=user_data.full_name,
-            roles=user_data.roles,
-            groups=user_data.groups,
-            domains=user_data.domains
+            roles=["user"],  # Always assign safe defaults
+            groups=["viewer"],
+            domains=[]
         )
 
         # Set httpOnly cookies
