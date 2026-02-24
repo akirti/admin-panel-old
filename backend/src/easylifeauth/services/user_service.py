@@ -230,13 +230,16 @@ class UserService:
         result = await self.db.users.insert_one(user_data)
         user_id = str(result.inserted_id)
 
+        # Resolve domains from groups/roles before generating token
+        resolved_domains = await self.resolve_user_domains(user_data)
+
         # Generate Token
         tokens = await self.token_manager.generate_tokens(
             user_id=user_id,
             email=email,
             roles=roles,
             groups=groups,
-            domains=domains
+            domains=resolved_domains
         )
 
         return {
@@ -246,7 +249,7 @@ class UserService:
             "full_name": full_name,
             "roles": roles,
             "groups": groups,
-            "domains": domains,
+            "domains": resolved_domains,
             **tokens
         }
 
