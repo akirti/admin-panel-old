@@ -62,13 +62,13 @@ async def resolve_domains(db: DatabaseManager, domain_refs: List[str]) -> List[s
         if ObjectId.is_valid(ref):
             domain = await db.domains.find_one({"_id": ObjectId(ref)})
             if domain:
-                resolved_keys.append(domain.get("domainId", ref))
+                resolved_keys.append(domain.get("key", ref))
                 continue
 
-        # Try as domainId key
-        domain = await db.domains.find_one({"domainId": ref})
+        # Try as domain key
+        domain = await db.domains.find_one({"key": ref})
         if domain:
-            resolved_keys.append(domain.get("domainId", ref))
+            resolved_keys.append(domain.get("key", ref))
         else:
             # Keep the original value if not found (allows for flexibility)
             resolved_keys.append(ref)
