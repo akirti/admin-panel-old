@@ -185,19 +185,44 @@ class TokenManager:
     async def refresh_access_token(self, refresh_token: str, db: DatabaseManager) -> Dict[str, Any]:
         """Generate new access token using refresh token"""
         payload = await self.verify_token(refresh_token, token_type="refresh")
-        
+
         # Get user from DB
         user = await db.users.find_one({"_id": ObjectId(payload["user_id"])})
-        
+
         if not user:
             raise AuthError("User not found", 404)
-        
+
+        # Resolve domains from groups and roles (same as login)
+        all_domains = set(user.get("domains", []))
+        user_roles = user.get("roles", [])
+        if user_roles:
+            roles_cursor = db.roles.find({
+                "$or": [
+                    {"roleId": {"$in": user_roles}},
+                    {"_id": {"$in": [ObjectId(r) for r in user_roles if ObjectId.is_valid(r)]}}
+                ],
+                "status": "active"
+            })
+            async for role in roles_cursor:
+                all_domains.update(role.get("domains", []))
+        user_groups = user.get("groups", [])
+        if user_groups:
+            groups_cursor = db.groups.find({
+                "$or": [
+                    {"groupId": {"$in": user_groups}},
+                    {"_id": {"$in": [ObjectId(g) for g in user_groups if ObjectId.is_valid(g)]}}
+                ],
+                "status": "active"
+            })
+            async for group in groups_cursor:
+                all_domains.update(group.get("domains", []))
+
         return await self.generate_tokens(
             str(user["_id"]),
             user["email"],
             user.get("roles", []),
             user.get("groups", []),
-            user.get("domains", [])
+            list(all_domains)
         )
 
     def decode_token(self, token: str) -> Dict[str, Any]:
