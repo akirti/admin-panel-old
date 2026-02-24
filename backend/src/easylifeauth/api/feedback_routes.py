@@ -8,7 +8,8 @@ from .models import (
 )
 from .dependencies import get_current_user, get_feedback_service
 from ..services.feedback_service import FeedbackService
-from ..security.access_control import CurrentUser
+from ..security.access_control import CurrentUser, require_admin
+from ..db.constants import EDITORS
 from ..errors.auth_error import AuthError
 
 router = APIRouter(prefix="/feedback", tags=["Feedback"])
@@ -32,18 +33,10 @@ async def create_public_feedback(
 
 @router.get("/stats", response_model=FeedbackStats)
 async def get_feedback_stats(
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_admin),
     feedback_service: FeedbackService = Depends(get_feedback_service)
 ):
     """Get feedback statistics for dashboard"""
-    # Check admin role
-    admin_roles = ["super-administrator", "administrator"]
-    if not any(role in current_user.roles for role in admin_roles):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Administrator access required"
-        )
-
     try:
         result = await feedback_service.get_stats()
         return result
@@ -75,18 +68,10 @@ async def get_admin_feedback_list(
     rating: Optional[int] = Query(None, ge=1, le=5, description="Filter by rating (1-5)"),
     sort_by: str = Query("createdAt", description="Field to sort by"),
     sort_order: str = Query("desc", description="Sort order (asc/desc)"),
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_admin),
     feedback_service: FeedbackService = Depends(get_feedback_service)
 ):
     """Get paginated feedback list for administrators"""
-    # Check admin role
-    admin_roles = ["super-administrator", "administrator"]
-    if not any(role in current_user.roles for role in admin_roles):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Administrator access required"
-        )
-
     try:
         result = await feedback_service.get_paginated(
             page=page,
@@ -127,6 +112,12 @@ async def update_feedback(
 ):
     """Update feedback"""
     try:
+        # Ownership check: only creator or editor+ can update
+        if not any(r in EDITORS for r in current_user.roles):
+            existing = await feedback_service.get(feedback_id)
+            if existing.get("user_id") != current_user.user_id and existing.get("email") != current_user.email:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only update your own feedback")
+
         update_data = data.model_dump(exclude_unset=True)
         update_data["feedback_id"] = feedback_id
         result = await feedback_service.update(update_data)
