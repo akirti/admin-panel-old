@@ -170,9 +170,15 @@ async def update_scenario_request(
 ) -> Dict[str, Any]:
     """Update a scenario request (user fields only)"""
     try:
+        # Ownership check: only creator or editor+ can update
+        if not any(r in EDITORS for r in current_user.roles):
+            existing = await scenario_request_service.get(request_id)
+            if existing.get("user_id") != current_user.user_id and existing.get("email") != current_user.email:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only update your own requests")
+
         update_data = data.model_dump(exclude_unset=True)
         update_data["request_id"] = request_id
-        
+
         result = await scenario_request_service.update(
             update_data,
             current_user=current_user.model_dump()
@@ -212,6 +218,10 @@ async def get_scenario_request(
     """Get scenario request by ID"""
     try:
         result = await scenario_request_service.get(request_id)
+        # Ownership check: only creator or editor+ can view
+        if not any(r in EDITORS for r in current_user.roles):
+            if result.get("user_id") != current_user.user_id and result.get("email") != current_user.email:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only view your own requests")
         return result
     except AuthError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message)
@@ -226,6 +236,12 @@ async def upload_user_file(
 ) -> Dict[str, Any]:
     """Upload a sample file (user files)"""
     try:
+        # Ownership check: only creator or editor+ can upload files
+        if not any(r in EDITORS for r in current_user.roles):
+            existing = await scenario_request_service.get(request_id)
+            if existing.get("user_id") != current_user.user_id and existing.get("email") != current_user.email:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only upload files to your own requests")
+
         from ..utils.file_validation import validate_upload
         content = await file.read()
         validate_upload(file, {".csv", ".xlsx", ".xls", ".json", ".pdf", ".png", ".jpg", ".jpeg"}, content=content)
@@ -276,6 +292,12 @@ async def preview_file(
 ) -> Dict[str, Any]:
     """Get file preview (grid/json view)"""
     try:
+        # Ownership check: only creator or editor+ can preview files
+        if not any(r in EDITORS for r in current_user.roles):
+            existing = await scenario_request_service.get(request_id)
+            if existing.get("user_id") != current_user.user_id and existing.get("email") != current_user.email:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only preview files from your own requests")
+
         preview = await scenario_request_service.get_file_preview(
             request_id=request_id,
             file_path=file_path,
@@ -295,6 +317,12 @@ async def download_file(
 ):
     """Download a file"""
     try:
+        # Ownership check: only creator or editor+ can download files
+        if not any(r in EDITORS for r in current_user.roles):
+            existing = await scenario_request_service.get(request_id)
+            if existing.get("user_id") != current_user.user_id and existing.get("email") != current_user.email:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only download files from your own requests")
+
         result = await scenario_request_service.download_file(
             request_id=request_id,
             file_path=file_path,
