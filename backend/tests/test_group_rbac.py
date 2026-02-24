@@ -149,7 +149,7 @@ class TestResolveDomains:
         oid = ObjectId()
         db = _mock_db()
         db.domains.find_one = AsyncMock(return_value={
-            "_id": oid, "domainId": "hr",
+            "_id": oid, "key": "hr",
         })
         result = await resolve_domains(db, [str(oid)])
         assert result == ["hr"]

@@ -184,11 +184,11 @@ class TestDomainAllRoute:
         async def cursor_gen():
             yield {
                 "_id": ObjectId(), "key": "finance", "name": "Finance",
-                "status": "active", "order": 1,
+                "path": "/finance", "status": "active", "order": 1,
             }
             yield {
                 "_id": ObjectId(), "key": "hr", "name": "HR",
-                "status": "active", "order": 2,
+                "path": "/hr", "status": "active", "order": 2,
             }
 
         mock_cursor = MagicMock()
@@ -212,7 +212,7 @@ class TestDomainAllRoute:
         async def cursor_gen():
             yield {
                 "_id": ObjectId(), "key": "finance", "name": "Finance",
-                "status": "active", "order": 1,
+                "path": "/finance", "status": "active", "order": 1,
             }
 
         mock_cursor = MagicMock()
@@ -286,7 +286,7 @@ class TestDomainGetByIdAccess:
         oid = ObjectId()
         db.domains.find_one = AsyncMock(return_value={
             "_id": oid, "key": "finance", "name": "Finance",
-            "status": "active", "order": 1,
+            "path": "/finance", "status": "active", "order": 1,
         })
         db.users.find_one = AsyncMock(return_value={
             "_id": ObjectId(), "email": "user@example.com",
@@ -303,7 +303,7 @@ class TestDomainGetByIdAccess:
         oid = ObjectId()
         db.domains.find_one = AsyncMock(return_value={
             "_id": oid, "key": "hr", "name": "HR",
-            "status": "active", "order": 1,
+            "path": "/hr", "status": "active", "order": 1,
         })
         db.users.find_one = AsyncMock(return_value={
             "_id": ObjectId(), "email": "user@example.com",
@@ -320,7 +320,7 @@ class TestDomainGetByIdAccess:
         oid = ObjectId()
         db.domains.find_one = AsyncMock(return_value={
             "_id": oid, "key": "secret", "name": "Secret",
-            "status": "active", "order": 1,
+            "path": "/secret", "status": "active", "order": 1,
         })
 
         client, _ = _app(user, db=db)
@@ -505,7 +505,8 @@ class TestPlayboardDomainAccess:
 
         oid = ObjectId()
         db.playboards.find_one = AsyncMock(return_value={
-            "_id": oid, "scenarioKey": "sc-hr", "status": "active",
+            "_id": oid, "key": "pb-hr", "name": "HR Playboard",
+            "scenarioKey": "sc-hr", "status": "active",
         })
         db.domain_scenarios.find_one = AsyncMock(return_value={
             "key": "sc-hr", "domainKey": "hr",
@@ -520,7 +521,7 @@ class TestPlayboardDomainAccess:
 
         oid = ObjectId()
         db.playboards.find_one = AsyncMock(return_value={
-            "_id": oid, "key": "pb1", "scenarioKey": "sc-fin",
+            "_id": oid, "key": "pb1", "name": "PB1", "scenarioKey": "sc-fin",
             "status": "active", "dataDomain": "finance",
         })
         db.domain_scenarios.find_one = AsyncMock(return_value={

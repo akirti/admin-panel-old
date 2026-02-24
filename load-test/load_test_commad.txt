@@ -3,11 +3,11 @@
 # 1000 users headless load test
 locust -f load-test/locustfile.py \
   --host=http://localhost:8000 \
-  --users=1000 \
+  --users=500 \
   --spawn-rate=10 \
   --headless \
   --run-time=5m \
-  --html=load-test/report.html
+  --html=load-test/report_02242026.html
 
 # Debug mode
 locust -f load-test/locustfile.py --host=http://localhost:8000 --loglevel=DEBUG

@@ -1,7 +1,7 @@
 """Tests for Health Check API Routes"""
 import pytest
 import time
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -9,16 +9,38 @@ from easylifeauth.api.health_routes import (
     router, cache_health_data, get_system_metrics,
     determine_overall_status, _health_cache, _cache_lock
 )
+from easylifeauth.api.dependencies import get_db
+from easylifeauth.security.access_control import CurrentUser, require_admin
 
 
 class TestHealthRoutes:
     """Tests for health check endpoints"""
 
     @pytest.fixture
-    def app(self):
+    def mock_db(self):
+        """Create mock database manager"""
+        db = MagicMock()
+        db.ensure_connected = AsyncMock(return_value=True)
+        return db
+
+    @pytest.fixture
+    def mock_admin_user(self):
+        """Create mock admin user"""
+        return CurrentUser(
+            user_id="test",
+            email="admin@test.com",
+            roles=["administrator"],
+            groups=[],
+            domains=[]
+        )
+
+    @pytest.fixture
+    def app(self, mock_db, mock_admin_user):
         """Create test FastAPI app"""
         app = FastAPI()
         app.include_router(router)
+        app.dependency_overrides[get_db] = lambda: mock_db
+        app.dependency_overrides[require_admin] = lambda: mock_admin_user
         return app
 
     @pytest.fixture

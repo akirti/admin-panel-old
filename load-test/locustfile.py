@@ -4,13 +4,22 @@ Tests 100 concurrent users against FastAPI backend endpoints
 
 Endpoints covered:
 - Health checks (live, ready, metrics)
-- Authentication (login, refresh, profile, CSRF)
-- Users, Roles, Groups, Permissions
-- Domains, Scenarios, Playboards
-- Scenario Requests, Customers, Configurations
-- Feedback, Activity Logs, Error Logs
-- API Configs, Distribution Lists, Export
-- Dashboard (stats, summary, analytics)
+- Authentication (login, refresh, profile, logout, CSRF, password change)
+- Users, Roles, Groups, Permissions (list, count, detail, types)
+- Domains (list, all, count, types, admin/all)
+- Scenarios, Domain Scenarios, Playboards (list, count, detail)
+- Scenario Requests (list, lookups: statuses, types, domains, defaults)
+- Customers (list, count, filters)
+- Configurations (list, count, types, GCS status)
+- Feedback (list, stats, admin list, create, public)
+- Activity Logs (list, stats, actions, entity-types)
+- Error Logs (list, stats, levels, types, archives, current-file)
+- API Configs (list, count, tags, GCS status)
+- Distribution Lists (list, types)
+- Export (users, roles, groups, domains CSV/JSON)
+- Dashboard (stats, summary, analytics, recent-logins)
+- Admin Management (user list)
+- Jira (status, projects, boards, issue-types, statuses, assignable-users)
 
 Run with:
     locust -f locustfile.py --host=http://localhost:8000
@@ -181,8 +190,14 @@ class AdminPanelUser(HttpUser):
 
     @task(2)
     def health_metrics(self):
-        """System metrics."""
-        self.client.get("/api/v1/health/metrics", name="/api/v1/health/metrics")
+        """System metrics (requires admin auth)."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/health/metrics",
+            headers=self._get_auth_headers(),
+            name="/api/v1/health/metrics"
+        )
 
     @task(2)
     def app_info(self):
@@ -253,6 +268,28 @@ class AdminPanelUser(HttpUser):
             name="/api/v1/users/count"
         )
 
+    @task(1)
+    def get_my_assigned_customers(self):
+        """Get current user's assigned customers."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/users/me/assigned-customers",
+            headers=self._get_auth_headers(),
+            name="/api/v1/users/me/assigned-customers"
+        )
+
+    @task(1)
+    def get_my_customer_tags(self):
+        """Get current user's customer tags."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/users/me/customer-tags",
+            headers=self._get_auth_headers(),
+            name="/api/v1/users/me/customer-tags"
+        )
+
     # ==================== Roles Endpoints ====================
 
     @task(3)
@@ -301,6 +338,17 @@ class AdminPanelUser(HttpUser):
             name="/api/v1/groups/count"
         )
 
+    @task(1)
+    def get_group_types(self):
+        """Get group types."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/groups/types",
+            headers=self._get_auth_headers(),
+            name="/api/v1/groups/types"
+        )
+
     # ==================== Permissions Endpoints ====================
 
     @task(2)
@@ -323,6 +371,17 @@ class AdminPanelUser(HttpUser):
             "/api/v1/permissions/modules",
             headers=self._get_auth_headers(),
             name="/api/v1/permissions/modules"
+        )
+
+    @task(1)
+    def get_permissions_count(self):
+        """Get permissions count."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/permissions/count",
+            headers=self._get_auth_headers(),
+            name="/api/v1/permissions/count"
         )
 
     # ==================== Domains Endpoints ====================
@@ -360,6 +419,28 @@ class AdminPanelUser(HttpUser):
             name="/api/v1/domains/count"
         )
 
+    @task(1)
+    def get_domain_types(self):
+        """Get domain types."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/domains/types",
+            headers=self._get_auth_headers(),
+            name="/api/v1/domains/types"
+        )
+
+    @task(1)
+    def get_all_domains_admin(self):
+        """Admin: Get all domains (unfiltered)."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/domains/admin/all",
+            headers=self._get_auth_headers(),
+            name="/api/v1/domains/admin/all"
+        )
+
     # ==================== Scenarios Endpoints ====================
 
     @task(4)
@@ -382,6 +463,17 @@ class AdminPanelUser(HttpUser):
             "/api/v1/domain-scenarios",
             headers=self._get_auth_headers(),
             name="/api/v1/domain-scenarios"
+        )
+
+    @task(1)
+    def get_domain_scenarios_count(self):
+        """Get domain scenarios count."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/domain-scenarios/count",
+            headers=self._get_auth_headers(),
+            name="/api/v1/domain-scenarios/count"
         )
 
     # ==================== Playboards Endpoints ====================
@@ -443,6 +535,28 @@ class AdminPanelUser(HttpUser):
             name="/api/v1/ask_scenarios/lookup/request_types"
         )
 
+    @task(1)
+    def get_request_domains(self):
+        """Get available domain options for scenario requests."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/ask_scenarios/lookup/domains",
+            headers=self._get_auth_headers(),
+            name="/api/v1/ask_scenarios/lookup/domains"
+        )
+
+    @task(1)
+    def get_request_defaults(self):
+        """Get default values for scenario requests."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/ask_scenarios/lookup/defaults",
+            headers=self._get_auth_headers(),
+            name="/api/v1/ask_scenarios/lookup/defaults"
+        )
+
     # ==================== Customers Endpoints ====================
 
     @task(3)
@@ -465,6 +579,17 @@ class AdminPanelUser(HttpUser):
             "/api/v1/customers/count",
             headers=self._get_auth_headers(),
             name="/api/v1/customers/count"
+        )
+
+    @task(1)
+    def get_customer_filters(self):
+        """Get customer filter options."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/customers/filters",
+            headers=self._get_auth_headers(),
+            name="/api/v1/customers/filters"
         )
 
     # ==================== Configurations Endpoints ====================
@@ -491,6 +616,28 @@ class AdminPanelUser(HttpUser):
             name="/api/v1/configurations/types"
         )
 
+    @task(1)
+    def get_configuration_count(self):
+        """Get configuration count."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/configurations/count",
+            headers=self._get_auth_headers(),
+            name="/api/v1/configurations/count"
+        )
+
+    @task(1)
+    def get_configurations_gcs_status(self):
+        """Get GCS storage status for configurations."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/configurations/gcs/status",
+            headers=self._get_auth_headers(),
+            name="/api/v1/configurations/gcs/status"
+        )
+
     # ==================== Feedback Endpoints ====================
 
     @task(2)
@@ -502,6 +649,29 @@ class AdminPanelUser(HttpUser):
             "/api/v1/feedback/all",
             headers=self._get_auth_headers(),
             name="/api/v1/feedback/all"
+        )
+
+    @task(1)
+    def get_feedback_stats(self):
+        """Get feedback statistics (admin)."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/feedback/stats",
+            headers=self._get_auth_headers(),
+            name="/api/v1/feedback/stats"
+        )
+
+    @task(1)
+    def get_admin_feedback_list(self):
+        """Get admin feedback list with pagination."""
+        if not self._is_authenticated():
+            return
+        page = random.randint(0, 3)
+        self.client.get(
+            f"/api/v1/feedback/admin/list?page={page}&limit=25",
+            headers=self._get_auth_headers(),
+            name="/api/v1/feedback/admin/list"
         )
 
     # ==================== Activity Logs Endpoints ====================
@@ -614,6 +784,17 @@ class AdminPanelUser(HttpUser):
             name="/api/v1/error-logs/archives"
         )
 
+    @task(1)
+    def get_error_log_current_file(self):
+        """Get current error log file content."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/error-logs/current-file",
+            headers=self._get_auth_headers(),
+            name="/api/v1/error-logs/current-file"
+        )
+
     # ==================== API Configs Endpoints ====================
 
     @task(2)
@@ -650,6 +831,17 @@ class AdminPanelUser(HttpUser):
             name="/api/v1/api-configs/count"
         )
 
+    @task(1)
+    def get_api_configs_gcs_status(self):
+        """Get GCS storage status for API configs."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/api-configs/gcs/status",
+            headers=self._get_auth_headers(),
+            name="/api/v1/api-configs/gcs/status"
+        )
+
     # ==================== Distribution Lists Endpoints ====================
 
     @task(2)
@@ -665,27 +857,39 @@ class AdminPanelUser(HttpUser):
         )
 
     @task(1)
-    def get_distribution_list_count(self):
-        """Get distribution list count."""
+    def get_distribution_list_types(self):
+        """Get distribution list types."""
         if not self._is_authenticated():
             return
         self.client.get(
-            "/api/v1/distribution-lists/count",
+            "/api/v1/distribution-lists/types",
             headers=self._get_auth_headers(),
-            name="/api/v1/distribution-lists/count"
+            name="/api/v1/distribution-lists/types"
         )
 
     # ==================== Export Endpoints ====================
 
     @task(1)
-    def get_export_formats(self):
-        """Get available export formats."""
+    def export_users_csv(self):
+        """Export users as CSV."""
         if not self._is_authenticated():
             return
         self.client.get(
-            "/api/v1/export/formats",
+            "/api/v1/export/users/csv",
             headers=self._get_auth_headers(),
-            name="/api/v1/export/formats"
+            name="/api/v1/export/users/csv"
+        )
+
+    @task(1)
+    def export_data_json(self):
+        """Export data as JSON (random entity type)."""
+        if not self._is_authenticated():
+            return
+        entity = random.choice(["users", "roles", "groups", "domains"])
+        self.client.get(
+            f"/api/v1/export/{entity}/json",
+            headers=self._get_auth_headers(),
+            name="/api/v1/export/[entity]/json"
         )
 
     # ==================== Dashboard Endpoints ====================
@@ -747,6 +951,96 @@ class AdminPanelUser(HttpUser):
             name="/api/v1/admin/management/users"
         )
 
+    # ==================== Jira Integration Endpoints ====================
+
+    @task(1)
+    def jira_status(self):
+        """Get Jira connection status."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/jira/status",
+            headers=self._get_auth_headers(),
+            name="/api/v1/jira/status"
+        )
+
+    @task(1)
+    def jira_projects(self):
+        """Get Jira projects."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/jira/projects",
+            headers=self._get_auth_headers(),
+            name="/api/v1/jira/projects"
+        )
+
+    @task(1)
+    def jira_projects_latest(self):
+        """Get latest Jira project."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/jira/projects/latest",
+            headers=self._get_auth_headers(),
+            name="/api/v1/jira/projects/latest"
+        )
+
+    @task(1)
+    def jira_my_tasks(self):
+        """Get my Jira tasks."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/jira/tasks/my",
+            headers=self._get_auth_headers(),
+            name="/api/v1/jira/tasks/my"
+        )
+
+    @task(1)
+    def jira_issue_types(self):
+        """Get Jira issue types."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/jira/issue-types",
+            headers=self._get_auth_headers(),
+            name="/api/v1/jira/issue-types"
+        )
+
+    @task(1)
+    def jira_statuses(self):
+        """Get Jira statuses."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/jira/statuses",
+            headers=self._get_auth_headers(),
+            name="/api/v1/jira/statuses"
+        )
+
+    @task(1)
+    def jira_boards(self):
+        """Get Jira boards."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/jira/boards",
+            headers=self._get_auth_headers(),
+            name="/api/v1/jira/boards"
+        )
+
+    @task(1)
+    def jira_assignable_users(self):
+        """Get Jira assignable users."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/jira/assignable-users",
+            headers=self._get_auth_headers(),
+            name="/api/v1/jira/assignable-users"
+        )
+
 
 class PublicEndpointUser(HttpUser):
     """
@@ -782,6 +1076,20 @@ class PublicEndpointUser(HttpUser):
         """Get app info."""
         self.client.get("/api/v1/info", name="/api/v1/info [public]")
 
+    @task(1)
+    def public_feedback(self):
+        """Submit public feedback (no auth required)."""
+        feedback_data = {
+            "rating": random.randint(1, 5),
+            "improvements": f"Public feedback {random.randint(1, 10000)}",
+            "suggestions": "Anonymous load test feedback."
+        }
+        self.client.post(
+            "/api/v1/feedback/public",
+            json=feedback_data,
+            name="/api/v1/feedback/public [POST]"
+        )
+
 
 class WriteOperationsUser(HttpUser):
     """
@@ -793,6 +1101,7 @@ class WriteOperationsUser(HttpUser):
     weight = 1  # Lower weight - fewer write operations
 
     access_token = None
+    refresh_token = None
     csrf_token = None
     login_failed = False
     current_user = None
@@ -827,7 +1136,9 @@ class WriteOperationsUser(HttpUser):
             headers=headers
         )
         if response.status_code == 200:
-            self.access_token = response.json().get("access_token")
+            data = response.json()
+            self.access_token = data.get("access_token")
+            self.refresh_token = data.get("refresh_token")
             self.login_failed = False
         else:
             self.login_failed = True
@@ -866,7 +1177,6 @@ class WriteOperationsUser(HttpUser):
         """Create feedback entry."""
         if not self._is_authenticated():
             return
-        # Schema matches FeedbackCreate model: rating, improvements, suggestions, email
         feedback_data = {
             "rating": random.randint(1, 5),
             "improvements": f"Load test improvement suggestion {random.randint(1, 10000)}",
@@ -877,6 +1187,67 @@ class WriteOperationsUser(HttpUser):
             json=feedback_data,
             headers=self._get_auth_headers(),
             name="/api/v1/feedback [POST]"
+        )
+
+    @task(1)
+    def update_password(self):
+        """Change user password (and change it back)."""
+        if not self._is_authenticated():
+            return
+        # Change password then change it back to avoid breaking future logins
+        new_pass = f"temp_{random.randint(10000, 99999)}"
+        with self.client.post(
+            "/api/v1/auth/update_password",
+            json={
+                "current_password": self.current_user["password"],
+                "new_password": new_pass
+            },
+            headers=self._get_auth_headers(),
+            catch_response=True,
+            name="/api/v1/auth/update_password [POST]"
+        ) as response:
+            if response.status_code == 200:
+                # Change it back immediately
+                self.client.post(
+                    "/api/v1/auth/update_password",
+                    json={
+                        "current_password": new_pass,
+                        "new_password": self.current_user["password"]
+                    },
+                    headers=self._get_auth_headers(),
+                    name="/api/v1/auth/update_password [POST] (revert)"
+                )
+                response.success()
+            else:
+                response.failure(f"Password update failed: {response.status_code}")
+
+    @task(1)
+    def do_logout_and_relogin(self):
+        """Logout and re-login to test logout flow."""
+        if not self._is_authenticated():
+            return
+        with self.client.post(
+            "/api/v1/auth/logout",
+            headers=self._get_auth_headers(),
+            catch_response=True,
+            name="/api/v1/auth/logout [POST]"
+        ) as response:
+            if response.status_code == 200:
+                response.success()
+            else:
+                response.failure(f"Logout failed: {response.status_code}")
+        # Re-login to continue testing
+        self._login()
+
+    @task(1)
+    def force_archive_error_logs(self):
+        """Force archive error logs."""
+        if not self._is_authenticated():
+            return
+        self.client.post(
+            "/api/v1/error-logs/force-archive",
+            headers=self._get_auth_headers(),
+            name="/api/v1/error-logs/force-archive [POST]"
         )
 
 

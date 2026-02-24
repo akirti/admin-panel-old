@@ -8,6 +8,7 @@ from datetime import datetime
 
 from easylifeauth.api.feedback_routes import router
 from easylifeauth.api.dependencies import get_current_user, get_feedback_service
+from easylifeauth.security.access_control import require_admin
 from easylifeauth.errors.auth_error import AuthError
 
 
@@ -56,6 +57,7 @@ class TestFeedbackRoutes:
         """Create test client with admin dependencies"""
         app.dependency_overrides[get_feedback_service] = lambda: mock_feedback_service
         app.dependency_overrides[get_current_user] = lambda: mock_admin
+        app.dependency_overrides[require_admin] = lambda: mock_admin
         return TestClient(app)
 
     def test_create_public_feedback(self, client, mock_feedback_service):
@@ -214,7 +216,7 @@ class TestFeedbackRoutes:
         response = client.post("/feedback", json=feedback_data)
         assert response.status_code == 400
 
-    def test_update_feedback(self, client, mock_feedback_service):
+    def test_update_feedback(self, client, mock_feedback_service, mock_user):
         """Test update feedback endpoint"""
         feedback_id = str(ObjectId())
         result = {
@@ -222,6 +224,9 @@ class TestFeedbackRoutes:
             "rating": 4,
             "improvements": "Updated improvements"
         }
+        mock_feedback_service.get = AsyncMock(return_value={
+            "id": feedback_id, "user_id": mock_user.user_id, "email": mock_user.email
+        })
         mock_feedback_service.update = AsyncMock(return_value=result)
 
         response = client.put(
@@ -230,9 +235,12 @@ class TestFeedbackRoutes:
         )
         assert response.status_code == 200
 
-    def test_update_feedback_error(self, client, mock_feedback_service):
+    def test_update_feedback_error(self, client, mock_feedback_service, mock_user):
         """Test update feedback with error"""
         feedback_id = str(ObjectId())
+        mock_feedback_service.get = AsyncMock(return_value={
+            "id": feedback_id, "user_id": mock_user.user_id, "email": mock_user.email
+        })
         mock_feedback_service.update = AsyncMock(side_effect=AuthError("Not found", 404))
 
         response = client.put(
@@ -291,6 +299,7 @@ class TestFeedbackRoutesSuperAdmin:
         """Create test client with super admin"""
         app.dependency_overrides[get_feedback_service] = lambda: mock_feedback_service
         app.dependency_overrides[get_current_user] = lambda: mock_super_admin
+        app.dependency_overrides[require_admin] = lambda: mock_super_admin
         return TestClient(app)
 
     def test_get_feedback_stats_super_admin(self, client, mock_feedback_service):

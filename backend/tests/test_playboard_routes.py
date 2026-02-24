@@ -191,6 +191,7 @@ class TestPlayboardRoutes:
         playboard_id = ObjectId()
         mock_playboard = {
             "_id": playboard_id,
+            "key": "test-playboard",
             "name": "Test Playboard",
             "scenarioKey": "scenario1",
             "status": "active",
@@ -279,6 +280,7 @@ class TestPlayboardRoutes:
         playboard_id = ObjectId()
         mock_playboard = {
             "_id": playboard_id,
+            "key": "test-playboard",
             "name": "Test Playboard",
             "scenarioKey": "scenario1",
             "status": "active",
@@ -297,12 +299,12 @@ class TestPlayboardRoutes:
         assert data["name"] == "Test Playboard"
 
     def test_get_playboard_invalid_id(self, client, mock_db):
-        """Test get playboard with invalid ID"""
-        mock_db.playboards.find_one = AsyncMock(side_effect=Exception("Invalid ObjectId"))
+        """Test get playboard with invalid ID returns not found"""
+        mock_db.playboards.find_one = AsyncMock(return_value=None)
+        mock_db.users.find_one = AsyncMock(return_value={"email": "admin@test.com"})
 
         response = client.get("/playboards/invalid-id")
-        assert response.status_code == 400
-        assert "Invalid playboard ID" in response.json()["detail"]
+        assert response.status_code == 404
 
     def test_get_playboard_not_found(self, client, mock_db, mock_user_service):
         """Test get playboard not found"""
@@ -326,6 +328,7 @@ class TestPlayboardRoutes:
     def test_upload_playboard_json_success(self, client, mock_db):
         """Test upload playboard JSON file"""
         mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": "scenario1"})
+        mock_db.playboards.find_one = AsyncMock(return_value=None)
         mock_db.playboards.insert_one = AsyncMock(return_value=MagicMock(inserted_id=ObjectId()))
 
         json_content = json.dumps({"test": "data"})
@@ -348,7 +351,7 @@ class TestPlayboardRoutes:
             files=files
         )
         assert response.status_code == 400
-        assert "Only JSON files are allowed" in response.json()["detail"]
+        assert "Invalid file type" in response.json()["detail"]
 
     def test_upload_playboard_invalid_json(self, client, mock_db):
         """Test upload playboard with invalid JSON"""
@@ -365,6 +368,7 @@ class TestPlayboardRoutes:
 
     def test_upload_playboard_scenario_not_found(self, client, mock_db):
         """Test upload playboard with invalid scenario"""
+        mock_db.playboards.find_one = AsyncMock(return_value=None)
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=None)
 
         json_content = json.dumps({"test": "data"})
@@ -382,6 +386,7 @@ class TestPlayboardRoutes:
         playboard_id = ObjectId()
         existing = {
             "_id": playboard_id,
+            "key": "test-playboard",
             "name": "Old Name",
             "scenarioKey": "scenario1",
             "status": "active",
@@ -420,6 +425,7 @@ class TestPlayboardRoutes:
         playboard_id = ObjectId()
         existing = {
             "_id": playboard_id,
+            "key": "test-playboard",
             "name": "Test",
             "scenarioKey": "scenario1",
             "status": "active",
@@ -445,6 +451,7 @@ class TestPlayboardRoutes:
         playboard_id = ObjectId()
         existing = {
             "_id": playboard_id,
+            "key": "test-playboard",
             "name": "Test",
             "scenarioKey": "scenario1",
             "status": "active",
@@ -484,6 +491,7 @@ class TestPlayboardRoutes:
         playboard_id = ObjectId()
         existing = {
             "_id": playboard_id,
+            "key": "test-playboard",
             "name": "Test",
             "scenarioKey": "scenario1",
             "status": "active",
@@ -497,13 +505,14 @@ class TestPlayboardRoutes:
         files = {"file": ("test.txt", io.BytesIO(b"not json"), "text/plain")}
         response = client.put(f"/playboards/{playboard_id}/upload", files=files)
         assert response.status_code == 400
-        assert "Only JSON files are allowed" in response.json()["detail"]
+        assert "Invalid file type" in response.json()["detail"]
 
     def test_update_playboard_json_invalid_json(self, client, mock_db):
         """Test update playboard JSON with invalid JSON content"""
         playboard_id = ObjectId()
         existing = {
             "_id": playboard_id,
+            "key": "test-playboard",
             "name": "Test",
             "scenarioKey": "scenario1",
             "status": "active",
@@ -548,6 +557,7 @@ class TestPlayboardRoutes:
         playboard_id = ObjectId()
         playboard = {
             "_id": playboard_id,
+            "key": "test-playboard",
             "name": "Test",
             "status": "active"
         }
@@ -564,6 +574,7 @@ class TestPlayboardRoutes:
         playboard_id = ObjectId()
         playboard = {
             "_id": playboard_id,
+            "key": "test-playboard",
             "name": "Test",
             "status": "inactive"
         }
@@ -595,6 +606,7 @@ class TestPlayboardRoutes:
         playboard_id = ObjectId()
         playboard = {
             "_id": playboard_id,
+            "key": "test-playboard",
             "name": "Test",
             "scenarioKey": "scenario1",
             "data": {"key": "value"}
@@ -738,6 +750,7 @@ class TestPlayboardRoutesRegularUser:
         playboard_id = ObjectId()
         playboard = {
             "_id": playboard_id,
+            "key": "test-playboard",
             "name": "Test",
             "scenarioKey": "scenario1",
             "status": "active",
@@ -760,6 +773,7 @@ class TestPlayboardRoutesRegularUser:
         playboard_id = ObjectId()
         playboard = {
             "_id": playboard_id,
+            "key": "test-playboard",
             "name": "Test",
             "scenarioKey": "scenario1",
             "data": {"key": "value"}

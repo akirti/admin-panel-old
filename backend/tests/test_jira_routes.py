@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from bson import ObjectId
 
 from easylifeauth.api.jira_routes import router
-from easylifeauth.security.access_control import CurrentUser
+from easylifeauth.security.access_control import CurrentUser, require_admin_or_editor
 
 
 @pytest.fixture
@@ -135,6 +135,7 @@ def app_with_routes(mock_current_user, mock_jira_service, mock_db, mock_file_sto
 
     # Override dependencies
     app.dependency_overrides[get_current_user] = lambda: mock_current_user
+    app.dependency_overrides[require_admin_or_editor] = lambda: mock_current_user
     app.dependency_overrides[get_jira_service] = lambda: mock_jira_service
     app.dependency_overrides[get_db] = lambda: mock_db
     app.dependency_overrides[get_file_storage_service] = lambda: mock_file_storage

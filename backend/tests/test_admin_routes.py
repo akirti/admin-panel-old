@@ -33,14 +33,14 @@ def app(mock_admin_service):
         return MagicMock(
             user_id="admin_user_id",
             email="admin@test.com",
-            roles=["admin"],
-            groups=["super_admin"],
+            roles=["administrator"],
+            groups=["administrator"],
             domains=["*"],
             model_dump=lambda: {
                 "user_id": "admin_user_id",
                 "email": "admin@test.com",
-                "roles": ["admin"],
-                "groups": ["super_admin"],
+                "roles": ["administrator"],
+                "groups": ["administrator"],
                 "domains": ["*"]
             }
         )
@@ -49,14 +49,14 @@ def app(mock_admin_service):
         return MagicMock(
             user_id="super_admin_id",
             email="superadmin@test.com",
-            roles=["super_admin"],
-            groups=["super_admin"],
+            roles=["super-administrator"],
+            groups=["administrator"],
             domains=["*"],
             model_dump=lambda: {
                 "user_id": "super_admin_id",
                 "email": "superadmin@test.com",
-                "roles": ["super_admin"],
-                "groups": ["super_admin"],
+                "roles": ["super-administrator"],
+                "groups": ["administrator"],
                 "domains": ["*"]
             }
         )

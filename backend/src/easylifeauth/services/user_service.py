@@ -61,9 +61,11 @@ def verify_scrypt_password(plain_password: str, hashed_password: str) -> bool:
 def verify_bcrypt_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against a bcrypt hash."""
     try:
-        from passlib.context import CryptContext
-        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        return pwd_context.verify(plain_password, hashed_password)
+        import bcrypt
+        return bcrypt.checkpw(
+            plain_password.encode('utf-8'),
+            hashed_password.encode('utf-8')
+        )
     except Exception as e:
         print(f"Bcrypt verification error: {e}")
         return False

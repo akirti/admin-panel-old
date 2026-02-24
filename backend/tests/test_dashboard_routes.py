@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 from easylifeauth.api.dashboard_routes import router
 from easylifeauth.api.dependencies import get_db
-from easylifeauth.security.access_control import require_super_admin
+from easylifeauth.security.access_control import require_super_admin, require_group_admin
 
 
 class TestDashboardRoutes:
@@ -50,6 +50,7 @@ class TestDashboardRoutes:
         """Create test client with overridden dependencies"""
         app.dependency_overrides[get_db] = lambda: mock_db
         app.dependency_overrides[require_super_admin] = lambda: mock_super_admin
+        app.dependency_overrides[require_group_admin] = lambda: mock_super_admin
         return TestClient(app)
 
     def test_get_dashboard_stats(self, client, mock_db):
@@ -300,6 +301,7 @@ class TestDashboardRoutesWithoutOptionalCollections:
         """Create test client with minimal db"""
         app.dependency_overrides[get_db] = lambda: mock_db_minimal
         app.dependency_overrides[require_super_admin] = lambda: mock_super_admin
+        app.dependency_overrides[require_group_admin] = lambda: mock_super_admin
         return TestClient(app)
 
     def test_get_dashboard_stats_minimal(self, client, mock_db_minimal):

@@ -357,11 +357,13 @@ class TestGetCurrentUser:
         })
         access_control = AccessControl(mock_token_manager)
 
-        # Create mock credentials
+        # Create mock credentials and request
         mock_credentials = MagicMock()
         mock_credentials.credentials = "valid_token"
+        mock_request = MagicMock()
+        mock_request.cookies = {}
 
-        result = await access_control.get_current_user(credentials=mock_credentials)
+        result = await access_control.get_current_user(request=mock_request, credentials=mock_credentials)
 
         assert result.user_id == "user123"
         assert result.email == "test@example.com"
@@ -377,9 +379,11 @@ class TestGetCurrentUser:
 
         mock_credentials = MagicMock()
         mock_credentials.credentials = "invalid_token"
+        mock_request = MagicMock()
+        mock_request.cookies = {}
 
         with pytest.raises(HTTPException) as exc_info:
-            await access_control.get_current_user(credentials=mock_credentials)
+            await access_control.get_current_user(request=mock_request, credentials=mock_credentials)
 
         assert exc_info.value.status_code == 401
         assert exc_info.value.headers.get("WWW-Authenticate") == "Bearer"
@@ -400,8 +404,10 @@ class TestGetCurrentUser:
 
         mock_credentials = MagicMock()
         mock_credentials.credentials = "valid_token"
+        mock_request = MagicMock()
+        mock_request.cookies = {}
 
-        result = await get_current_user(credentials=mock_credentials)
+        result = await get_current_user(request=mock_request, credentials=mock_credentials)
 
         assert result.user_id == "user456"
         assert result.email == "standalone@example.com"
@@ -417,9 +423,11 @@ class TestGetCurrentUser:
 
         mock_credentials = MagicMock()
         mock_credentials.credentials = "expired_token"
+        mock_request = MagicMock()
+        mock_request.cookies = {}
 
         with pytest.raises(HTTPException) as exc_info:
-            await get_current_user(credentials=mock_credentials)
+            await get_current_user(request=mock_request, credentials=mock_credentials)
 
         assert exc_info.value.status_code == 401
         assert "Token expired" in exc_info.value.detail
@@ -437,8 +445,10 @@ class TestGetCurrentUser:
 
         mock_credentials = MagicMock()
         mock_credentials.credentials = "partial_token"
+        mock_request = MagicMock()
+        mock_request.cookies = {}
 
-        result = await get_current_user(credentials=mock_credentials)
+        result = await get_current_user(request=mock_request, credentials=mock_credentials)
 
         # Should use defaults
         assert result.user_id == ""

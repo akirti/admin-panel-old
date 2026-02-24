@@ -25,7 +25,14 @@ class TestScenarioRequestRoutes:
     @pytest.fixture
     def mock_scenario_request_service(self):
         """Create mock scenario request service"""
-        return MagicMock()
+        service = MagicMock()
+        # Default get returns matching user for ownership checks
+        service.get = AsyncMock(return_value={
+            "user_id": "user_123",
+            "email": "user@test.com",
+            "request_id": "req_123"
+        })
+        return service
 
     @pytest.fixture
     def mock_user(self):
@@ -216,7 +223,9 @@ class TestScenarioRequestRoutes:
         result = {
             "request_id": "req_123",
             "title": "Test Request",
-            "status": "new"
+            "status": "new",
+            "user_id": "user_123",
+            "email": "user@test.com"
         }
         mock_scenario_request_service.get = AsyncMock(return_value=result)
 

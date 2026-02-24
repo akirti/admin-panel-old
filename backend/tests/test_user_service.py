@@ -424,24 +424,20 @@ class TestPasswordVerification:
 
     def test_verify_bcrypt_password_valid(self):
         """Test bcrypt password verification"""
-        pytest.importorskip("passlib")
+        import bcrypt as bcrypt_lib
         from easylifeauth.services.user_service import verify_bcrypt_password
-        from passlib.context import CryptContext
 
-        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        hashed = pwd_context.hash("testpassword")
+        hashed = bcrypt_lib.hashpw("testpassword".encode(), bcrypt_lib.gensalt()).decode()
 
         result = verify_bcrypt_password("testpassword", hashed)
         assert result is True
 
     def test_verify_bcrypt_password_invalid(self):
         """Test bcrypt password verification with wrong password"""
-        pytest.importorskip("passlib")
+        import bcrypt as bcrypt_lib
         from easylifeauth.services.user_service import verify_bcrypt_password
-        from passlib.context import CryptContext
 
-        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        hashed = pwd_context.hash("testpassword")
+        hashed = bcrypt_lib.hashpw("testpassword".encode(), bcrypt_lib.gensalt()).decode()
 
         result = verify_bcrypt_password("wrongpassword", hashed)
         assert result is False
@@ -498,12 +494,10 @@ class TestPasswordVerification:
 
     def test_verify_password_multi_bcrypt(self):
         """Test multi verify with bcrypt hash"""
-        pytest.importorskip("passlib")
+        import bcrypt as bcrypt_lib
         from easylifeauth.services.user_service import verify_password_multi
-        from passlib.context import CryptContext
 
-        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        hashed = pwd_context.hash("testpassword")
+        hashed = bcrypt_lib.hashpw("testpassword".encode(), bcrypt_lib.gensalt()).decode()
 
         result = verify_password_multi("testpassword", hashed)
         assert result is True

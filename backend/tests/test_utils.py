@@ -280,9 +280,11 @@ class TestConfigurationLoader:
 
     def test_init_default_path(self):
         """Test initialization with default path"""
+        clean_env = {k: v for k, v in os.environ.items() if not k.startswith("EASYLIFE_")}
         with patch.object(Path, 'exists', return_value=False):
-            loader = ConfigurationLoader()
-            assert loader.configuration == {}
+            with patch.dict(os.environ, clean_env, clear=True):
+                loader = ConfigurationLoader()
+                assert loader.configuration == {}
 
     def test_convert_value_json(self):
         """Test converting JSON value"""

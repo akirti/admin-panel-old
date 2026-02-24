@@ -8,7 +8,7 @@ from bson import ObjectId
 
 from easylifeauth.api.roles_routes import router, create_pagination_meta, notify_users_of_role_change
 from easylifeauth.api import dependencies
-from easylifeauth.security.access_control import CurrentUser, require_super_admin
+from easylifeauth.security.access_control import CurrentUser, require_super_admin, require_group_admin
 
 
 class TestRolesPaginationMeta:
@@ -73,7 +73,7 @@ class TestRolesRoutes:
         return CurrentUser(
             user_id="507f1f77bcf86cd799439011",
             email="admin@example.com",
-            roles=["super_admin"],
+            roles=["super-administrator"],
             groups=[],
             domains=[]
         )
@@ -92,6 +92,10 @@ class TestRolesRoutes:
         db.users = MagicMock()
         db.users.find = MagicMock()
         db.users.update_many = AsyncMock()
+        db.permissions = MagicMock()
+        db.permissions.find_one = AsyncMock(return_value=None)
+        db.domains = MagicMock()
+        db.domains.find_one = AsyncMock(return_value=None)
         return db
 
     @pytest.fixture
@@ -108,6 +112,7 @@ class TestRolesRoutes:
         app.include_router(router)
 
         app.dependency_overrides[require_super_admin] = lambda: mock_super_admin_user
+        app.dependency_overrides[require_group_admin] = lambda: mock_super_admin_user
         app.dependency_overrides[dependencies.get_db] = lambda: mock_db
         app.dependency_overrides[dependencies.get_email_service] = lambda: mock_email_service
 

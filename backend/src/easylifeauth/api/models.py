@@ -1,5 +1,5 @@
 """Pydantic models for API requests and responses"""
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from pydantic import BaseModel, Field
 from datetime import datetime
 from enum import Enum
@@ -789,7 +789,7 @@ class WidgetDescriptionBase(BaseModel):
     type: Optional[str] = None
     text: Optional[str] = None
     index: Optional[int] = None
-    styleClasses: Optional[List[str]|str] = None
+    styleClasses: Optional[Union[List[str], str]] = None
     status:Optional[str] = "active"
     model_config = {
             "extra": "allow"
@@ -917,7 +917,7 @@ class PlayboardInDB(BaseModel):
     widgets: Optional[PlayboardWidget] = []
     order: Optional[int] = 0
     program_key: Optional[str] = None
-    addon_configurations: Optional[list[str]|str] = None
+    addon_configurations: Optional[Union[List[str], str]] = None
     scenarioDescription: Optional[list[WidgetDescription]] = None
     data: Optional[Dict[str, Any]] = None
     status: str = "active"

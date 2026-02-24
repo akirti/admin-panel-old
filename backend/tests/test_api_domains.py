@@ -328,6 +328,7 @@ class TestDomainsRoutes:
         mock_db.roles.update_many = AsyncMock()
         mock_db.groups = MagicMock()
         mock_db.groups.update_many = AsyncMock()
+        mock_db.users.update_many = AsyncMock()
         mock_db.domain_scenarios = MagicMock()
         mock_db.domain_scenarios.delete_many = AsyncMock()
 
