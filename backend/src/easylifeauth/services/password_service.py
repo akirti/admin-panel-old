@@ -94,8 +94,8 @@ class PasswordResetService:
         if result.matched_count == 0:
             raise AuthError("User not found", 400)
         
-        # Delete reset token
-        await self.db.reset_tokens.delete_one({"_id": reset_record["_id"]})
+        # Delete all reset tokens for this user (invalidate any outstanding tokens)
+        await self.db.reset_tokens.delete_many({"user_id": reset_record["user_id"]})
         
         return {"message": "Password reset successfully"}
 

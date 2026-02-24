@@ -10,6 +10,7 @@ from fastapi import APIRouter, Query, Request, Depends
 import psutil
 
 from easylifeauth.api.dependencies import get_db
+from easylifeauth.security.access_control import CurrentUser, require_admin
 from easylifeauth.db.db_manager import DatabaseManager
 
 router = APIRouter(tags=["Health"])
@@ -225,8 +226,8 @@ async def readiness_check(db: DatabaseManager = Depends(get_db)):
 
 
 @router.get("/health/metrics")
-async def metrics_endpoint():
-    """Detailed metrics endpoint"""
+async def metrics_endpoint(current_user: CurrentUser = Depends(require_admin)):
+    """Detailed metrics endpoint (admin only)"""
     return {
         'system': get_system_metrics(),
         'timestamp': datetime.now(timezone.utc).isoformat(),
