@@ -445,7 +445,8 @@ function ScenarioRequestsManagement() {
       </div>
 
       {/* Status Update Modal */}
-      <Modal isOpen={showStatusModal && !!selectedRequest} onClose={() => setShowStatusModal(false)} title="Update Status" size="sm">
+      {showStatusModal && selectedRequest && (
+      <Modal isOpen={true} onClose={() => setShowStatusModal(false)} title="Update Status" size="sm">
             <div className="p-5 space-y-4">
               <div>
                 <p className="text-sm text-neutral-500 mb-1">Request</p>
@@ -491,6 +492,7 @@ function ScenarioRequestsManagement() {
               </button>
             </div>
       </Modal>
+      )}
     </div>
   );
 }

@@ -637,8 +637,8 @@ function ScenarioDetailPage() {
   if (!scenario) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-xl font-semibold text-gray-800 mb-2">Scenario Not Found</h2>
-        <p className="text-gray-500 mb-4">The scenario you're looking for doesn't exist.</p>
+        <h2 className="text-xl font-semibold text-neutral-900 mb-2">Scenario Not Found</h2>
+        <p className="text-neutral-500 mb-4">The scenario you're looking for doesn't exist.</p>
         <Link to="/domains" className="btn-primary">
           Back to Domains
         </Link>
@@ -649,7 +649,7 @@ function ScenarioDetailPage() {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500">
+      <div className="flex items-center gap-2 text-sm text-neutral-500">
         <Link to="/domains" className="hover:text-blue-600 flex items-center gap-1">
           <ArrowLeft size={16} />
           Domains
@@ -663,7 +663,7 @@ function ScenarioDetailPage() {
             <ChevronRight size={16} />
           </>
         )}
-        <span className="text-gray-800">{scenario.name}</span>
+        <span className="text-neutral-900">{scenario.name}</span>
       </div>
 
       {/* Scenario Header */}
@@ -674,17 +674,17 @@ function ScenarioDetailPage() {
               <FileText className="text-purple-600" size={32} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">{scenario.name}</h1>
-              <p className="text-gray-500">{scenario.key}</p>
+              <h1 className="text-2xl font-bold text-neutral-900">{scenario.name}</h1>
+              <p className="text-neutral-500">{scenario.key}</p>
               {scenario.description && (
-                <p className="text-gray-600 mt-2">{scenario.description}</p>
+                <p className="text-neutral-600 mt-2">{scenario.description}</p>
               )}
               <div className="flex items-center gap-4 mt-3">
                 <Badge variant={scenario.status === 'active' || scenario.status === 'A' ? 'success' : 'default'}>
                   {scenario.status === 'active' || scenario.status === 'A' ? 'Active' : 'Inactive'}
                 </Badge>
                 {scenario.domainKey && (
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-neutral-500">
                     Domain: <span className="font-medium">{scenario.domainKey}</span>
                   </span>
                 )}
@@ -704,14 +704,14 @@ function ScenarioDetailPage() {
       </Card>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-neutral-200">
         <nav className="flex gap-4">
           <button
             onClick={() => setActiveTab('playboards')}
             className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 'playboards'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                : 'border-transparent text-neutral-500 hover:text-neutral-700'
             }`}
           >
             <Layout size={16} className="inline mr-2" />
@@ -722,7 +722,7 @@ function ScenarioDetailPage() {
             className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 'details'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                : 'border-transparent text-neutral-500 hover:text-neutral-700'
             }`}
           >
             <Settings size={16} className="inline mr-2" />
@@ -735,7 +735,7 @@ function ScenarioDetailPage() {
       {activeTab === 'playboards' && (
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">
+            <h2 className="text-lg font-semibold text-neutral-900">
               Playboards
             </h2>
             {canAdd && (
@@ -754,8 +754,8 @@ function ScenarioDetailPage() {
 
           {playboards.length === 0 ? (
             <div className="text-center py-8">
-              <Layout className="mx-auto text-gray-400 mb-4" size={48} />
-              <p className="text-gray-500">No playboards available for this scenario.</p>
+              <Layout className="mx-auto text-neutral-400 mb-4" size={48} />
+              <p className="text-neutral-500">No playboards available for this scenario.</p>
               {canAdd && (
                 <div className="flex justify-center space-x-3 mt-4">
                   <Button variant="secondary" onClick={() => { resetUploadForm(); setUploadModalOpen(true); }}>
@@ -780,10 +780,10 @@ function ScenarioDetailPage() {
                     <Layout className="text-blue-600" size={20} />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-medium text-gray-800">{playboard.name}</h3>
-                    <p className="text-sm text-gray-500">{playboard.data?.key || playboard.key || playboard._id}</p>
+                    <h3 className="font-medium text-neutral-900">{playboard.name}</h3>
+                    <p className="text-sm text-neutral-500">{playboard.data?.key || playboard.key || playboard._id}</p>
                     {playboard.description && (
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-1">
+                      <p className="text-sm text-neutral-600 mt-1 line-clamp-1">
                         {playboard.description}
                       </p>
                     )}
@@ -802,14 +802,14 @@ function ScenarioDetailPage() {
                     </Badge>
                     <button
                       onClick={() => handleViewDetails(playboard)}
-                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                      className="p-2 text-neutral-400 hover:text-blue-600 hover:bg-blue-50 rounded"
                       title="View JSON"
                     >
                       <Eye size={16} />
                     </button>
                     <button
                       onClick={() => handleDownloadPlayboard(playboard)}
-                      className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded"
+                      className="p-2 text-neutral-400 hover:text-green-600 hover:bg-green-50 rounded"
                       title="Download JSON"
                     >
                       <Download size={16} />
@@ -817,7 +817,7 @@ function ScenarioDetailPage() {
                     {canEdit && (
                       <button
                         onClick={() => openEditModal(playboard)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                        className="p-2 text-neutral-400 hover:text-blue-600 hover:bg-blue-50 rounded"
                         title="Edit"
                       >
                         <Edit2 size={16} />
@@ -826,7 +826,7 @@ function ScenarioDetailPage() {
                     {canDelete && (
                       <button
                         onClick={() => handleDeletePlayboard(playboard)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                        className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded"
                         title="Delete"
                       >
                         <Trash2 size={16} />
@@ -842,14 +842,14 @@ function ScenarioDetailPage() {
 
       {activeTab === 'details' && (
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Scenario Information</h2>
+          <h2 className="text-lg font-semibold text-neutral-900 mb-4">Scenario Information</h2>
           <dl className="grid grid-cols-2 gap-4">
             <div>
-              <dt className="text-sm text-gray-500">Key</dt>
-              <dd className="text-gray-800 font-mono">{scenario.key}</dd>
+              <dt className="text-sm text-neutral-500">Key</dt>
+              <dd className="text-neutral-900 font-mono">{scenario.key}</dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500">Status</dt>
+              <dt className="text-sm text-neutral-500">Status</dt>
               <dd>
                 <Badge variant={scenario.status === 'active' || scenario.status === 'A' ? 'success' : 'default'}>
                   {scenario.status === 'active' || scenario.status === 'A' ? 'Active' : 'Inactive'}
@@ -858,50 +858,50 @@ function ScenarioDetailPage() {
             </div>
             {scenario.domainKey && (
               <div>
-                <dt className="text-sm text-gray-500">Domain Key</dt>
-                <dd className="text-gray-800">{scenario.domainKey}</dd>
+                <dt className="text-sm text-neutral-500">Domain Key</dt>
+                <dd className="text-neutral-900">{scenario.domainKey}</dd>
               </div>
             )}
             {scenario.dataDomain && (
               <div>
-                <dt className="text-sm text-gray-500">Data Domain</dt>
-                <dd className="text-gray-800">{scenario.dataDomain}</dd>
+                <dt className="text-sm text-neutral-500">Data Domain</dt>
+                <dd className="text-neutral-900">{scenario.dataDomain}</dd>
               </div>
             )}
             {scenario.path && (
               <div>
-                <dt className="text-sm text-gray-500">Path</dt>
-                <dd className="text-gray-800">{scenario.path}</dd>
+                <dt className="text-sm text-neutral-500">Path</dt>
+                <dd className="text-neutral-900">{scenario.path}</dd>
               </div>
             )}
             {scenario.order !== undefined && (
               <div>
-                <dt className="text-sm text-gray-500">Order</dt>
-                <dd className="text-gray-800">{scenario.order}</dd>
+                <dt className="text-sm text-neutral-500">Order</dt>
+                <dd className="text-neutral-900">{scenario.order}</dd>
               </div>
             )}
             {scenario.icon && (
               <div>
-                <dt className="text-sm text-gray-500">Icon</dt>
-                <dd className="text-gray-800">{scenario.icon}</dd>
+                <dt className="text-sm text-neutral-500">Icon</dt>
+                <dd className="text-neutral-900">{scenario.icon}</dd>
               </div>
             )}
             {scenario.type && (
               <div>
-                <dt className="text-sm text-gray-500">Type</dt>
-                <dd className="text-gray-800">{scenario.type}</dd>
+                <dt className="text-sm text-neutral-500">Type</dt>
+                <dd className="text-neutral-900">{scenario.type}</dd>
               </div>
             )}
           </dl>
 
           {scenario.subDomains && scenario.subDomains.length > 0 && (
             <div className="mt-6">
-              <h3 className="text-md font-semibold text-gray-800 mb-3">Sub-Domains</h3>
+              <h3 className="text-md font-semibold text-neutral-900 mb-3">Sub-Domains</h3>
               <div className="space-y-2">
                 {scenario.subDomains.map((subDomain, index) => (
-                  <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                    <p className="font-medium text-gray-800">{subDomain.name}</p>
-                    <p className="text-sm text-gray-500">{subDomain.key}</p>
+                  <div key={index} className="p-3 bg-neutral-50 rounded-lg">
+                    <p className="font-medium text-neutral-900">{subDomain.name}</p>
+                    <p className="text-sm text-neutral-500">{subDomain.key}</p>
                   </div>
                 ))}
               </div>
@@ -919,7 +919,7 @@ function ScenarioDetailPage() {
       >
         <form onSubmit={editingItem ? handleUpdate : handleCreate}>
           {/* Tabs */}
-          <div className="border-b border-gray-200 mb-4">
+          <div className="border-b border-neutral-200 mb-4">
             <nav className="flex space-x-4 overflow-x-auto">
               {formTabs.map((tab) => (
                 <button
@@ -929,7 +929,7 @@ function ScenarioDetailPage() {
                   className={`py-2 px-3 text-sm font-medium border-b-2 whitespace-nowrap ${
                     formActiveTab === tab.id
                       ? 'border-red-500 text-red-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                      : 'border-transparent text-neutral-500 hover:text-neutral-700'
                   }`}
                 >
                   {tab.label}
@@ -1013,9 +1013,9 @@ function ScenarioDetailPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Description</label>
                 <textarea
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                   rows={3}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -1025,7 +1025,7 @@ function ScenarioDetailPage() {
 
               {/* Addon Configurations */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Addon Configurations</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Addon Configurations</label>
                 <div className="flex space-x-2 mb-2">
                   <Input
                     value={addonInput}
@@ -1055,14 +1055,14 @@ function ScenarioDetailPage() {
             <div className="space-y-4">
               {/* Existing Filters */}
               {formData.widgets.filters.length > 0 && (
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <h4 className="font-medium text-gray-900 mb-2">Configured Filters ({formData.widgets.filters.length})</h4>
+                <div className="bg-neutral-50 rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-neutral-900 mb-2">Configured Filters ({formData.widgets.filters.length})</h4>
                   <div className="space-y-2">
                     {formData.widgets.filters.map((filter, idx) => (
                       <div key={idx} className="flex items-center justify-between bg-white p-3 rounded border">
                         <div>
                           <span className="font-medium">{filter.displayName}</span>
-                          <span className="text-gray-500 text-sm ml-2">({filter.name})</span>
+                          <span className="text-neutral-500 text-sm ml-2">({filter.name})</span>
                           <Badge variant="default" className="ml-2">
                             {filter.attributes?.find(a => a.key === 'type')?.value || 'input'}
                           </Badge>
@@ -1082,7 +1082,7 @@ function ScenarioDetailPage() {
 
               {/* Add New Filter */}
               <div className="border rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 mb-3">Add New Filter</h4>
+                <h4 className="font-medium text-neutral-900 mb-3">Add New Filter</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <Input
                     label="Name (key)"
@@ -1142,7 +1142,7 @@ function ScenarioDetailPage() {
                 {/* Options for Select type */}
                 {currentFilter.type === 'select' && (
                   <div className="mt-4 border-t pt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Options</label>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">Options</label>
                     <div className="flex space-x-2 mb-2">
                       <Input
                         placeholder="Value (e.g., 01)"
@@ -1157,7 +1157,7 @@ function ScenarioDetailPage() {
                       <Button type="button" onClick={addOption} variant="secondary">Add</Button>
                     </div>
                     {currentFilter.options.length > 0 && (
-                      <div className="bg-gray-50 rounded p-2 max-h-32 overflow-y-auto">
+                      <div className="bg-neutral-50 rounded p-2 max-h-32 overflow-y-auto">
                         {currentFilter.options.map((opt, idx) => (
                           <div key={idx} className="flex items-center justify-between py-1">
                             <span className="text-sm">{opt.value} - {opt.name}</span>
@@ -1195,15 +1195,15 @@ function ScenarioDetailPage() {
             <div className="space-y-4">
               {/* Existing Actions */}
               {formData.widgets.grid.actions.rowActions.events.length > 0 && (
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <h4 className="font-medium text-gray-900 mb-2">Configured Row Actions ({formData.widgets.grid.actions.rowActions.events.length})</h4>
+                <div className="bg-neutral-50 rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-neutral-900 mb-2">Configured Row Actions ({formData.widgets.grid.actions.rowActions.events.length})</h4>
                   <div className="space-y-2">
                     {formData.widgets.grid.actions.rowActions.events.map((action, idx) => (
                       <div key={idx} className="bg-white p-3 rounded border">
                         <div className="flex items-center justify-between">
                           <div>
                             <span className="font-medium">{action.name}</span>
-                            <span className="text-gray-500 text-sm ml-2">-&gt; {action.path}</span>
+                            <span className="text-neutral-500 text-sm ml-2">-&gt; {action.path}</span>
                             <Badge variant={action.status === 'A' ? 'success' : 'danger'} className="ml-2">
                               {action.status === 'A' ? 'Active' : 'Inactive'}
                             </Badge>
@@ -1220,7 +1220,7 @@ function ScenarioDetailPage() {
                           </button>
                         </div>
                         {action.filters && action.filters.length > 0 && (
-                          <div className="mt-2 pt-2 border-t text-xs text-gray-500">
+                          <div className="mt-2 pt-2 border-t text-xs text-neutral-500">
                             {action.filters.map((f, i) => (
                               <span key={i} className="mr-3">
                                 {f.inputKey} -&gt; {f.dataKey}
@@ -1236,7 +1236,7 @@ function ScenarioDetailPage() {
 
               {/* Add New Action */}
               <div className="border rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 mb-3">Add New Row Action</h4>
+                <h4 className="font-medium text-neutral-900 mb-3">Add New Row Action</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <Input
                     label="Key"
@@ -1284,7 +1284,7 @@ function ScenarioDetailPage() {
 
                 {/* Action Filters */}
                 <div className="mt-4 border-t pt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Filters (maps row data to navigation params)
                   </label>
                   <div className="flex space-x-2 mb-2">
@@ -1301,13 +1301,13 @@ function ScenarioDetailPage() {
                     <Button type="button" onClick={addActionFilter} variant="secondary">Add</Button>
                   </div>
                   {currentRowAction.filters.length > 0 && (
-                    <div className="bg-gray-50 rounded p-2 space-y-1">
+                    <div className="bg-neutral-50 rounded p-2 space-y-1">
                       {currentRowAction.filters.map((filter, idx) => (
                         <div key={idx} className="flex items-center justify-between bg-white p-2 rounded border text-sm">
                           <span>
-                            <span className="text-gray-500">inputKey:</span> <span className="font-medium">{filter.inputKey}</span>
+                            <span className="text-neutral-500">inputKey:</span> <span className="font-medium">{filter.inputKey}</span>
                             <span className="mx-2">-&gt;</span>
-                            <span className="text-gray-500">dataKey:</span> <span className="font-medium">{filter.dataKey}</span>
+                            <span className="text-neutral-500">dataKey:</span> <span className="font-medium">{filter.dataKey}</span>
                           </span>
                           <button type="button" onClick={() => removeActionFilter(idx)} className="text-red-500 hover:text-red-700">x</button>
                         </div>
@@ -1403,14 +1403,14 @@ function ScenarioDetailPage() {
             <div className="space-y-4">
               {/* Existing Descriptions */}
               {formData.scenarioDescription.length > 0 && (
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <h4 className="font-medium text-gray-900 mb-2">Scenario Description Items</h4>
+                <div className="bg-neutral-50 rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-neutral-900 mb-2">Scenario Description Items</h4>
                   <div className="space-y-2">
                     {formData.scenarioDescription.map((desc, idx) => (
                       <div key={idx} className="flex items-center justify-between bg-white p-3 rounded border">
                         <div>
                           <Badge variant="default" className="mr-2">{desc.type}</Badge>
-                          <span className="text-gray-700">{desc.text || '(empty)'}</span>
+                          <span className="text-neutral-700">{desc.text || '(empty)'}</span>
                         </div>
                         <button
                           type="button"
@@ -1427,7 +1427,7 @@ function ScenarioDetailPage() {
 
               {/* Add New Description */}
               <div className="border rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 mb-3">Add Description Element</h4>
+                <h4 className="font-medium text-neutral-900 mb-3">Add Description Element</h4>
                 <div className="grid grid-cols-4 gap-4">
                   <Select
                     label="Type"
@@ -1468,7 +1468,7 @@ function ScenarioDetailPage() {
           {/* JSON Preview Tab */}
           {formActiveTab === 'json' && (
             <div>
-              <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-auto max-h-96 text-xs">
+              <pre className="bg-neutral-900 text-green-400 p-4 rounded-lg overflow-auto max-h-96 text-xs">
                 {JSON.stringify({
                   key: formData.key,
                   dataDomain: formData.dataDomain,
@@ -1506,7 +1506,7 @@ function ScenarioDetailPage() {
       >
         <form onSubmit={handleFileUpload} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">JSON File *</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">JSON File *</label>
             <FileUpload
               accept=".json"
               label="Select playboard JSON file"
@@ -1532,9 +1532,9 @@ function ScenarioDetailPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Description (optional)</label>
             <textarea
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
               rows={2}
               value={uploadDescription}
               onChange={(e) => setUploadDescription(e.target.value)}
@@ -1545,33 +1545,33 @@ function ScenarioDetailPage() {
           {/* JSON Preview */}
           {jsonPreview && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">JSON Preview</label>
-              <div className="bg-gray-50 rounded-lg p-4 border">
+              <label className="block text-sm font-medium text-neutral-700 mb-2">JSON Preview</label>
+              <div className="bg-neutral-50 rounded-lg p-4 border">
                 <div className="grid grid-cols-2 gap-4 text-sm mb-3">
                   <div>
-                    <span className="text-gray-500">Key:</span>{' '}
+                    <span className="text-neutral-500">Key:</span>{' '}
                     <span className="font-medium">{jsonPreview.key || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Scenario:</span>{' '}
+                    <span className="text-neutral-500">Scenario:</span>{' '}
                     <span className="font-medium">{jsonPreview.scenarioKey || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Data Domain:</span>{' '}
+                    <span className="text-neutral-500">Data Domain:</span>{' '}
                     <span className="font-medium">{jsonPreview.dataDomain || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Status:</span>{' '}
+                    <span className="text-neutral-500">Status:</span>{' '}
                     <Badge variant={jsonPreview.status === 'A' ? 'success' : 'danger'}>
                       {jsonPreview.status === 'A' ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
                   <div>
-                    <span className="text-gray-500">Filters:</span>{' '}
+                    <span className="text-neutral-500">Filters:</span>{' '}
                     <Badge variant="primary">{jsonPreview.widgets?.filters?.length || 0}</Badge>
                   </div>
                   <div>
-                    <span className="text-gray-500">Row Actions:</span>{' '}
+                    <span className="text-neutral-500">Row Actions:</span>{' '}
                     <Badge variant="success">{jsonPreview.widgets?.grid?.actions?.rowActions?.events?.length || 0}</Badge>
                   </div>
                 </div>
@@ -1579,7 +1579,7 @@ function ScenarioDetailPage() {
                   <summary className="cursor-pointer text-sm text-red-600 hover:text-red-700">
                     View Full JSON
                   </summary>
-                  <pre className="mt-2 bg-gray-900 text-green-400 p-3 rounded text-xs overflow-auto max-h-48">
+                  <pre className="mt-2 bg-neutral-900 text-green-400 p-3 rounded text-xs overflow-auto max-h-48">
                     {JSON.stringify(jsonPreview, null, 2)}
                   </pre>
                 </details>
@@ -1626,10 +1626,10 @@ function ScenarioDetailPage() {
         {selectedPlayboard && (
           <div>
             <div className="mb-4">
-              <h3 className="font-medium text-gray-900">{selectedPlayboard.name}</h3>
-              <p className="text-gray-500 text-sm">{selectedPlayboard.description}</p>
+              <h3 className="font-medium text-neutral-900">{selectedPlayboard.name}</h3>
+              <p className="text-neutral-500 text-sm">{selectedPlayboard.description}</p>
             </div>
-            <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-auto max-h-[60vh] text-xs">
+            <pre className="bg-neutral-900 text-green-400 p-4 rounded-lg overflow-auto max-h-[60vh] text-xs">
               {JSON.stringify(selectedPlayboard.data || selectedPlayboard, null, 2)}
             </pre>
             <div className="flex justify-end mt-4">
