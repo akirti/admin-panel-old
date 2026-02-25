@@ -29,6 +29,7 @@ import {
   Mail,
   Compass
 } from 'lucide-react';
+import { Badge } from '../shared';
 
 function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
   const { user, logout, isSuperAdmin, canManageUsers, isEditor } = useAuth();
@@ -220,7 +221,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
       <main className="flex-1 overflow-auto">
         {/* Header */}
         <header className="h-16 bg-white shadow-sm border-b border-neutral-200 flex items-center justify-between px-6">
-          <h1 className="text-xl font-semibold text-neutral-800">
+          <h1 className="text-xl font-semibold text-neutral-900">
             {isAdmin ? 'Administration' : isGroupAdmin ? 'Management' : 'Welcome'}
           </h1>
           
@@ -228,12 +229,9 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
             {/* Role badges */}
             <div className="flex gap-2">
               {user?.roles?.slice(0, 2).map((role) => (
-                <span
-                  key={role}
-                  className="badge badge-primary"
-                >
+                <Badge key={role} variant="primary">
                   {role}
-                </span>
+                </Badge>
               ))}
             </div>
           </div>

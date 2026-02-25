@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Input, Modal, Toggle } from '../../components/shared';
+import { Input, Modal, Toggle, Badge } from '../../components/shared';
 import { distributionListsAPI } from '../../services/api';
 import toast from 'react-hot-toast';
-import { Search, Plus, Edit2, Trash2, ToggleLeft, ToggleRight, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, ToggleLeft, ToggleRight, Mail, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 const DistributionListManagement = () => {
   const [lists, setLists] = useState([]);
@@ -192,8 +192,8 @@ const DistributionListManagement = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Distribution Lists</h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-neutral-900">Distribution Lists</h1>
+          <p className="text-neutral-500 text-sm mt-1">
             Manage email distribution lists for notifications ({pagination.total || 0} total)
           </p>
         </div>
@@ -207,7 +207,7 @@ const DistributionListManagement = () => {
       <div className="card">
         <div className="flex items-center gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
             <input
               type="text"
               placeholder="Search by name or key..."
@@ -232,75 +232,65 @@ const DistributionListManagement = () => {
       {/* Distribution Lists Table */}
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading distribution lists...</div>
+          <div className="p-8 text-center text-neutral-500">Loading distribution lists...</div>
         ) : lists.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            <Mail className="mx-auto mb-4 text-gray-400" size={48} />
+          <div className="p-8 text-center text-neutral-500">
+            <Mail className="mx-auto mb-4 text-neutral-400" size={48} />
             <p>No distribution lists found. Click "Add Distribution List" to create one.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Name
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Type
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Recipients
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                    Actions
-                  </th>
+              <thead>
+                <tr className="table-header">
+                  <th className="px-4 py-3 text-left">Name</th>
+                  <th className="px-4 py-3 text-left">Type</th>
+                  <th className="px-4 py-3 text-left">Recipients</th>
+                  <th className="px-4 py-3 text-left">Status</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-neutral-200">
                 {lists.map((item) => (
-                  <tr key={item._id} className="hover:bg-gray-50">
+                  <tr key={item._id} className="hover:bg-neutral-50">
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">{item.name}</div>
-                      <div className="text-xs text-gray-500">{item.key}</div>
+                      <div className="font-medium text-neutral-900">{item.name}</div>
+                      <div className="text-xs text-neutral-500">{item.key}</div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`badge badge-${getTypeBadgeVariant(item.type)}`}>
+                      <Badge variant={getTypeBadgeVariant(item.type)}>
                         {getTypeLabel(item.type)}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
                         <span className="font-medium">{item.emails?.length || 0}</span>
-                        <span className="text-gray-500 text-sm">emails</span>
+                        <span className="text-neutral-500 text-sm">emails</span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`badge ${item.is_active ? 'badge-success' : 'badge-warning'}`}>
+                      <Badge variant={item.is_active ? 'success' : 'warning'}>
                         {item.is_active ? 'Active' : 'Inactive'}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-1">
                         <button
-                          className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           onClick={() => openEditModal(item)}
                           title="Edit"
                         >
                           <Edit2 size={18} />
                         </button>
                         <button
-                          className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${item.is_active ? 'text-gray-500 hover:text-orange-600 hover:bg-orange-50' : 'text-gray-500 hover:text-green-600 hover:bg-green-50'}`}
+                          className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${item.is_active ? 'text-neutral-500 hover:text-orange-600 hover:bg-orange-50' : 'text-neutral-500 hover:text-green-600 hover:bg-green-50'}`}
                           onClick={() => handleToggleStatus(item)}
                           title={item.is_active ? 'Disable' : 'Enable'}
                         >
                           {item.is_active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
                         </button>
                         <button
-                          className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           onClick={() => handleDelete(item)}
                           title="Delete"
                         >
@@ -318,7 +308,7 @@ const DistributionListManagement = () => {
         {/* Pagination */}
         {pagination.pages > 1 && (
           <div className="px-4 py-3 border-t flex items-center justify-between">
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-neutral-500">
               Showing {pagination.page * pagination.limit + 1} to {Math.min((pagination.page + 1) * pagination.limit, pagination.total)} of {pagination.total}
             </span>
             <div className="flex gap-2">
@@ -376,7 +366,7 @@ const DistributionListManagement = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Type</label>
               <select
                 className="input w-full"
                 value={formData.type}
@@ -398,7 +388,7 @@ const DistributionListManagement = () => {
 
           {/* Email Management */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Email Recipients</label>
+            <label className="block text-sm font-medium text-neutral-700">Email Recipients</label>
             <div className="flex gap-2">
               <input
                 type="email"
@@ -415,24 +405,22 @@ const DistributionListManagement = () => {
             {formData.emails.length > 0 ? (
               <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
                 {formData.emails.map((email, index) => (
-                  <div key={index} className="flex items-center justify-between bg-gray-50 rounded px-3 py-2">
+                  <div key={index} className="flex items-center justify-between bg-neutral-50 rounded px-3 py-2">
                     <span className="text-sm">{email}</span>
                     <button
                       type="button"
                       onClick={() => removeEmail(email)}
                       className="text-red-500 hover:text-red-700"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      <X size={16} />
                     </button>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-500 italic">No emails added yet</p>
+              <p className="text-sm text-neutral-500 italic">No emails added yet</p>
             )}
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-neutral-500">
               {formData.emails.length} recipient{formData.emails.length !== 1 ? 's' : ''} in this list
             </p>
           </div>

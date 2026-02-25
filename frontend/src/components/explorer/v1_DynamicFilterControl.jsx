@@ -105,7 +105,7 @@ const V1DynamicFilterControl = ({
         onChange={(e) => onChange(filter.dataKey, e.target.value)}
         min={getAttrValue(attrs, 'min')}
         max={getAttrValue(attrs, 'max')}
-        className="border border-gray-300 rounded-md h-10 px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition-colors hover:border-gray-400"
+        className="border border-neutral-300 rounded-md h-10 px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition-colors hover:border-neutral-400"
         style={{ minWidth: width }}
       />
     );
@@ -340,9 +340,9 @@ const V1DynamicFilterControl = ({
               end: valueEnd,
             })
           }
-          className="border border-gray-300 rounded-md h-10 px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition-colors hover:border-gray-400"
+          className="border border-neutral-300 rounded-md h-10 px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition-colors hover:border-neutral-400"
         />
-        <span className="text-sm text-gray-500 font-medium">to</span>
+        <span className="text-sm text-neutral-500 font-medium">to</span>
         <input
           type="date"
           value={valueEnd}
@@ -353,7 +353,7 @@ const V1DynamicFilterControl = ({
               end: e.target.value,
             })
           }
-          className="border border-gray-300 rounded-md h-10 px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition-colors hover:border-gray-400"
+          className="border border-neutral-300 rounded-md h-10 px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition-colors hover:border-neutral-400"
         />
       </div>
     );
@@ -386,7 +386,7 @@ const V1DynamicFilterControl = ({
       type="text"
       value={value || ''}
       onChange={(e) => onChange(filter.dataKey, e.target.value)}
-      className="border border-gray-300 rounded-md h-10 px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition-colors hover:border-gray-400"
+      className="border border-neutral-300 rounded-md h-10 px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition-colors hover:border-neutral-400"
       placeholder={
         (!value || value === '') && filter.inputHint
           ? filter.inputHint

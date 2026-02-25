@@ -177,7 +177,7 @@ function PublicFeedbackForm({ onSuccess }) {
           </>
         ) : (
           <>
-            <Send className="w-5 h-5" />
+            <Send size={20} />
             Submit Feedback
           </>
         )}

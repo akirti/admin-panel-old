@@ -46,27 +46,27 @@ const V1ToggleButtonDropdown = ({
     <div className="relative w-full" ref={dropdownRef}>
       <button
         type="button"
-        className={`border border-gray-300 rounded-md h-10 px-3 py-2 w-full text-left bg-white flex justify-between items-center shadow-sm transition-colors ${
+        className={`border border-neutral-300 rounded-md h-10 px-3 py-2 w-full text-left bg-white flex justify-between items-center shadow-sm transition-colors ${
           disabled
             ? 'opacity-50 cursor-not-allowed'
-            : 'hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500'
+            : 'hover:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500'
         }`}
         onClick={() => !disabled && setIsOpen((o) => !o)}
         disabled={disabled}
       >
-        <span className="text-sm text-gray-900 truncate">
+        <span className="text-sm text-neutral-900 truncate">
           {trimLabel(selectedLabel)}
         </span>
         <span className="ml-2 flex-shrink-0">
           {isOpen ? (
-            <ChevronUp className="w-4 h-4 text-gray-400" />
+            <ChevronUp className="w-4 h-4 text-neutral-400" />
           ) : (
-            <ChevronDown className="w-4 h-4 text-gray-400" />
+            <ChevronDown className="w-4 h-4 text-neutral-400" />
           )}
         </span>
       </button>
       {isOpen && (
-        <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden">
+        <div className="absolute z-20 mt-1 w-full bg-white border border-neutral-200 rounded-md shadow-lg overflow-hidden">
           <div className="max-h-48 overflow-auto">
             {options.map((opt, idx) => {
               const toggleId = `${id}-toggle-${idx}`;
@@ -75,7 +75,7 @@ const V1ToggleButtonDropdown = ({
                 <div
                   key={toggleId}
                   className={`flex items-center px-3 py-2.5 cursor-pointer transition-colors text-sm ${
-                    disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
+                    disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-neutral-50'
                   }`}
                   onClick={(e) => {
                     if (disabled) return;
@@ -119,7 +119,7 @@ const V1ToggleButtonDropdown = ({
                       />
                       <span
                         className={`block w-10 h-6 rounded-full transition-colors duration-200 ${
-                          isOn ? 'bg-red-500' : 'bg-gray-300'
+                          isOn ? 'bg-red-500' : 'bg-neutral-300'
                         }`}
                       />
                       <span
@@ -130,7 +130,7 @@ const V1ToggleButtonDropdown = ({
                     </span>
                     <label
                       className={`cursor-pointer select-none ${
-                        isOn ? 'font-medium text-gray-900' : 'text-gray-600'
+                        isOn ? 'font-medium text-neutral-900' : 'text-neutral-600'
                       }`}
                       htmlFor={toggleId}
                     >
@@ -142,13 +142,13 @@ const V1ToggleButtonDropdown = ({
             })}
           </div>
           {handleToggleSelectAll && (
-            <div className="border-t border-gray-200 px-3 py-2 bg-gray-50 flex items-center">
+            <div className="border-t border-neutral-200 px-3 py-2 bg-neutral-50 flex items-center">
               <button
                 type="button"
                 onClick={handleToggleSelectAll}
                 className={`w-full px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
                   allSelected
-                    ? 'bg-white text-gray-700 hover:bg-gray-100 border-gray-300'
+                    ? 'bg-white text-neutral-700 hover:bg-neutral-100 border-neutral-300'
                     : 'bg-red-600 text-white hover:bg-red-700 border-red-600'
                 }`}
               >

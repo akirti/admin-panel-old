@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { Modal, Badge } from '../../components/shared';
 import { domainAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 import { Layers, Plus, Edit2, Trash2, X, Search, Image } from 'lucide-react';
@@ -184,9 +185,9 @@ function DomainsManagement() {
   if (!isEditor()) {
     return (
       <div className="text-center py-12">
-        <Layers className="mx-auto text-gray-400 mb-4" size={48} />
-        <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
-        <p className="text-gray-500">You don't have permission to manage domains.</p>
+        <Layers className="mx-auto text-neutral-400 mb-4" size={48} />
+        <h2 className="text-xl font-semibold text-neutral-900 mb-2">Access Denied</h2>
+        <p className="text-neutral-500">You don't have permission to manage domains.</p>
       </div>
     );
   }
@@ -194,10 +195,10 @@ function DomainsManagement() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Domains Management</h1>
+        <h1 className="text-2xl font-bold text-neutral-900">Domains Management</h1>
         <div className="flex items-center gap-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
             <input
               type="text"
               placeholder="Search domains..."
@@ -221,25 +222,25 @@ function DomainsManagement() {
           </div>
         ) : filteredDomains.length === 0 ? (
           <div className="text-center py-12">
-            <Layers className="mx-auto text-gray-400 mb-4" size={48} />
-            <p className="text-gray-500">No domains found</p>
+            <Layers className="mx-auto text-neutral-400 mb-4" size={48} />
+            <p className="text-neutral-500">No domains found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="bg-gray-50 border-b">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Domain</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Key</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Path</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Order</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Status</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Actions</th>
+                <tr className="table-header">
+                  <th className="text-left py-3 px-4">Domain</th>
+                  <th className="text-left py-3 px-4">Key</th>
+                  <th className="text-left py-3 px-4">Path</th>
+                  <th className="text-left py-3 px-4">Order</th>
+                  <th className="text-left py-3 px-4">Status</th>
+                  <th className="text-left py-3 px-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredDomains.map((domain) => (
-                  <tr key={domain.key} className="border-b hover:bg-gray-50">
+                  <tr key={domain.key} className="border-b hover:bg-neutral-50">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center overflow-hidden">
@@ -261,9 +262,9 @@ function DomainsManagement() {
                           />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-800">{domain.name}</p>
+                          <p className="font-medium text-neutral-900">{domain.name}</p>
                           {domain.description && (
-                            <p className="text-sm text-gray-500 line-clamp-1">
+                            <p className="text-sm text-neutral-500 line-clamp-1">
                               {domain.description}
                             </p>
                           )}
@@ -271,39 +272,33 @@ function DomainsManagement() {
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                      <code className="text-sm bg-neutral-100 px-2 py-1 rounded">
                         {domain.key}
                       </code>
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
+                    <td className="py-3 px-4 text-sm text-neutral-600">
                       {domain.path || '-'}
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
+                    <td className="py-3 px-4 text-sm text-neutral-600">
                       {domain.order || 0}
                     </td>
                     <td className="py-3 px-4">
-                      <span
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          domain.status === 'active'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
+                      <Badge variant={domain.status === 'active' ? 'success' : 'default'}>
                         {domain.status === 'active' ? 'Active' : 'Inactive'}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => openEditModal(domain)}
-                          className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="Edit"
                         >
                           <Edit2 size={18} />
                         </button>
                         <button
                           onClick={() => handleDelete(domain)}
-                          className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete"
                         >
                           <Trash2 size={18} />
@@ -319,21 +314,15 @@ function DomainsManagement() {
       </div>
 
       {/* Create/Edit Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto py-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6 my-auto max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">
-                {editingDomain ? 'Edit Domain' : 'Create Domain'}
-              </h3>
-              <button onClick={closeModal} className="p-1 hover:bg-gray-100 rounded">
-                <X size={20} />
-              </button>
-            </div>
-
+      <Modal
+        isOpen={modalOpen}
+        onClose={closeModal}
+        title={editingDomain ? 'Edit Domain' : 'Create Domain'}
+        size="lg"
+      >
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
                   Key *
                 </label>
                 <input
@@ -349,7 +338,7 @@ function DomainsManagement() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
                   Name *
                 </label>
                 <input
@@ -364,7 +353,7 @@ function DomainsManagement() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
                   Description
                 </label>
                 <textarea
@@ -378,7 +367,7 @@ function DomainsManagement() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
                   Icon
                 </label>
                 <div className="flex gap-3 items-start">
@@ -404,19 +393,19 @@ function DomainsManagement() {
                         <button
                           type="button"
                           onClick={() => setFormData(prev => ({ ...prev, icon: '' }))}
-                          className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                          className="p-2 text-neutral-500 hover:text-red-600 hover:bg-red-50 rounded"
                           title="Clear icon"
                         >
                           <X size={18} />
                         </button>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-neutral-500 mt-1">
                       Click "Select Icon" to choose from Lucide icons, or paste a URL/data URI
                     </p>
                   </div>
                   {formData.icon && (
-                    <div className="w-12 h-12 border rounded-lg flex items-center justify-center bg-gray-50 flex-shrink-0">
+                    <div className="w-12 h-12 border rounded-lg flex items-center justify-center bg-neutral-50 flex-shrink-0">
                       <img
                         src={formData.icon}
                         alt="Icon preview"
@@ -426,7 +415,7 @@ function DomainsManagement() {
                           e.target.nextSibling.style.display = 'flex';
                         }}
                       />
-                      <div className="hidden items-center justify-center text-gray-400 text-xs">
+                      <div className="hidden items-center justify-center text-neutral-400 text-xs">
                         Invalid
                       </div>
                     </div>
@@ -436,7 +425,7 @@ function DomainsManagement() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
                     Path
                   </label>
                   <input
@@ -449,7 +438,7 @@ function DomainsManagement() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
                     Order
                   </label>
                   <input
@@ -465,7 +454,7 @@ function DomainsManagement() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
                     Type
                   </label>
                   <select
@@ -490,7 +479,7 @@ function DomainsManagement() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
                     Data Domain
                   </label>
                   <input
@@ -506,7 +495,7 @@ function DomainsManagement() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
                     Status
                   </label>
                   <select
@@ -526,21 +515,21 @@ function DomainsManagement() {
                       name="defaultSelected"
                       checked={formData.defaultSelected}
                       onChange={(e) => setFormData(prev => ({ ...prev, defaultSelected: e.target.checked }))}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="w-4 h-4 text-blue-600 border-neutral-300 rounded focus:ring-blue-500"
                     />
-                    <span className="ml-2 text-sm font-medium text-gray-700">Default Selected</span>
+                    <span className="ml-2 text-sm font-medium text-neutral-700">Default Selected</span>
                   </label>
                 </div>
               </div>
 
               {/* SubDomains Section */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
                   Sub Domains
                 </label>
 
                 {/* Add SubDomain Form */}
-                <div className="bg-gray-50 p-3 rounded-lg mb-2">
+                <div className="bg-neutral-50 p-3 rounded-lg mb-2">
                   <div className="grid grid-cols-3 gap-2 mb-2">
                     <input
                       type="text"
@@ -581,8 +570,8 @@ function DomainsManagement() {
                       <div key={index} className="flex items-center justify-between bg-blue-50 px-3 py-2 rounded">
                         <div className="text-sm">
                           <span className="font-medium">{sub.name}</span>
-                          <span className="text-gray-500 ml-2">({sub.key})</span>
-                          <span className="text-gray-400 ml-2">{sub.path}</span>
+                          <span className="text-neutral-500 ml-2">({sub.key})</span>
+                          <span className="text-neutral-400 ml-2">{sub.path}</span>
                         </div>
                         <button
                           type="button"
@@ -606,9 +595,7 @@ function DomainsManagement() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Icon Picker Modal */}
       {iconPickerOpen && (

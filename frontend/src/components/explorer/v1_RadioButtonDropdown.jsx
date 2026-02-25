@@ -30,20 +30,20 @@ const V1RadioButtonDropdown = ({
     <div className="relative w-full" ref={dropdownRef}>
       <button
         type="button"
-        className="border border-gray-300 rounded-md h-10 px-3 py-2 w-full text-left bg-white flex justify-between items-center hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition-colors"
+        className="border border-neutral-300 rounded-md h-10 px-3 py-2 w-full text-left bg-white flex justify-between items-center hover:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition-colors"
         onClick={() => setIsOpen((o) => !o)}
       >
-        <span className="text-sm text-gray-900 truncate">{selectedLabel}</span>
+        <span className="text-sm text-neutral-900 truncate">{selectedLabel}</span>
         <span className="ml-2 flex-shrink-0">
           {isOpen ? (
-            <ChevronUp className="w-4 h-4 text-gray-400" />
+            <ChevronUp className="w-4 h-4 text-neutral-400" />
           ) : (
-            <ChevronDown className="w-4 h-4 text-gray-400" />
+            <ChevronDown className="w-4 h-4 text-neutral-400" />
           )}
         </span>
       </button>
       {isOpen && (
-        <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-auto">
+        <div className="absolute z-20 mt-1 w-full bg-white border border-neutral-200 rounded-md shadow-lg max-h-48 overflow-auto">
           {options.map((opt, idx) => {
             const radioId = `${name}-${idx}`;
             const isSelected = value === (opt.value || opt.name);
@@ -51,7 +51,7 @@ const V1RadioButtonDropdown = ({
               <div
                 key={radioId}
                 className={`flex items-center px-3 py-2 cursor-pointer transition-colors text-sm ${
-                  isSelected ? 'bg-red-50' : 'hover:bg-gray-50'
+                  isSelected ? 'bg-red-50' : 'hover:bg-neutral-50'
                 }`}
                 onClick={() => {
                   onChange(opt.value || opt.name);
@@ -69,7 +69,7 @@ const V1RadioButtonDropdown = ({
                 />
                 <label
                   className={`ml-2.5 cursor-pointer select-none ${
-                    isSelected ? 'font-medium text-gray-900' : 'text-gray-700'
+                    isSelected ? 'font-medium text-neutral-900' : 'text-neutral-700'
                   }`}
                   htmlFor={radioId}
                 >

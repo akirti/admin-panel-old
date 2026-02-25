@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { scenarioRequestAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { Modal } from '../../components/shared';
 
 // Status config matching backend ScenarioRequestStatusTypes enum values
 const STATUS_CONFIG = {
@@ -473,7 +474,7 @@ function RequestDetailPage() {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <Package className="mx-auto text-neutral-300 mb-2" size={40} />
+                  <Package className="mx-auto text-neutral-300 mb-2" size={48} />
                   <p className="text-neutral-500 text-sm">
                     {canUploadBucketFiles()
                       ? 'No data snapshots uploaded yet. Click "Upload Snapshot" to add files.'
@@ -729,110 +730,100 @@ function RequestDetailPage() {
       </div>
 
       {/* Upload Modal */}
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-md">
-            <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h3 className="font-semibold text-lg">Upload Data Snapshot</h3>
-              <button
-                onClick={() => {
-                  setShowUploadModal(false);
-                  setUploadFile(null);
-                  setUploadComment('');
-                }}
-                className="text-neutral-400 hover:text-neutral-600"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Select File <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="file"
-                  onChange={handleFileSelect}
-                  accept=".xlsx,.xls,.csv,.json,.txt,.png,.jpg,.jpeg"
-                  className="block w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-600 hover:file:bg-red-100"
-                />
-                <p className="text-xs text-neutral-500 mt-1">
-                  Supported: xlsx, csv, json, txt, image (max 10MB)
-                </p>
-                {uploadFile && (
-                  <div className="mt-2 p-2 bg-neutral-50 rounded flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText size={16} className="text-neutral-400" />
-                      <span className="text-sm text-neutral-700">{uploadFile.name}</span>
-                    </div>
-                    <span className="text-xs text-neutral-500">
-                      {(uploadFile.size / 1024).toFixed(1)} KB
-                    </span>
-                  </div>
-                )}
+      <Modal
+        isOpen={showUploadModal}
+        onClose={() => {
+          setShowUploadModal(false);
+          setUploadFile(null);
+          setUploadComment('');
+        }}
+        title="Upload Data Snapshot"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              Select File <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="file"
+              onChange={handleFileSelect}
+              accept=".xlsx,.xls,.csv,.json,.txt,.png,.jpg,.jpeg"
+              className="block w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-600 hover:file:bg-red-100"
+            />
+            <p className="text-xs text-neutral-500 mt-1">
+              Supported: xlsx, csv, json, txt, image (max 10MB)
+            </p>
+            {uploadFile && (
+              <div className="mt-2 p-2 bg-neutral-50 rounded flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText size={16} className="text-neutral-400" />
+                  <span className="text-sm text-neutral-700">{uploadFile.name}</span>
+                </div>
+                <span className="text-xs text-neutral-500">
+                  {(uploadFile.size / 1024).toFixed(1)} KB
+                </span>
               </div>
+            )}
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Explanation (Optional)
-                </label>
-                <textarea
-                  value={uploadComment}
-                  onChange={(e) => setUploadComment(e.target.value)}
-                  placeholder="Add context or notes about this snapshot..."
-                  rows={3}
-                  className="input w-full"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 px-6 py-4 border-t">
-              <button
-                onClick={() => {
-                  setShowUploadModal(false);
-                  setUploadFile(null);
-                  setUploadComment('');
-                }}
-                className="btn btn-secondary"
-                disabled={uploading}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUploadBucketFile}
-                disabled={!uploadFile || uploading}
-                className="btn btn-primary flex items-center gap-2"
-              >
-                {uploading ? (
-                  <>
-                    <Loader2 className="animate-spin" size={16} />
-                    Uploading...
-                  </>
-                ) : (
-                  <>
-                    <Upload size={16} />
-                    Upload
-                  </>
-                )}
-              </button>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              Explanation (Optional)
+            </label>
+            <textarea
+              value={uploadComment}
+              onChange={(e) => setUploadComment(e.target.value)}
+              placeholder="Add context or notes about this snapshot..."
+              rows={3}
+              className="input w-full"
+            />
           </div>
         </div>
-      )}
+        <div className="flex justify-end gap-3 pt-4 border-t mt-4">
+          <button
+            onClick={() => {
+              setShowUploadModal(false);
+              setUploadFile(null);
+              setUploadComment('');
+            }}
+            className="btn btn-secondary"
+            disabled={uploading}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleUploadBucketFile}
+            disabled={!uploadFile || uploading}
+            className="btn btn-primary flex items-center gap-2"
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="animate-spin" size={16} />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Upload size={16} />
+                Upload
+              </>
+            )}
+          </button>
+        </div>
+      </Modal>
 
       {/* Preview Modal */}
-      {previewData && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between px-4 py-3 border-b">
-              <h3 className="font-semibold">{previewData.fileName}</h3>
-              <button onClick={() => {
-                setPreviewData(null);
-                setPreviewPage(0);
-              }} className="text-neutral-400 hover:text-neutral-600">
-                <XCircle size={20} />
-              </button>
-            </div>
-            <div className="flex-1 overflow-auto p-4">
+      <Modal
+        isOpen={!!previewData}
+        onClose={() => {
+          setPreviewData(null);
+          setPreviewPage(0);
+        }}
+        title={previewData?.fileName || 'Preview'}
+        size="full"
+      >
+        {previewData && (
+          <div className="max-h-[70vh] overflow-auto">
               {previewLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="animate-spin text-red-600" size={32} />
@@ -901,118 +892,106 @@ function RequestDetailPage() {
               ) : (
                 <p className="text-neutral-500 text-center py-12">Preview not available for this file type</p>
               )}
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {/* Add Jira Link Modal */}
-      {showAddJiraLinkModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-md">
-            <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h3 className="font-semibold text-lg flex items-center gap-2">
-                <Link size={18} />
-                Add Jira Link
-              </h3>
-              <button
-                onClick={() => {
-                  setShowAddJiraLinkModal(false);
-                  setNewJiraLink({ ticket_key: '', ticket_url: '', title: '', link_type: 'dependency' });
-                }}
-                className="text-neutral-400 hover:text-neutral-600"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Ticket Key <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={newJiraLink.ticket_key}
-                  onChange={(e) => setNewJiraLink(prev => ({ ...prev, ticket_key: e.target.value }))}
-                  placeholder="e.g., PROJ-123"
-                  className="input w-full"
-                />
-              </div>
+      <Modal
+        isOpen={showAddJiraLinkModal}
+        onClose={() => {
+          setShowAddJiraLinkModal(false);
+          setNewJiraLink({ ticket_key: '', ticket_url: '', title: '', link_type: 'dependency' });
+        }}
+        title="Add Jira Link"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              Ticket Key <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={newJiraLink.ticket_key}
+              onChange={(e) => setNewJiraLink(prev => ({ ...prev, ticket_key: e.target.value }))}
+              placeholder="e.g., PROJ-123"
+              className="input w-full"
+            />
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Ticket URL (Optional)
-                </label>
-                <input
-                  type="url"
-                  value={newJiraLink.ticket_url}
-                  onChange={(e) => setNewJiraLink(prev => ({ ...prev, ticket_url: e.target.value }))}
-                  placeholder="https://your-domain.atlassian.net/browse/PROJ-123"
-                  className="input w-full"
-                />
-              </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              Ticket URL (Optional)
+            </label>
+            <input
+              type="url"
+              value={newJiraLink.ticket_url}
+              onChange={(e) => setNewJiraLink(prev => ({ ...prev, ticket_url: e.target.value }))}
+              placeholder="https://your-domain.atlassian.net/browse/PROJ-123"
+              className="input w-full"
+            />
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Title (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={newJiraLink.title}
-                  onChange={(e) => setNewJiraLink(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="Brief description of the ticket"
-                  className="input w-full"
-                />
-              </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              Title (Optional)
+            </label>
+            <input
+              type="text"
+              value={newJiraLink.title}
+              onChange={(e) => setNewJiraLink(prev => ({ ...prev, title: e.target.value }))}
+              placeholder="Brief description of the ticket"
+              className="input w-full"
+            />
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Link Type
-                </label>
-                <select
-                  value={newJiraLink.link_type}
-                  onChange={(e) => setNewJiraLink(prev => ({ ...prev, link_type: e.target.value }))}
-                  className="input w-full"
-                >
-                  <option value="dependency">Dependency</option>
-                  <option value="related">Related</option>
-                  <option value="blocks">Blocks</option>
-                  <option value="blocked_by">Blocked By</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 px-6 py-4 border-t">
-              <button
-                onClick={() => {
-                  setShowAddJiraLinkModal(false);
-                  setNewJiraLink({ ticket_key: '', ticket_url: '', title: '', link_type: 'dependency' });
-                }}
-                className="btn btn-secondary"
-                disabled={addingJiraLink}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddJiraLink}
-                disabled={!newJiraLink.ticket_key.trim() || addingJiraLink}
-                className="btn btn-primary flex items-center gap-2"
-              >
-                {addingJiraLink ? (
-                  <>
-                    <Loader2 className="animate-spin" size={16} />
-                    Adding...
-                  </>
-                ) : (
-                  <>
-                    <Plus size={16} />
-                    Add Link
-                  </>
-                )}
-              </button>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              Link Type
+            </label>
+            <select
+              value={newJiraLink.link_type}
+              onChange={(e) => setNewJiraLink(prev => ({ ...prev, link_type: e.target.value }))}
+              className="input w-full"
+            >
+              <option value="dependency">Dependency</option>
+              <option value="related">Related</option>
+              <option value="blocks">Blocks</option>
+              <option value="blocked_by">Blocked By</option>
+            </select>
           </div>
         </div>
-      )}
+        <div className="flex justify-end gap-3 pt-4 border-t mt-4">
+          <button
+            onClick={() => {
+              setShowAddJiraLinkModal(false);
+              setNewJiraLink({ ticket_key: '', ticket_url: '', title: '', link_type: 'dependency' });
+            }}
+            className="btn btn-secondary"
+            disabled={addingJiraLink}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleAddJiraLink}
+            disabled={!newJiraLink.ticket_key.trim() || addingJiraLink}
+            className="btn btn-primary flex items-center gap-2"
+          >
+            {addingJiraLink ? (
+              <>
+                <Loader2 className="animate-spin" size={16} />
+                Adding...
+              </>
+            ) : (
+              <>
+                <Plus size={16} />
+                Add Link
+              </>
+            )}
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

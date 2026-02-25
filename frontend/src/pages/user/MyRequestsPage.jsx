@@ -15,6 +15,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { scenarioRequestAPI } from '../../services/api';
+import { Badge } from '../../components/shared';
 
 // Status config matching backend ScenarioRequestStatusTypes enum values
 const STATUS_CONFIG = {
@@ -207,15 +208,15 @@ function MyRequestsPage() {
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-neutral-50 border-b border-neutral-200">
-                  <tr>
-                    <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Request ID</th>
-                    <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Name</th>
-                    <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Domain</th>
-                    <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Status</th>
-                    <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Created</th>
-                    <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Updated</th>
-                    <th className="text-center px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Actions</th>
+                <thead>
+                  <tr className="table-header">
+                    <th className="text-left px-5 py-4">Request ID</th>
+                    <th className="text-left px-5 py-4">Name</th>
+                    <th className="text-left px-5 py-4">Domain</th>
+                    <th className="text-left px-5 py-4">Status</th>
+                    <th className="text-left px-5 py-4">Created</th>
+                    <th className="text-left px-5 py-4">Updated</th>
+                    <th className="text-center px-5 py-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
@@ -232,9 +233,9 @@ function MyRequestsPage() {
                         </p>
                       </td>
                       <td className="px-5 py-4">
-                        <span className="inline-flex px-2.5 py-1 bg-neutral-100 text-neutral-700 rounded-full text-xs font-medium">
+                        <Badge variant="default">
                           {request.dataDomain}
-                        </span>
+                        </Badge>
                       </td>
                       <td className="px-5 py-4">
                         {getStatusBadge(request.status)}

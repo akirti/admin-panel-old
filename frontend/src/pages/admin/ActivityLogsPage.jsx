@@ -115,10 +115,10 @@ const ActivityLogsPage = () => {
       {/* Statistics */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-4">
+          <div className="card">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-red-100 rounded-lg">
-                <Activity className="w-5 h-5 text-red-600" />
+                <Activity size={20} className="text-red-600" />
               </div>
               <div>
                 <div className="text-sm text-neutral-500">Total Activities</div>
@@ -127,10 +127,10 @@ const ActivityLogsPage = () => {
             </div>
             <div className="text-xs text-neutral-400 mt-2">Last {stats.period_days} days</div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-4">
+          <div className="card">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-blue-600" />
+                <TrendingUp size={20} className="text-blue-600" />
               </div>
               <div>
                 <div className="text-sm text-neutral-500">Action Types</div>
@@ -145,10 +145,10 @@ const ActivityLogsPage = () => {
               ))}
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-4">
+          <div className="card">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-100 rounded-lg">
-                <Filter className="w-5 h-5 text-green-600" />
+                <Filter size={20} className="text-green-600" />
               </div>
               <div>
                 <div className="text-sm text-neutral-500">Entity Types</div>
@@ -163,10 +163,10 @@ const ActivityLogsPage = () => {
               ))}
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-4">
+          <div className="card">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-purple-100 rounded-lg">
-                <User className="w-5 h-5 text-purple-600" />
+                <User size={20} className="text-purple-600" />
               </div>
               <div>
                 <div className="text-sm text-neutral-500">Active Users</div>
@@ -181,7 +181,7 @@ const ActivityLogsPage = () => {
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-4">
+      <div className="card">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">User Email</label>
@@ -233,7 +233,7 @@ const ActivityLogsPage = () => {
 
       {/* Activity Timeline Chart */}
       {stats?.timeline && stats.timeline.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-4">
+        <div className="card">
           <h3 className="text-lg font-semibold mb-4">Activity Timeline</h3>
           <div className="flex items-end space-x-1 h-32">
             {stats.timeline.map((item) => {
@@ -257,7 +257,7 @@ const ActivityLogsPage = () => {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
+      <div className="card overflow-hidden p-0">
         {loading ? (
           <div className="flex items-center justify-center h-48">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
@@ -265,14 +265,14 @@ const ActivityLogsPage = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-neutral-200">
-              <thead className="bg-neutral-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Action</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Entity Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Entity ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">User</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Changes</th>
+              <thead>
+                <tr className="table-header">
+                  <th className="px-6 py-3 text-left">Time</th>
+                  <th className="px-6 py-3 text-left">Action</th>
+                  <th className="px-6 py-3 text-left">Entity Type</th>
+                  <th className="px-6 py-3 text-left">Entity ID</th>
+                  <th className="px-6 py-3 text-left">User</th>
+                  <th className="px-6 py-3 text-left">Changes</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-neutral-200">

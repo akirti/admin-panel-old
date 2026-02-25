@@ -19,6 +19,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { scenarioRequestAPI } from '../../services/api';
+import { Modal } from '../../components/shared';
 
 // Status config matching backend ScenarioRequestStatusTypes enum values
 const STATUS_CONFIG = {
@@ -303,18 +304,18 @@ function ScenarioRequestsManagement() {
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-neutral-50 border-b border-neutral-200">
-                  <tr>
-                    <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Request ID</th>
-                    <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Name</th>
-                    <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Requester</th>
-                    <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Domain</th>
-                    <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Status</th>
-                    <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Team</th>
-                    <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Assignee</th>
-                    <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Jira</th>
-                    <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Created</th>
-                    <th className="text-center px-5 py-4 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Actions</th>
+                <thead>
+                  <tr className="table-header">
+                    <th className="text-left px-5 py-4">Request ID</th>
+                    <th className="text-left px-5 py-4">Name</th>
+                    <th className="text-left px-5 py-4">Requester</th>
+                    <th className="text-left px-5 py-4">Domain</th>
+                    <th className="text-left px-5 py-4">Status</th>
+                    <th className="text-left px-5 py-4">Team</th>
+                    <th className="text-left px-5 py-4">Assignee</th>
+                    <th className="text-left px-5 py-4">Jira</th>
+                    <th className="text-left px-5 py-4">Created</th>
+                    <th className="text-center px-5 py-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
@@ -444,15 +445,7 @@ function ScenarioRequestsManagement() {
       </div>
 
       {/* Status Update Modal */}
-      {showStatusModal && selectedRequest && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl w-full max-w-md shadow-xl">
-            <div className="flex items-center justify-between px-5 py-4 border-b">
-              <h3 className="font-semibold text-lg text-neutral-900">Update Status</h3>
-              <button onClick={() => setShowStatusModal(false)} className="text-neutral-400 hover:text-neutral-600">
-                <X size={20} />
-              </button>
-            </div>
+      <Modal isOpen={showStatusModal && !!selectedRequest} onClose={() => setShowStatusModal(false)} title="Update Status" size="sm">
             <div className="p-5 space-y-4">
               <div>
                 <p className="text-sm text-neutral-500 mb-1">Request</p>
@@ -497,9 +490,7 @@ function ScenarioRequestsManagement() {
                 Update Status
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

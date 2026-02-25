@@ -44,8 +44,8 @@ function ResetPasswordPage() {
   if (!token) {
     return (
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Invalid Link</h2>
-        <p className="text-gray-600 mb-6">
+        <h2 className="text-2xl font-bold text-neutral-900 mb-4">Invalid Link</h2>
+        <p className="text-neutral-600 mb-6">
           This password reset link is invalid or has expired.
         </p>
         <Link to="/forgot-password" className="text-blue-600 hover:underline">
@@ -61,8 +61,8 @@ function ResetPasswordPage() {
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <CheckCircle className="text-green-600" size={32} />
         </div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Password Reset!</h2>
-        <p className="text-gray-600 mb-6">
+        <h2 className="text-2xl font-bold text-neutral-900 mb-2">Password Reset!</h2>
+        <p className="text-neutral-600 mb-6">
           Your password has been reset successfully.
         </p>
         <button
@@ -77,18 +77,18 @@ function ResetPasswordPage() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">Reset Password</h2>
-      <p className="text-gray-600 mb-6">
+      <h2 className="text-2xl font-bold text-neutral-900 mb-2">Reset Password</h2>
+      <p className="text-neutral-600 mb-6">
         Enter your new password below.
       </p>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-neutral-700 mb-1">
             New Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
@@ -100,7 +100,7 @@ function ResetPasswordPage() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
@@ -108,11 +108,11 @@ function ResetPasswordPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-neutral-700 mb-1">
             Confirm Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
             <input
               type={showPassword ? 'text' : 'password'}
               value={confirmPassword}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Badge } from '../../components/shared';
 import { Upload, Download, FileSpreadsheet, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { bulkAPI } from '../../services/api';
@@ -96,7 +97,7 @@ const BulkUploadPage = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Upload Form */}
-        <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
+        <div className="card p-6">
           <h3 className="text-lg font-semibold text-neutral-900 mb-4 flex items-center gap-2">
             <Upload className="w-5 h-5 text-red-600" />
             Upload File
@@ -174,7 +175,7 @@ const BulkUploadPage = () => {
                 </>
               ) : (
                 <>
-                  <Upload className="w-4 h-4" />
+                  <Upload size={16} />
                   Upload
                 </>
               )}
@@ -183,7 +184,7 @@ const BulkUploadPage = () => {
         </div>
 
         {/* Download Templates */}
-        <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
+        <div className="card p-6">
           <h3 className="text-lg font-semibold text-neutral-900 mb-4 flex items-center gap-2">
             <Download className="w-5 h-5 text-red-600" />
             Download Templates
@@ -197,14 +198,14 @@ const BulkUploadPage = () => {
               onClick={() => handleDownloadTemplate('xlsx')}
               className="flex items-center gap-2 px-4 py-2 border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50"
             >
-              <FileSpreadsheet className="w-4 h-4" />
+              <FileSpreadsheet size={16} />
               Excel Template
             </button>
             <button
               onClick={() => handleDownloadTemplate('csv')}
               className="flex items-center gap-2 px-4 py-2 border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50"
             >
-              <Download className="w-4 h-4" />
+              <Download size={16} />
               CSV Template
             </button>
           </div>
@@ -213,9 +214,9 @@ const BulkUploadPage = () => {
           <div className="mt-6 pt-6 border-t border-neutral-200">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-md font-medium text-neutral-900">Upload from GCS</h4>
-              <span className={`px-2 py-1 text-xs rounded ${gcsStatus?.configured ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+              <Badge variant={gcsStatus?.configured ? 'success' : 'warning'}>
                 {gcsStatus?.configured ? 'Configured' : 'Not Configured'}
-              </span>
+              </Badge>
             </div>
 
             {gcsStatus?.configured ? (
@@ -249,7 +250,7 @@ const BulkUploadPage = () => {
 
       {/* Results */}
       {result && (
-        <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
+        <div className="card p-6">
           <h3 className="text-lg font-semibold text-neutral-900 mb-4">Upload Results</h3>
 
           <div className="grid grid-cols-3 gap-4 mb-4">
@@ -284,7 +285,7 @@ const BulkUploadPage = () => {
       )}
 
       {/* Instructions */}
-      <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
+      <div className="card p-6">
         <h3 className="text-lg font-semibold text-neutral-900 mb-4">Instructions</h3>
         <ul className="list-disc list-inside space-y-2 text-sm text-neutral-600">
           <li>Download the template for your entity type to see the required columns.</li>

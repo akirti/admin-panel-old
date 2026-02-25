@@ -163,11 +163,11 @@ const V1CustomerSuggestInput = ({
         <div
           ref={menuRef}
           style={menuStyleRef.current}
-          className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
+          className="bg-white border border-neutral-200 rounded-md shadow-lg overflow-hidden"
         >
           {/* Tag filter bar */}
           {tags.length > 0 && (
-            <div className="px-3 py-2 border-b border-gray-100 flex items-center gap-2">
+            <div className="px-3 py-2 border-b border-neutral-100 flex items-center gap-2">
               <button
                 ref={tagBtnRef}
                 type="button"
@@ -175,18 +175,18 @@ const V1CustomerSuggestInput = ({
                 className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded border transition-colors ${
                   selectedTag
                     ? 'bg-red-50 border-red-300 text-red-700'
-                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                    : 'bg-neutral-50 border-neutral-200 text-neutral-600 hover:bg-neutral-100'
                 }`}
               >
-                <Tag className="w-3 h-3" />
+                <Tag size={12} />
                 {selectedTag || 'Filter by tag'}
-                <ChevronDown className="w-3 h-3" />
+                <ChevronDown size={12} />
               </button>
               {selectedTag && (
                 <button
                   type="button"
                   onClick={() => handleTagSelect('')}
-                  className="text-xs text-gray-400 hover:text-gray-600"
+                  className="text-xs text-neutral-400 hover:text-neutral-600"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -198,26 +198,26 @@ const V1CustomerSuggestInput = ({
           <ul className="max-h-52 overflow-auto">
             {loading ? (
               <li className="px-3 py-4 text-center">
-                <div className="w-5 h-5 border-2 border-gray-200 border-t-red-600 rounded-full animate-spin mx-auto" />
+                <div className="w-5 h-5 border-2 border-neutral-200 border-t-red-600 rounded-full animate-spin mx-auto" />
               </li>
             ) : customers.length === 0 ? (
-              <li className="px-3 py-3 text-sm text-gray-400 text-center">
+              <li className="px-3 py-3 text-sm text-neutral-400 text-center">
                 {inputValue ? 'No matching customers' : 'No assigned customers'}
               </li>
             ) : (
               customers.map((cust) => (
                 <li
                   key={cust.customerId}
-                  className={`px-3 py-2 cursor-pointer text-sm hover:bg-gray-50 transition-colors ${
+                  className={`px-3 py-2 cursor-pointer text-sm hover:bg-neutral-50 transition-colors ${
                     inputValue === cust.customerId ? 'bg-red-50' : ''
                   }`}
                   onClick={() => handleSelect(cust)}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <span className="font-medium text-gray-900">{cust.customerId}</span>
+                      <span className="font-medium text-neutral-900">{cust.customerId}</span>
                       {cust.name && (
-                        <span className="text-gray-500 ml-1.5">— {cust.name}</span>
+                        <span className="text-neutral-500 ml-1.5">— {cust.name}</span>
                       )}
                     </div>
                     {getSourceBadge(cust.source)}
@@ -227,7 +227,7 @@ const V1CustomerSuggestInput = ({
                       {cust.tags.map((t) => (
                         <span
                           key={t}
-                          className="inline-flex items-center px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-500 rounded"
+                          className="inline-flex items-center px-1.5 py-0.5 text-[10px] bg-neutral-100 text-neutral-500 rounded"
                         >
                           {t}
                         </span>
@@ -249,14 +249,14 @@ const V1CustomerSuggestInput = ({
         <div
           ref={tagMenuRef}
           style={tagMenuStyleRef.current}
-          className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
+          className="bg-white border border-neutral-200 rounded-md shadow-lg overflow-hidden"
         >
           <ul className="max-h-40 overflow-auto">
             {tags.map((t) => (
               <li
                 key={t}
                 className={`px-3 py-1.5 cursor-pointer text-sm transition-colors ${
-                  selectedTag === t ? 'bg-red-50 text-red-700 font-medium' : 'hover:bg-gray-50 text-gray-700'
+                  selectedTag === t ? 'bg-red-50 text-red-700 font-medium' : 'hover:bg-neutral-50 text-neutral-700'
                 }`}
                 onClick={() => handleTagSelect(t)}
               >
@@ -272,11 +272,11 @@ const V1CustomerSuggestInput = ({
   return (
     <div className="relative w-full">
       <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
         <input
           ref={inputRef}
           type="text"
-          className="w-full pl-8 pr-8 h-10 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition-colors hover:border-gray-400"
+          className="w-full pl-8 pr-8 h-10 text-sm border border-neutral-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition-colors hover:border-neutral-400"
           placeholder={placeholder}
           value={inputValue}
           onChange={handleInputChange}
@@ -289,9 +289,9 @@ const V1CustomerSuggestInput = ({
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
           >
-            <X className="w-4 h-4" />
+            <X size={16} />
           </button>
         )}
       </div>

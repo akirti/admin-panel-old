@@ -113,16 +113,16 @@ const V1CustomDropdown = ({
         <div
           ref={menuRef}
           style={menuStyleRef.current}
-          className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
+          className="bg-white border border-neutral-200 rounded-md shadow-lg overflow-hidden"
         >
           {options.length > 5 && (
-            <div className="p-2 border-b border-gray-100">
+            <div className="p-2 border-b border-neutral-100">
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                 <input
                   ref={searchInputRef}
                   type="text"
-                  className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
+                  className="w-full pl-8 pr-3 py-1.5 text-sm border border-neutral-200 rounded focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
                   placeholder="Search..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -132,7 +132,7 @@ const V1CustomDropdown = ({
           )}
           <ul className="max-h-48 overflow-auto">
             {filteredOptions.length === 0 ? (
-              <li className="px-4 py-2 text-sm text-gray-400 select-none">
+              <li className="px-4 py-2 text-sm text-neutral-400 select-none">
                 No results found
               </li>
             ) : (
@@ -142,7 +142,7 @@ const V1CustomDropdown = ({
                   className={`px-4 py-2 cursor-pointer text-sm flex items-center justify-between transition-colors ${
                     opt.value === value
                       ? 'bg-red-50 text-red-700 font-medium'
-                      : 'hover:bg-gray-50 text-gray-700'
+                      : 'hover:bg-neutral-50 text-neutral-700'
                   }`}
                   onClick={() => handleSelect(opt.value)}
                 >
@@ -167,16 +167,16 @@ const V1CustomDropdown = ({
       <button
         ref={btnRef}
         type="button"
-        className="border border-gray-300 rounded-md h-10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white flex items-center w-full justify-between hover:border-gray-400 shadow-sm transition-colors"
+        className="border border-neutral-300 rounded-md h-10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white flex items-center w-full justify-between hover:border-neutral-400 shadow-sm transition-colors"
         onClick={handleToggle}
       >
-        <span className="truncate text-gray-900">
+        <span className="truncate text-neutral-900">
           {selected ? selected.name : placeholder}
         </span>
         {open ? (
-          <ChevronUp className="ml-2 w-4 h-4 text-gray-400 flex-shrink-0" />
+          <ChevronUp className="ml-2 w-4 h-4 text-neutral-400 flex-shrink-0" />
         ) : (
-          <ChevronDown className="ml-2 w-4 h-4 text-gray-400 flex-shrink-0" />
+          <ChevronDown className="ml-2 w-4 h-4 text-neutral-400 flex-shrink-0" />
         )}
       </button>
       {dropdownMenu}

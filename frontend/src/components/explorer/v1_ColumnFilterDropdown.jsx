@@ -81,11 +81,11 @@ const V1ColumnFilterDropdown = ({
     <div
       ref={dropdownRef}
       style={dropdownStyle}
-      className="bg-white border border-gray-200 rounded-lg shadow-lg flex flex-col"
+      className="bg-white border border-neutral-200 rounded-lg shadow-lg flex flex-col"
     >
       <div className="max-h-48 overflow-auto">
         {options.length === 0 ? (
-          <div className="px-3 py-2 text-gray-400 text-sm">No values</div>
+          <div className="px-3 py-2 text-neutral-400 text-sm">No values</div>
         ) : (
           options.map((option, idx) => {
             const key =
@@ -110,8 +110,8 @@ const V1ColumnFilterDropdown = ({
                 <span
                   className={
                     localSelected.includes(option)
-                      ? "font-medium text-gray-900"
-                      : "text-gray-600"
+                      ? "font-medium text-neutral-900"
+                      : "text-neutral-600"
                   }
                 >
                   {label}
@@ -122,11 +122,11 @@ const V1ColumnFilterDropdown = ({
         )}
       </div>
       {options.length > 0 && (
-        <div className="flex items-center justify-between border-t border-gray-100 px-3 py-2">
+        <div className="flex items-center justify-between border-t border-neutral-100 px-3 py-2">
           <button
             type="button"
             onClick={handleClear}
-            className="text-xs text-gray-500 hover:text-gray-700"
+            className="text-xs text-neutral-500 hover:text-neutral-700"
           >
             Clear
           </button>
@@ -148,8 +148,8 @@ const V1ColumnFilterDropdown = ({
         ref={triggerRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`p-0.5 rounded hover:bg-gray-200 focus:outline-none ${
-          hasActiveFilter ? "text-blue-600" : "text-gray-400"
+        className={`p-0.5 rounded hover:bg-neutral-200 focus:outline-none ${
+          hasActiveFilter ? "text-blue-600" : "text-neutral-400"
         }`}
         aria-label={`Filter ${columnLabel}`}
         title={`Filter ${columnLabel}`}

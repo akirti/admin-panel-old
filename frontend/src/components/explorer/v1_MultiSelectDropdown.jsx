@@ -138,16 +138,16 @@ const V1MultiSelectDropdown = ({
         <div
           ref={menuRef}
           style={menuStyleRef.current}
-          className="bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
+          className="bg-white border border-neutral-200 rounded-md shadow-lg overflow-hidden"
         >
           {options.length > 5 && (
-            <div className="p-2 border-b border-gray-100">
+            <div className="p-2 border-b border-neutral-100">
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                 <input
                   ref={searchInputRef}
                   type="text"
-                  className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
+                  className="w-full pl-8 pr-3 py-1.5 text-sm border border-neutral-200 rounded focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
                   placeholder="Search..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -157,7 +157,7 @@ const V1MultiSelectDropdown = ({
           )}
           <ul className="max-h-48 overflow-auto">
             {filteredOptions.length === 0 ? (
-              <li className="px-3 py-2 text-sm text-gray-400 select-none">
+              <li className="px-3 py-2 text-sm text-neutral-400 select-none">
                 No results found
               </li>
             ) : (
@@ -168,7 +168,7 @@ const V1MultiSelectDropdown = ({
                   <li
                     key={key}
                     className={`px-3 py-2 cursor-pointer flex items-center text-sm transition-colors ${
-                      isChecked ? 'bg-red-50' : 'hover:bg-gray-50'
+                      isChecked ? 'bg-red-50' : 'hover:bg-neutral-50'
                     }`}
                     onClick={() => handleOptionClick(option)}
                   >
@@ -181,8 +181,8 @@ const V1MultiSelectDropdown = ({
                     <span
                       className={
                         isChecked
-                          ? 'font-medium text-gray-900'
-                          : 'text-gray-700'
+                          ? 'font-medium text-neutral-900'
+                          : 'text-neutral-700'
                       }
                     >
                       {option.name || option.label || option.value}
@@ -193,13 +193,13 @@ const V1MultiSelectDropdown = ({
             )}
           </ul>
           {multiSelectFooter && handleToggleSelectAll && (
-            <div className="border-t border-gray-200 px-3 py-2 bg-gray-50 flex items-center">
+            <div className="border-t border-neutral-200 px-3 py-2 bg-neutral-50 flex items-center">
               <button
                 type="button"
                 onClick={handleToggleSelectAll}
                 className={`w-full px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
                   allSelected
-                    ? 'bg-white text-gray-700 hover:bg-gray-100 border-gray-300'
+                    ? 'bg-white text-neutral-700 hover:bg-neutral-100 border-neutral-300'
                     : 'bg-red-600 text-white hover:bg-red-700 border-red-600'
                 }`}
               >
@@ -215,24 +215,24 @@ const V1MultiSelectDropdown = ({
   return (
     <div className="relative w-full">
       {label && (
-        <label className="font-medium text-gray-700 mb-1 block text-sm">
+        <label className="font-medium text-neutral-700 mb-1 block text-sm">
           {label}
         </label>
       )}
       <button
         ref={btnRef}
         type="button"
-        className="border border-gray-300 rounded-md h-10 px-3 py-2 text-left bg-white flex items-center justify-between w-full hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition-colors"
+        className="border border-neutral-300 rounded-md h-10 px-3 py-2 text-left bg-white flex items-center justify-between w-full hover:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 shadow-sm transition-colors"
         onClick={handleToggle}
       >
-        <span className="flex-1 text-left text-sm text-gray-900 truncate">
+        <span className="flex-1 text-left text-sm text-neutral-900 truncate">
           {trimLabel(selectedLabel())}
         </span>
         <span className="ml-2 flex-shrink-0">
           {isOpen ? (
-            <ChevronUp className="w-4 h-4 text-gray-400" />
+            <ChevronUp className="w-4 h-4 text-neutral-400" />
           ) : (
-            <ChevronDown className="w-4 h-4 text-gray-400" />
+            <ChevronDown className="w-4 h-4 text-neutral-400" />
           )}
         </span>
       </button>

@@ -24,13 +24,13 @@ const V1DownloadModal = ({ isOpen, onClose, onDownload }) => {
       <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-neutral-900">
             Download Data
           </h3>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+            className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600"
             aria-label="Close"
           >
             <X size={20} />
@@ -39,11 +39,11 @@ const V1DownloadModal = ({ isOpen, onClose, onDownload }) => {
 
         {/* Download Type */}
         <div className="mb-5">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-neutral-700 mb-2">
             Data Range
           </label>
           <div className="flex flex-col gap-2">
-            <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">
+            <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg border border-neutral-200 hover:bg-neutral-50">
               <input
                 type="radio"
                 name="downloadType"
@@ -52,9 +52,9 @@ const V1DownloadModal = ({ isOpen, onClose, onDownload }) => {
                 onChange={() => setDownloadType("current")}
                 className="accent-blue-600 w-4 h-4"
               />
-              <span className="text-sm text-gray-700">Current Page</span>
+              <span className="text-sm text-neutral-700">Current Page</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">
+            <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg border border-neutral-200 hover:bg-neutral-50">
               <input
                 type="radio"
                 name="downloadType"
@@ -63,18 +63,18 @@ const V1DownloadModal = ({ isOpen, onClose, onDownload }) => {
                 onChange={() => setDownloadType("full")}
                 className="accent-blue-600 w-4 h-4"
               />
-              <span className="text-sm text-gray-700">Full Report</span>
+              <span className="text-sm text-neutral-700">Full Report</span>
             </label>
           </div>
         </div>
 
         {/* Format Selection */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-neutral-700 mb-2">
             Format
           </label>
           <div className="flex gap-3">
-            <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 flex-1 justify-center">
+            <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg border border-neutral-200 hover:bg-neutral-50 flex-1 justify-center">
               <input
                 type="radio"
                 name="format"
@@ -83,9 +83,9 @@ const V1DownloadModal = ({ isOpen, onClose, onDownload }) => {
                 onChange={() => setFormat("csv")}
                 className="accent-blue-600 w-4 h-4"
               />
-              <span className="text-sm text-gray-700">CSV</span>
+              <span className="text-sm text-neutral-700">CSV</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 flex-1 justify-center">
+            <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg border border-neutral-200 hover:bg-neutral-50 flex-1 justify-center">
               <input
                 type="radio"
                 name="format"
@@ -94,17 +94,17 @@ const V1DownloadModal = ({ isOpen, onClose, onDownload }) => {
                 onChange={() => setFormat("json")}
                 className="accent-blue-600 w-4 h-4"
               />
-              <span className="text-sm text-gray-700">JSON</span>
+              <span className="text-sm text-neutral-700">JSON</span>
             </label>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-4">
+        <div className="flex items-center justify-end gap-3 border-t border-neutral-100 pt-4">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+            className="px-4 py-2 text-sm font-medium text-neutral-700 bg-neutral-100 rounded-lg hover:bg-neutral-200"
           >
             Cancel
           </button>

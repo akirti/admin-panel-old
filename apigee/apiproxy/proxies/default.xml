@@ -136,6 +136,20 @@
             <Condition>(proxy.pathsuffix MatchesPath "/users") and (request.verb = "POST")</Condition>
         </Flow>
 
+        <Flow name="Users-AssignedCustomers">
+            <Description>Get current user assigned customers</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/users/me/assigned-customers") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Users-CustomerTags">
+            <Description>Get current user customer tags</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/users/me/customer-tags") and (request.verb = "GET")</Condition>
+        </Flow>
+
         <Flow name="Users-GetById">
             <Description>Get user by ID</Description>
             <Request/>
@@ -201,6 +215,20 @@
             <Condition>(proxy.pathsuffix MatchesPath "/roles/count") and (request.verb = "GET")</Condition>
         </Flow>
 
+        <Flow name="Roles-ToggleStatus">
+            <Description>Toggle role status</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/roles/*/toggle-status") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="Roles-Users">
+            <Description>Get users with a role</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/roles/*/users") and (request.verb = "GET")</Condition>
+        </Flow>
+
         <Flow name="Roles-CRUD">
             <Description>Roles CRUD operations</Description>
             <Request/>
@@ -221,6 +249,27 @@
             <Request/>
             <Response/>
             <Condition>(proxy.pathsuffix MatchesPath "/groups/count") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Groups-Types">
+            <Description>Get group types</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/groups/types") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Groups-ToggleStatus">
+            <Description>Toggle group status</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/groups/*/toggle-status") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="Groups-Users">
+            <Description>Get users in a group</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/groups/*/users") and (request.verb = "GET")</Condition>
         </Flow>
 
         <Flow name="Groups-CRUD">
@@ -250,6 +299,20 @@
             <Request/>
             <Response/>
             <Condition>(proxy.pathsuffix MatchesPath "/permissions/count") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Permissions-Roles">
+            <Description>Get roles with a permission</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/permissions/*/roles") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Permissions-Groups">
+            <Description>Get groups with a permission</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/permissions/*/groups") and (request.verb = "GET")</Condition>
         </Flow>
 
         <Flow name="Permissions-CRUD">
@@ -288,6 +351,34 @@
             <Condition>(proxy.pathsuffix MatchesPath "/domains/count") and (request.verb = "GET")</Condition>
         </Flow>
 
+        <Flow name="Domains-Types">
+            <Description>Get domain types</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/domains/types") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Domains-ToggleStatus">
+            <Description>Toggle domain status</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/domains/*/toggle-status") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="Domains-Subdomains">
+            <Description>Manage domain subdomains</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/domains/*/subdomains") or (proxy.pathsuffix MatchesPath "/domains/*/subdomains/*")</Condition>
+        </Flow>
+
+        <Flow name="Domains-Scenarios">
+            <Description>Get scenarios for a domain</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/domains/*/scenarios") and (request.verb = "GET")</Condition>
+        </Flow>
+
         <Flow name="Domains-CRUD">
             <Description>Domains CRUD operations</Description>
             <Request/>
@@ -308,6 +399,27 @@
             <Request/>
             <Response/>
             <Condition>(proxy.pathsuffix MatchesPath "/domain-scenarios/count") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="DomainScenarios-ToggleStatus">
+            <Description>Toggle domain scenario status</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/domain-scenarios/*/toggle-status") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="DomainScenarios-Subdomains">
+            <Description>Manage domain scenario subdomains</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/domain-scenarios/*/subdomains") or (proxy.pathsuffix MatchesPath "/domain-scenarios/*/subdomains/*")</Condition>
+        </Flow>
+
+        <Flow name="DomainScenarios-Playboards">
+            <Description>Get playboards for a domain scenario</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/domain-scenarios/*/playboards") and (request.verb = "GET")</Condition>
         </Flow>
 
         <Flow name="DomainScenarios-CRUD">
@@ -347,6 +459,55 @@
             <Condition>(proxy.pathsuffix MatchesPath "/ask_scenarios/all") and (request.verb = "GET")</Condition>
         </Flow>
 
+        <Flow name="AskScenarios-AdminUpdate">
+            <Description>Admin update scenario request</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ask_scenarios/*/admin") and (request.verb = "PUT")</Condition>
+        </Flow>
+
+        <Flow name="AskScenarios-StatusUpdate">
+            <Description>Update scenario request status</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ask_scenarios/*/status") and (request.verb = "PUT")</Condition>
+        </Flow>
+
+        <Flow name="AskScenarios-Files">
+            <Description>Upload files to scenario request</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ask_scenarios/*/files") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="AskScenarios-FileAccess">
+            <Description>Preview or download scenario request files</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ask_scenarios/*/files/**")</Condition>
+        </Flow>
+
+        <Flow name="AskScenarios-Buckets">
+            <Description>Upload bucket files to scenario request</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ask_scenarios/*/buckets") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="AskScenarios-Comment">
+            <Description>Add comment to scenario request</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ask_scenarios/*/comment") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="AskScenarios-Workflow">
+            <Description>Add workflow entry to scenario request</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ask_scenarios/*/workflow") and (request.verb = "POST")</Condition>
+        </Flow>
+
         <Flow name="AskScenarios-CRUD">
             <Description>Scenario requests CRUD operations</Description>
             <Request/>
@@ -374,6 +535,27 @@
             <Request/>
             <Response/>
             <Condition>(proxy.pathsuffix MatchesPath "/playboards/upload") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="Playboards-ToggleStatus">
+            <Description>Toggle playboard status</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/playboards/*/toggle-status") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="Playboards-Download">
+            <Description>Download playboard JSON</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/playboards/*/download") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Playboards-UploadById">
+            <Description>Upload JSON to update playboard</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/playboards/*/upload") and (request.verb = "PUT")</Condition>
         </Flow>
 
         <Flow name="Playboards-CRUD">
@@ -417,6 +599,20 @@
             <Request/>
             <Response/>
             <Condition>(proxy.pathsuffix MatchesPath "/configurations/gcs/status") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Configurations-Download">
+            <Description>Download configuration file</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/configurations/*/download") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Configurations-Versions">
+            <Description>Get configuration file versions</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/configurations/*/versions") and (request.verb = "GET")</Condition>
         </Flow>
 
         <Flow name="Configurations-CRUD">
@@ -531,6 +727,41 @@
             <Request/>
             <Response/>
             <Condition>(proxy.pathsuffix MatchesPath "/customers/count") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Customers-Filters">
+            <Description>Get customer filter options</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/customers/filters") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Customers-ToggleStatus">
+            <Description>Toggle customer status</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/customers/*/toggle-status") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="Customers-Users">
+            <Description>Get users assigned to a customer</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/customers/*/users") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Customers-AssignUsers">
+            <Description>Assign users to a customer</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/customers/*/assign-users") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="Customers-RemoveUsers">
+            <Description>Remove users from a customer</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/customers/*/remove-users") and (request.verb = "POST")</Condition>
         </Flow>
 
         <Flow name="Customers-CRUD">
@@ -681,6 +912,135 @@
             <Condition>(proxy.pathsuffix MatchesPath "/bulk/gcs/**")</Condition>
         </Flow>
 
+        <!-- ==================== Distribution Lists Endpoints ==================== -->
+        <Flow name="DistLists-List">
+            <Description>List distribution lists</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/distribution-lists") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="DistLists-Create">
+            <Description>Create distribution list</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/distribution-lists") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="DistLists-Types">
+            <Description>Get distribution list types</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/distribution-lists/types") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="DistLists-ByKey">
+            <Description>Get distribution list by key</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/distribution-lists/by-key/*") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="DistLists-ByType">
+            <Description>Get distribution lists by type</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/distribution-lists/by-type/*") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="DistLists-Emails">
+            <Description>Get emails by distribution list key</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/distribution-lists/emails/*") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="DistLists-ToggleStatus">
+            <Description>Toggle distribution list status</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/distribution-lists/*/toggle-status") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="DistLists-ManageEmails">
+            <Description>Add or remove emails from distribution list</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/distribution-lists/*/emails") and (request.verb = "POST" or request.verb = "DELETE")</Condition>
+        </Flow>
+
+        <Flow name="DistLists-CRUD">
+            <Description>Distribution list CRUD by ID</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/distribution-lists/*")</Condition>
+        </Flow>
+
+        <!-- ==================== Error Logs Endpoints ==================== -->
+        <Flow name="ErrorLogs-List">
+            <Description>List error logs</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/error-logs") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="ErrorLogs-Stats">
+            <Description>Get error log statistics</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/error-logs/stats") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="ErrorLogs-Levels">
+            <Description>Get available log levels</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/error-logs/levels") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="ErrorLogs-Types">
+            <Description>Get distinct error types</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/error-logs/types") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="ErrorLogs-CurrentFile">
+            <Description>Get current log file content</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/error-logs/current-file") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="ErrorLogs-ForceArchive">
+            <Description>Force archive current log file</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/error-logs/force-archive") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="ErrorLogs-Cleanup">
+            <Description>Delete old archived logs</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/error-logs/cleanup") and (request.verb = "DELETE")</Condition>
+        </Flow>
+
+        <Flow name="ErrorLogs-Archives">
+            <Description>List and manage archived log files</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/error-logs/archives") or (proxy.pathsuffix MatchesPath "/error-logs/archives/**")</Condition>
+        </Flow>
+
+        <!-- ==================== Prevail Proxy Endpoints ==================== -->
+        <Flow name="Prevail-Query">
+            <Description>Proxy query to Prevail service</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/prevail/*") and (request.verb = "POST")</Condition>
+        </Flow>
+
         <!-- ==================== Export Endpoints ==================== -->
         <Flow name="Export-Users">
             <Description>Export users data</Description>
@@ -765,6 +1125,20 @@
             <Request/>
             <Response/>
             <Condition>(proxy.pathsuffix MatchesPath "/jira/statuses") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Jira-Boards">
+            <Description>Get Jira boards/teams</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/jira/boards") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Jira-AssignableUsers">
+            <Description>Get Jira assignable users</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/jira/assignable-users") and (request.verb = "GET")</Condition>
         </Flow>
 
         <Flow name="Jira-Sync">

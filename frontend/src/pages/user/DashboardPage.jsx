@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { domainAPI, scenarioRequestAPI } from '../../services/api';
 import { Layers, FileText, Settings, ArrowRight, TrendingUp, Users, Activity, MessageSquarePlus, ClipboardList, Clock, CheckCircle } from 'lucide-react';
+import { Badge } from '../../components/shared';
 
 function DashboardPage() {
   const { user, isSuperAdmin, canManageUsers, isEditor } = useAuth();
@@ -163,13 +164,13 @@ function DashboardPage() {
                   <span className="font-mono text-sm text-red-600">{request.requestId}</span>
                   <span className="text-neutral-800">{request.name}</span>
                 </div>
-                <span className={`badge ${
-                  request.status === 'submitted' ? 'bg-blue-100 text-blue-700' :
-                  ['in-progress', 'development', 'review', 'testing'].includes(request.status) ? 'bg-yellow-100 text-yellow-700' :
-                  ['deployed', 'active', 'snapshot'].includes(request.status) ? 'bg-green-100 text-green-700' :
-                  request.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                  'bg-neutral-100 text-neutral-700'
-                }`}>
+                <Badge variant={
+                  request.status === 'submitted' ? 'info' :
+                  ['in-progress', 'development', 'review', 'testing'].includes(request.status) ? 'warning' :
+                  ['deployed', 'active', 'snapshot'].includes(request.status) ? 'success' :
+                  request.status === 'rejected' ? 'danger' :
+                  'default'
+                }>
                   {request.status === 'submitted' ? 'Submitted' :
                     request.status === 'in-progress' ? 'In Progress' :
                     request.status === 'development' ? 'Development' :
@@ -180,7 +181,7 @@ function DashboardPage() {
                     request.status === 'rejected' ? 'Rejected' :
                     request.status === 'accepted' ? 'Accepted' :
                     request.statusDescription || request.status}
-                </span>
+                </Badge>
               </Link>
             ))}
           </div>
@@ -313,9 +314,9 @@ function DashboardPage() {
             <p className="text-sm text-neutral-500 mb-2">Roles</p>
             <div className="flex flex-wrap gap-1">
               {user?.roles?.map((role) => (
-                <span key={role} className="badge badge-primary">
+                <Badge key={role} variant="primary">
                   {role}
-                </span>
+                </Badge>
               ))}
             </div>
           </div>
@@ -323,9 +324,9 @@ function DashboardPage() {
             <p className="text-sm text-neutral-500 mb-2">Groups</p>
             <div className="flex flex-wrap gap-1">
               {user?.groups?.length > 0 ? user.groups.map((group) => (
-                <span key={group} className="badge badge-success">
+                <Badge key={group} variant="success">
                   {group}
-                </span>
+                </Badge>
               )) : (
                 <span className="text-neutral-400 text-sm">None</span>
               )}
@@ -335,13 +336,13 @@ function DashboardPage() {
             <p className="text-sm text-neutral-500 mb-2">Domains Access</p>
             <div className="flex flex-wrap gap-1">
               {user?.domains?.length > 0 ? user.domains.map((domain) => (
-                <span key={domain} className="badge badge-warning">
+                <Badge key={domain} variant="warning">
                   {domain}
-                </span>
+                </Badge>
               )) : (
-                <span className="badge badge-neutral">
+                <Badge variant="default">
                   {user?.roles?.some(r => ['super-administrator', 'administrator'].includes(r)) ? 'All' : 'None'}
-                </span>
+                </Badge>
               )}
             </div>
           </div>

@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { authAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 import { User, Mail, Shield, Save, Lock, Eye, EyeOff } from 'lucide-react';
+import { Badge } from '../../components/shared';
 
 function ProfilePage() {
   const { user, updateProfile } = useAuth();
@@ -154,10 +155,10 @@ function ProfilePage() {
             </label>
             <div className="flex flex-wrap gap-2">
               {user?.roles?.map((role) => (
-                <span key={role} className="badge badge-primary flex items-center gap-1">
+                <Badge key={role} variant="primary" className="flex items-center gap-1">
                   <Shield size={12} />
                   {role}
-                </span>
+                </Badge>
               ))}
             </div>
           </div>
@@ -168,9 +169,9 @@ function ProfilePage() {
             </label>
             <div className="flex flex-wrap gap-2">
               {user?.groups?.length > 0 ? user.groups.map((group) => (
-                <span key={group} className="badge badge-success">
+                <Badge key={group} variant="success">
                   {group}
-                </span>
+                </Badge>
               )) : (
                 <span className="text-neutral-500 text-sm">No groups assigned</span>
               )}
@@ -183,13 +184,13 @@ function ProfilePage() {
             </label>
             <div className="flex flex-wrap gap-2">
               {user?.domains?.length > 0 ? user.domains.map((domain) => (
-                <span key={domain} className="badge badge-warning">
+                <Badge key={domain} variant="warning">
                   {domain}
-                </span>
+                </Badge>
               )) : (
-                <span className="badge badge-neutral">
+                <Badge variant="default">
                   {user?.roles?.some(r => ['super-administrator', 'administrator'].includes(r)) ? 'All Domains' : 'No Domains Assigned'}
-                </span>
+                </Badge>
               )}
             </div>
           </div>

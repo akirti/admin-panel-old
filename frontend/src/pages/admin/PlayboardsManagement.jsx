@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Input, Table, Modal, Badge, SearchInput, Select, Toggle, FileUpload, Pagination } from '../../components/shared';
 import { playboardsAPI, scenariosAPI, domainsAPI } from '../../services/api';
 import toast from 'react-hot-toast';
+import { Eye, Download, Pencil, Trash2, X, Plus, Upload } from 'lucide-react';
 
 const PlayboardsManagement = () => {
   const [playboards, setPlayboards] = useState([]);
@@ -854,40 +855,31 @@ const PlayboardsManagement = () => {
         <div className="flex items-center space-x-2">
           <button
             onClick={(e) => { e.stopPropagation(); handleViewDetails(item); }}
-            className="p-1 text-gray-500 hover:text-blue-600"
+            className="p-1 text-neutral-500 hover:text-blue-600"
             title="View JSON"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
+            <Eye size={16} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleDownload(item); }}
-            className="p-1 text-gray-500 hover:text-green-600"
+            className="p-1 text-neutral-500 hover:text-green-600"
             title="Download JSON"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
+            <Download size={16} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); openEditModal(item); }}
-            className="p-1 text-gray-500 hover:text-red-600"
+            className="p-1 text-neutral-500 hover:text-red-600"
             title="Edit"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
+            <Pencil size={16} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
             className="p-1 text-red-500 hover:text-red-600"
             title="Delete"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
+            <Trash2 size={16} />
           </button>
         </div>
       )
@@ -908,20 +900,16 @@ const PlayboardsManagement = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Playboards</h1>
-          <p className="text-gray-500 mt-1">Manage playboard configurations with widgets, filters, and actions</p>
+          <h1 className="text-2xl font-bold text-neutral-900">Playboards</h1>
+          <p className="text-neutral-500 mt-1">Manage playboard configurations with widgets, filters, and actions</p>
         </div>
         <div className="flex space-x-3">
           <Button variant="secondary" onClick={() => { resetUploadForm(); setUploadModalOpen(true); }}>
-            <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
+            <Upload size={16} className="mr-2" />
             Upload JSON
           </Button>
           <Button onClick={() => { resetForm(); setModalOpen(true); }}>
-            <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
+            <Plus size={16} className="mr-2" />
             Build Playboard
           </Button>
         </div>
@@ -959,7 +947,7 @@ const PlayboardsManagement = () => {
       >
         <form onSubmit={editingItem ? handleUpdate : handleCreate}>
           {/* Tabs */}
-          <div className="border-b border-gray-200 mb-4">
+          <div className="border-b border-neutral-200 mb-4">
             <nav className="flex space-x-4 overflow-x-auto">
               {tabs.map((tab) => (
                 <button
@@ -969,7 +957,7 @@ const PlayboardsManagement = () => {
                   className={`py-2 px-3 text-sm font-medium border-b-2 whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'border-red-500 text-red-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                      : 'border-transparent text-neutral-500 hover:text-neutral-700'
                   }`}
                 >
                   {tab.label}
@@ -1057,9 +1045,9 @@ const PlayboardsManagement = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Description</label>
                 <textarea
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                   rows={3}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -1069,7 +1057,7 @@ const PlayboardsManagement = () => {
 
               {/* Addon Configurations */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Addon Configurations</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Addon Configurations</label>
                 <div className="flex space-x-2 mb-2">
                   <Input
                     value={addonInput}
@@ -1099,8 +1087,8 @@ const PlayboardsManagement = () => {
             <div className="space-y-4">
               {/* Existing Filters */}
               {formData.widgets.filters.length > 0 && (
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <h4 className="font-medium text-gray-900 mb-2">Configured Filters ({formData.widgets.filters.length})</h4>
+                <div className="bg-neutral-50 rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-neutral-900 mb-2">Configured Filters ({formData.widgets.filters.length})</h4>
                   <div className="space-y-2">
                     {formData.widgets.filters.map((filter, idx) => {
                       // Handle both array and object formats for attributes (support both 'name' and 'key')
@@ -1121,7 +1109,7 @@ const PlayboardsManagement = () => {
                       <div key={idx} className={`flex items-center justify-between bg-white p-3 rounded border ${isEditing ? 'ring-2 ring-blue-500' : ''}`}>
                         <div>
                           <span className="font-medium">{filter.displayName}</span>
-                          <span className="text-gray-500 text-sm ml-2">({filter.name})</span>
+                          <span className="text-neutral-500 text-sm ml-2">({filter.name})</span>
                           <Badge variant="default" className="ml-2">
                             {getFilterType()}
                           </Badge>
@@ -1141,9 +1129,7 @@ const PlayboardsManagement = () => {
                             className="text-blue-500 hover:text-blue-700"
                             title="Edit"
                           >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
+                            <Pencil size={16} />
                           </button>
                           <button
                             type="button"
@@ -1151,9 +1137,7 @@ const PlayboardsManagement = () => {
                             className="text-red-500 hover:text-red-700"
                             title="Delete"
                           >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
+                            <X size={16} />
                           </button>
                         </div>
                       </div>
@@ -1165,7 +1149,7 @@ const PlayboardsManagement = () => {
 
               {/* Add/Edit Filter */}
               <div className={`border rounded-lg p-4 ${editingFilterIndex !== null ? 'border-blue-500 bg-blue-50' : ''}`}>
-                <h4 className="font-medium text-gray-900 mb-3">
+                <h4 className="font-medium text-neutral-900 mb-3">
                   {editingFilterIndex !== null ? `Edit Filter: ${currentFilter.displayName || currentFilter.name}` : 'Add New Filter'}
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
@@ -1227,7 +1211,7 @@ const PlayboardsManagement = () => {
                 {/* Options for Select type */}
                 {currentFilter.type === 'select' && (
                   <div className="mt-4 border-t pt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Options</label>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">Options</label>
                     <div className="flex space-x-2 mb-2">
                       <Input
                         placeholder="Value (e.g., 01)"
@@ -1242,7 +1226,7 @@ const PlayboardsManagement = () => {
                       <Button type="button" onClick={addOption} variant="secondary">Add</Button>
                     </div>
                     {currentFilter.options.length > 0 && (
-                      <div className="bg-gray-50 rounded p-2 max-h-32 overflow-y-auto">
+                      <div className="bg-neutral-50 rounded p-2 max-h-32 overflow-y-auto">
                         {currentFilter.options.map((opt, idx) => (
                           <div key={idx} className="flex items-center justify-between py-1">
                             <span className="text-sm">{opt.value} - {opt.name}</span>
@@ -1264,16 +1248,16 @@ const PlayboardsManagement = () => {
 
                 {/* Custom Attributes */}
                 <div className="mt-4 border-t pt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Custom Attributes
-                    <span className="text-gray-400 font-normal ml-2">(name-value pairs)</span>
+                    <span className="text-neutral-400 font-normal ml-2">(name-value pairs)</span>
                   </label>
                   <div className="grid grid-cols-2 gap-2 mb-2">
                     <div>
                       <input
                         list="attribute-names"
                         type="text"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                         placeholder="Name (e.g., width)"
                         value={filterAttributeInput.name}
                         onChange={(e) => setFilterAttributeInput({ ...filterAttributeInput, name: e.target.value })}
@@ -1287,7 +1271,7 @@ const PlayboardsManagement = () => {
                     <div className="flex space-x-2">
                       <input
                         type="text"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                        className="flex-1 px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                         placeholder="Value (e.g., 200px)"
                         value={filterAttributeInput.value}
                         onChange={(e) => setFilterAttributeInput({ ...filterAttributeInput, value: e.target.value })}
@@ -1296,24 +1280,22 @@ const PlayboardsManagement = () => {
                     </div>
                   </div>
                   {currentFilter.attributes.length > 0 && (
-                    <div className="bg-gray-50 rounded p-2 max-h-32 overflow-y-auto space-y-1">
+                    <div className="bg-neutral-50 rounded p-2 max-h-32 overflow-y-auto space-y-1">
                       {currentFilter.attributes.map((attr, idx) => (
                         <div key={idx} className="flex items-center justify-between bg-white p-2 rounded border text-sm">
                           <span>
-                            <span className="font-medium text-gray-700">{attr.name}</span>
+                            <span className="font-medium text-neutral-700">{attr.name}</span>
                             <span className="mx-2">:</span>
-                            <span className="text-gray-600">{typeof attr.value === 'object' ? JSON.stringify(attr.value) : attr.value}</span>
+                            <span className="text-neutral-600">{typeof attr.value === 'object' ? JSON.stringify(attr.value) : attr.value}</span>
                           </span>
                           <button type="button" onClick={() => removeFilterAttribute(idx)} className="text-red-500 hover:text-red-700">
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
+                            <X size={16} />
                           </button>
                         </div>
                       ))}
                     </div>
                   )}
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-neutral-500 mt-1">
                     All filter attributes are shown here. Standard attributes (type, defaultValue, regex, options) are also editable via the form fields above.
                   </p>
                 </div>
@@ -1346,8 +1328,8 @@ const PlayboardsManagement = () => {
             <div className="space-y-4">
               {/* Existing Actions */}
               {(formData.widgets?.grid?.actions?.rowActions?.events?.length || 0) > 0 && (
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <h4 className="font-medium text-gray-900 mb-2">Configured Row Actions ({formData.widgets?.grid?.actions?.rowActions?.events?.length || 0})</h4>
+                <div className="bg-neutral-50 rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-neutral-900 mb-2">Configured Row Actions ({formData.widgets?.grid?.actions?.rowActions?.events?.length || 0})</h4>
                   <div className="space-y-2">
                     {(formData.widgets?.grid?.actions?.rowActions?.events || []).map((action, idx) => {
                       const isEditing = editingRowActionIndex === idx;
@@ -1356,8 +1338,8 @@ const PlayboardsManagement = () => {
                         <div className="flex items-center justify-between">
                           <div>
                             <span className="font-medium">{action.name}</span>
-                            <span className="text-gray-500 text-sm ml-2">({action.key})</span>
-                            <span className="text-gray-500 text-sm ml-2">-&gt; {action.path}</span>
+                            <span className="text-neutral-500 text-sm ml-2">({action.key})</span>
+                            <span className="text-neutral-500 text-sm ml-2">-&gt; {action.path}</span>
                             <Badge variant={action.status === 'active' ? 'success' : 'danger'} className="ml-2">
                               {action.status === 'active' ? 'Active' : 'Inactive'}
                             </Badge>
@@ -1375,9 +1357,7 @@ const PlayboardsManagement = () => {
                               className="text-blue-500 hover:text-blue-700"
                               title="Edit"
                             >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
+                              <Pencil size={16} />
                             </button>
                             <button
                               type="button"
@@ -1385,14 +1365,12 @@ const PlayboardsManagement = () => {
                               className="text-red-500 hover:text-red-700"
                               title="Delete"
                             >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
+                              <X size={16} />
                             </button>
                           </div>
                         </div>
                         {action.filters && action.filters.length > 0 && (
-                          <div className="mt-2 pt-2 border-t text-xs text-gray-500">
+                          <div className="mt-2 pt-2 border-t text-xs text-neutral-500">
                             {action.filters.map((f, i) => (
                               <span key={i} className="mr-3">
                                 {f.inputKey} -&gt; {f.dataKey}
@@ -1409,7 +1387,7 @@ const PlayboardsManagement = () => {
 
               {/* Add/Edit Action */}
               <div className={`border rounded-lg p-4 ${editingRowActionIndex !== null ? 'border-blue-500 bg-blue-50' : ''}`}>
-                <h4 className="font-medium text-gray-900 mb-3">
+                <h4 className="font-medium text-neutral-900 mb-3">
                   {editingRowActionIndex !== null ? `Edit Row Action: ${currentRowAction.name}` : 'Add New Row Action'}
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
@@ -1459,7 +1437,7 @@ const PlayboardsManagement = () => {
 
                 {/* Action Filters */}
                 <div className="mt-4 border-t pt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Filters (maps row data to navigation params)
                   </label>
                   <div className="flex space-x-2 mb-2">
@@ -1476,13 +1454,13 @@ const PlayboardsManagement = () => {
                     <Button type="button" onClick={addActionFilter} variant="secondary">Add</Button>
                   </div>
                   {currentRowAction.filters.length > 0 && (
-                    <div className="bg-gray-50 rounded p-2 space-y-1">
+                    <div className="bg-neutral-50 rounded p-2 space-y-1">
                       {currentRowAction.filters.map((filter, idx) => (
                         <div key={idx} className="flex items-center justify-between bg-white p-2 rounded border text-sm">
                           <span>
-                            <span className="text-gray-500">inputKey:</span> <span className="font-medium">{filter.inputKey}</span>
+                            <span className="text-neutral-500">inputKey:</span> <span className="font-medium">{filter.inputKey}</span>
                             <span className="mx-2">-&gt;</span>
-                            <span className="text-gray-500">dataKey:</span> <span className="font-medium">{filter.dataKey}</span>
+                            <span className="text-neutral-500">dataKey:</span> <span className="font-medium">{filter.dataKey}</span>
                           </span>
                           <button type="button" onClick={() => removeActionFilter(idx)} className="text-red-500 hover:text-red-700">x</button>
                         </div>
@@ -1596,7 +1574,7 @@ const PlayboardsManagement = () => {
 
               {/* Pagination Widget Settings */}
               <div className="border-t pt-4 mt-4">
-                <h4 className="font-medium text-gray-900 mb-3">Pagination Widget</h4>
+                <h4 className="font-medium text-neutral-900 mb-3">Pagination Widget</h4>
                 {(() => {
                   const paginationItem = formData.widgets?.pagination?.[0] || {
                     name: 'pagination_limit',
@@ -1710,14 +1688,14 @@ const PlayboardsManagement = () => {
                       {/* Show all pagination attributes */}
                       {paginationItem.attributes && paginationItem.attributes.length > 0 && (
                         <div className="mt-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">All Attributes</label>
-                          <div className="bg-gray-50 rounded p-2 max-h-32 overflow-y-auto space-y-1">
+                          <label className="block text-sm font-medium text-neutral-700 mb-2">All Attributes</label>
+                          <div className="bg-neutral-50 rounded p-2 max-h-32 overflow-y-auto space-y-1">
                             {paginationItem.attributes.map((attr, idx) => (
                               <div key={idx} className="flex items-center justify-between bg-white p-2 rounded border text-sm">
                                 <span>
-                                  <span className="font-medium text-gray-700">{attr.name || attr.key}</span>
+                                  <span className="font-medium text-neutral-700">{attr.name || attr.key}</span>
                                   <span className="mx-2">:</span>
-                                  <span className="text-gray-600">{typeof attr.value === 'object' ? JSON.stringify(attr.value) : attr.value}</span>
+                                  <span className="text-neutral-600">{typeof attr.value === 'object' ? JSON.stringify(attr.value) : attr.value}</span>
                                 </span>
                               </div>
                             ))}
@@ -1736,23 +1714,21 @@ const PlayboardsManagement = () => {
             <div className="space-y-4">
               {/* Existing Descriptions */}
               {formData.scenarioDescription.length > 0 && (
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <h4 className="font-medium text-gray-900 mb-2">Scenario Description Items</h4>
+                <div className="bg-neutral-50 rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-neutral-900 mb-2">Scenario Description Items</h4>
                   <div className="space-y-2">
                     {formData.scenarioDescription.map((desc, idx) => (
                       <div key={idx} className="flex items-center justify-between bg-white p-3 rounded border">
                         <div>
                           <Badge variant="default" className="mr-2">{desc.type}</Badge>
-                          <span className="text-gray-700">{desc.text || '(empty)'}</span>
+                          <span className="text-neutral-700">{desc.text || '(empty)'}</span>
                         </div>
                         <button
                           type="button"
                           onClick={() => removeDescription(idx)}
                           className="text-red-500 hover:text-red-700"
                         >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
+                          <X size={16} />
                         </button>
                       </div>
                     ))}
@@ -1762,7 +1738,7 @@ const PlayboardsManagement = () => {
 
               {/* Add New Description */}
               <div className="border rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 mb-3">Add Description Element</h4>
+                <h4 className="font-medium text-neutral-900 mb-3">Add Description Element</h4>
                 <div className="grid grid-cols-4 gap-4">
                   <Select
                     label="Type"
@@ -1803,7 +1779,7 @@ const PlayboardsManagement = () => {
           {/* JSON Preview Tab */}
           {activeTab === 'json' && (
             <div>
-              <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-auto max-h-96 text-xs">
+              <pre className="bg-neutral-900 text-green-400 p-4 rounded-lg overflow-auto max-h-96 text-xs">
                 {JSON.stringify({
                   key: formData.key,
                   dataDomain: formData.dataDomain,
@@ -1841,7 +1817,7 @@ const PlayboardsManagement = () => {
       >
         <form onSubmit={handleFileUpload} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">JSON File *</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">JSON File *</label>
             <FileUpload
               accept=".json"
               label="Select playboard JSON file"
@@ -1871,9 +1847,9 @@ const PlayboardsManagement = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Description (optional)</label>
             <textarea
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
               rows={2}
               value={uploadDescription}
               onChange={(e) => setUploadDescription(e.target.value)}
@@ -1884,33 +1860,33 @@ const PlayboardsManagement = () => {
           {/* JSON Preview */}
           {jsonPreview && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">JSON Preview</label>
-              <div className="bg-gray-50 rounded-lg p-4 border">
+              <label className="block text-sm font-medium text-neutral-700 mb-2">JSON Preview</label>
+              <div className="bg-neutral-50 rounded-lg p-4 border">
                 <div className="grid grid-cols-2 gap-4 text-sm mb-3">
                   <div>
-                    <span className="text-gray-500">Key:</span>{' '}
+                    <span className="text-neutral-500">Key:</span>{' '}
                     <span className="font-medium">{jsonPreview.key || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Scenario:</span>{' '}
+                    <span className="text-neutral-500">Scenario:</span>{' '}
                     <span className="font-medium">{jsonPreview.scenarioKey || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Data Domain:</span>{' '}
+                    <span className="text-neutral-500">Data Domain:</span>{' '}
                     <span className="font-medium">{jsonPreview.dataDomain || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Status:</span>{' '}
+                    <span className="text-neutral-500">Status:</span>{' '}
                     <Badge variant={jsonPreview.status === 'active' ? 'success' : 'danger'}>
                       {jsonPreview.status === 'active' ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
                   <div>
-                    <span className="text-gray-500">Filters:</span>{' '}
+                    <span className="text-neutral-500">Filters:</span>{' '}
                     <Badge variant="primary">{jsonPreview.widgets?.filters?.length || 0}</Badge>
                   </div>
                   <div>
-                    <span className="text-gray-500">Row Actions:</span>{' '}
+                    <span className="text-neutral-500">Row Actions:</span>{' '}
                     <Badge variant="success">{jsonPreview.widgets?.grid?.actions?.rowActions?.events?.length || 0}</Badge>
                   </div>
                 </div>
@@ -1918,7 +1894,7 @@ const PlayboardsManagement = () => {
                   <summary className="cursor-pointer text-sm text-red-600 hover:text-red-700">
                     View Full JSON
                   </summary>
-                  <pre className="mt-2 bg-gray-900 text-green-400 p-3 rounded text-xs overflow-auto max-h-48">
+                  <pre className="mt-2 bg-neutral-900 text-green-400 p-3 rounded text-xs overflow-auto max-h-48">
                     {JSON.stringify(jsonPreview, null, 2)}
                   </pre>
                 </details>
@@ -1965,10 +1941,10 @@ const PlayboardsManagement = () => {
         {selectedPlayboard && (
           <div>
             <div className="mb-4">
-              <h3 className="font-medium text-gray-900">{selectedPlayboard.name}</h3>
-              <p className="text-gray-500 text-sm">{selectedPlayboard.description}</p>
+              <h3 className="font-medium text-neutral-900">{selectedPlayboard.name}</h3>
+              <p className="text-neutral-500 text-sm">{selectedPlayboard.description}</p>
             </div>
-            <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-auto max-h-[60vh] text-xs">
+            <pre className="bg-neutral-900 text-green-400 p-4 rounded-lg overflow-auto max-h-[60vh] text-xs">
               {JSON.stringify(selectedPlayboard.data || selectedPlayboard, null, 2)}
             </pre>
             <div className="flex justify-end mt-4">

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { MessageSquare, Star, Search, Mail, Calendar, User, Globe, Eye, X, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { feedbackAPI } from '../../services/api';
+import { Modal } from '../../components/shared';
 
 const FeedbackManagement = () => {
   const [feedbackList, setFeedbackList] = useState([]);
@@ -74,15 +75,16 @@ const FeedbackManagement = () => {
     setPagination((prev) => ({ ...prev, page: 0 }));
   };
 
-  const renderStars = (rating, size = 'w-4 h-4') => {
+  const renderStars = (rating, iconSize = 16) => {
     return (
       <div className="flex gap-0.5">
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`${size} ${
+            size={iconSize}
+            className={
               star <= rating ? 'fill-amber-400 text-amber-400' : 'text-neutral-300'
-            }`}
+            }
           />
         ))}
       </div>
@@ -112,10 +114,10 @@ const FeedbackManagement = () => {
       {/* Statistics */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-4">
+          <div className="card">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-100 rounded-lg">
-                <MessageSquare className="w-5 h-5 text-amber-600" />
+                <MessageSquare size={20} className="text-amber-600" />
               </div>
               <div>
                 <div className="text-sm text-neutral-500">Total Feedback</div>
@@ -123,10 +125,10 @@ const FeedbackManagement = () => {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-4">
+          <div className="card">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-yellow-100 rounded-lg">
-                <Star className="w-5 h-5 text-yellow-600" />
+                <Star size={20} className="text-yellow-600" />
               </div>
               <div>
                 <div className="text-sm text-neutral-500">Average Rating</div>
@@ -135,10 +137,10 @@ const FeedbackManagement = () => {
             </div>
             <div className="mt-2">{renderStars(Math.round(stats.avg_rating))}</div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-4">
+          <div className="card">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-100 rounded-lg">
-                <Calendar className="w-5 h-5 text-green-600" />
+                <Calendar size={20} className="text-green-600" />
               </div>
               <div>
                 <div className="text-sm text-neutral-500">This Week</div>
@@ -146,10 +148,10 @@ const FeedbackManagement = () => {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-4">
+          <div className="card">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-lg">
-                <Star className="w-5 h-5 text-blue-600" />
+                <Star size={20} className="text-blue-600" />
               </div>
               <div>
                 <div className="text-sm text-neutral-500">Rating Distribution</div>
@@ -168,11 +170,11 @@ const FeedbackManagement = () => {
       )}
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-4">
+      <div className="card">
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400" />
+            <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" />
             <input
               type="text"
               value={search}
@@ -184,7 +186,7 @@ const FeedbackManagement = () => {
 
           {/* Rating Filter */}
           <div className="relative sm:w-48">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400" />
+            <Filter size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" />
             <select
               value={ratingFilter}
               onChange={handleRatingFilter}
@@ -205,7 +207,7 @@ const FeedbackManagement = () => {
               onClick={clearFilters}
               className="px-4 py-2 text-sm text-neutral-600 hover:text-neutral-800 hover:bg-neutral-100 rounded-lg transition-colors flex items-center gap-1"
             >
-              <X className="w-4 h-4" />
+              <X size={16} />
               Clear
             </button>
           )}
@@ -213,7 +215,7 @@ const FeedbackManagement = () => {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
+      <div className="card overflow-hidden p-0">
         {loading ? (
           <div className="flex items-center justify-center h-48">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
@@ -221,48 +223,48 @@ const FeedbackManagement = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-neutral-200">
-              <thead className="bg-neutral-50">
-                <tr>
+              <thead>
+                <tr className="table-header">
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100"
+                    className="px-6 py-3 text-left cursor-pointer hover:bg-neutral-100"
                     onClick={() => handleSort('email')}
                   >
                     <div className="flex items-center gap-1">
-                      <Mail className="w-4 h-4" />
+                      <Mail size={16} />
                       Email
                       {sortBy === 'email' && <span>{sortOrder === 'desc' ? '↓' : '↑'}</span>}
                     </div>
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100"
+                    className="px-6 py-3 text-left cursor-pointer hover:bg-neutral-100"
                     onClick={() => handleSort('rating')}
                   >
                     <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4" />
+                      <Star size={16} />
                       Rating
                       {sortBy === 'rating' && <span>{sortOrder === 'desc' ? '↓' : '↑'}</span>}
                     </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left">
                     Improvements
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left">
                     Suggestions
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left">
                     Type
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100"
+                    className="px-6 py-3 text-left cursor-pointer hover:bg-neutral-100"
                     onClick={() => handleSort('createdAt')}
                   >
                     <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
+                      <Calendar size={16} />
                       Date
                       {sortBy === 'createdAt' && <span>{sortOrder === 'desc' ? '↓' : '↑'}</span>}
                     </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left">
                     Actions
                   </th>
                 </tr>
@@ -298,12 +300,12 @@ const FeedbackManagement = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {feedback.is_public ? (
                           <span className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">
-                            <Globe className="w-3 h-3" />
+                            <Globe size={12} />
                             Public
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-green-100 text-green-800">
-                            <User className="w-3 h-3" />
+                            <User size={12} />
                             User
                           </span>
                         )}
@@ -316,7 +318,7 @@ const FeedbackManagement = () => {
                           onClick={() => handleViewFeedback(feedback)}
                           className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
                         >
-                          <Eye className="w-4 h-4" />
+                          <Eye size={16} />
                           View
                         </button>
                       </td>
@@ -363,7 +365,7 @@ const FeedbackManagement = () => {
                   className="p-1.5 border border-neutral-300 rounded text-sm disabled:opacity-50 hover:bg-white disabled:hover:bg-transparent"
                   title="First page"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft size={16} />
                   <ChevronLeft className="w-4 h-4 -ml-3" />
                 </button>
                 <button
@@ -372,7 +374,7 @@ const FeedbackManagement = () => {
                   className="p-1.5 border border-neutral-300 rounded text-sm disabled:opacity-50 hover:bg-white disabled:hover:bg-transparent"
                   title="Previous page"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft size={16} />
                 </button>
 
                 <span className="px-3 py-1 text-sm text-neutral-700">
@@ -386,7 +388,7 @@ const FeedbackManagement = () => {
                   className="p-1.5 border border-neutral-300 rounded text-sm disabled:opacity-50 hover:bg-white disabled:hover:bg-transparent"
                   title="Next page"
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight size={16} />
                 </button>
                 <button
                   onClick={() => handlePageChange(pagination.pages - 1)}
@@ -394,7 +396,7 @@ const FeedbackManagement = () => {
                   className="p-1.5 border border-neutral-300 rounded text-sm disabled:opacity-50 hover:bg-white disabled:hover:bg-transparent"
                   title="Last page"
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight size={16} />
                   <ChevronRight className="w-4 h-4 -ml-3" />
                 </button>
               </div>
@@ -404,96 +406,82 @@ const FeedbackManagement = () => {
       </div>
 
       {/* Feedback Detail Modal */}
-      {detailModalOpen && selectedFeedback && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-neutral-200">
-              <h2 className="text-xl font-semibold text-neutral-900">Feedback Details</h2>
-              <button
-                onClick={closeDetailModal}
-                className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-neutral-500" />
-              </button>
+      <Modal isOpen={detailModalOpen && !!selectedFeedback} onClose={closeDetailModal} title="Feedback Details" size="lg">
+        {selectedFeedback && (
+          <div className="space-y-6">
+            {/* Email and Type */}
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Mail size={20} className="text-neutral-400" />
+                <span className="text-neutral-900 font-medium">{selectedFeedback.email}</span>
+              </div>
+              {selectedFeedback.is_public ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                  <Globe size={12} />
+                  Public Submission
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                  <User size={12} />
+                  Authenticated User
+                </span>
+              )}
             </div>
 
-            {/* Modal Body */}
-            <div className="p-6 space-y-6">
-              {/* Email and Type */}
-              <div className="flex flex-wrap items-center gap-4">
+            {/* Rating */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-500 mb-2">Rating</label>
+              {selectedFeedback.rating ? (
                 <div className="flex items-center gap-2">
-                  <Mail className="w-5 h-5 text-neutral-400" />
-                  <span className="text-neutral-900 font-medium">{selectedFeedback.email}</span>
+                  {renderStars(selectedFeedback.rating, 24)}
+                  <span className="text-lg font-semibold text-neutral-900">{selectedFeedback.rating}/5</span>
                 </div>
-                {selectedFeedback.is_public ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                    <Globe className="w-3 h-3" />
-                    Public Submission
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                    <User className="w-3 h-3" />
-                    Authenticated User
-                  </span>
-                )}
-              </div>
+              ) : (
+                <span className="text-neutral-400">No rating provided</span>
+              )}
+            </div>
 
-              {/* Rating */}
-              <div>
-                <label className="block text-sm font-medium text-neutral-500 mb-2">Rating</label>
-                {selectedFeedback.rating ? (
-                  <div className="flex items-center gap-2">
-                    {renderStars(selectedFeedback.rating, 'w-6 h-6')}
-                    <span className="text-lg font-semibold text-neutral-900">{selectedFeedback.rating}/5</span>
-                  </div>
-                ) : (
-                  <span className="text-neutral-400">No rating provided</span>
-                )}
-              </div>
-
-              {/* Improvements */}
-              <div>
-                <label className="block text-sm font-medium text-neutral-500 mb-2">Areas for Improvement</label>
-                <div className="bg-neutral-50 rounded-lg p-4 text-neutral-700">
-                  {selectedFeedback.improvements || <span className="text-neutral-400 italic">No improvements provided</span>}
-                </div>
-              </div>
-
-              {/* Suggestions */}
-              <div>
-                <label className="block text-sm font-medium text-neutral-500 mb-2">Suggestions</label>
-                <div className="bg-neutral-50 rounded-lg p-4 text-neutral-700">
-                  {selectedFeedback.suggestions || <span className="text-neutral-400 italic">No suggestions provided</span>}
-                </div>
-              </div>
-
-              {/* Metadata */}
-              <div className="flex flex-wrap gap-6 pt-4 border-t border-neutral-200">
-                <div>
-                  <label className="block text-xs font-medium text-neutral-400 mb-1">Submitted On</label>
-                  <div className="flex items-center gap-1 text-sm text-neutral-600">
-                    <Calendar className="w-4 h-4" />
-                    {selectedFeedback.createdAt}
-                  </div>
-                </div>
-                {selectedFeedback.user_id && (
-                  <div>
-                    <label className="block text-xs font-medium text-neutral-400 mb-1">User ID</label>
-                    <span className="text-sm text-neutral-600 font-mono">{selectedFeedback.user_id}</span>
-                  </div>
-                )}
-                {selectedFeedback._id && (
-                  <div>
-                    <label className="block text-xs font-medium text-neutral-400 mb-1">Feedback ID</label>
-                    <span className="text-sm text-neutral-600 font-mono">{selectedFeedback._id}</span>
-                  </div>
-                )}
+            {/* Improvements */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-500 mb-2">Areas for Improvement</label>
+              <div className="bg-neutral-50 rounded-lg p-4 text-neutral-700">
+                {selectedFeedback.improvements || <span className="text-neutral-400 italic">No improvements provided</span>}
               </div>
             </div>
 
-            {/* Modal Footer */}
-            <div className="flex justify-end p-6 border-t border-neutral-200">
+            {/* Suggestions */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-500 mb-2">Suggestions</label>
+              <div className="bg-neutral-50 rounded-lg p-4 text-neutral-700">
+                {selectedFeedback.suggestions || <span className="text-neutral-400 italic">No suggestions provided</span>}
+              </div>
+            </div>
+
+            {/* Metadata */}
+            <div className="flex flex-wrap gap-6 pt-4 border-t border-neutral-200">
+              <div>
+                <label className="block text-xs font-medium text-neutral-400 mb-1">Submitted On</label>
+                <div className="flex items-center gap-1 text-sm text-neutral-600">
+                  <Calendar size={16} />
+                  {selectedFeedback.createdAt}
+                </div>
+              </div>
+              {selectedFeedback.user_id && (
+                <div>
+                  <label className="block text-xs font-medium text-neutral-400 mb-1">User ID</label>
+                  <span className="text-sm text-neutral-600 font-mono">{selectedFeedback.user_id}</span>
+                </div>
+              )}
+              {selectedFeedback._id && (
+                <div>
+                  <label className="block text-xs font-medium text-neutral-400 mb-1">Feedback ID</label>
+                  <span className="text-sm text-neutral-600 font-mono">{selectedFeedback._id}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end pt-4 border-t border-neutral-200">
               <button
                 onClick={closeDetailModal}
                 className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-lg transition-colors"
@@ -502,8 +490,8 @@ const FeedbackManagement = () => {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 };

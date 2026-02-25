@@ -126,7 +126,7 @@ function LucideIconPicker({ onChange, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded"
+            className="p-1 hover:bg-neutral-100 rounded"
           >
             <X size={20} />
           </button>
@@ -135,7 +135,7 @@ function LucideIconPicker({ onChange, onClose }) {
         {/* Search and Color */}
         <div className="p-4 border-b space-y-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
             <input
               type="text"
               value={searchTerm}
@@ -147,7 +147,7 @@ function LucideIconPicker({ onChange, onClose }) {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">Color:</span>
+            <span className="text-sm text-neutral-600">Color:</span>
             <div className="flex gap-1">
               {colorPresets.map((color) => (
                 <button
@@ -156,8 +156,8 @@ function LucideIconPicker({ onChange, onClose }) {
                   onClick={() => setSelectedColor(color.value)}
                   className={`w-6 h-6 rounded-full border-2 transition-all ${
                     selectedColor === color.value
-                      ? 'border-gray-800 ring-2 ring-offset-1 ring-gray-400'
-                      : 'border-gray-200 hover:border-gray-400'
+                      ? 'border-neutral-800 ring-2 ring-offset-1 ring-neutral-400'
+                      : 'border-neutral-200 hover:border-neutral-400'
                   }`}
                   style={{ backgroundColor: color.value }}
                   title={color.name}
@@ -177,7 +177,7 @@ function LucideIconPicker({ onChange, onClose }) {
         {/* Icons Grid */}
         <div className="flex-1 overflow-y-auto p-4">
           {filteredIcons.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-neutral-500">
               <p>No icons found for "{searchTerm}"</p>
               <p className="text-sm mt-2">Try searching for: home, user, settings, mail, star, etc.</p>
             </div>
@@ -193,7 +193,7 @@ function LucideIconPicker({ onChange, onClose }) {
                     type="button"
                     data-icon-name={iconName}
                     onClick={() => handleSelectIcon(iconName)}
-                    className="flex flex-col items-center p-2 rounded-lg hover:bg-gray-100 transition-colors group border border-transparent hover:border-gray-200"
+                    className="flex flex-col items-center p-2 rounded-lg hover:bg-neutral-100 transition-colors group border border-transparent hover:border-neutral-200"
                     title={`Select ${iconName}`}
                   >
                     <div
@@ -202,7 +202,7 @@ function LucideIconPicker({ onChange, onClose }) {
                     >
                       {icon}
                     </div>
-                    <span className="text-[10px] text-gray-500 mt-1 truncate w-full text-center group-hover:text-gray-700">
+                    <span className="text-[10px] text-neutral-500 mt-1 truncate w-full text-center group-hover:text-neutral-700">
                       {iconName.length > 10 ? iconName.slice(0, 9) + '…' : iconName}
                     </span>
                   </button>
@@ -213,7 +213,7 @@ function LucideIconPicker({ onChange, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="p-3 border-t bg-gray-50 text-sm text-gray-500 flex justify-between items-center">
+        <div className="p-3 border-t bg-neutral-50 text-sm text-neutral-500 flex justify-between items-center">
           <span>
             {searchTerm
               ? `${filteredIcons.length} icons matching "${searchTerm}"`

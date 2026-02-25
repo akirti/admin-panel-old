@@ -5,6 +5,7 @@ import {
   Users, Search, ChevronLeft, ChevronRight, Plus, Edit2,
   Power, Trash2, X, Key, Download, FileDown, Filter
 } from 'lucide-react';
+import { Badge, Modal } from '../../components/shared';
 
 const UsersManagement = () => {
   const [users, setUsers] = useState([]);
@@ -222,7 +223,7 @@ const UsersManagement = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-800">Users</h1>
+          <h1 className="text-2xl font-bold text-neutral-900">Users</h1>
           <p className="text-neutral-500 mt-1">Manage user accounts and access</p>
         </div>
         <div className="flex items-center gap-2">
@@ -337,17 +338,17 @@ const UsersManagement = () => {
                       <td className="py-3 px-4">
                         <div className="flex flex-wrap gap-1">
                           {(user.roles || []).slice(0, 2).map((r) => (
-                            <span key={r} className="badge badge-primary">{r}</span>
+                            <Badge key={r} variant="primary">{r}</Badge>
                           ))}
                           {(user.roles || []).length > 2 && (
-                            <span className="badge badge-neutral">+{user.roles.length - 2}</span>
+                            <Badge variant="default">+{user.roles.length - 2}</Badge>
                           )}
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <span className={`badge ${user.is_active ? 'badge-success' : 'bg-red-100 text-red-700'}`}>
+                        <Badge variant={user.is_active ? 'success' : 'danger'}>
                           {user.is_active ? 'Active' : 'Inactive'}
-                        </span>
+                        </Badge>
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-1">
@@ -421,18 +422,7 @@ const UsersManagement = () => {
       </div>
 
       {/* User Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-neutral-200">
-              <h3 className="text-xl font-semibold text-neutral-800">
-                {editingUser ? 'Edit User' : 'Add User'}
-              </h3>
-              <button onClick={() => { setModalOpen(false); resetForm(); }} className="p-2 hover:bg-neutral-100 rounded-lg text-neutral-500">
-                <X size={20} />
-              </button>
-            </div>
-
+      <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); resetForm(); }} title={editingUser ? 'Edit User' : 'Add User'} size="xl">
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -658,9 +648,7 @@ const UsersManagement = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 };

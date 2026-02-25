@@ -936,7 +936,7 @@ function AskScenarioPage() {
             )}
 
             <div className="border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center hover:border-red-300 transition-colors">
-              <FileUp className="mx-auto text-neutral-400 mb-3" size={40} />
+              <FileUp className="mx-auto text-neutral-400 mb-3" size={48} />
               <p className="text-sm text-neutral-600 mb-3">
                 {isEditMode ? 'Add more files' : 'Drag and drop files here, or click to browse'}
               </p>

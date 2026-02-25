@@ -17,6 +17,7 @@ import {
   Link2,
   Filter,
 } from 'lucide-react';
+import { Modal } from '../../components/shared';
 
 const PermissionsManagement = () => {
   const { isSuperAdmin } = useAuth();
@@ -253,9 +254,9 @@ const PermissionsManagement = () => {
   if (!isSuperAdmin()) {
     return (
       <div className="text-center py-12">
-        <Shield className="mx-auto text-gray-400 mb-4" size={48} />
-        <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
-        <p className="text-gray-500">Only Super Administrators can access this page.</p>
+        <Shield className="mx-auto text-neutral-400 mb-4" size={48} />
+        <h2 className="text-xl font-semibold text-neutral-800 mb-2">Access Denied</h2>
+        <p className="text-neutral-500">Only Super Administrators can access this page.</p>
       </div>
     );
   }
@@ -265,8 +266,8 @@ const PermissionsManagement = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Permissions Management</h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-neutral-900">Permissions Management</h1>
+          <p className="text-neutral-500 text-sm mt-1">
             Manage granular system permissions by module ({total} total)
           </p>
         </div>
@@ -284,7 +285,7 @@ const PermissionsManagement = () => {
               className="hidden absolute right-0 mt-1 bg-white border rounded-lg shadow-lg z-10"
             >
               <button
-                className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+                className="block w-full px-4 py-2 text-left hover:bg-neutral-100"
                 onClick={() => {
                   handleExport('csv');
                   document.getElementById('export-menu-perms').classList.add('hidden');
@@ -293,7 +294,7 @@ const PermissionsManagement = () => {
                 Export as CSV
               </button>
               <button
-                className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+                className="block w-full px-4 py-2 text-left hover:bg-neutral-100"
                 onClick={() => {
                   handleExport('json');
                   document.getElementById('export-menu-perms').classList.add('hidden');
@@ -333,9 +334,9 @@ const PermissionsManagement = () => {
               className="card p-4 cursor-pointer hover:border-blue-300"
               onClick={() => setModuleFilter(module)}
             >
-              <div className="text-sm text-gray-500">{module}</div>
-              <div className="text-2xl font-bold text-gray-900">{perms.length}</div>
-              <div className="text-xs text-gray-400">permissions</div>
+              <div className="text-sm text-neutral-500">{module}</div>
+              <div className="text-2xl font-bold text-neutral-900">{perms.length}</div>
+              <div className="text-xs text-neutral-400">permissions</div>
             </div>
           ))}
         </div>
@@ -345,7 +346,7 @@ const PermissionsManagement = () => {
       <div className="card">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
             <input
               type="text"
               placeholder="Search permissions by key or name..."
@@ -355,7 +356,7 @@ const PermissionsManagement = () => {
             />
           </div>
           <div className="relative flex items-center gap-2">
-            <Filter size={16} className="text-gray-400" />
+            <Filter size={16} className="text-neutral-400" />
             <select
               className="input"
               value={moduleFilter}
@@ -386,47 +387,35 @@ const PermissionsManagement = () => {
       {/* Permissions Table */}
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading permissions...</div>
+          <div className="p-8 text-center text-neutral-500">Loading permissions...</div>
         ) : permissions.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
+          <div className="p-8 text-center text-neutral-500">
             No permissions found. Click "Add Permission" to create one.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Key
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Name
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Module
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Actions
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Created
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                    Manage
-                  </th>
+              <thead>
+                <tr className="table-header">
+                  <th className="px-4 py-3 text-left">Key</th>
+                  <th className="px-4 py-3 text-left">Name</th>
+                  <th className="px-4 py-3 text-left">Module</th>
+                  <th className="px-4 py-3 text-left">Actions</th>
+                  <th className="px-4 py-3 text-left">Created</th>
+                  <th className="px-4 py-3 text-right">Manage</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {permissions.map((permission) => (
-                  <tr key={permission._id || permission.key} className="hover:bg-gray-50">
+                  <tr key={permission._id || permission.key} className="hover:bg-neutral-50">
                     <td className="px-4 py-3">
-                      <span className="font-mono text-sm text-gray-600">{permission.key}</span>
+                      <span className="font-mono text-sm text-neutral-600">{permission.key}</span>
                     </td>
                     <td className="px-4 py-3">
                       <div>
-                        <div className="font-medium text-gray-800">{permission.name}</div>
+                        <div className="font-medium text-neutral-800">{permission.name}</div>
                         {permission.description && (
-                          <div className="text-xs text-gray-500 truncate max-w-xs">
+                          <div className="text-xs text-neutral-500 truncate max-w-xs">
                             {permission.description}
                           </div>
                         )}
@@ -448,14 +437,14 @@ const PermissionsManagement = () => {
                           </span>
                         ))}
                         {(permission.actions || []).length > 3 && (
-                          <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
+                          <span className="px-2 py-0.5 text-xs bg-neutral-100 text-neutral-600 rounded">
                             +{permission.actions.length - 3} more
                           </span>
                         )}
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-neutral-500">
                         {permission.created_at
                           ? new Date(permission.created_at).toLocaleDateString()
                           : 'N/A'}
@@ -471,14 +460,14 @@ const PermissionsManagement = () => {
                           <Link2 size={18} />
                         </button>
                         <button
-                          className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           onClick={() => openEditModal(permission)}
                           title="Edit"
                         >
                           <Edit2 size={18} />
                         </button>
                         <button
-                          className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           onClick={() => handleDelete(permission)}
                           title="Delete"
                         >
@@ -496,7 +485,7 @@ const PermissionsManagement = () => {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="px-4 py-3 border-t flex items-center justify-between">
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-neutral-500">
               Page {page + 1} of {totalPages} ({total} permissions)
             </div>
             <div className="flex gap-2">
@@ -522,26 +511,12 @@ const PermissionsManagement = () => {
       </div>
 
       {/* Create/Edit Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-            <div className="px-6 py-4 border-b flex items-center justify-between">
-              <h2 className="text-xl font-semibold">
-                {editingPermission ? 'Edit Permission' : 'Create Permission'}
-              </h2>
-              <button
-                className="p-1 hover:bg-gray-100 rounded"
-                onClick={() => setModalOpen(false)}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editingPermission ? 'Edit Permission' : 'Create Permission'} size="lg">
+            <form onSubmit={handleSubmit}>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">
                       Permission Key <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -556,7 +531,7 @@ const PermissionsManagement = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">
                       Name <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -572,7 +547,7 @@ const PermissionsManagement = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
                     Module <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -593,7 +568,7 @@ const PermissionsManagement = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
                     Description
                   </label>
                   <textarea
@@ -609,7 +584,7 @@ const PermissionsManagement = () => {
                 {/* Actions Section */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-medium text-neutral-700">
                       Actions ({formData.actions.length} selected)
                     </label>
                     <div className="flex gap-2">
@@ -622,14 +597,14 @@ const PermissionsManagement = () => {
                       </button>
                       <button
                         type="button"
-                        className="text-xs text-gray-600 hover:underline"
+                        className="text-xs text-neutral-600 hover:underline"
                         onClick={() => handleSelectAllActions(false)}
                       >
                         Clear All
                       </button>
                     </div>
                   </div>
-                  <div className="border rounded-lg p-4 bg-gray-50">
+                  <div className="border rounded-lg p-4 bg-neutral-50">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                       {commonActions.map((action) => (
                         <label
@@ -637,14 +612,14 @@ const PermissionsManagement = () => {
                           className={`flex items-center p-2 rounded border cursor-pointer transition-colors ${
                             formData.actions.includes(action)
                               ? 'bg-blue-50 border-blue-300'
-                              : 'bg-white border-gray-200 hover:border-gray-300'
+                              : 'bg-white border-neutral-200 hover:border-neutral-300'
                           }`}
                         >
                           <input
                             type="checkbox"
                             checked={formData.actions.includes(action)}
                             onChange={() => handleActionToggle(action)}
-                            className="rounded border-gray-300 mr-2"
+                            className="rounded border-neutral-300 mr-2"
                           />
                           <span className="text-sm capitalize">{action}</span>
                         </label>
@@ -654,7 +629,7 @@ const PermissionsManagement = () => {
                     {/* Display selected actions */}
                     {formData.actions.length > 0 && (
                       <div className="mt-3 pt-3 border-t">
-                        <p className="text-xs font-medium text-gray-700 mb-2">Selected Actions:</p>
+                        <p className="text-xs font-medium text-neutral-700 mb-2">Selected Actions:</p>
                         <div className="flex flex-wrap gap-1">
                           {formData.actions.map((action) => (
                             <span
@@ -686,29 +661,13 @@ const PermissionsManagement = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Relationship Modal */}
-      {relationshipModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[80vh] overflow-hidden">
-            <div className="px-6 py-4 border-b flex items-center justify-between">
-              <h2 className="text-xl font-semibold">
-                Permission Usage: {selectedPermission?.name}
-              </h2>
-              <button
-                className="p-1 hover:bg-gray-100 rounded"
-                onClick={() => setRelationshipModalOpen(false)}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto max-h-[calc(80vh-160px)]">
+      <Modal isOpen={relationshipModalOpen} onClose={() => setRelationshipModalOpen(false)} title={`Permission Usage: ${selectedPermission?.name || ''}`} size="xl">
+            <div>
               {loadingRelationships ? (
-                <div className="text-center py-8 text-gray-500">Loading relationships...</div>
+                <div className="text-center py-8 text-neutral-500">Loading relationships...</div>
               ) : (
                 <div className="space-y-6">
                   {/* Roles using this permission */}
@@ -719,11 +678,11 @@ const PermissionsManagement = () => {
                     {permissionRoles.length > 0 ? (
                       <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
                         {permissionRoles.map((role) => (
-                          <div key={role.roleId || role._id} className="p-3 hover:bg-gray-50">
+                          <div key={role.roleId || role._id} className="p-3 hover:bg-neutral-50">
                             <div className="flex items-center justify-between">
                               <div>
                                 <p className="font-medium">{role.name}</p>
-                                <p className="text-sm text-gray-500">{role.roleId}</p>
+                                <p className="text-sm text-neutral-500">{role.roleId}</p>
                               </div>
                               <span
                                 className={`px-2 py-1 text-xs rounded-full ${
@@ -739,7 +698,7 @@ const PermissionsManagement = () => {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-gray-500 text-center py-4 border rounded-lg">
+                      <p className="text-neutral-500 text-center py-4 border rounded-lg">
                         No roles have this permission
                       </p>
                     )}
@@ -753,11 +712,11 @@ const PermissionsManagement = () => {
                     {permissionGroups.length > 0 ? (
                       <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
                         {permissionGroups.map((group) => (
-                          <div key={group.groupId || group._id} className="p-3 hover:bg-gray-50">
+                          <div key={group.groupId || group._id} className="p-3 hover:bg-neutral-50">
                             <div className="flex items-center justify-between">
                               <div>
                                 <p className="font-medium">{group.name}</p>
-                                <p className="text-sm text-gray-500">{group.groupId}</p>
+                                <p className="text-sm text-neutral-500">{group.groupId}</p>
                               </div>
                               <span
                                 className={`px-2 py-1 text-xs rounded-full ${
@@ -773,21 +732,21 @@ const PermissionsManagement = () => {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-gray-500 text-center py-4 border rounded-lg">
+                      <p className="text-neutral-500 text-center py-4 border rounded-lg">
                         No groups have this permission
                       </p>
                     )}
                   </div>
 
                   {/* Permission Details */}
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="bg-neutral-50 p-4 rounded-lg">
                     <h4 className="font-semibold mb-2">Permission Details</h4>
                     <dl className="grid grid-cols-2 gap-2 text-sm">
-                      <dt className="text-gray-600">Key:</dt>
+                      <dt className="text-neutral-600">Key:</dt>
                       <dd className="font-mono">{selectedPermission?.key}</dd>
-                      <dt className="text-gray-600">Module:</dt>
+                      <dt className="text-neutral-600">Module:</dt>
                       <dd>{selectedPermission?.module}</dd>
-                      <dt className="text-gray-600">Actions:</dt>
+                      <dt className="text-neutral-600">Actions:</dt>
                       <dd className="flex flex-wrap gap-1">
                         {(selectedPermission?.actions || []).map((a) => (
                           <span
@@ -804,7 +763,7 @@ const PermissionsManagement = () => {
               )}
             </div>
 
-            <div className="px-6 py-4 border-t flex justify-end">
+            <div className="pt-4 border-t flex justify-end">
               <button
                 className="btn btn-secondary"
                 onClick={() => setRelationshipModalOpen(false)}
@@ -812,9 +771,7 @@ const PermissionsManagement = () => {
                 Close
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 };

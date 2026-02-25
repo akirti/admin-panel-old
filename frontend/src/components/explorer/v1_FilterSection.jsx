@@ -278,15 +278,15 @@ const V1FilterSection = ({
 
   return (
     <div className="w-full mt-4">
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+      <div className="card p-0">
         {/* Accordion Header */}
         <div
-          className="flex items-center justify-between px-5 py-3.5 cursor-pointer select-none hover:bg-gray-50 transition-colors border-b border-gray-100"
+          className="flex items-center justify-between px-5 py-3.5 cursor-pointer select-none hover:bg-neutral-50 transition-colors border-b border-neutral-100"
           onClick={() => setShow((s) => !s)}
         >
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-gray-500" />
-            <h5 className="text-sm font-semibold text-gray-800 m-0">
+            <Filter className="w-4 h-4 text-neutral-500" />
+            <h5 className="text-sm font-semibold text-neutral-800 m-0">
               Filters
             </h5>
           </div>
@@ -302,18 +302,18 @@ const V1FilterSection = ({
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
                   useCustomerSuggest
                     ? 'bg-red-50 border-red-300 text-red-700'
-                    : 'bg-gray-50 border-gray-300 text-gray-500'
+                    : 'bg-neutral-50 border-neutral-300 text-neutral-500'
                 }`}
               >
                 <Users className="w-3.5 h-3.5" />
                 {useCustomerSuggest ? 'Assigned Customers' : 'No Preference'}
               </button>
             )}
-            <div className="text-gray-400">
+            <div className="text-neutral-400">
               {show ? (
-                <ChevronUp className="w-5 h-5" />
+                <ChevronUp size={20} />
               ) : (
-                <ChevronDown className="w-5 h-5" />
+                <ChevronDown size={20} />
               )}
             </div>
           </div>
@@ -324,7 +324,7 @@ const V1FilterSection = ({
           <div className="px-5 py-4">
             {externalLoading ? (
               <div className="flex justify-center items-center min-h-[120px]">
-                <div className="w-8 h-8 border-4 border-gray-200 border-t-red-600 rounded-full animate-spin" />
+                <div className="w-8 h-8 border-4 border-neutral-200 border-t-red-600 rounded-full animate-spin" />
               </div>
             ) : filterError ? (
               <div className="flex items-center justify-center py-4">
@@ -333,7 +333,7 @@ const V1FilterSection = ({
                 </div>
               </div>
             ) : filterConfig.length === 0 ? (
-              <div className="text-center py-8 text-gray-400 text-sm">
+              <div className="text-center py-8 text-neutral-400 text-sm">
                 No filters available.
               </div>
             ) : (
@@ -348,7 +348,7 @@ const V1FilterSection = ({
                         className="flex flex-col w-full"
                         key={filter.dataKey}
                       >
-                        <label className="text-sm font-medium text-gray-700 mb-1.5">
+                        <label className="text-sm font-medium text-neutral-700 mb-1.5">
                           {trimCellValue(filter.displayName)}
                         </label>
                         {(() => {
@@ -395,7 +395,7 @@ const V1FilterSection = ({
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-800 transition-colors shadow-sm"
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-neutral-600 bg-white border border-neutral-300 rounded-md hover:bg-neutral-50 hover:text-neutral-800 transition-colors shadow-sm"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     Reset

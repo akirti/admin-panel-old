@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Input, Table, Modal, Badge, SearchInput, Select, Pagination } from '../../components/shared';
 import { apiConfigsAPI } from '../../services/api';
+import { PlayCircle, Eye, Pencil, ShieldCheck, ToggleLeft, Trash2, Plus, Check, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const AUTH_TYPES = [
@@ -397,10 +398,10 @@ const ApiConfigsManagement = () => {
       render: (val) => (
         <div className="flex flex-wrap gap-1">
           {(val || []).slice(0, 2).map((tag, i) => (
-            <span key={i} className="text-xs bg-gray-100 px-2 py-0.5 rounded">{tag}</span>
+            <span key={i} className="text-xs bg-neutral-100 px-2 py-0.5 rounded">{tag}</span>
           ))}
           {(val || []).length > 2 && (
-            <span className="text-xs text-gray-400">+{val.length - 2}</span>
+            <span className="text-xs text-neutral-400">+{val.length - 2}</span>
           )}
         </div>
       ),
@@ -415,29 +416,21 @@ const ApiConfigsManagement = () => {
             className="p-1 text-green-500 hover:text-green-600"
             title="Test API"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <PlayCircle size={16} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleViewDetails(item); }}
-            className="p-1 text-gray-500 hover:text-red-600"
+            className="p-1 text-neutral-500 hover:text-red-600"
             title="View Details"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
+            <Eye size={16} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); openEditModal(item); }}
-            className="p-1 text-gray-500 hover:text-red-600"
+            className="p-1 text-neutral-500 hover:text-red-600"
             title="Edit"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
+            <Pencil size={16} />
           </button>
           {gcsStatus?.configured && (
             <button
@@ -445,9 +438,7 @@ const ApiConfigsManagement = () => {
               className="p-1 text-purple-500 hover:text-purple-600"
               title="Upload Certificate"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
+              <ShieldCheck size={16} />
             </button>
           )}
           <button
@@ -455,18 +446,14 @@ const ApiConfigsManagement = () => {
             className={`p-1 ${item.status === 'active' ? 'text-yellow-500 hover:text-yellow-600' : 'text-green-500 hover:text-green-600'}`}
             title={item.status === 'active' ? 'Deactivate' : 'Activate'}
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-            </svg>
+            <ToggleLeft size={16} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
             className="p-1 text-red-500 hover:text-red-600"
             title="Delete"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
+            <Trash2 size={16} />
           </button>
         </div>
       ),
@@ -478,8 +465,8 @@ const ApiConfigsManagement = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">API Configurations</h1>
-          <p className="text-gray-500 mt-1">Manage external API configurations and test connectivity</p>
+          <h1 className="text-2xl font-bold text-neutral-900">API Configurations</h1>
+          <p className="text-neutral-500 mt-1">Manage external API configurations and test connectivity</p>
         </div>
         <div className="flex space-x-3">
           {gcsStatus && (
@@ -488,9 +475,7 @@ const ApiConfigsManagement = () => {
             </span>
           )}
           <Button onClick={() => { resetForm(); setModalOpen(true); }}>
-            <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
+            <Plus size={16} className="mr-2" />
             Add API Config
           </Button>
         </div>
@@ -611,7 +596,7 @@ const ApiConfigsManagement = () => {
                   type="checkbox"
                   checked={formData.ssl_verify}
                   onChange={(e) => setFormData({ ...formData, ssl_verify: e.target.checked })}
-                  className="rounded border-gray-300"
+                  className="rounded border-neutral-300"
                 />
                 <span className="text-sm">Verify SSL</span>
               </label>
@@ -620,7 +605,7 @@ const ApiConfigsManagement = () => {
                   type="checkbox"
                   checked={formData.use_proxy}
                   onChange={(e) => setFormData({ ...formData, use_proxy: e.target.checked })}
-                  className="rounded border-gray-300"
+                  className="rounded border-neutral-300"
                 />
                 <span className="text-sm">Use Proxy</span>
               </label>
@@ -847,16 +832,16 @@ const ApiConfigsManagement = () => {
           {/* Auth Config JSON - For basic, bearer, api_key, mtls, custom */}
           {formData.auth_type !== 'none' && formData.auth_type !== 'login_token' && formData.auth_type !== 'oauth2' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-neutral-700 mb-1">
                 Auth Configuration JSON
-                <span className="text-xs text-gray-400 ml-2">
+                <span className="text-xs text-neutral-400 ml-2">
                   {formData.auth_type === 'basic' && '{"username": "", "password": ""}'}
                   {formData.auth_type === 'bearer' && '{"token": ""}'}
                   {formData.auth_type === 'api_key' && '{"key_name": "X-API-Key", "key_value": "", "key_location": "header"}'}
                 </span>
               </label>
               <textarea
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 font-mono text-sm"
+                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 font-mono text-sm"
                 rows={3}
                 value={authConfigJson}
                 onChange={(e) => setAuthConfigJson(e.target.value)}
@@ -866,9 +851,9 @@ const ApiConfigsManagement = () => {
 
           {/* Headers JSON */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Headers JSON</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Headers JSON</label>
             <textarea
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 font-mono text-sm"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 font-mono text-sm"
               rows={2}
               value={headersJson}
               onChange={(e) => setHeadersJson(e.target.value)}
@@ -879,9 +864,9 @@ const ApiConfigsManagement = () => {
           {/* Params & Body */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Query Params JSON</label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Query Params JSON</label>
               <textarea
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 font-mono text-sm"
+                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 font-mono text-sm"
                 rows={2}
                 value={paramsJson}
                 onChange={(e) => setParamsJson(e.target.value)}
@@ -889,9 +874,9 @@ const ApiConfigsManagement = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Request Body JSON</label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Request Body JSON</label>
               <textarea
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 font-mono text-sm"
+                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 font-mono text-sm"
                 rows={2}
                 value={bodyJson}
                 onChange={(e) => setBodyJson(e.target.value)}
@@ -923,8 +908,8 @@ const ApiConfigsManagement = () => {
           </div>
 
           {/* Ping/Health Check */}
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <h4 className="text-sm font-medium text-gray-700 mb-3">Health Check Settings</h4>
+          <div className="p-4 bg-neutral-50 rounded-lg">
+            <h4 className="text-sm font-medium text-neutral-700 mb-3">Health Check Settings</h4>
             <div className="grid grid-cols-4 gap-4">
               <div className="col-span-2">
                 <Input
@@ -956,7 +941,7 @@ const ApiConfigsManagement = () => {
                 type="checkbox"
                 checked={formData.cache_enabled}
                 onChange={(e) => setFormData({ ...formData, cache_enabled: e.target.checked })}
-                className="rounded border-gray-300"
+                className="rounded border-neutral-300"
               />
               <span className="text-sm">Enable Caching</span>
             </label>
@@ -1012,20 +997,16 @@ const ApiConfigsManagement = () => {
           {testLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
-              <span className="ml-3 text-gray-500">Testing API connection...</span>
+              <span className="ml-3 text-neutral-500">Testing API connection...</span>
             </div>
           ) : testResult ? (
             <>
               <div className={`p-4 rounded-lg ${testResult.success ? 'bg-green-50' : 'bg-red-50'}`}>
                 <div className="flex items-center gap-2">
                   {testResult.success ? (
-                    <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
+                    <Check size={20} className="text-green-500" />
                   ) : (
-                    <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <X size={20} className="text-red-500" />
                   )}
                   <span className={`font-medium ${testResult.success ? 'text-green-700' : 'text-red-700'}`}>
                     {testResult.success ? 'Connection Successful' : 'Connection Failed'}
@@ -1034,16 +1015,16 @@ const ApiConfigsManagement = () => {
               </div>
 
               <div className="grid grid-cols-3 gap-4">
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500">Status Code</p>
+                <div className="bg-neutral-50 p-3 rounded-lg">
+                  <p className="text-xs text-neutral-500">Status Code</p>
                   <p className="text-lg font-semibold">{testResult.status_code || 'N/A'}</p>
                 </div>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500">Response Time</p>
+                <div className="bg-neutral-50 p-3 rounded-lg">
+                  <p className="text-xs text-neutral-500">Response Time</p>
                   <p className="text-lg font-semibold">{testResult.response_time_ms ? `${testResult.response_time_ms}ms` : 'N/A'}</p>
                 </div>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500">SSL Version</p>
+                <div className="bg-neutral-50 p-3 rounded-lg">
+                  <p className="text-xs text-neutral-500">SSL Version</p>
                   <p className="text-lg font-semibold">{testResult.ssl_info?.version || 'N/A'}</p>
                 </div>
               </div>
@@ -1057,8 +1038,8 @@ const ApiConfigsManagement = () => {
 
               {testResult.response_headers && (
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">Response Headers</p>
-                  <pre className="bg-gray-900 text-green-400 p-3 rounded-lg overflow-auto max-h-32 text-xs">
+                  <p className="text-sm font-medium text-neutral-700 mb-2">Response Headers</p>
+                  <pre className="bg-neutral-900 text-green-400 p-3 rounded-lg overflow-auto max-h-32 text-xs">
                     {JSON.stringify(testResult.response_headers, null, 2)}
                   </pre>
                 </div>
@@ -1066,8 +1047,8 @@ const ApiConfigsManagement = () => {
 
               {testResult.response_body && (
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">Response Body</p>
-                  <pre className="bg-gray-900 text-green-400 p-3 rounded-lg overflow-auto max-h-48 text-xs">
+                  <p className="text-sm font-medium text-neutral-700 mb-2">Response Body</p>
+                  <pre className="bg-neutral-900 text-green-400 p-3 rounded-lg overflow-auto max-h-48 text-xs">
                     {typeof testResult.response_body === 'string'
                       ? testResult.response_body
                       : JSON.stringify(testResult.response_body, null, 2)}
@@ -1096,60 +1077,60 @@ const ApiConfigsManagement = () => {
           <div className="space-y-4 max-h-[70vh] overflow-y-auto">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-500">Key</label>
-                <p className="text-gray-900 font-mono">{selectedConfig.key}</p>
+                <label className="block text-sm font-medium text-neutral-500">Key</label>
+                <p className="text-neutral-900 font-mono">{selectedConfig.key}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-500">Name</label>
-                <p className="text-gray-900">{selectedConfig.name}</p>
+                <label className="block text-sm font-medium text-neutral-500">Name</label>
+                <p className="text-neutral-900">{selectedConfig.name}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-500">Status</label>
+                <label className="block text-sm font-medium text-neutral-500">Status</label>
                 {getStatusBadge(selectedConfig.status)}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-500">Auth Type</label>
+                <label className="block text-sm font-medium text-neutral-500">Auth Type</label>
                 {getAuthTypeBadge(selectedConfig.auth_type)}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-500">Endpoint</label>
-              <p className="text-gray-900 font-mono text-sm break-all">{selectedConfig.endpoint}</p>
+              <label className="block text-sm font-medium text-neutral-500">Endpoint</label>
+              <p className="text-neutral-900 font-mono text-sm break-all">{selectedConfig.endpoint}</p>
             </div>
 
             {selectedConfig.description && (
               <div>
-                <label className="block text-sm font-medium text-gray-500">Description</label>
-                <p className="text-gray-900">{selectedConfig.description}</p>
+                <label className="block text-sm font-medium text-neutral-500">Description</label>
+                <p className="text-neutral-900">{selectedConfig.description}</p>
               </div>
             )}
 
             <div className="grid grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-500">Method</label>
+                <label className="block text-sm font-medium text-neutral-500">Method</label>
                 <Badge variant="primary">{selectedConfig.method}</Badge>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-500">Timeout</label>
-                <p className="text-gray-900">{selectedConfig.timeout}s</p>
+                <label className="block text-sm font-medium text-neutral-500">Timeout</label>
+                <p className="text-neutral-900">{selectedConfig.timeout}s</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-500">SSL Verify</label>
-                <p className="text-gray-900">{selectedConfig.ssl_verify ? 'Yes' : 'No'}</p>
+                <label className="block text-sm font-medium text-neutral-500">SSL Verify</label>
+                <p className="text-neutral-900">{selectedConfig.ssl_verify ? 'Yes' : 'No'}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-500">Use Proxy</label>
-                <p className="text-gray-900">{selectedConfig.use_proxy ? 'Yes' : 'No'}</p>
+                <label className="block text-sm font-medium text-neutral-500">Use Proxy</label>
+                <p className="text-neutral-900">{selectedConfig.use_proxy ? 'Yes' : 'No'}</p>
               </div>
             </div>
 
             {(selectedConfig.tags || []).length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-500 mb-2">Tags</label>
+                <label className="block text-sm font-medium text-neutral-500 mb-2">Tags</label>
                 <div className="flex flex-wrap gap-2">
                   {selectedConfig.tags.map((tag, i) => (
-                    <span key={i} className="bg-gray-100 px-3 py-1 rounded-full text-sm">{tag}</span>
+                    <span key={i} className="bg-neutral-100 px-3 py-1 rounded-full text-sm">{tag}</span>
                   ))}
                 </div>
               </div>
@@ -1175,8 +1156,8 @@ const ApiConfigsManagement = () => {
 
             {Object.keys(selectedConfig.headers || {}).length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-500 mb-2">Headers</label>
-                <pre className="bg-gray-900 text-green-400 p-3 rounded-lg overflow-auto max-h-32 text-xs">
+                <label className="block text-sm font-medium text-neutral-500 mb-2">Headers</label>
+                <pre className="bg-neutral-900 text-green-400 p-3 rounded-lg overflow-auto max-h-32 text-xs">
                   {JSON.stringify(selectedConfig.headers, null, 2)}
                 </pre>
               </div>
@@ -1184,17 +1165,17 @@ const ApiConfigsManagement = () => {
 
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <label className="block text-sm font-medium text-gray-500">Created</label>
-                <p className="text-gray-900">
+                <label className="block text-sm font-medium text-neutral-500">Created</label>
+                <p className="text-neutral-900">
                   {selectedConfig.created_at ? new Date(selectedConfig.created_at).toLocaleString() : '-'}
-                  {selectedConfig.created_by && <span className="text-gray-400"> by {selectedConfig.created_by}</span>}
+                  {selectedConfig.created_by && <span className="text-neutral-400"> by {selectedConfig.created_by}</span>}
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-500">Updated</label>
-                <p className="text-gray-900">
+                <label className="block text-sm font-medium text-neutral-500">Updated</label>
+                <p className="text-neutral-900">
                   {selectedConfig.updated_at ? new Date(selectedConfig.updated_at).toLocaleString() : '-'}
-                  {selectedConfig.updated_by && <span className="text-gray-400"> by {selectedConfig.updated_by}</span>}
+                  {selectedConfig.updated_by && <span className="text-neutral-400"> by {selectedConfig.updated_by}</span>}
                 </p>
               </div>
             </div>
@@ -1235,15 +1216,15 @@ const ApiConfigsManagement = () => {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Certificate File</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Certificate File</label>
             <input
               type="file"
               accept=".pem,.crt,.key"
               onChange={(e) => setCertFile(e.target.files[0])}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg"
             />
             {certFile && (
-              <p className="mt-2 text-sm text-gray-500">Selected: {certFile.name}</p>
+              <p className="mt-2 text-sm text-neutral-500">Selected: {certFile.name}</p>
             )}
           </div>
 

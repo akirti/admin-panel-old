@@ -40,9 +40,9 @@ function FeedbackPage() {
             <h1 className="text-2xl font-bold text-red-600">Share Your Feedback</h1>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-8">
+          <div className="card p-8">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-neutral-800">Share Your Feedback</h2>
+              <h2 className="text-2xl font-bold text-neutral-900">Share Your Feedback</h2>
               <p className="text-neutral-500 mt-1">
                 Your feedback helps us improve our services.
               </p>
@@ -56,7 +56,7 @@ function FeedbackPage() {
               to="/login"
               className="inline-flex items-center gap-2 text-neutral-500 hover:text-red-600 transition-colors"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft size={16} />
               Back to Login
             </Link>
           </div>
