@@ -114,6 +114,9 @@ class UserService:
         1. Direct user domains
         2. Domains from user's roles
         3. Domains from user's groups
+
+        Handles both domain key strings (e.g. "sales") and ObjectId strings
+        (e.g. "693a23030a31e21d279dc2da") that some groups/roles may store.
         """
         all_domains = set(user.get("domains", []))
 
@@ -145,13 +148,35 @@ class UserService:
                 group_domains = group.get("domains", [])
                 all_domains.update(group_domains)
 
-        return list(all_domains)
+        # Resolve any ObjectId-based domain references to domain keys.
+        # Some groups/roles store domain _id values instead of key strings.
+        resolved = set()
+        objectid_refs = []
+        for d in all_domains:
+            if ObjectId.is_valid(d):
+                objectid_refs.append(d)
+            else:
+                resolved.add(d)
+
+        if objectid_refs:
+            cursor = self.db.domains.find({
+                "_id": {"$in": [ObjectId(ref) for ref in objectid_refs]}
+            })
+            async for domain in cursor:
+                key = domain.get("key")
+                if key:
+                    resolved.add(key)
+
+        return list(resolved)
 
     async def resolve_user_permissions(self, user: Dict[str, Any]) -> List[str]:
         """
         Resolve all permissions a user has based on:
         1. Permissions from user's roles
         2. Permissions from user's groups
+
+        Handles both permission key strings (e.g. "manage_users") and ObjectId
+        strings that some groups/roles may store.
         """
         all_permissions = set()
 
@@ -183,7 +208,25 @@ class UserService:
                 group_permissions = group.get("permissions", [])
                 all_permissions.update(group_permissions)
 
-        return list(all_permissions)
+        # Resolve any ObjectId-based permission references to permission keys.
+        resolved = set()
+        objectid_refs = []
+        for p in all_permissions:
+            if ObjectId.is_valid(p):
+                objectid_refs.append(p)
+            else:
+                resolved.add(p)
+
+        if objectid_refs:
+            cursor = self.db.permissions.find({
+                "_id": {"$in": [ObjectId(ref) for ref in objectid_refs]}
+            })
+            async for perm in cursor:
+                perm_id = perm.get("permissionId")
+                if perm_id:
+                    resolved.add(perm_id)
+
+        return list(resolved)
 
     async def register_user(
         self,
