@@ -453,8 +453,13 @@ class NewScenarioService:
         user_id = current_user.get("user_id")
         roles = current_user.get("roles", [])
 
-        # Check if user can edit
-        if not self._can_edit_request(user_id, roles, current_request):
+        # Allow comments from any logged-in user without edit permission
+        is_comment_only = (
+            set(update_data.keys()) - {"request_id", "requestId"}
+        ) == {"new_comment"}
+
+        # Check if user can edit (skip for comment-only updates)
+        if not is_comment_only and not self._can_edit_request(user_id, roles, current_request):
             raise AuthError("You do not have permission to edit this request", 403)
 
         # Get allowed fields

@@ -1099,6 +1099,64 @@ class TestNewScenarioServiceUpdateAdvanced:
         assert mock_db.scenario_requests.update_one.call_count >= 1
 
     @pytest.mark.asyncio
+    async def test_update_comment_by_non_creator(self, scenario_service, mock_db):
+        """Test that any logged-in user can comment even if not the creator"""
+        mock_db.scenario_requests.find_one = AsyncMock(return_value={
+            "requestId": "REQ-SCR-0001",
+            "user_id": "creator_user_id",
+            "email": "creator@example.com",
+            "status": "S",
+            "_id": ObjectId(),
+            "comments": []
+        })
+        mock_db.scenario_requests.update_one = AsyncMock()
+
+        non_creator = {
+            "user_id": "different_user_id",
+            "email": "viewer@example.com",
+            "full_name": "Viewer User",
+            "roles": ["viewer"]
+        }
+
+        result = await scenario_service.update(
+            {
+                "request_id": "REQ-SCR-0001",
+                "new_comment": {"comment": "I have a question about this"}
+            },
+            non_creator
+        )
+
+        # Comment should be added successfully
+        assert mock_db.scenario_requests.update_one.call_count >= 1
+
+    @pytest.mark.asyncio
+    async def test_update_edit_blocked_for_non_creator(self, scenario_service, mock_db):
+        """Test that non-creator cannot edit fields (only comment)"""
+        mock_db.scenario_requests.find_one = AsyncMock(return_value={
+            "requestId": "REQ-SCR-0001",
+            "user_id": "creator_user_id",
+            "email": "creator@example.com",
+            "status": "S",
+            "_id": ObjectId()
+        })
+
+        non_creator = {
+            "user_id": "different_user_id",
+            "email": "viewer@example.com",
+            "roles": ["viewer"]
+        }
+
+        with pytest.raises(AuthError) as exc_info:
+            await scenario_service.update(
+                {
+                    "request_id": "REQ-SCR-0001",
+                    "description": "Trying to edit someone else's request"
+                },
+                non_creator
+            )
+        assert exc_info.value.status_code == 403
+
+    @pytest.mark.asyncio
     async def test_update_new_workflow(self, scenario_service, mock_db, sample_admin):
         """Test adding new workflow entry"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={

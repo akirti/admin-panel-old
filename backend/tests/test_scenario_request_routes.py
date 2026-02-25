@@ -26,7 +26,7 @@ class TestScenarioRequestRoutes:
     def mock_scenario_request_service(self):
         """Create mock scenario request service"""
         service = MagicMock()
-        # Default get returns matching user for ownership checks
+        # Default get returns matching user for ownership checks on edit/upload
         service.get = AsyncMock(return_value={
             "user_id": "user_123",
             "email": "user@test.com",
@@ -137,7 +137,7 @@ class TestScenarioRequestRoutes:
         assert response.status_code == 500
 
     def test_get_all_scenario_requests(self, client, mock_scenario_request_service):
-        """Test get all scenario requests endpoint"""
+        """Test get all scenario requests - regular user sees all requests"""
         result = {
             "data": [
                 {"request_id": "req_1", "title": "Request 1"},
@@ -152,6 +152,10 @@ class TestScenarioRequestRoutes:
         data = response.json()
         assert "data" in data
         assert "pagination" in data
+        # All users see all requests - user_id should be None
+        mock_scenario_request_service.get_all.assert_called_once()
+        call_args = mock_scenario_request_service.get_all.call_args
+        assert call_args.kwargs.get("user_id") is None
 
     def test_get_all_scenario_requests_with_pagination(self, client, mock_scenario_request_service):
         """Test get all scenario requests with pagination"""
@@ -204,12 +208,39 @@ class TestScenarioRequestRoutes:
         assert response.status_code == 400  # AuthError default status_code
 
     def test_update_scenario_request(self, client, mock_scenario_request_service):
-        """Test update scenario request endpoint"""
+        """Test update scenario request endpoint (creator can update own)"""
         result = {"request_id": "req_123", "title": "Updated Request"}
         mock_scenario_request_service.update = AsyncMock(return_value=result)
 
         response = client.put("/ask_scenarios/req_123", json={"title": "Updated Request"})
         assert response.status_code == 200
+
+    def test_update_scenario_request_forbidden_for_non_creator(self, app, mock_scenario_request_service):
+        """Test that non-creator regular user cannot update another user's request"""
+        # Mock service returns a request owned by a different user
+        mock_scenario_request_service.get = AsyncMock(return_value={
+            "user_id": "other_user_456",
+            "email": "other@test.com",
+            "request_id": "req_123"
+        })
+        mock_scenario_request_service.update = AsyncMock(return_value={})
+
+        other_user = MagicMock()
+        other_user.email = "viewer@test.com"
+        other_user.user_id = "viewer_789"
+        other_user.roles = ["user"]
+        other_user.model_dump = MagicMock(return_value={
+            "email": "viewer@test.com",
+            "user_id": "viewer_789",
+            "roles": ["user"]
+        })
+
+        app.dependency_overrides[get_scenario_request_service] = lambda: mock_scenario_request_service
+        app.dependency_overrides[get_current_user] = lambda: other_user
+        client = TestClient(app)
+
+        response = client.put("/ask_scenarios/req_123", json={"title": "Hacked"})
+        assert response.status_code == 403
 
     def test_update_scenario_request_error(self, client, mock_scenario_request_service):
         """Test update scenario request with error"""
@@ -219,7 +250,7 @@ class TestScenarioRequestRoutes:
         assert response.status_code == 400  # AuthError default status_code
 
     def test_get_scenario_request(self, client, mock_scenario_request_service):
-        """Test get scenario request by ID"""
+        """Test get scenario request by ID - any logged-in user can view"""
         result = {
             "request_id": "req_123",
             "title": "Test Request",
@@ -234,6 +265,35 @@ class TestScenarioRequestRoutes:
         data = response.json()
         assert data["request_id"] == "req_123"
 
+    def test_get_scenario_request_another_users_request(self, app, mock_scenario_request_service):
+        """Test that any logged-in user can view another user's request"""
+        # Request owned by a different user
+        mock_scenario_request_service.get = AsyncMock(return_value={
+            "request_id": "req_456",
+            "title": "Someone Else's Request",
+            "user_id": "other_user_999",
+            "email": "other@test.com"
+        })
+
+        viewer = MagicMock()
+        viewer.email = "viewer@test.com"
+        viewer.user_id = "viewer_123"
+        viewer.roles = ["user"]
+        viewer.model_dump = MagicMock(return_value={
+            "email": "viewer@test.com",
+            "user_id": "viewer_123",
+            "roles": ["user"]
+        })
+
+        app.dependency_overrides[get_scenario_request_service] = lambda: mock_scenario_request_service
+        app.dependency_overrides[get_current_user] = lambda: viewer
+        client = TestClient(app)
+
+        response = client.get("/ask_scenarios/req_456")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["request_id"] == "req_456"
+
     def test_get_scenario_request_error(self, client, mock_scenario_request_service):
         """Test get scenario request with error"""
         mock_scenario_request_service.get = AsyncMock(side_effect=AuthError("Not found", 404))
@@ -242,7 +302,7 @@ class TestScenarioRequestRoutes:
         assert response.status_code == 404
 
     def test_upload_user_file(self, client, mock_scenario_request_service):
-        """Test upload user file endpoint"""
+        """Test upload user file endpoint (creator can upload to own request)"""
         result = {
             "file_name": "test.csv",
             "file_path": "files/test.csv",
@@ -257,6 +317,34 @@ class TestScenarioRequestRoutes:
         assert response.status_code == 200
         data = response.json()
         assert data["file_name"] == "test.csv"
+
+    def test_upload_user_file_forbidden_for_non_creator(self, app, mock_scenario_request_service):
+        """Test that non-creator regular user cannot upload to another user's request"""
+        mock_scenario_request_service.get = AsyncMock(return_value={
+            "user_id": "other_user_456",
+            "email": "other@test.com",
+            "request_id": "req_123"
+        })
+
+        other_user = MagicMock()
+        other_user.email = "viewer@test.com"
+        other_user.user_id = "viewer_789"
+        other_user.roles = ["user"]
+        other_user.model_dump = MagicMock(return_value={
+            "email": "viewer@test.com",
+            "user_id": "viewer_789",
+            "roles": ["user"]
+        })
+
+        app.dependency_overrides[get_scenario_request_service] = lambda: mock_scenario_request_service
+        app.dependency_overrides[get_current_user] = lambda: other_user
+        client = TestClient(app)
+
+        response = client.post(
+            "/ask_scenarios/req_123/files",
+            files={"file": ("test.csv", b"test content", "text/csv")}
+        )
+        assert response.status_code == 403
 
     def test_upload_user_file_error(self, client, mock_scenario_request_service):
         """Test upload user file with error"""
@@ -295,7 +383,7 @@ class TestScenarioRequestRoutes:
         assert response.status_code == 400  # AuthError default status_code
 
     def test_preview_file(self, client, mock_scenario_request_service):
-        """Test file preview endpoint"""
+        """Test file preview endpoint - any logged-in user can preview"""
         result = {
             "columns": ["col1", "col2"],
             "data": [{"col1": "a", "col2": "b"}],
@@ -314,7 +402,7 @@ class TestScenarioRequestRoutes:
         assert response.status_code == 400  # AuthError default status_code
 
     def test_download_file(self, client, mock_scenario_request_service):
-        """Test file download endpoint"""
+        """Test file download endpoint - any logged-in user can download"""
         mock_scenario_request_service.download_file = AsyncMock(
             return_value=(b"file content", "test.csv")
         )
@@ -345,6 +433,31 @@ class TestScenarioRequestRoutes:
         response = client.post(
             "/ask_scenarios/req_123/comment",
             data={"comment": "Test comment"}
+        )
+        assert response.status_code == 200
+
+    def test_add_comment_by_non_creator(self, app, mock_scenario_request_service):
+        """Test that any logged-in user can comment on another user's request"""
+        result = {"request_id": "req_123", "comments": [{"comment": "Nice work!"}]}
+        mock_scenario_request_service.update = AsyncMock(return_value=result)
+
+        other_user = MagicMock()
+        other_user.email = "user10@easylife.local"
+        other_user.user_id = "user10_id"
+        other_user.roles = ["viewer"]
+        other_user.model_dump = MagicMock(return_value={
+            "email": "user10@easylife.local",
+            "user_id": "user10_id",
+            "roles": ["viewer"]
+        })
+
+        app.dependency_overrides[get_scenario_request_service] = lambda: mock_scenario_request_service
+        app.dependency_overrides[get_current_user] = lambda: other_user
+        client = TestClient(app)
+
+        response = client.post(
+            "/ask_scenarios/req_123/comment",
+            data={"comment": "Nice work!"}
         )
         assert response.status_code == 200
 
@@ -446,16 +559,31 @@ class TestScenarioRequestRoutesEditorUser:
         return TestClient(app)
 
     def test_get_all_scenario_requests_editor_sees_all(self, client, mock_scenario_request_service, mock_editor):
-        """Test editor sees all requests"""
+        """Test editor sees all requests (same as regular user)"""
         result = {"data": [], "pagination": {"total": 0}}
         mock_scenario_request_service.get_all = AsyncMock(return_value=result)
 
         response = client.get("/ask_scenarios/all")
         assert response.status_code == 200
-        # Verify service was called with user_id=None (editor sees all)
+        # Verify service was called with user_id=None (all users see all)
         mock_scenario_request_service.get_all.assert_called_once()
         call_args = mock_scenario_request_service.get_all.call_args
         assert call_args.kwargs.get("user_id") is None
+
+    def test_editor_can_update_any_request(self, client, mock_scenario_request_service):
+        """Test editor can update any user's request without ownership check"""
+        # Service get returns a request from another user
+        mock_scenario_request_service.get = AsyncMock(return_value={
+            "user_id": "other_user_999",
+            "email": "other@test.com",
+            "request_id": "req_456"
+        })
+        mock_scenario_request_service.update = AsyncMock(return_value={
+            "request_id": "req_456", "title": "Updated by editor"
+        })
+
+        response = client.put("/ask_scenarios/req_456", json={"title": "Updated by editor"})
+        assert response.status_code == 200
 
 
 class TestScenarioRequestRoutesAdminEndpoints:

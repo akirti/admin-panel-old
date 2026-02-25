@@ -117,15 +117,10 @@ async def get_all_scenario_requests(
     current_user: CurrentUser = Depends(get_current_user),
     scenario_request_service: NewScenarioService = Depends(get_scenario_request_service)
 ) -> Dict[str, Any]:
-    """Get all scenario requests (filtered by user role)"""
+    """Get all scenario requests visible to all logged-in users"""
     try:
-        # Editors and admins see all, users see only their own
-        user_id = current_user.user_id
-        if any(r in EDITORS for r in current_user.roles):
-            user_id = None
-        
         result = await scenario_request_service.get_all(
-            user_id=user_id,
+            user_id=None,
             pagination={"page": page, "limit": limit}
         )
         return result
@@ -215,13 +210,9 @@ async def get_scenario_request(
     current_user: CurrentUser = Depends(get_current_user),
     scenario_request_service: NewScenarioService = Depends(get_scenario_request_service)
 ) -> Dict[str, Any]:
-    """Get scenario request by ID"""
+    """Get scenario request by ID (visible to all logged-in users)"""
     try:
         result = await scenario_request_service.get(request_id)
-        # Ownership check: only creator or editor+ can view
-        if not any(r in EDITORS for r in current_user.roles):
-            if result.get("user_id") != current_user.user_id and result.get("email") != current_user.email:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only view your own requests")
         return result
     except AuthError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message)
@@ -290,14 +281,8 @@ async def preview_file(
     current_user: CurrentUser = Depends(get_current_user),
     scenario_request_service: NewScenarioService = Depends(get_scenario_request_service)
 ) -> Dict[str, Any]:
-    """Get file preview (grid/json view)"""
+    """Get file preview (grid/json view) - visible to all logged-in users"""
     try:
-        # Ownership check: only creator or editor+ can preview files
-        if not any(r in EDITORS for r in current_user.roles):
-            existing = await scenario_request_service.get(request_id)
-            if existing.get("user_id") != current_user.user_id and existing.get("email") != current_user.email:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only preview files from your own requests")
-
         preview = await scenario_request_service.get_file_preview(
             request_id=request_id,
             file_path=file_path,
@@ -315,25 +300,19 @@ async def download_file(
     current_user: CurrentUser = Depends(get_current_user),
     scenario_request_service: NewScenarioService = Depends(get_scenario_request_service)
 ):
-    """Download a file"""
+    """Download a file - visible to all logged-in users"""
     try:
-        # Ownership check: only creator or editor+ can download files
-        if not any(r in EDITORS for r in current_user.roles):
-            existing = await scenario_request_service.get(request_id)
-            if existing.get("user_id") != current_user.user_id and existing.get("email") != current_user.email:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only download files from your own requests")
-
         result = await scenario_request_service.download_file(
             request_id=request_id,
             file_path=file_path,
             current_user=current_user.model_dump()
         )
-        
+
         if not result:
             raise HTTPException(status_code=404, detail="File not found")
-        
+
         content, file_name = result
-        
+
         return StreamingResponse(
             io.BytesIO(content),
             media_type="application/octet-stream",
