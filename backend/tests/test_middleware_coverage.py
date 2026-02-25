@@ -416,6 +416,8 @@ class TestDbHealthDispatchEnabled:
             check_interval=0,
             enabled=True,
         )
+        # Force check by making last check time far in the past
+        middleware._last_check_time = 0
 
         req = _make_request("/api/data")
         resp = await middleware.dispatch(req, _ok_call_next)
@@ -434,6 +436,8 @@ class TestDbHealthDispatchEnabled:
             check_interval=0,
             enabled=True,
         )
+        # Force check by making last check time far in the past
+        middleware._last_check_time = 0
 
         req = _make_request("/api/data")
         resp = await middleware.dispatch(req, _ok_call_next)
@@ -558,6 +562,8 @@ class TestDbHealthDbGetterReturnsNone:
             check_interval=0,
             enabled=True,
         )
+        # Force check by making last check time far in the past
+        middleware._last_check_time = 0
 
         req = _make_request("/api/data")
         resp = await middleware.dispatch(req, _ok_call_next)
@@ -583,6 +589,8 @@ class TestDbHealthExceptionHandling:
             check_interval=0,
             enabled=True,
         )
+        # Force check by making last check time far in the past
+        middleware._last_check_time = 0
 
         with patch("asyncio.wait_for", side_effect=asyncio.TimeoutError()):
             req = _make_request("/api/data")
@@ -605,6 +613,8 @@ class TestDbHealthExceptionHandling:
             enabled=True,
         )
         middleware._last_check_success = True
+        # Force check by making last check time far in the past
+        middleware._last_check_time = 0
 
         with patch("asyncio.wait_for", side_effect=RuntimeError("not ready")):
             req = _make_request("/api/data")
@@ -625,6 +635,8 @@ class TestDbHealthExceptionHandling:
             check_interval=0,
             enabled=True,
         )
+        # Force check by making last check time far in the past
+        middleware._last_check_time = 0
 
         with patch("asyncio.wait_for", side_effect=ConnectionError("refused")):
             req = _make_request("/api/data")
