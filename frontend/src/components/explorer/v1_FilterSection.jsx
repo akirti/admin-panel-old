@@ -5,7 +5,8 @@ import React, {
   useCallback,
   useRef,
 } from 'react';
-import { ChevronDown, ChevronUp, Filter, RotateCcw, Users } from 'lucide-react';
+import { ChevronDown, ChevronUp, Filter, RotateCcw, Users, Info, X } from 'lucide-react';
+import V1DescriptionRenderer from './v1_DescriptionRenderer';
 import V1DynamicFilterControl from './v1_DynamicFilterControl';
 import useAssignedCustomers from '../../hooks/useAssignedCustomers';
 import {
@@ -25,6 +26,70 @@ const isCustomerFilter = (filter) => {
   if (CUSTOMER_DATAKEY_PATTERN.test(filter.dataKey)) return true;
   const display = filter.displayName || '';
   return CUSTOMER_DISPLAY_PATTERN.test(display);
+};
+
+/**
+ * Filter label with optional info tooltip.
+ * Shows an info icon when filter.description exists; clicking it
+ * opens/closes an inline popover that renders the description HTML.
+ */
+const FilterLabel = ({ filter }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  const hasDescription =
+    filter.description &&
+    ((Array.isArray(filter.description) &&
+      filter.description.some((d) => d.status !== 'I' && (d.text || d.nodes))) ||
+      (typeof filter.description === 'string' && filter.description.trim()));
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div className="flex items-center gap-1.5 mb-1.5" ref={ref}>
+      <label className="text-sm font-medium text-neutral-700">
+        {trimCellValue(filter.displayName)}
+      </label>
+      {hasDescription && (
+        <div className="relative">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpen((prev) => !prev);
+            }}
+            className="text-neutral-400 hover:text-red-500 transition-colors focus:outline-none"
+            title="View filter info"
+          >
+            <Info size={14} />
+          </button>
+          {open && (
+            <div className="absolute left-0 top-full mt-1.5 z-50 w-72 bg-white border border-neutral-200 rounded-lg shadow-lg p-3 text-sm text-neutral-700">
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Info</span>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="text-neutral-400 hover:text-neutral-600"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+              <V1DescriptionRenderer description={filter.description} />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 };
 
 const V1FilterSection = ({
@@ -348,9 +413,8 @@ const V1FilterSection = ({
                         className="flex flex-col w-full"
                         key={filter.dataKey}
                       >
-                        <label className="text-sm font-medium text-neutral-700 mb-1.5">
-                          {trimCellValue(filter.displayName)}
-                        </label>
+                        <FilterLabel filter={filter} />
+
                         {(() => {
                           const type = filter.attributes?.find(
                             (attr) => attr.key === 'type'

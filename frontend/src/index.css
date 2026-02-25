@@ -167,4 +167,43 @@ body {
   .stat-icon {
     @apply w-12 h-12 rounded-lg bg-red-50 flex items-center justify-center text-red-600;
   }
+
+  /* Description content rendered from WidgetDescription HTML */
+  .description-content p {
+    @apply mb-2 last:mb-0;
+  }
+  .description-content ul {
+    @apply list-disc list-inside mb-2 space-y-1;
+  }
+  .description-content ol {
+    @apply list-decimal list-inside mb-2 space-y-1;
+  }
+  .description-content h1, .description-content h2, .description-content h3,
+  .description-content h4, .description-content h5, .description-content h6 {
+    @apply font-semibold text-neutral-800 mb-1;
+  }
+  .description-content a {
+    @apply text-red-600 hover:text-red-700 underline;
+  }
+  .description-content table {
+    @apply w-full border-collapse text-sm mb-2;
+  }
+  .description-content th, .description-content td {
+    @apply border border-neutral-200 px-2 py-1 text-left;
+  }
+  .description-content th {
+    @apply bg-neutral-50 font-medium;
+  }
+  .description-content strong, .description-content b {
+    @apply font-semibold;
+  }
+  .description-content em, .description-content i {
+    @apply italic;
+  }
+  .description-content code {
+    @apply bg-neutral-100 text-red-600 px-1 py-0.5 rounded text-xs;
+  }
+  .description-content blockquote {
+    @apply border-l-4 border-neutral-300 pl-3 italic text-neutral-600 mb-2;
+  }
 }

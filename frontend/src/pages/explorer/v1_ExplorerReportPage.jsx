@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useLocation } from 'react-router';
-import { Loader2, AlertCircle, BarChart3 } from 'lucide-react';
+import { Loader2, AlertCircle, BarChart3, BookOpen, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { useExplorer } from '../../components/explorer/v1_ExplorerContext';
 import V1Breadcrumbs from '../../components/explorer/v1_Breadcrumbs';
 import V1FilterSection from '../../components/explorer/v1_FilterSection';
@@ -8,9 +8,73 @@ import V1DataTable from '../../components/explorer/v1_DataTable';
 import { playboardAPI } from '../../services/api';
 import { prevailAPI } from '../../services/v1_explorerApi';
 import { getColumnsFromData as getColumnsObj } from '../../utils/v1_reportUtils';
+import V1DescriptionRenderer from '../../components/explorer/v1_DescriptionRenderer';
 
 // Date regex for detecting date strings in filter values (YYYY-MM-DD)
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Button that opens a documentation panel showing the scenario description.
+ * The description can contain HTML and renders via V1DescriptionRenderer.
+ */
+function ScenarioDocButton({ description }) {
+  const [open, setOpen] = useState(false);
+  const panelRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (panelRef.current && !panelRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
+          open
+            ? 'bg-red-50 border-red-300 text-red-700'
+            : 'bg-neutral-50 border-neutral-300 text-neutral-600 hover:bg-neutral-100'
+        }`}
+      >
+        <BookOpen size={14} />
+        Documentation
+        {open ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-40" onClick={() => setOpen(false)}>
+          <div
+            ref={panelRef}
+            className="absolute right-4 top-20 z-50 w-full max-w-lg bg-white border border-neutral-200 rounded-xl shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-neutral-100">
+              <div className="flex items-center gap-2">
+                <BookOpen size={16} className="text-red-600" />
+                <h3 className="text-sm font-semibold text-neutral-800">Scenario Documentation</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="text-neutral-400 hover:text-neutral-600 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="px-5 py-4 max-h-96 overflow-y-auto text-sm text-neutral-700 leading-relaxed">
+              <V1DescriptionRenderer description={description} />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 function V1ExplorerReportPage() {
   const { dataDomain, scenarioKey } = useParams();
@@ -473,20 +537,28 @@ function V1ExplorerReportPage() {
         <div className="p-2 bg-red-100 rounded-lg">
           <BarChart3 size={24} className="text-red-600" />
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-800">
-            {scenario?.name || scenarioKey}
-          </h1>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-neutral-800">
+              {scenario?.name || scenarioKey}
+            </h1>
+            {playboard?.scenarioDescription && (
+              <ScenarioDocButton description={playboard.scenarioDescription} />
+            )}
+          </div>
           {playboard?.scenarioDescription && (
             <p className="text-sm text-neutral-500 mt-1">
               {typeof playboard.scenarioDescription === 'string'
-                ? playboard.scenarioDescription
+                ? playboard.scenarioDescription.replace(/<[^>]*>/g, '').slice(0, 120)
                 : Array.isArray(playboard.scenarioDescription)
                   ? playboard.scenarioDescription
                       .filter((d) => d.text && d.status !== 'I')
-                      .map((d) => d.text)
+                      .map((d) => d.text.replace(/<[^>]*>/g, ''))
                       .join(' — ')
+                      .slice(0, 120)
                   : ''}
+              {((typeof playboard.scenarioDescription === 'string' && playboard.scenarioDescription.length > 120) ||
+                (Array.isArray(playboard.scenarioDescription) && playboard.scenarioDescription.filter((d) => d.text && d.status !== 'I').map((d) => d.text).join(' — ').length > 120)) && '...'}
             </p>
           )}
         </div>
