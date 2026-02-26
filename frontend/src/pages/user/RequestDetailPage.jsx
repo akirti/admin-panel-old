@@ -43,7 +43,7 @@ const STATUS_CONFIG = {
   'deployed': { label: 'Deployed', color: 'bg-green-100 text-green-700', icon: CheckCircle },
   'snapshot': { label: 'Files Ready', color: 'bg-cyan-100 text-cyan-700', icon: Clock },
   'active': { label: 'Active', color: 'bg-green-100 text-green-700', icon: CheckCircle },
-  'inactive': { label: 'Inactive', color: 'bg-neutral-100 text-neutral-700', icon: XCircle }
+  'inactive': { label: 'Inactive', color: 'bg-surface-hover text-content-secondary', icon: XCircle }
 };
 
 function RequestDetailPage() {
@@ -225,7 +225,7 @@ function RequestDetailPage() {
   };
 
   const getStatusBadge = (status) => {
-    const config = STATUS_CONFIG[status] || { label: status, color: 'bg-neutral-100 text-neutral-700', icon: Clock };
+    const config = STATUS_CONFIG[status] || { label: status, color: 'bg-surface-hover text-content-secondary', icon: Clock };
     const Icon = config.icon;
     return (
       <span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium ${config.color}`}>
@@ -249,7 +249,7 @@ function RequestDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="animate-spin text-red-600" size={32} />
+        <Loader2 className="animate-spin text-primary-600" size={32} />
       </div>
     );
   }
@@ -257,7 +257,7 @@ function RequestDetailPage() {
   if (!request) {
     return (
       <div className="text-center py-12">
-        <p className="text-neutral-500">Request not found</p>
+        <p className="text-content-muted">Request not found</p>
       </div>
     );
   }
@@ -268,7 +268,7 @@ function RequestDetailPage() {
       <div className="mb-6">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-neutral-600 hover:text-neutral-900 mb-4"
+          className="flex items-center gap-2 text-content-secondary hover:text-content mb-4"
         >
           <ArrowLeft size={18} />
           Back to Requests
@@ -277,10 +277,10 @@ function RequestDetailPage() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <span className="font-mono text-lg text-red-600">{request.requestId}</span>
+              <span className="font-mono text-lg text-primary-600">{request.requestId}</span>
               {getStatusBadge(request.status)}
             </div>
-            <h1 className="text-2xl font-bold text-neutral-900">{request.name}</h1>
+            <h1 className="text-2xl font-bold text-content">{request.name}</h1>
           </div>
           
           {/* Show Edit button for:
@@ -311,14 +311,14 @@ function RequestDetailPage() {
             <div className="card-body">
               <div
                 className="prose prose-sm max-w-none break-words overflow-wrap-anywhere"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(request.description || '<p class="text-neutral-500">No description</p>') }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(request.description || '<p class="text-content-muted">No description</p>') }}
               />
 
               {request.reason && (
                 <div className="mt-4 pt-4 border-t">
-                  <h3 className="text-sm font-medium text-neutral-700 mb-2">Business Justification</h3>
+                  <h3 className="text-sm font-medium text-content-secondary mb-2">Business Justification</h3>
                   <div
-                    className="prose prose-sm max-w-none break-words overflow-wrap-anywhere text-neutral-600"
+                    className="prose prose-sm max-w-none break-words overflow-wrap-anywhere text-content-secondary"
                     dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(request.reason) }}
                   />
                 </div>
@@ -336,22 +336,22 @@ function RequestDetailPage() {
                 <ol className="space-y-4">
                   {request.steps.map((step, index) => (
                     <li key={index} className="flex gap-3">
-                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-sm font-medium">
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center text-sm font-medium">
                         {index + 1}
                       </span>
                       <div className="flex-1 min-w-0">
                         <div
-                          className="prose prose-sm max-w-none text-neutral-800 break-words"
+                          className="prose prose-sm max-w-none text-content break-words"
                           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(step.description) }}
                         />
                         {step.database && (
-                          <p className="text-sm text-neutral-500 mt-2">
+                          <p className="text-sm text-content-muted mt-2">
                             <span className="font-medium">Database:</span> {step.database}
                           </p>
                         )}
                         {step.query && (
                           <div className="mt-2">
-                            <p className="text-xs font-medium text-neutral-600 mb-1">Query:</p>
+                            <p className="text-xs font-medium text-content-secondary mb-1">Query:</p>
                             <pre className="text-xs bg-neutral-900 text-green-400 p-3 rounded-lg overflow-x-auto font-mono">
                               {step.query}
                             </pre>
@@ -374,12 +374,12 @@ function RequestDetailPage() {
               <div className="card-body">
                 <div className="space-y-2">
                   {request.files.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
+                    <div key={index} className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg">
                       <div className="flex items-center gap-3">
-                        <FileText size={20} className="text-neutral-400" />
+                        <FileText size={20} className="text-content-muted" />
                         <div>
-                          <p className="text-sm font-medium text-neutral-900">{file.file_name || file.name}</p>
-                          <p className="text-xs text-neutral-500">{file.file_type} • v{file.version || 1}</p>
+                          <p className="text-sm font-medium text-content">{file.file_name || file.name}</p>
+                          <p className="text-xs text-content-muted">{file.file_type} • v{file.version || 1}</p>
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -430,8 +430,8 @@ function RequestDetailPage() {
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <FileText size={20} className="text-green-600 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-neutral-900 truncate">{file.file_name || file.name}</p>
-                          <div className="flex items-center gap-2 text-xs text-neutral-500">
+                          <p className="text-sm font-medium text-content truncate">{file.file_name || file.name}</p>
+                          <div className="flex items-center gap-2 text-xs text-content-muted">
                             <span>{file.file_type}</span>
                             <span>•</span>
                             <span>v{file.version || 1}</span>
@@ -449,7 +449,7 @@ function RequestDetailPage() {
                             )}
                           </div>
                           {file.comment && (
-                            <p className="text-xs text-neutral-600 mt-1 italic">{file.comment}</p>
+                            <p className="text-xs text-content-secondary mt-1 italic">{file.comment}</p>
                           )}
                         </div>
                       </div>
@@ -474,8 +474,8 @@ function RequestDetailPage() {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <Package className="mx-auto text-neutral-300 mb-2" size={48} />
-                  <p className="text-neutral-500 text-sm">
+                  <Package className="mx-auto text-content-muted mb-2" size={48} />
+                  <p className="text-content-muted text-sm">
                     {canUploadBucketFiles()
                       ? 'No data snapshots uploaded yet. Click "Upload Snapshot" to add files.'
                       : 'No data snapshots available yet.'}
@@ -503,11 +503,11 @@ function RequestDetailPage() {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-neutral-900">{comment.username || 'User'}</span>
-                          <span className="text-xs text-neutral-500">{formatDate(comment.commentDate)}</span>
+                          <span className="font-medium text-content">{comment.username || 'User'}</span>
+                          <span className="text-xs text-content-muted">{formatDate(comment.commentDate)}</span>
                         </div>
                         <div 
-                          className="text-sm text-neutral-700"
+                          className="text-sm text-content-secondary"
                           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(comment.comment) }}
                         />
                       </div>
@@ -515,7 +515,7 @@ function RequestDetailPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-neutral-500 text-sm mb-4">No comments yet</p>
+                <p className="text-content-muted text-sm mb-4">No comments yet</p>
               )}
               
               {/* Add Comment */}
@@ -548,22 +548,22 @@ function RequestDetailPage() {
             </div>
             <div className="card-body space-y-4">
               <div>
-                <p className="text-sm text-neutral-500">Domain</p>
+                <p className="text-sm text-content-muted">Domain</p>
                 <p className="font-medium">{request.dataDomain}</p>
               </div>
               <div>
-                <p className="text-sm text-neutral-500">Request Type</p>
+                <p className="text-sm text-content-muted">Request Type</p>
                 <p className="font-medium">{request.requestType || 'New Scenario'}</p>
               </div>
               <div>
-                <p className="text-sm text-neutral-500">Created</p>
+                <p className="text-sm text-content-muted">Created</p>
                 <p className="font-medium flex items-center gap-2">
                   <Calendar size={14} />
                   {formatDate(request.row_add_stp)}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-neutral-500">Last Updated</p>
+                <p className="text-sm text-content-muted">Last Updated</p>
                 <p className="font-medium flex items-center gap-2">
                   <Clock size={14} />
                   {formatDate(request.row_update_stp)}
@@ -571,25 +571,25 @@ function RequestDetailPage() {
               </div>
               {request.fulfilmentDate && (
                 <div>
-                  <p className="text-sm text-neutral-500">Target Date</p>
+                  <p className="text-sm text-content-muted">Target Date</p>
                   <p className="font-medium">{formatDate(request.fulfilmentDate)}</p>
                 </div>
               )}
               {request.scenarioKey && (
                 <div>
-                  <p className="text-sm text-neutral-500">Scenario Key</p>
-                  <p className="font-mono text-sm bg-neutral-100 px-2 py-1 rounded">{request.scenarioKey}</p>
+                  <p className="text-sm text-content-muted">Scenario Key</p>
+                  <p className="font-mono text-sm bg-surface-hover px-2 py-1 rounded">{request.scenarioKey}</p>
                 </div>
               )}
               {request.team && (
                 <div>
-                  <p className="text-sm text-neutral-500">Team</p>
+                  <p className="text-sm text-content-muted">Team</p>
                   <p className="font-medium">{request.team}</p>
                 </div>
               )}
               {request.assignee_name && (
                 <div>
-                  <p className="text-sm text-neutral-500">Assignee</p>
+                  <p className="text-sm text-content-muted">Assignee</p>
                   <p className="font-medium">{request.assignee_name}</p>
                 </div>
               )}
@@ -608,19 +608,19 @@ function RequestDetailPage() {
                   <div className="space-y-4">
                     {request.work_flow.map((wf, index) => (
                       <div key={index} className="relative flex gap-3 pl-8">
-                        <div className="absolute left-1.5 w-3 h-3 rounded-full bg-red-500"></div>
+                        <div className="absolute left-1.5 w-3 h-3 rounded-full bg-primary-500"></div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-neutral-500">{formatDate(wf.create_stp)}</span>
+                            <span className="text-xs text-content-muted">{formatDate(wf.create_stp)}</span>
                           </div>
-                          <p className="text-sm font-medium text-neutral-900">
+                          <p className="text-sm font-medium text-content">
                             {wf.from_status} → {wf.to_status}
                           </p>
                           {wf.assigned_to_name && (
-                            <p className="text-xs text-neutral-500">Assigned to: {wf.assigned_to_name}</p>
+                            <p className="text-xs text-content-muted">Assigned to: {wf.assigned_to_name}</p>
                           )}
                           {wf.comment && (
-                            <p className="text-xs text-neutral-600 mt-1">{wf.comment}</p>
+                            <p className="text-xs text-content-secondary mt-1">{wf.comment}</p>
                           )}
                         </div>
                       </div>
@@ -673,14 +673,14 @@ function RequestDetailPage() {
                 {/* Dependency Links */}
                 {request.jira_links && request.jira_links.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-xs text-neutral-500 font-medium">Dependencies & Related</p>
+                    <p className="text-xs text-content-muted font-medium">Dependencies & Related</p>
                     {request.jira_links.map((link, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between p-2 bg-neutral-50 rounded-lg border border-neutral-200"
+                        className="flex items-center justify-between p-2 bg-surface-secondary rounded-lg border border-edge"
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-xs px-1.5 py-0.5 bg-neutral-200 text-neutral-600 rounded capitalize">
+                          <span className="text-xs px-1.5 py-0.5 bg-neutral-200 text-content-secondary rounded capitalize">
                             {link.link_type || 'dependency'}
                           </span>
                           <a
@@ -693,14 +693,14 @@ function RequestDetailPage() {
                             <ExternalLink size={12} />
                           </a>
                           {link.title && (
-                            <span className="text-xs text-neutral-500 truncate">{link.title}</span>
+                            <span className="text-xs text-content-muted truncate">{link.title}</span>
                           )}
                         </div>
                         {isEditor() && (
                           <button
                             onClick={() => handleRemoveJiraLink(index)}
                             disabled={removingJiraLinkIndex === index}
-                            className="p-1 text-neutral-400 hover:text-red-600 transition-colors"
+                            className="p-1 text-content-muted hover:text-red-600 transition-colors"
                             title="Remove link"
                           >
                             {removingJiraLinkIndex === index ? (
@@ -719,7 +719,7 @@ function RequestDetailPage() {
                 {!request.jira?.ticket_key &&
                  !request.jira_integration?.ticket_key &&
                  (!request.jira_links || request.jira_links.length === 0) && (
-                  <p className="text-sm text-neutral-500 text-center py-2">
+                  <p className="text-sm text-content-muted text-center py-2">
                     No Jira tickets linked yet
                   </p>
                 )}
@@ -742,25 +742,25 @@ function RequestDetailPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-2">
+            <label className="block text-sm font-medium text-content-secondary mb-2">
               Select File <span className="text-red-500">*</span>
             </label>
             <input
               type="file"
               onChange={handleFileSelect}
               accept=".xlsx,.xls,.csv,.json,.txt,.png,.jpg,.jpeg"
-              className="block w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-600 hover:file:bg-red-100"
+              className="block w-full text-sm text-content-muted file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-600 hover:file:bg-primary-100"
             />
-            <p className="text-xs text-neutral-500 mt-1">
+            <p className="text-xs text-content-muted mt-1">
               Supported: xlsx, csv, json, txt, image (max 10MB)
             </p>
             {uploadFile && (
-              <div className="mt-2 p-2 bg-neutral-50 rounded flex items-center justify-between">
+              <div className="mt-2 p-2 bg-surface-secondary rounded flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <FileText size={16} className="text-neutral-400" />
-                  <span className="text-sm text-neutral-700">{uploadFile.name}</span>
+                  <FileText size={16} className="text-content-muted" />
+                  <span className="text-sm text-content-secondary">{uploadFile.name}</span>
                 </div>
-                <span className="text-xs text-neutral-500">
+                <span className="text-xs text-content-muted">
                   {(uploadFile.size / 1024).toFixed(1)} KB
                 </span>
               </div>
@@ -768,7 +768,7 @@ function RequestDetailPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-2">
+            <label className="block text-sm font-medium text-content-secondary mb-2">
               Explanation (Optional)
             </label>
             <textarea
@@ -826,22 +826,22 @@ function RequestDetailPage() {
           <div className="max-h-[70vh] overflow-auto">
               {previewLoading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="animate-spin text-red-600" size={32} />
+                  <Loader2 className="animate-spin text-primary-600" size={32} />
                 </div>
               ) : previewData.type === 'grid' ? (
                 <div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm border-collapse">
-                      <thead className="bg-neutral-100 sticky top-0">
+                      <thead className="bg-surface-hover sticky top-0">
                         <tr>
                           {previewData.headers?.map((h, i) => (
-                            <th key={i} className="px-3 py-2 text-left font-medium border-b-2 border-neutral-300">{h}</th>
+                            <th key={i} className="px-3 py-2 text-left font-medium border-b-2 border-edge">{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
                         {previewData.rows?.slice(previewPage * ROWS_PER_PAGE, (previewPage + 1) * ROWS_PER_PAGE).map((row, i) => (
-                          <tr key={i} className="border-b hover:bg-neutral-50">
+                          <tr key={i} className="border-b hover:bg-surface-secondary">
                             {row.map((cell, j) => (
                               <td key={j} className="px-3 py-2">{String(cell)}</td>
                             ))}
@@ -852,7 +852,7 @@ function RequestDetailPage() {
                   </div>
                   {previewData.rows && previewData.rows.length > ROWS_PER_PAGE && (
                     <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                      <p className="text-sm text-neutral-600">
+                      <p className="text-sm text-content-secondary">
                         Showing {previewPage * ROWS_PER_PAGE + 1} to {Math.min((previewPage + 1) * ROWS_PER_PAGE, previewData.rows.length)} of {previewData.rows.length} rows
                       </p>
                       <div className="flex gap-2">
@@ -863,7 +863,7 @@ function RequestDetailPage() {
                         >
                           <ChevronLeft size={16} />
                         </button>
-                        <span className="px-3 py-1 text-sm text-neutral-600">
+                        <span className="px-3 py-1 text-sm text-content-secondary">
                           Page {previewPage + 1} of {Math.ceil(previewData.rows.length / ROWS_PER_PAGE)}
                         </span>
                         <button
@@ -878,7 +878,7 @@ function RequestDetailPage() {
                   )}
                 </div>
               ) : previewData.type === 'json' ? (
-                <pre className="bg-neutral-50 p-4 rounded text-xs overflow-auto">
+                <pre className="bg-surface-secondary p-4 rounded text-xs overflow-auto">
                   {JSON.stringify(previewData.data, null, 2)}
                 </pre>
               ) : previewData.type === 'image' ? (
@@ -886,11 +886,11 @@ function RequestDetailPage() {
                   <img src={previewData.data} alt="Preview" className="max-w-full max-h-[70vh] object-contain" />
                 </div>
               ) : previewData.type === 'text' ? (
-                <pre className="bg-neutral-50 p-4 rounded text-sm overflow-auto whitespace-pre-wrap">
+                <pre className="bg-surface-secondary p-4 rounded text-sm overflow-auto whitespace-pre-wrap">
                   {previewData.data}
                 </pre>
               ) : (
-                <p className="text-neutral-500 text-center py-12">Preview not available for this file type</p>
+                <p className="text-content-muted text-center py-12">Preview not available for this file type</p>
               )}
           </div>
         )}
@@ -908,7 +908,7 @@ function RequestDetailPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-2">
+            <label className="block text-sm font-medium text-content-secondary mb-2">
               Ticket Key <span className="text-red-500">*</span>
             </label>
             <input
@@ -921,7 +921,7 @@ function RequestDetailPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-2">
+            <label className="block text-sm font-medium text-content-secondary mb-2">
               Ticket URL (Optional)
             </label>
             <input
@@ -934,7 +934,7 @@ function RequestDetailPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-2">
+            <label className="block text-sm font-medium text-content-secondary mb-2">
               Title (Optional)
             </label>
             <input
@@ -947,7 +947,7 @@ function RequestDetailPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-2">
+            <label className="block text-sm font-medium text-content-secondary mb-2">
               Link Type
             </label>
             <select
