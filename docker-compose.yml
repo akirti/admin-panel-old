@@ -6,6 +6,7 @@ services:
     image: mongo:7.0
     container_name: easylife-mongodb
     restart: unless-stopped
+    command: mongod --auth --bind_ip_all --setParameter diagnosticDataCollectionEnabled=false
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password123}

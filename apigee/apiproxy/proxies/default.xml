@@ -208,6 +208,13 @@
             <Condition>(proxy.pathsuffix MatchesPath "/roles") and (request.verb = "GET")</Condition>
         </Flow>
 
+        <Flow name="Roles-Create">
+            <Description>Create a new role</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/roles") and (request.verb = "POST")</Condition>
+        </Flow>
+
         <Flow name="Roles-Count">
             <Description>Get roles count</Description>
             <Request/>
@@ -242,6 +249,13 @@
             <Request/>
             <Response/>
             <Condition>(proxy.pathsuffix MatchesPath "/groups") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Groups-Create">
+            <Description>Create a new group</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/groups") and (request.verb = "POST")</Condition>
         </Flow>
 
         <Flow name="Groups-Count">
@@ -285,6 +299,13 @@
             <Request/>
             <Response/>
             <Condition>(proxy.pathsuffix MatchesPath "/permissions") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Permissions-Create">
+            <Description>Create a new permission</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/permissions") and (request.verb = "POST")</Condition>
         </Flow>
 
         <Flow name="Permissions-Modules">
@@ -344,6 +365,13 @@
             <Condition>(proxy.pathsuffix MatchesPath "/domains") and (request.verb = "GET")</Condition>
         </Flow>
 
+        <Flow name="Domains-Create">
+            <Description>Create a new domain</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/domains") and (request.verb = "POST")</Condition>
+        </Flow>
+
         <Flow name="Domains-Count">
             <Description>Get domains count</Description>
             <Request/>
@@ -392,6 +420,13 @@
             <Request/>
             <Response/>
             <Condition>(proxy.pathsuffix MatchesPath "/domain-scenarios") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="DomainScenarios-Create">
+            <Description>Create a new domain scenario</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/domain-scenarios") and (request.verb = "POST")</Condition>
         </Flow>
 
         <Flow name="DomainScenarios-Count">
@@ -523,6 +558,13 @@
             <Condition>(proxy.pathsuffix MatchesPath "/playboards") and (request.verb = "GET")</Condition>
         </Flow>
 
+        <Flow name="Playboards-Create">
+            <Description>Create a new playboard</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/playboards") and (request.verb = "POST")</Condition>
+        </Flow>
+
         <Flow name="Playboards-Count">
             <Description>Get playboards count</Description>
             <Request/>
@@ -571,6 +613,13 @@
             <Request/>
             <Response/>
             <Condition>(proxy.pathsuffix MatchesPath "/configurations") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Configurations-Create">
+            <Description>Create a new configuration</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/configurations") and (request.verb = "POST")</Condition>
         </Flow>
 
         <Flow name="Configurations-Count">
@@ -720,6 +769,13 @@
             <Request/>
             <Response/>
             <Condition>(proxy.pathsuffix MatchesPath "/customers") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Customers-Create">
+            <Description>Create a new customer</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/customers") and (request.verb = "POST")</Condition>
         </Flow>
 
         <Flow name="Customers-Count">
