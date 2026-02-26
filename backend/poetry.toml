@@ -1,0 +1,16 @@
+[virtualenvs]
+create = true
+in-project = true
+path = ".venv"
+prefer-active-python = true
+
+[installer]
+max-workers = 4
+modern-installation = true
+no-binary = false
+
+[solver]
+lazy-wheel = true
+
+[repositories.pypi]
+url = "https://pypi.org/simple/"
