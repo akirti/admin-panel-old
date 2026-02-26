@@ -34,7 +34,7 @@ function DomainsPage() {
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
@@ -42,9 +42,9 @@ function DomainsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-neutral-900">My Domains</h1>
+        <h1 className="text-2xl font-bold text-content">My Domains</h1>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
           <input
             type="text"
             placeholder="Search domains..."
@@ -57,9 +57,9 @@ function DomainsPage() {
 
       {filteredDomains.length === 0 ? (
         <div className="card text-center py-12">
-          <Layers className="mx-auto text-neutral-400 mb-4" size={48} />
-          <h3 className="text-lg font-medium text-neutral-900 mb-2">No Domains Found</h3>
-          <p className="text-neutral-500">
+          <Layers className="mx-auto text-content-muted mb-4" size={48} />
+          <h3 className="text-lg font-medium text-content mb-2">No Domains Found</h3>
+          <p className="text-content-muted">
             {searchTerm
               ? 'No domains match your search criteria.'
               : 'You don\'t have access to any domains yet.'}
@@ -74,22 +74,37 @@ function DomainsPage() {
               className="card hover:shadow-lg transition-shadow group"
             >
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Layers className="text-blue-600" size={24} />
+                <div className="w-12 h-12 bg-primary-50 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {domain.icon ? (
+                    <img
+                      src={domain.icon}
+                      alt={domain.name}
+                      className="w-7 h-7 object-contain"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'block';
+                      }}
+                    />
+                  ) : null}
+                  <Layers
+                    className="text-primary-600"
+                    size={24}
+                    style={{ display: domain.icon ? 'none' : 'block' }}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-neutral-900 group-hover:text-blue-600 transition-colors">
+                  <h3 className="font-semibold text-content group-hover:text-primary-600 transition-colors">
                     {domain.name}
                   </h3>
-                  <p className="text-sm text-neutral-500 mb-2">{domain.key}</p>
+                  <p className="text-sm text-content-muted mb-2">{domain.key}</p>
                   {domain.description && (
-                    <p className="text-sm text-neutral-600 line-clamp-2">
+                    <p className="text-sm text-content-secondary line-clamp-2">
                       {domain.description}
                     </p>
                   )}
                 </div>
                 <ArrowRight
-                  className="text-neutral-400 group-hover:text-blue-600 transition-colors flex-shrink-0"
+                  className="text-content-muted group-hover:text-primary-600 transition-colors flex-shrink-0"
                   size={20}
                 />
               </div>

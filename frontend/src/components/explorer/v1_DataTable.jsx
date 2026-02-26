@@ -208,7 +208,7 @@ const V1DataTable = ({
   // Sort icon for column header
   const getSortIcon = (colKey) => {
     if (sortBy !== colKey || !sortOrder) {
-      return <ArrowUpDown size={14} className="text-neutral-400" />;
+      return <ArrowUpDown size={14} className="text-content-muted" />;
     }
     return sortOrder === "asc" ? (
       <ArrowUp size={14} className="text-blue-600" />
@@ -220,7 +220,7 @@ const V1DataTable = ({
   return (
     <div className="mt-4">
       {filteredData.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-neutral-400">
+        <div className="flex flex-col items-center justify-center py-16 text-content-muted">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-12 w-12 mb-3"
@@ -242,9 +242,9 @@ const V1DataTable = ({
         <div className="card p-0 overflow-auto">
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10">
-              <tr className="bg-neutral-50 border-b border-neutral-200">
+              <tr className="bg-surface-secondary border-b border-edge">
                 {actionGrid.length > 0 && (
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider whitespace-nowrap w-16">
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-content-secondary uppercase tracking-wider whitespace-nowrap w-16">
                     Actions
                   </th>
                 )}
@@ -254,7 +254,7 @@ const V1DataTable = ({
                     className={`px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap ${
                       isColumnFiltered(col.key)
                         ? "bg-blue-50 text-blue-700"
-                        : "text-neutral-600"
+                        : "text-content-secondary"
                     }`}
                     scope="col"
                     aria-sort={
@@ -288,12 +288,12 @@ const V1DataTable = ({
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-100">
+            <tbody className="divide-y divide-edge-light">
               {filteredData.map((row, idx) => (
                 <tr
                   key={row.id ?? idx}
                   className={`${
-                    idx % 2 === 0 ? "bg-white" : "bg-neutral-50/50"
+                    idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary/50"
                   } hover:bg-blue-50/40 transition-colors`}
                 >
                   {actionGrid.length > 0 && (
@@ -305,14 +305,14 @@ const V1DataTable = ({
                         onClick={() => toggleActionMenu(idx)}
                         aria-label="Show actions"
                       >
-                        <MoreVertical size={16} className="text-neutral-500" />
+                        <MoreVertical size={16} className="text-content-muted" />
                       </button>
                       {openMenuIdx === idx &&
                         menuPosition &&
                         ReactDOM.createPortal(
                           <div
                             ref={menuRef}
-                            className="fixed bg-white border border-neutral-200 rounded-lg shadow-lg py-1 min-w-[160px]"
+                            className="fixed bg-surface border border-edge rounded-lg shadow-lg py-1 min-w-[160px]"
                             style={{
                               top: menuPosition.top,
                               left: menuPosition.left,
@@ -323,7 +323,7 @@ const V1DataTable = ({
                               <button
                                 key={`${action.name || "action"}-${i}`}
                                 type="button"
-                                className="block w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                className="block w-full text-left px-4 py-2 text-sm text-content-secondary hover:bg-blue-50 hover:text-blue-700 transition-colors"
                                 onClick={handleActionClick(action, row)}
                                 aria-label={action.name}
                               >
@@ -338,7 +338,7 @@ const V1DataTable = ({
                   {columns.map((col) => (
                     <td
                       key={col.key}
-                      className="px-3 py-2 whitespace-nowrap text-neutral-700"
+                      className="px-3 py-2 whitespace-nowrap text-content-secondary"
                     >
                       {trimCellValue(row[col.key])}
                     </td>

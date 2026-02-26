@@ -50,8 +50,8 @@ function RegisterPage() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-neutral-900 mb-2">Create Account</h2>
-      <p className="text-neutral-500 mb-6">Start your journey with us</p>
+      <h2 className="text-2xl font-bold text-content mb-2">Create Account</h2>
+      <p className="text-content-muted mb-6">Start your journey with us</p>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -59,7 +59,7 @@ function RegisterPage() {
             Full Name
           </label>
           <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
             <input
               type="text"
               name="full_name"
@@ -76,7 +76,7 @@ function RegisterPage() {
             Username
           </label>
           <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
             <input
               type="text"
               name="username"
@@ -94,7 +94,7 @@ function RegisterPage() {
             Email
           </label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
             <input
               type="email"
               name="email"
@@ -112,7 +112,7 @@ function RegisterPage() {
             Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
             <input
               type={showPassword ? 'text' : 'password'}
               name="password"
@@ -125,7 +125,7 @@ function RegisterPage() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-content-muted hover:text-content-secondary"
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
@@ -137,7 +137,7 @@ function RegisterPage() {
             Confirm Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
             <input
               type={showPassword ? 'text' : 'password'}
               name="confirmPassword"
@@ -160,8 +160,8 @@ function RegisterPage() {
       </form>
 
       <div className="mt-6 text-center">
-        <span className="text-sm text-neutral-500">Already have an account?</span>{' '}
-        <Link to="/login" className="text-sm text-red-600 hover:text-red-700 font-medium">
+        <span className="text-sm text-content-muted">Already have an account?</span>{' '}
+        <Link to="/login" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
           Sign in
         </Link>
       </div>

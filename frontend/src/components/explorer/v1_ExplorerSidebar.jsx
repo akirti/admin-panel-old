@@ -21,19 +21,19 @@ function V1ExplorerSidebar() {
 
   if (loading) {
     return (
-      <div className={`${collapsed ? 'w-16' : 'w-56'} bg-white border-r border-neutral-200 flex items-center justify-center`}>
-        <Loader2 className="animate-spin text-red-600" size={24} />
+      <div className={`${collapsed ? 'w-16' : 'w-56'} bg-surface border-r border-edge flex items-center justify-center`}>
+        <Loader2 className="animate-spin text-primary-600" size={24} />
       </div>
     );
   }
 
   return (
-    <div className={`${collapsed ? 'w-16' : 'w-56'} bg-white border-r border-neutral-200 flex flex-col transition-all duration-200`}>
-      <div className="flex items-center justify-between p-3 border-b border-neutral-200">
-        {!collapsed && <span className="text-sm font-semibold text-neutral-700">Data Domains</span>}
+    <div className={`${collapsed ? 'w-16' : 'w-56'} bg-surface border-r border-edge flex flex-col transition-all duration-200`}>
+      <div className="flex items-center justify-between p-3 border-b border-edge">
+        {!collapsed && <span className="text-sm font-semibold text-content-secondary">Data Domains</span>}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-1 rounded hover:bg-neutral-100 text-neutral-500"
+          className="p-1 rounded hover:bg-surface-hover text-content-muted"
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
@@ -47,14 +47,35 @@ function V1ExplorerSidebar() {
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                     isActive
-                      ? 'bg-red-600 text-white'
-                      : 'text-neutral-700 hover:bg-red-50 hover:text-red-600'
+                      ? 'bg-primary-600 text-white'
+                      : 'text-content-secondary hover:bg-primary-50 hover:text-primary-600'
                   }`
                 }
                 title={domain.name}
               >
-                <Layers size={18} className="shrink-0" />
-                {!collapsed && <span className="truncate">{domain.name}</span>}
+                {({ isActive }) => (
+                  <>
+                    <span className="w-5 h-5 shrink-0 flex items-center justify-center overflow-hidden">
+                      {domain.icon && !isActive ? (
+                        <img
+                          src={domain.icon}
+                          alt=""
+                          className="w-5 h-5 object-contain"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'block';
+                          }}
+                        />
+                      ) : null}
+                      <Layers
+                        size={18}
+                        className="shrink-0"
+                        style={{ display: domain.icon && !isActive ? 'none' : 'block' }}
+                      />
+                    </span>
+                    {!collapsed && <span className="truncate">{domain.name}</span>}
+                  </>
+                )}
               </NavLink>
             </li>
           ))}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
+import ThemeSwitcher from '../shared/ThemeSwitcher';
 import {
   LayoutDashboard,
   Users,
@@ -112,23 +113,23 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
   };
 
   return (
-    <div className="flex h-screen bg-neutral-100">
+    <div className="flex h-screen bg-base-secondary">
       {/* Sidebar */}
       <aside
         className={`${
           sidebarOpen ? 'w-64' : 'w-20'
-        } bg-white shadow-sm border-r border-neutral-200 transition-all duration-300 flex flex-col`}
+        } bg-sidebar-bg shadow-sm border-r border-edge transition-all duration-300 flex flex-col`}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-neutral-200">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-edge">
           {sidebarOpen && (
-            <span className="text-xl font-bold text-red-600">
+            <span className="text-xl font-bold text-primary-600">
               {isAdmin ? 'Admin Panel' : isGroupAdmin ? 'Management' : 'EasyLife'}
             </span>
           )}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-600"
+            className="p-2 rounded-lg hover:bg-surface-hover text-content-secondary"
           >
             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -163,7 +164,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
                     </Link>
                   )}
                   {item.dividerAfter && (
-                    <div className="my-3 border-t border-neutral-200"></div>
+                    <div className="my-3 border-t border-edge"></div>
                   )}
                 </li>
               );
@@ -171,12 +172,17 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
           </ul>
         </nav>
 
+        {/* Theme Switcher */}
+        <div className="px-4 py-2 border-t border-edge">
+          <ThemeSwitcher compact={!sidebarOpen} />
+        </div>
+
         {/* User Info */}
-        <div className="p-4 border-t border-neutral-200">
+        <div className="p-4 border-t border-edge">
           <div className="relative">
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-100"
+              className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-surface-hover"
             >
               <div className="avatar">
                 <User size={20} />
@@ -184,21 +190,21 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
               {sidebarOpen && (
                 <>
                   <div className="flex-1 text-left">
-                    <p className="text-sm font-medium text-neutral-900 truncate">
+                    <p className="text-sm font-medium text-content truncate">
                       {user?.full_name || user?.username || 'User'}
                     </p>
-                    <p className="text-xs text-neutral-500 truncate">{user?.email}</p>
+                    <p className="text-xs text-content-muted truncate">{user?.email}</p>
                   </div>
-                  <ChevronDown size={16} className={`text-neutral-400 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={16} className={`text-content-muted transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </>
               )}
             </button>
 
             {userMenuOpen && (
-              <div className="absolute bottom-full left-0 w-full mb-2 bg-white rounded-lg shadow-lg border border-neutral-200 py-2">
+              <div className="absolute bottom-full left-0 w-full mb-2 bg-surface rounded-lg shadow-lg border border-edge py-2">
                 <Link
                   to="/profile"
-                  className="flex items-center gap-2 px-4 py-2 hover:bg-neutral-100 text-neutral-700"
+                  className="flex items-center gap-2 px-4 py-2 hover:bg-surface-hover text-content-secondary"
                   onClick={() => setUserMenuOpen(false)}
                 >
                   <User size={16} />
@@ -220,11 +226,11 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {/* Header */}
-        <header className="h-16 bg-white shadow-sm border-b border-neutral-200 flex items-center justify-between px-6">
-          <h1 className="text-xl font-semibold text-neutral-900">
+        <header className="h-16 bg-header-bg shadow-sm border-b border-edge flex items-center justify-between px-6">
+          <h1 className="text-xl font-semibold text-content">
             {isAdmin ? 'Administration' : isGroupAdmin ? 'Management' : 'Welcome'}
           </h1>
-          
+
           <div className="flex items-center gap-4">
             {/* Role badges */}
             <div className="flex gap-2">

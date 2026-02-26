@@ -345,9 +345,9 @@ const CustomersManagement = () => {
   if (!isSuperAdmin()) {
     return (
       <div className="text-center py-12">
-        <Shield className="mx-auto text-neutral-400 mb-4" size={48} />
-        <h2 className="text-xl font-semibold text-neutral-900 mb-2">Access Denied</h2>
-        <p className="text-neutral-500">Only Super Administrators can access this page.</p>
+        <Shield className="mx-auto text-content-muted mb-4" size={48} />
+        <h2 className="text-xl font-semibold text-content mb-2">Access Denied</h2>
+        <p className="text-content-muted">Only Super Administrators can access this page.</p>
       </div>
     );
   }
@@ -357,8 +357,8 @@ const CustomersManagement = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Customers Management</h1>
-          <p className="text-neutral-500 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-content">Customers Management</h1>
+          <p className="text-content-muted text-sm mt-1">
             Manage customer accounts and their users ({total} total)
           </p>
         </div>
@@ -373,10 +373,10 @@ const CustomersManagement = () => {
             </button>
             <div
               id="export-menu-customers"
-              className="hidden absolute right-0 mt-1 bg-white border rounded-lg shadow-lg z-10"
+              className="hidden absolute right-0 mt-1 bg-surface border rounded-lg shadow-lg z-10"
             >
               <button
-                className="block w-full px-4 py-2 text-left hover:bg-neutral-100"
+                className="block w-full px-4 py-2 text-left hover:bg-surface-hover"
                 onClick={() => {
                   handleExport('csv');
                   document.getElementById('export-menu-customers').classList.add('hidden');
@@ -385,7 +385,7 @@ const CustomersManagement = () => {
                 Export as CSV
               </button>
               <button
-                className="block w-full px-4 py-2 text-left hover:bg-neutral-100"
+                className="block w-full px-4 py-2 text-left hover:bg-surface-hover"
                 onClick={() => {
                   handleExport('json');
                   document.getElementById('export-menu-customers').classList.add('hidden');
@@ -430,7 +430,7 @@ const CustomersManagement = () => {
             />
           </div>
           <div className="flex items-center gap-2">
-            <Filter size={18} className="text-neutral-400" />
+            <Filter size={18} className="text-content-muted" />
             <select
               className="input min-w-[150px]"
               value={filterLocation}
@@ -480,9 +480,9 @@ const CustomersManagement = () => {
       {/* Customers Table */}
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-neutral-500">Loading customers...</div>
+          <div className="p-8 text-center text-content-muted">Loading customers...</div>
         ) : customers.length === 0 ? (
-          <div className="p-8 text-center text-neutral-500">
+          <div className="p-8 text-center text-content-muted">
             No customers found. Click "Add Customer" to create one.
           </div>
         ) : (
@@ -506,18 +506,18 @@ const CustomersManagement = () => {
               </thead>
               <tbody className="divide-y">
                 {customers.map((customer) => (
-                  <tr key={customer._id || customer.customerId} className="hover:bg-neutral-50">
+                  <tr key={customer._id || customer.customerId} className="hover:bg-surface-hover">
                     <td className="px-4 py-3">
-                      <span className="font-mono text-sm text-neutral-600">{customer.customerId}</span>
+                      <span className="font-mono text-sm text-content-muted">{customer.customerId}</span>
                     </td>
                     <td className="px-4 py-3">
                       <div>
-                        <div className="font-medium text-neutral-900 flex items-center gap-2">
-                          <Building2 size={16} className="text-neutral-400" />
+                        <div className="font-medium text-content flex items-center gap-2">
+                          <Building2 size={16} className="text-content-muted" />
                           {customer.name}
                         </div>
                         {customer.description && (
-                          <div className="text-xs text-neutral-500 truncate max-w-xs">
+                          <div className="text-xs text-content-muted truncate max-w-xs">
                             {customer.description}
                           </div>
                         )}
@@ -526,13 +526,13 @@ const CustomersManagement = () => {
                     <td className="px-4 py-3">
                       <div className="text-sm">
                         {customer.contactEmail && (
-                          <div className="text-neutral-600">{customer.contactEmail}</div>
+                          <div className="text-content-muted">{customer.contactEmail}</div>
                         )}
                         {customer.contactPhone && (
-                          <div className="text-neutral-500 text-xs">{customer.contactPhone}</div>
+                          <div className="text-content-muted text-xs">{customer.contactPhone}</div>
                         )}
                         {!customer.contactEmail && !customer.contactPhone && (
-                          <span className="text-neutral-400 text-xs">No contact info</span>
+                          <span className="text-content-muted text-xs">No contact info</span>
                         )}
                       </div>
                     </td>
@@ -542,19 +542,19 @@ const CustomersManagement = () => {
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm text-neutral-600">{customer.unit || '-'}</span>
+                      <span className="text-sm text-content-muted">{customer.unit || '-'}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm text-neutral-600">{customer.sales || '-'}</span>
+                      <span className="text-sm text-content-muted">{customer.sales || '-'}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm text-neutral-600">{customer.division || '-'}</span>
+                      <span className="text-sm text-content-muted">{customer.division || '-'}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm text-neutral-600">{customer.channel || '-'}</span>
+                      <span className="text-sm text-content-muted">{customer.channel || '-'}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm text-neutral-600">{customer.location || '-'}</span>
+                      <span className="text-sm text-content-muted">{customer.location || '-'}</span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1 max-w-xs">
@@ -565,15 +565,15 @@ const CustomersManagement = () => {
                             </Badge>
                           ))
                         ) : (
-                          <span className="text-neutral-400 text-xs">-</span>
+                          <span className="text-content-muted text-xs">-</span>
                         )}
                         {customer.tags && customer.tags.length > 3 && (
-                          <span className="text-neutral-500 text-xs">+{customer.tags.length - 3}</span>
+                          <span className="text-content-muted text-xs">+{customer.tags.length - 3}</span>
                         )}
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm text-neutral-500">
+                      <span className="text-sm text-content-muted">
                         {customer.created_at
                           ? new Date(customer.created_at).toLocaleDateString()
                           : 'N/A'}
@@ -582,14 +582,14 @@ const CustomersManagement = () => {
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
                         <button
-                          className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           onClick={() => showUsers(customer)}
                           title="Manage Users"
                         >
                           <Users size={18} />
                         </button>
                         <button
-                          className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           onClick={() => openEditModal(customer)}
                           title="Edit"
                         >
@@ -599,7 +599,7 @@ const CustomersManagement = () => {
                           className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${
                             customer.status === 'active'
                               ? 'text-green-600 hover:bg-green-50'
-                              : 'text-neutral-400 hover:bg-neutral-50'
+                              : 'text-neutral-400 hover:bg-surface-hover'
                           }`}
                           onClick={() => handleToggleStatus(customer)}
                           title={customer.status === 'active' ? 'Deactivate' : 'Activate'}
@@ -611,7 +611,7 @@ const CustomersManagement = () => {
                           )}
                         </button>
                         <button
-                          className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           onClick={() => handleDelete(customer)}
                           title="Delete"
                         >
@@ -628,8 +628,8 @@ const CustomersManagement = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-200">
-            <p className="text-sm text-neutral-500">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-edge">
+            <p className="text-sm text-content-muted">
               Showing {page * limit + 1} to{' '}
               {Math.min((page + 1) * limit, total)} of{' '}
               {total} customers
@@ -638,17 +638,17 @@ const CustomersManagement = () => {
               <button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="p-2 rounded-lg hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-600"
+                className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-neutral-600"
               >
                 <ChevronLeft size={20} />
               </button>
-              <span className="text-sm text-neutral-600">
+              <span className="text-sm text-content-muted">
                 Page {page + 1} of {totalPages}
               </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                className="p-2 rounded-lg hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-600"
+                className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-neutral-600"
               >
                 <ChevronRight size={20} />
               </button>
@@ -668,7 +668,7 @@ const CustomersManagement = () => {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    <label className="block text-sm font-medium text-content-secondary mb-1">
                       Customer ID <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -683,7 +683,7 @@ const CustomersManagement = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    <label className="block text-sm font-medium text-content-secondary mb-1">
                       Name <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -699,7 +699,7 @@ const CustomersManagement = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  <label className="block text-sm font-medium text-content-secondary mb-1">
                     Description
                   </label>
                   <textarea
@@ -714,7 +714,7 @@ const CustomersManagement = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    <label className="block text-sm font-medium text-content-secondary mb-1">
                       Contact Email
                     </label>
                     <input
@@ -727,7 +727,7 @@ const CustomersManagement = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    <label className="block text-sm font-medium text-content-secondary mb-1">
                       Contact Phone
                     </label>
                     <input
@@ -742,7 +742,7 @@ const CustomersManagement = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  <label className="block text-sm font-medium text-content-secondary mb-1">
                     Address
                   </label>
                   <textarea
@@ -756,7 +756,7 @@ const CustomersManagement = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Status</label>
+                  <label className="block text-sm font-medium text-content-secondary mb-1">Status</label>
                   <select
                     name="status"
                     className="input w-full"
@@ -771,7 +771,7 @@ const CustomersManagement = () => {
                 {/* Business Attributes */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">Unit</label>
+                    <label className="block text-sm font-medium text-content-secondary mb-1">Unit</label>
                     <input
                       type="text"
                       name="unit"
@@ -782,7 +782,7 @@ const CustomersManagement = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">Sales</label>
+                    <label className="block text-sm font-medium text-content-secondary mb-1">Sales</label>
                     <input
                       type="text"
                       name="sales"
@@ -796,7 +796,7 @@ const CustomersManagement = () => {
 
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">Division</label>
+                    <label className="block text-sm font-medium text-content-secondary mb-1">Division</label>
                     <input
                       type="text"
                       name="division"
@@ -807,7 +807,7 @@ const CustomersManagement = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">Channel</label>
+                    <label className="block text-sm font-medium text-content-secondary mb-1">Channel</label>
                     <input
                       type="text"
                       name="channel"
@@ -818,7 +818,7 @@ const CustomersManagement = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">Location</label>
+                    <label className="block text-sm font-medium text-content-secondary mb-1">Location</label>
                     <input
                       type="text"
                       name="location"
@@ -832,7 +832,7 @@ const CustomersManagement = () => {
 
                 {/* Tags */}
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Tags</label>
+                  <label className="block text-sm font-medium text-content-secondary mb-1">Tags</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -897,7 +897,7 @@ const CustomersManagement = () => {
       >
             <div className="overflow-y-auto max-h-[calc(80vh-160px)]">
               {loadingUsers ? (
-                <div className="text-center py-8 text-neutral-500">Loading users...</div>
+                <div className="text-center py-8 text-content-muted">Loading users...</div>
               ) : (
                 <div className="space-y-6">
                   {/* Add User Section */}
@@ -908,7 +908,7 @@ const CustomersManagement = () => {
                     </h3>
                     <div className="flex gap-2">
                       <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={16} />
                         <input
                           type="text"
                           placeholder="Search users to assign..."
@@ -923,12 +923,12 @@ const CustomersManagement = () => {
                         {availableUsers.slice(0, 10).map((user) => (
                           <div
                             key={user._id}
-                            className="p-2 hover:bg-neutral-50 flex items-center justify-between cursor-pointer"
+                            className="p-2 hover:bg-surface-hover flex items-center justify-between cursor-pointer"
                             onClick={() => handleAssignUser(user._id)}
                           >
                             <div>
                               <div className="text-sm font-medium">{user.full_name || user.email}</div>
-                              <div className="text-xs text-neutral-500">{user.email}</div>
+                              <div className="text-xs text-content-muted">{user.email}</div>
                             </div>
                             <button className="text-blue-600 text-sm hover:underline">
                               Assign
@@ -938,7 +938,7 @@ const CustomersManagement = () => {
                       </div>
                     )}
                     {userSearch && availableUsers.length === 0 && (
-                      <p className="mt-2 text-sm text-neutral-500">No matching users found</p>
+                      <p className="mt-2 text-sm text-content-muted">No matching users found</p>
                     )}
                   </div>
 
@@ -949,7 +949,7 @@ const CustomersManagement = () => {
                       Assigned Users ({customerUsers.length})
                     </h3>
                     {customerUsers.length === 0 ? (
-                      <p className="text-neutral-500 text-center py-4 border rounded-lg">
+                      <p className="text-content-muted text-center py-4 border rounded-lg">
                         No users assigned to this customer
                       </p>
                     ) : (
@@ -957,13 +957,13 @@ const CustomersManagement = () => {
                         {customerUsers.map((user) => (
                           <div
                             key={user._id}
-                            className="p-3 hover:bg-neutral-50 flex items-center justify-between"
+                            className="p-3 hover:bg-surface-hover flex items-center justify-between"
                           >
                             <div>
-                              <div className="font-medium text-neutral-900">
+                              <div className="font-medium text-content">
                                 {user.full_name || user.username || user.email}
                               </div>
-                              <div className="text-sm text-neutral-500">{user.email}</div>
+                              <div className="text-sm text-content-muted">{user.email}</div>
                             </div>
                             <div className="flex items-center gap-2">
                               <Badge variant={user.is_active ? 'success' : 'danger'}>

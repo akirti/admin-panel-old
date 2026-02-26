@@ -37,8 +37,8 @@ function ScenarioDocButton({ description }) {
         onClick={() => setOpen((prev) => !prev)}
         className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
           open
-            ? 'bg-red-50 border-red-300 text-red-700'
-            : 'bg-neutral-50 border-neutral-300 text-neutral-600 hover:bg-neutral-100'
+            ? 'bg-primary-50 border-primary-300 text-primary-700'
+            : 'bg-surface-secondary border-edge text-content-secondary hover:bg-surface-hover'
         }`}
       >
         <BookOpen size={14} />
@@ -50,23 +50,23 @@ function ScenarioDocButton({ description }) {
         <div className="fixed inset-0 z-40" onClick={() => setOpen(false)}>
           <div
             ref={panelRef}
-            className="absolute right-4 top-20 z-50 w-full max-w-lg bg-white border border-neutral-200 rounded-xl shadow-xl"
+            className="absolute right-4 top-20 z-50 w-full max-w-lg bg-surface border border-edge rounded-xl shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-neutral-100">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-edge-light">
               <div className="flex items-center gap-2">
-                <BookOpen size={16} className="text-red-600" />
-                <h3 className="text-sm font-semibold text-neutral-800">Scenario Documentation</h3>
+                <BookOpen size={16} className="text-primary-600" />
+                <h3 className="text-sm font-semibold text-content">Scenario Documentation</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="text-neutral-400 hover:text-neutral-600 transition-colors"
+                className="text-content-muted hover:text-content-secondary transition-colors"
               >
                 <X size={16} />
               </button>
             </div>
-            <div className="px-5 py-4 max-h-96 overflow-y-auto text-sm text-neutral-700 leading-relaxed">
+            <div className="px-5 py-4 max-h-96 overflow-y-auto text-sm text-content-secondary leading-relaxed">
               <V1DescriptionRenderer description={description} />
             </div>
           </div>
@@ -534,12 +534,12 @@ function V1ExplorerReportPage() {
 
       {/* Page header */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-red-100 rounded-lg">
-          <BarChart3 size={24} className="text-red-600" />
+        <div className="p-2 bg-primary-100 rounded-lg">
+          <BarChart3 size={24} className="text-primary-600" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-neutral-800">
+            <h1 className="text-2xl font-bold text-content">
               {scenario?.name || scenarioKey}
             </h1>
             {playboard?.scenarioDescription && (
@@ -547,7 +547,7 @@ function V1ExplorerReportPage() {
             )}
           </div>
           {playboard?.scenarioDescription && (
-            <p className="text-sm text-neutral-500 mt-1">
+            <p className="text-sm text-content-muted mt-1">
               {typeof playboard.scenarioDescription === 'string'
                 ? playboard.scenarioDescription.replace(/<[^>]*>/g, '').slice(0, 120)
                 : Array.isArray(playboard.scenarioDescription)
@@ -567,8 +567,8 @@ function V1ExplorerReportPage() {
       {/* Filter Section */}
       {playboardLoading ? (
         <div className="flex items-center justify-center py-8">
-          <Loader2 size={24} className="animate-spin text-red-600 mr-2" />
-          <span className="text-neutral-500">Loading filters...</span>
+          <Loader2 size={24} className="animate-spin text-primary-600 mr-2" />
+          <span className="text-content-muted">Loading filters...</span>
         </div>
       ) : playboardError ? (
         <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg mb-6">
@@ -586,8 +586,8 @@ function V1ExplorerReportPage() {
       {/* Data Table */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 size={32} className="animate-spin text-red-600 mr-3" />
-          <span className="text-neutral-500 text-lg">Loading data...</span>
+          <Loader2 size={32} className="animate-spin text-primary-600 mr-3" />
+          <span className="text-content-muted text-lg">Loading data...</span>
         </div>
       ) : error ? (
         <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -611,8 +611,8 @@ function V1ExplorerReportPage() {
           totalRecords={totalCount}
         />
       ) : showTable && data.length === 0 ? (
-        <div className="text-center py-12 text-neutral-500">
-          <BarChart3 size={48} className="mx-auto mb-4 text-neutral-300" />
+        <div className="text-center py-12 text-content-muted">
+          <BarChart3 size={48} className="mx-auto mb-4 text-content-muted" />
           <p className="text-lg font-medium">No data found</p>
           <p className="text-sm mt-1">Try adjusting your filter criteria</p>
         </div>

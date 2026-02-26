@@ -67,13 +67,13 @@ function RichTextEditor({ value, onChange, placeholder, rows = 6 }) {
   };
 
   return (
-    <div className={`border rounded-lg overflow-hidden transition-all ${isFocused ? 'ring-2 ring-red-500 border-transparent' : 'border-neutral-300'}`}>
+    <div className={`border rounded-lg overflow-hidden transition-all ${isFocused ? 'ring-2 ring-primary-500 border-transparent' : 'border-edge'}`}>
       {/* Toolbar */}
-      <div className="flex items-center gap-1 px-2 py-1.5 bg-neutral-50 border-b border-neutral-200">
+      <div className="flex items-center gap-1 px-2 py-1.5 bg-surface-secondary border-b border-edge">
         <button
           type="button"
           onClick={() => execCommand('bold')}
-          className="p-1.5 rounded hover:bg-neutral-200 text-neutral-600"
+          className="p-1.5 rounded hover:bg-surface-hover text-content-secondary"
           title="Bold"
         >
           <Bold size={16} />
@@ -81,7 +81,7 @@ function RichTextEditor({ value, onChange, placeholder, rows = 6 }) {
         <button
           type="button"
           onClick={() => execCommand('italic')}
-          className="p-1.5 rounded hover:bg-neutral-200 text-neutral-600"
+          className="p-1.5 rounded hover:bg-surface-hover text-content-secondary"
           title="Italic"
         >
           <Italic size={16} />
@@ -90,7 +90,7 @@ function RichTextEditor({ value, onChange, placeholder, rows = 6 }) {
         <button
           type="button"
           onClick={() => execCommand('insertUnorderedList')}
-          className="p-1.5 rounded hover:bg-neutral-200 text-neutral-600"
+          className="p-1.5 rounded hover:bg-surface-hover text-content-secondary"
           title="Bullet List"
         >
           <List size={16} />
@@ -98,7 +98,7 @@ function RichTextEditor({ value, onChange, placeholder, rows = 6 }) {
         <button
           type="button"
           onClick={() => execCommand('insertOrderedList')}
-          className="p-1.5 rounded hover:bg-neutral-200 text-neutral-600"
+          className="p-1.5 rounded hover:bg-surface-hover text-content-secondary"
           title="Numbered List"
         >
           <ListOrdered size={16} />
@@ -110,7 +110,7 @@ function RichTextEditor({ value, onChange, placeholder, rows = 6 }) {
             const url = prompt('Enter URL:');
             if (url) execCommand('createLink', url);
           }}
-          className="p-1.5 rounded hover:bg-neutral-200 text-neutral-600"
+          className="p-1.5 rounded hover:bg-surface-hover text-content-secondary"
           title="Insert Link"
         >
           <LinkIcon size={16} />
@@ -118,7 +118,7 @@ function RichTextEditor({ value, onChange, placeholder, rows = 6 }) {
         <button
           type="button"
           onClick={() => execCommand('formatBlock', 'pre')}
-          className="p-1.5 rounded hover:bg-neutral-200 text-neutral-600"
+          className="p-1.5 rounded hover:bg-surface-hover text-content-secondary"
           title="Code Block"
         >
           <Code size={16} />
@@ -133,7 +133,7 @@ function RichTextEditor({ value, onChange, placeholder, rows = 6 }) {
         onBlur={() => setIsFocused(false)}
         onPaste={handlePaste}
         data-placeholder={placeholder}
-        className="w-full px-4 py-3 bg-white text-neutral-900 focus:outline-none overflow-y-auto prose prose-sm max-w-none"
+        className="w-full px-4 py-3 bg-surface text-content focus:outline-none overflow-y-auto prose prose-sm max-w-none"
         style={{ minHeight: `${rows * 1.5}rem` }}
       />
       <style>{`
@@ -526,7 +526,7 @@ function AskScenarioPage() {
   if (isEditMode && loadingRequest) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="animate-spin text-red-600" size={32} />
+        <Loader2 className="animate-spin text-primary-600" size={32} />
       </div>
     );
   }
@@ -538,16 +538,16 @@ function AskScenarioPage() {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-neutral-600 hover:text-neutral-900 mb-4"
+            className="flex items-center gap-2 text-content-secondary hover:text-content mb-4"
           >
             <ArrowLeft size={18} />
             Back
           </button>
         )}
-        <h1 className="text-2xl font-bold text-neutral-900">
+        <h1 className="text-2xl font-bold text-content">
           {isEditMode ? 'Edit Scenario Request' : 'Ask for a New Scenario'}
         </h1>
-        <p className="text-neutral-600 mt-1">
+        <p className="text-content-secondary mt-1">
           {isEditMode
             ? `Editing request ${requestId}`
             : 'Submit a request for a new scenario or feature. Our team will review and respond.'}
@@ -558,19 +558,19 @@ function AskScenarioPage() {
         {/* Request Type & Domain */}
         <div className="card">
           <div className="card-header">
-            <h2 className="text-lg font-semibold text-neutral-900">Basic Information</h2>
+            <h2 className="text-lg font-semibold text-content">Basic Information</h2>
           </div>
           <div className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="w-full">
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                <label className="block text-sm font-medium text-content-secondary mb-2">
                   Request Type <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="requestType"
                   value={formData.requestType}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900"
+                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
                 >
                   {requestTypes.length === 0 && (
                     <option value="scenario">New Scenario Request</option>
@@ -582,14 +582,14 @@ function AskScenarioPage() {
               </div>
               
               <div className="w-full">
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                <label className="block text-sm font-medium text-content-secondary mb-2">
                   Domain <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="dataDomain"
                   value={formData.dataDomain}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900"
+                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
                   required
                 >
                   <option value="">Select a domain...</option>
@@ -603,7 +603,7 @@ function AskScenarioPage() {
             </div>
 
             <div className="w-full">
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
+              <label className="block text-sm font-medium text-content-secondary mb-2">
                 Scenario Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -611,14 +611,14 @@ function AskScenarioPage() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900 placeholder-neutral-400"
+                className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
                 placeholder="Enter a descriptive name for your scenario"
                 required
               />
             </div>
 
             <div className="w-full">
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
+              <label className="block text-sm font-medium text-content-secondary mb-2">
                 Description <span className="text-red-500">*</span>
               </label>
               <RichTextEditor
@@ -630,7 +630,7 @@ function AskScenarioPage() {
             </div>
 
             <div className="w-full">
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
+              <label className="block text-sm font-medium text-content-secondary mb-2">
                 Reason / Business Justification
               </label>
               <RichTextEditor
@@ -642,16 +642,16 @@ function AskScenarioPage() {
             </div>
 
             {/* Team and Assignee - editable by all users */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-3 border-t border-neutral-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-3 border-t border-edge">
               <div className="w-full">
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                <label className="block text-sm font-medium text-content-secondary mb-2">
                   Team
                 </label>
                 <select
                   name="team"
                   value={formData.team}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900"
+                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
                 >
                   <option value="">Select a team...</option>
                   {jiraBoards.map(board => (
@@ -664,7 +664,7 @@ function AskScenarioPage() {
               </div>
 
               <div className="w-full">
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                <label className="block text-sm font-medium text-content-secondary mb-2">
                   Assignee
                 </label>
                 <select
@@ -678,7 +678,7 @@ function AskScenarioPage() {
                       assignee_name: selectedUser ? selectedUser.displayName : ''
                     }));
                   }}
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900"
+                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
                 >
                   <option value="">Select an assignee...</option>
                   {jiraUsers.map(jUser => (
@@ -698,8 +698,8 @@ function AskScenarioPage() {
         {/* Steps Section */}
         <div className="card">
           <div className="card-header flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-neutral-900">Implementation Details</h2>
-            <div className="flex items-center gap-2 text-sm text-neutral-600">
+            <h2 className="text-lg font-semibold text-content">Implementation Details</h2>
+            <div className="flex items-center gap-2 text-sm text-content-secondary">
               <HelpCircle size={16} />
               <span>Optional but helpful</span>
             </div>
@@ -712,9 +712,9 @@ function AskScenarioPage() {
                   name="has_suggestion"
                   checked={formData.has_suggestion}
                   onChange={handleChange}
-                  className="w-4 h-4 rounded border-neutral-300 text-red-600 focus:ring-red-500"
+                  className="w-4 h-4 rounded border-edge text-primary-600 focus:ring-primary-500"
                 />
-                <span className="text-sm text-neutral-700">I have suggestions for implementation</span>
+                <span className="text-sm text-content-secondary">I have suggestions for implementation</span>
               </label>
               
               <label className="flex items-center gap-2 cursor-pointer">
@@ -723,33 +723,33 @@ function AskScenarioPage() {
                   name="knows_steps"
                   checked={formData.knows_steps}
                   onChange={handleChange}
-                  className="w-4 h-4 rounded border-neutral-300 text-red-600 focus:ring-red-500"
+                  className="w-4 h-4 rounded border-edge text-primary-600 focus:ring-primary-500"
                 />
-                <span className="text-sm text-neutral-700">I know the required steps</span>
+                <span className="text-sm text-content-secondary">I know the required steps</span>
               </label>
             </div>
 
             {(formData.has_suggestion || formData.knows_steps) && (
-              <div className="border-t border-neutral-200 pt-5">
-                <h3 className="text-sm font-medium text-neutral-700 mb-4">Suggested Steps</h3>
+              <div className="border-t border-edge pt-5">
+                <h3 className="text-sm font-medium text-content-secondary mb-4">Suggested Steps</h3>
                 
                 {/* Existing Steps */}
                 {formData.steps.length > 0 && (
                   <div className="space-y-3 mb-5">
                     {formData.steps.map((step, index) => (
-                      <div key={index} className="flex items-start gap-3 p-4 bg-neutral-50 rounded-lg border border-neutral-200">
-                        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-sm font-semibold">
+                      <div key={index} className="flex items-start gap-3 p-4 bg-surface-secondary rounded-lg border border-edge">
+                        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center text-sm font-semibold">
                           {index + 1}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-neutral-800 font-medium">{step.description}</p>
+                          <p className="text-sm text-content font-medium">{step.description}</p>
                           {step.database && (
-                            <p className="text-xs text-neutral-500 mt-1">
+                            <p className="text-xs text-content-muted mt-1">
                               <span className="font-medium">Database:</span> {step.database}
                             </p>
                           )}
                           {step.query && step.query.length > 0 && (
-                            <pre className="text-xs text-neutral-600 mt-2 bg-neutral-100 p-2 rounded overflow-x-auto font-mono">
+                            <pre className="text-xs text-content-secondary mt-2 bg-surface-hover p-2 rounded overflow-x-auto font-mono">
                               {step.query.join('\n')}
                             </pre>
                           )}
@@ -757,7 +757,7 @@ function AskScenarioPage() {
                         <button
                           type="button"
                           onClick={() => handleRemoveStep(index)}
-                          className="flex-shrink-0 text-neutral-400 hover:text-red-600 p-1"
+                          className="flex-shrink-0 text-content-muted hover:text-red-600 p-1"
                         >
                           <Trash2 size={18} />
                         </button>
@@ -767,35 +767,35 @@ function AskScenarioPage() {
                 )}
 
                 {/* Add New Step */}
-                <div className="bg-neutral-50 rounded-lg p-5 border border-neutral-200 space-y-4">
+                <div className="bg-surface-secondary rounded-lg p-5 border border-edge space-y-4">
                   <div className="w-full">
-                    <label className="block text-xs font-medium text-neutral-600 mb-1">Step Description</label>
+                    <label className="block text-xs font-medium text-content-secondary mb-1">Step Description</label>
                     <input
                       type="text"
                       value={newStep.description}
                       onChange={(e) => setNewStep(prev => ({ ...prev, description: e.target.value }))}
-                      className="w-full px-4 py-2.5 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900 placeholder-neutral-400"
+                      className="w-full px-4 py-2.5 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
                       placeholder="What should this step do?"
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="w-full">
-                      <label className="block text-xs font-medium text-neutral-600 mb-1">Database / Schema</label>
+                      <label className="block text-xs font-medium text-content-secondary mb-1">Database / Schema</label>
                       <input
                         type="text"
                         value={newStep.database}
                         onChange={(e) => setNewStep(prev => ({ ...prev, database: e.target.value }))}
-                        className="w-full px-4 py-2.5 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900 placeholder-neutral-400"
+                        className="w-full px-4 py-2.5 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
                         placeholder="e.g., sales_db.reporting"
                       />
                     </div>
                     <div className="w-full">
-                      <label className="block text-xs font-medium text-neutral-600 mb-1">SQL Query Hint</label>
+                      <label className="block text-xs font-medium text-content-secondary mb-1">SQL Query Hint</label>
                       <input
                         type="text"
                         value={newStep.query}
                         onChange={(e) => setNewStep(prev => ({ ...prev, query: e.target.value }))}
-                        className="w-full px-4 py-2.5 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900 placeholder-neutral-400"
+                        className="w-full px-4 py-2.5 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
                         placeholder="SELECT ... FROM ... WHERE ..."
                       />
                     </div>
@@ -819,20 +819,20 @@ function AskScenarioPage() {
         {isEditMode && isEditor() && (
           <div className="card">
             <div className="card-header">
-              <h2 className="text-lg font-semibold text-neutral-900">Admin Settings</h2>
-              <p className="text-sm text-neutral-500 mt-1">These fields are only visible to administrators and editors</p>
+              <h2 className="text-lg font-semibold text-content">Admin Settings</h2>
+              <p className="text-sm text-content-muted mt-1">These fields are only visible to administrators and editors</p>
             </div>
             <div className="space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="w-full">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-sm font-medium text-content-secondary mb-2">
                     Status
                   </label>
                   <select
                     name="status"
                     value={formData.status}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900"
+                    className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
                   >
                     {statuses.map(status => (
                       <option key={status.value} value={status.value}>{status.label}</option>
@@ -841,7 +841,7 @@ function AskScenarioPage() {
                 </div>
 
                 <div className="w-full">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-sm font-medium text-content-secondary mb-2">
                     Target Date
                   </label>
                   <input
@@ -849,14 +849,14 @@ function AskScenarioPage() {
                     name="fulfilmentDate"
                     value={formData.fulfilmentDate}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900"
+                    className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="w-full">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-sm font-medium text-content-secondary mb-2">
                     Scenario Key
                   </label>
                   <input
@@ -864,13 +864,13 @@ function AskScenarioPage() {
                     name="scenarioKey"
                     value={formData.scenarioKey}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900 placeholder-neutral-400"
+                    className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
                     placeholder="e.g., SC-001"
                   />
                 </div>
 
                 <div className="w-full">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-sm font-medium text-content-secondary mb-2">
                     Config Name
                   </label>
                   <input
@@ -878,7 +878,7 @@ function AskScenarioPage() {
                     name="configName"
                     value={formData.configName}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900 placeholder-neutral-400"
+                    className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
                     placeholder="Configuration name"
                   />
                 </div>
@@ -886,8 +886,8 @@ function AskScenarioPage() {
 
               {/* Status Change Comment - Required when status is changed */}
               {formData.status && originalRequest && formData.status !== originalRequest.status && (
-                <div className="w-full border-t border-neutral-200 pt-5">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                <div className="w-full border-t border-edge pt-5">
+                  <label className="block text-sm font-medium text-content-secondary mb-2">
                     Status Change Comment <span className="text-red-500">*</span>
                   </label>
                   <textarea
@@ -895,11 +895,11 @@ function AskScenarioPage() {
                     value={formData.statusComment}
                     onChange={handleChange}
                     rows={3}
-                    className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900 placeholder-neutral-400"
+                    className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
                     placeholder="Please provide a reason for this status change..."
                     required
                   />
-                  <p className="text-xs text-neutral-500 mt-1">
+                  <p className="text-xs text-content-muted mt-1">
                     This comment will be recorded in the workflow history.
                   </p>
                 </div>
@@ -911,14 +911,14 @@ function AskScenarioPage() {
         {/* File Upload */}
         <div className="card">
           <div className="card-header">
-            <h2 className="text-lg font-semibold text-neutral-900">Sample Files</h2>
-            <p className="text-sm text-neutral-500 mt-1">Upload sample data files or screenshots to help us understand your requirements</p>
+            <h2 className="text-lg font-semibold text-content">Sample Files</h2>
+            <p className="text-sm text-content-muted mt-1">Upload sample data files or screenshots to help us understand your requirements</p>
           </div>
           <div>
             {/* Show existing files in edit mode */}
             {isEditMode && existingFiles.length > 0 && (
               <div className="mb-5 space-y-2">
-                <p className="text-sm font-medium text-neutral-700">Existing files:</p>
+                <p className="text-sm font-medium text-content-secondary">Existing files:</p>
                 {existingFiles.map((file, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
                     <div className="flex items-center gap-3 min-w-0">
@@ -926,8 +926,8 @@ function AskScenarioPage() {
                         <FileUp size={16} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-neutral-800 truncate">{file.file_name || file.name}</p>
-                        <p className="text-xs text-neutral-500">{file.file_type} • v{file.version || 1}</p>
+                        <p className="text-sm font-medium text-content truncate">{file.file_name || file.name}</p>
+                        <p className="text-xs text-content-muted">{file.file_type} • v{file.version || 1}</p>
                       </div>
                     </div>
                   </div>
@@ -935,12 +935,12 @@ function AskScenarioPage() {
               </div>
             )}
 
-            <div className="border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center hover:border-red-300 transition-colors">
-              <FileUp className="mx-auto text-neutral-400 mb-3" size={48} />
-              <p className="text-sm text-neutral-600 mb-3">
+            <div className="border-2 border-dashed border-edge rounded-lg p-8 text-center hover:border-primary-300 transition-colors">
+              <FileUp className="mx-auto text-content-muted mb-3" size={48} />
+              <p className="text-sm text-content-secondary mb-3">
                 {isEditMode ? 'Add more files' : 'Drag and drop files here, or click to browse'}
               </p>
-              <p className="text-xs text-neutral-400 mb-4">
+              <p className="text-xs text-content-muted mb-4">
                 Supported: CSV, Excel, JSON, PDF, PNG, JPG (max 10MB each)
               </p>
               <input
@@ -961,22 +961,22 @@ function AskScenarioPage() {
 
             {uploadedFiles.length > 0 && (
               <div className="mt-5 space-y-2">
-                <p className="text-sm font-medium text-neutral-700">{uploadedFiles.length} new file(s) to upload:</p>
+                <p className="text-sm font-medium text-content-secondary">{uploadedFiles.length} new file(s) to upload:</p>
                 {uploadedFiles.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg border border-neutral-200">
+                  <div key={index} className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg border border-edge">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded bg-red-100 flex items-center justify-center text-red-600">
+                      <div className="w-8 h-8 rounded bg-primary-100 flex items-center justify-center text-primary-600">
                         <FileUp size={16} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-neutral-800 truncate">{file.name}</p>
-                        <p className="text-xs text-neutral-500">{(file.size / 1024).toFixed(1)} KB</p>
+                        <p className="text-sm font-medium text-content truncate">{file.name}</p>
+                        <p className="text-xs text-content-muted">{(file.size / 1024).toFixed(1)} KB</p>
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => handleRemoveFile(index)}
-                      className="flex-shrink-0 text-neutral-400 hover:text-red-600 p-1"
+                      className="flex-shrink-0 text-content-muted hover:text-red-600 p-1"
                     >
                       <X size={18} />
                     </button>

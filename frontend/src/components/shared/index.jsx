@@ -13,11 +13,11 @@ export const Button = ({
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2';
 
   const variants = {
-    primary: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 disabled:bg-red-300',
-    secondary: 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 focus:ring-neutral-500 border border-neutral-300',
+    primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 disabled:bg-primary-300',
+    secondary: 'bg-neutral-100 text-content-secondary hover:bg-neutral-200 focus:ring-neutral-500 border border-edge',
     danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
     success: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500',
-    ghost: 'text-neutral-600 hover:bg-neutral-100 focus:ring-neutral-500',
+    ghost: 'text-content-secondary hover:bg-surface-hover focus:ring-neutral-500',
   };
 
   const sizes = {
@@ -48,13 +48,13 @@ export const Input = ({
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-neutral-700 mb-1">
+        <label className="block text-sm font-medium text-content-secondary mb-1">
           {label}
         </label>
       )}
       <input
-        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${
-          error ? 'border-red-500' : 'border-neutral-300'
+        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface-input text-content transition-all ${
+          error ? 'border-red-500' : 'border-edge'
         } ${className}`}
         {...props}
       />
@@ -74,13 +74,13 @@ export const Select = ({
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-neutral-700 mb-1">
+        <label className="block text-sm font-medium text-content-secondary mb-1">
           {label}
         </label>
       )}
       <select
-        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${
-          error ? 'border-red-500' : 'border-neutral-300'
+        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface-input text-content transition-all ${
+          error ? 'border-red-500' : 'border-edge'
         } ${className}`}
         {...props}
       >
@@ -114,7 +114,7 @@ export const Badge = ({ children, variant = 'default', className = '' }) => {
     success: 'bg-green-100 text-green-800',
     warning: 'bg-amber-100 text-amber-800',
     danger: 'bg-red-100 text-red-800',
-    primary: 'bg-red-100 text-red-800',
+    primary: 'bg-primary-100 text-primary-800',
     info: 'bg-blue-100 text-blue-800',
   };
 
@@ -141,12 +141,12 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
         <div className="fixed inset-0 transition-opacity bg-black/50" onClick={onClose} />
-        <div className={`relative inline-block w-full ${sizes[size]} p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-xl`}>
+        <div className={`relative inline-block w-full ${sizes[size]} p-6 my-8 text-left align-middle transition-all transform bg-surface shadow-xl rounded-xl`}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-neutral-900">{title}</h3>
+            <h3 className="text-lg font-semibold text-content">{title}</h3>
             <button
               onClick={onClose}
-              className="text-neutral-400 hover:text-neutral-500 focus:outline-none"
+              className="text-content-muted hover:text-content-secondary focus:outline-none"
             >
               <X size={20} />
             </button>
@@ -163,14 +163,14 @@ export const Table = ({ columns, data, onRowClick, loading = false }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 size={32} className="animate-spin text-red-600" />
+        <Loader2 size={32} className="animate-spin text-primary-600" />
       </div>
     );
   }
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-neutral-200">
+      <table className="min-w-full divide-y divide-edge">
         <thead>
           <tr className="table-header">
             {columns.map((column) => (
@@ -183,10 +183,10 @@ export const Table = ({ columns, data, onRowClick, loading = false }) => {
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-neutral-200">
+        <tbody className="bg-surface divide-y divide-edge">
           {data.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="px-6 py-12 text-center text-neutral-500">
+              <td colSpan={columns.length} className="px-6 py-12 text-center text-content-muted">
                 No data available
               </td>
             </tr>
@@ -194,11 +194,11 @@ export const Table = ({ columns, data, onRowClick, loading = false }) => {
             data.map((row, index) => (
               <tr
                 key={row._id || row.id || index}
-                className={`${onRowClick ? 'cursor-pointer hover:bg-neutral-50' : ''}`}
+                className={`${onRowClick ? 'cursor-pointer hover:bg-surface-hover' : ''}`}
                 onClick={() => onRowClick && onRowClick(row)}
               >
                 {columns.map((column) => (
-                  <td key={column.key} className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
+                  <td key={column.key} className="px-6 py-4 whitespace-nowrap text-sm text-content">
                     {column.render ? column.render(row[column.key], row) : row[column.key]}
                   </td>
                 ))}
@@ -219,8 +219,8 @@ export const Toggle = ({ enabled, onChange, label }) => {
       <button
         type="button"
         onClick={() => onChange(!isEnabled)}
-        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ${
-          isEnabled ? 'bg-red-600' : 'bg-neutral-200'
+        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+          isEnabled ? 'bg-primary-600' : 'bg-neutral-200'
         }`}
       >
         <span
@@ -229,7 +229,7 @@ export const Toggle = ({ enabled, onChange, label }) => {
           }`}
         />
       </button>
-      {label && <span className="ml-3 text-sm text-neutral-700">{label}</span>}
+      {label && <span className="ml-3 text-sm text-content-secondary">{label}</span>}
     </div>
   );
 };
@@ -240,8 +240,8 @@ export const StatCard = ({ title, value, icon, trend, trendValue }) => {
     <Card className="p-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-neutral-500">{title}</p>
-          <p className="mt-1 text-3xl font-bold text-neutral-900">{value}</p>
+          <p className="text-sm font-medium text-content-muted">{title}</p>
+          <p className="mt-1 text-3xl font-bold text-content">{value}</p>
           {trend && (
             <p className={`mt-1 text-sm ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
               {trend === 'up' ? '↑' : '↓'} {trendValue}
@@ -249,7 +249,7 @@ export const StatCard = ({ title, value, icon, trend, trendValue }) => {
           )}
         </div>
         {icon && (
-          <div className="p-3 bg-red-50 rounded-lg">
+          <div className="p-3 bg-primary-50 rounded-lg">
             {icon}
           </div>
         )}
@@ -263,13 +263,13 @@ export const SearchInput = ({ value, onChange, placeholder = 'Search...' }) => {
   return (
     <div className="relative">
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <Search size={20} className="text-neutral-400" />
+        <Search size={20} className="text-content-muted" />
       </div>
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="block w-full pl-10 pr-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+        className="block w-full pl-10 pr-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface-input text-content text-sm"
         placeholder={placeholder}
       />
     </div>
@@ -306,11 +306,11 @@ export const Pagination = ({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between border-t border-neutral-200 bg-white px-4 py-3 sm:px-6">
+    <div className="flex items-center justify-between border-t border-edge bg-surface px-4 py-3 sm:px-6">
       {showInfo && (
         <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm text-neutral-700">
+            <p className="text-sm text-content-secondary">
               Showing <span className="font-medium">{startItem}</span> to{' '}
               <span className="font-medium">{endItem}</span> of{' '}
               <span className="font-medium">{total}</span> results
@@ -332,11 +332,11 @@ export const Pagination = ({
           <>
             <button
               onClick={() => onPageChange(0)}
-              className="px-3 py-1 rounded-lg text-sm text-neutral-600 hover:bg-neutral-100"
+              className="px-3 py-1 rounded-lg text-sm text-content-secondary hover:bg-surface-hover"
             >
               1
             </button>
-            {startPage > 2 && <span className="text-neutral-400">...</span>}
+            {startPage > 2 && <span className="text-content-muted">...</span>}
           </>
         )}
 
@@ -346,8 +346,8 @@ export const Pagination = ({
             onClick={() => onPageChange(page - 1)}
             className={`px-3 py-1 rounded-lg text-sm ${
               displayPage === page
-                ? 'bg-red-600 text-white'
-                : 'text-neutral-600 hover:bg-neutral-100'
+                ? 'bg-primary-600 text-white'
+                : 'text-content-secondary hover:bg-surface-hover'
             }`}
           >
             {page}
@@ -356,10 +356,10 @@ export const Pagination = ({
 
         {endPage < totalPages && (
           <>
-            {endPage < totalPages - 1 && <span className="text-neutral-400">...</span>}
+            {endPage < totalPages - 1 && <span className="text-content-muted">...</span>}
             <button
               onClick={() => onPageChange(totalPages - 1)}
-              className="px-3 py-1 rounded-lg text-sm text-neutral-600 hover:bg-neutral-100"
+              className="px-3 py-1 rounded-lg text-sm text-content-secondary hover:bg-surface-hover"
             >
               {totalPages}
             </button>
@@ -390,11 +390,11 @@ export const FileUpload = ({ onFileSelect, accept = '*', label = 'Upload File' }
 
   return (
     <div className="flex items-center justify-center w-full">
-      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-neutral-300 border-dashed rounded-lg cursor-pointer bg-neutral-50 hover:bg-neutral-100">
+      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-edge border-dashed rounded-lg cursor-pointer bg-surface-secondary hover:bg-surface-hover">
         <div className="flex flex-col items-center justify-center pt-5 pb-6">
-          <Upload size={32} className="mb-2 text-neutral-500" />
-          <p className="mb-1 text-sm text-neutral-500">{label}</p>
-          <p className="text-xs text-neutral-400">CSV, XLS, or XLSX files</p>
+          <Upload size={32} className="mb-2 text-content-muted" />
+          <p className="mb-1 text-sm text-content-muted">{label}</p>
+          <p className="text-xs text-content-muted">CSV, XLS, or XLSX files</p>
         </div>
         <input type="file" className="hidden" accept={accept} onChange={handleChange} />
       </label>

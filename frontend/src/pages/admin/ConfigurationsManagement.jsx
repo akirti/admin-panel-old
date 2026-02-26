@@ -276,7 +276,7 @@ const ConfigurationsManagement = () => {
           return (
             <div className="text-xs">
               <div>{val.file_name}</div>
-              <div className="text-neutral-400">v{val.current_version} - {(val.size / 1024).toFixed(1)}KB</div>
+              <div className="text-content-muted">v{val.current_version} - {(val.size / 1024).toFixed(1)}KB</div>
             </div>
           );
         }
@@ -295,7 +295,7 @@ const ConfigurationsManagement = () => {
         <div className="flex items-center space-x-2">
           <button
             onClick={(e) => { e.stopPropagation(); handleViewDetails(item); }}
-            className="p-1 text-neutral-500 hover:text-red-600"
+            className="p-1 text-content-muted hover:text-primary-600"
             title="View Details"
           >
             <Eye size={16} />
@@ -303,7 +303,7 @@ const ConfigurationsManagement = () => {
           {item.type !== 'gcs-data' && (
             <button
               onClick={(e) => { e.stopPropagation(); openEditModal(item); }}
-              className="p-1 text-neutral-500 hover:text-red-600"
+              className="p-1 text-content-muted hover:text-primary-600"
               title="Edit"
             >
               <Pencil size={16} />
@@ -342,8 +342,8 @@ const ConfigurationsManagement = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Configurations</h1>
-          <p className="text-neutral-500 mt-1">Manage process configs, lookups, and file configurations</p>
+          <h1 className="text-2xl font-bold text-content">Configurations</h1>
+          <p className="text-content-muted mt-1">Manage process configs, lookups, and file configurations</p>
         </div>
         <div className="flex space-x-3">
           <Button variant="secondary" onClick={() => setUploadModalOpen(true)}>
@@ -424,13 +424,13 @@ const ConfigurationsManagement = () => {
 
           {formData.type !== 'gcs-data' && (
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">
+              <label className="block text-sm font-medium text-content-secondary mb-1">
                 {formData.type === 'process-config' && 'Configuration JSON (queries, logics, operations)'}
                 {formData.type === 'lookup-data' && 'Lookups JSON'}
                 {formData.type === 'snapshot-data' && 'Data JSON'}
               </label>
               <textarea
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 font-mono text-sm"
+                className="w-full px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono text-sm"
                 rows={12}
                 value={jsonInput}
                 onChange={(e) => handleJsonInputChange(e.target.value)}
@@ -481,19 +481,19 @@ const ConfigurationsManagement = () => {
           />
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-2">File</label>
+            <label className="block text-sm font-medium text-content-secondary mb-2">File</label>
             <FileUpload
               accept=".json,.xlsx,.xls,.csv"
               label="Select JSON, Excel, or CSV file"
               onFileSelect={(f) => setUploadFile(f)}
             />
             {uploadFile && (
-              <p className="mt-2 text-sm text-neutral-500">Selected: {uploadFile.name}</p>
+              <p className="mt-2 text-sm text-content-muted">Selected: {uploadFile.name}</p>
             )}
           </div>
 
-          <div className="bg-neutral-50 p-4 rounded-lg text-sm text-neutral-600">
-            <p className="font-medium mb-2">File Type Handling:</p>
+          <div className="bg-surface-secondary p-4 rounded-lg text-sm text-content-muted">
+            <p className="font-medium text-content-muted mb-2">File Type Handling:</p>
             <ul className="list-disc list-inside space-y-1">
               <li><strong>JSON files:</strong> Content parsed and stored in MongoDB based on structure</li>
               <li><strong>XLSX/CSV files:</strong> Stored in GCS bucket with versioning support</li>
@@ -522,42 +522,42 @@ const ConfigurationsManagement = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-500">Config ID</label>
-                <p className="text-neutral-900">{selectedConfig.config_id}</p>
+                <label className="block text-sm font-medium text-content-muted">Config ID</label>
+                <p className="text-content">{selectedConfig.config_id}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-500">Key</label>
-                <p className="text-neutral-900">{selectedConfig.key}</p>
+                <label className="block text-sm font-medium text-content-muted">Key</label>
+                <p className="text-content">{selectedConfig.key}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-500">Type</label>
+                <label className="block text-sm font-medium text-content-muted">Type</label>
                 <Badge variant={getTypeBadgeVariant(selectedConfig.type)}>
                   {getTypeLabel(selectedConfig.type)}
                 </Badge>
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-500">Last Updated</label>
-                <p className="text-neutral-900">
+                <label className="block text-sm font-medium text-content-muted">Last Updated</label>
+                <p className="text-content">
                   {selectedConfig.row_update_stp ? new Date(selectedConfig.row_update_stp).toLocaleString() : '-'}
                 </p>
               </div>
             </div>
 
             {selectedConfig.type === 'gcs-data' && selectedConfig.gcs && (
-              <div className="bg-neutral-50 p-4 rounded-lg">
-                <h4 className="font-medium text-neutral-900 mb-2">GCS File Info</h4>
+              <div className="bg-surface-secondary p-4 rounded-lg">
+                <h4 className="font-medium text-content mb-2">GCS File Info</h4>
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div><span className="text-neutral-500">File:</span> {selectedConfig.gcs.file_name}</div>
-                  <div><span className="text-neutral-500">Version:</span> {selectedConfig.gcs.current_version}</div>
-                  <div><span className="text-neutral-500">Size:</span> {(selectedConfig.gcs.size / 1024).toFixed(2)} KB</div>
-                  <div><span className="text-neutral-500">Type:</span> {selectedConfig.gcs.content_type}</div>
+                  <div><span className="text-content-muted">File:</span> {selectedConfig.gcs.file_name}</div>
+                  <div><span className="text-content-muted">Version:</span> {selectedConfig.gcs.current_version}</div>
+                  <div><span className="text-content-muted">Size:</span> {(selectedConfig.gcs.size / 1024).toFixed(2)} KB</div>
+                  <div><span className="text-content-muted">Type:</span> {selectedConfig.gcs.content_type}</div>
                 </div>
               </div>
             )}
 
             {selectedConfig.type !== 'gcs-data' && (
               <div>
-                <label className="block text-sm font-medium text-neutral-500 mb-2">Data</label>
+                <label className="block text-sm font-medium text-content-muted mb-2">Data</label>
                 <pre className="bg-neutral-900 text-green-400 p-4 rounded-lg overflow-auto max-h-96 text-sm">
                   {JSON.stringify(
                     selectedConfig.type === 'process-config'
@@ -590,25 +590,25 @@ const ConfigurationsManagement = () => {
       >
         <div className="space-y-4">
           {versions.length === 0 ? (
-            <p className="text-neutral-500 text-center py-4">No versions available</p>
+            <p className="text-content-muted text-center py-4">No versions available</p>
           ) : (
             <div className="space-y-2">
               {versions.map((version, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg"
                 >
                   <div>
-                    <p className="font-medium text-neutral-900">
+                    <p className="font-medium text-content">
                       Version {version.version}
                       {selectedConfig?.gcs?.current_version === version.version && (
                         <Badge variant="success" className="ml-2">Current</Badge>
                       )}
                     </p>
-                    <p className="text-sm text-neutral-500">
+                    <p className="text-sm text-content-muted">
                       {version.file_name} - {(version.size / 1024).toFixed(2)} KB
                     </p>
-                    <p className="text-xs text-neutral-400">
+                    <p className="text-xs text-content-muted">
                       Uploaded: {new Date(version.upload_date).toLocaleString()}
                     </p>
                   </div>

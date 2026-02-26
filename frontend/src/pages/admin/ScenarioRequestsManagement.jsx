@@ -33,7 +33,7 @@ const STATUS_CONFIG = {
   'deployed': { label: 'Deployed', color: 'bg-green-100 text-green-700', icon: CheckCircle },
   'snapshot': { label: 'Files Ready', color: 'bg-cyan-100 text-cyan-700', icon: Clock },
   'active': { label: 'Active', color: 'bg-green-100 text-green-700', icon: CheckCircle },
-  'inactive': { label: 'Inactive', color: 'bg-neutral-100 text-neutral-700', icon: XCircle }
+  'inactive': { label: 'Inactive', color: 'bg-surface-hover text-content-secondary', icon: XCircle }
 };
 
 // Categorize statuses for stats
@@ -155,7 +155,7 @@ function ScenarioRequestsManagement() {
   });
 
   const getStatusBadge = (status) => {
-    const config = STATUS_CONFIG[status] || { label: status || 'Unknown', color: 'bg-neutral-100 text-neutral-700', icon: Clock };
+    const config = STATUS_CONFIG[status] || { label: status || 'Unknown', color: 'bg-surface-hover text-content-secondary', icon: Clock };
     const Icon = config.icon;
     return (
       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.color}`}>
@@ -188,19 +188,19 @@ function ScenarioRequestsManagement() {
     <div className="w-full">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-neutral-900">Scenario Requests</h1>
-        <p className="text-neutral-600 mt-1">Manage and process scenario requests</p>
+        <h1 className="text-2xl font-bold text-content">Scenario Requests</h1>
+        <p className="text-content-muted mt-1">Manage and process scenario requests</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <div className="card flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-neutral-100 flex items-center justify-center">
-            <FileText className="text-neutral-600" size={24} />
+          <div className="w-12 h-12 rounded-lg bg-surface-hover flex items-center justify-center">
+            <FileText className="text-content-muted" size={24} />
           </div>
           <div>
-            <p className="text-sm text-neutral-500">Total</p>
-            <p className="text-2xl font-bold text-neutral-900">{stats.total}</p>
+            <p className="text-sm text-content-muted">Total</p>
+            <p className="text-2xl font-bold text-content">{stats.total}</p>
           </div>
         </div>
         <div className="card flex items-center gap-4">
@@ -208,7 +208,7 @@ function ScenarioRequestsManagement() {
             <Clock className="text-blue-600" size={24} />
           </div>
           <div>
-            <p className="text-sm text-neutral-500">Submitted</p>
+            <p className="text-sm text-content-muted">Submitted</p>
             <p className="text-2xl font-bold text-blue-600">{stats.submitted}</p>
           </div>
         </div>
@@ -217,7 +217,7 @@ function ScenarioRequestsManagement() {
             <TrendingUp className="text-yellow-600" size={24} />
           </div>
           <div>
-            <p className="text-sm text-neutral-500">In Progress</p>
+            <p className="text-sm text-content-muted">In Progress</p>
             <p className="text-2xl font-bold text-yellow-600">{stats.inProgress}</p>
           </div>
         </div>
@@ -226,7 +226,7 @@ function ScenarioRequestsManagement() {
             <CheckCircle className="text-green-600" size={24} />
           </div>
           <div>
-            <p className="text-sm text-neutral-500">Deployed</p>
+            <p className="text-sm text-content-muted">Deployed</p>
             <p className="text-2xl font-bold text-green-600">{stats.deployed}</p>
           </div>
         </div>
@@ -235,7 +235,7 @@ function ScenarioRequestsManagement() {
             <XCircle className="text-red-600" size={24} />
           </div>
           <div>
-            <p className="text-sm text-neutral-500">Rejected</p>
+            <p className="text-sm text-content-muted">Rejected</p>
             <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
           </div>
         </div>
@@ -245,20 +245,20 @@ function ScenarioRequestsManagement() {
       <div className="card mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={18} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={18} />
             <input
               type="text"
               placeholder="Search by ID, name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900"
+              className="w-full pl-10 pr-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
             />
           </div>
           <div className="flex gap-3">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full md:w-40 px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900"
+              className="w-full md:w-40 px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
             >
               <option value="">All Status</option>
               {statuses.map(status => (
@@ -268,7 +268,7 @@ function ScenarioRequestsManagement() {
             <select
               value={domainFilter}
               onChange={(e) => setDomainFilter(e.target.value)}
-              className="w-full md:w-40 px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900"
+              className="w-full md:w-40 px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
             >
               <option value="">All Domains</option>
               {domains.map(domain => (
@@ -291,14 +291,14 @@ function ScenarioRequestsManagement() {
       <div className="card p-0 overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="animate-spin text-red-600" size={32} />
+            <Loader2 className="animate-spin text-primary-600" size={32} />
           </div>
         ) : filteredRequests.length === 0 ? (
           <div className="text-center py-16">
-            <div className="w-16 h-16 mx-auto mb-4 bg-neutral-100 rounded-full flex items-center justify-center">
-              <FileText className="text-neutral-400" size={32} />
+            <div className="w-16 h-16 mx-auto mb-4 bg-surface-hover rounded-full flex items-center justify-center">
+              <FileText className="text-content-muted" size={32} />
             </div>
-            <p className="text-neutral-500">No requests found</p>
+            <p className="text-content-muted">No requests found</p>
           </div>
         ) : (
           <>
@@ -318,23 +318,23 @@ function ScenarioRequestsManagement() {
                     <th className="text-center px-5 py-4">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-100">
+                <tbody className="divide-y divide-edge-light">
                   {filteredRequests.map((request) => (
-                    <tr key={request.requestId} className="hover:bg-neutral-50 transition-colors">
+                    <tr key={request.requestId} className="hover:bg-surface-hover transition-colors">
                       <td className="px-5 py-4">
-                        <span className="font-mono text-sm font-medium text-red-600">{request.requestId}</span>
+                        <span className="font-mono text-sm font-medium text-primary-600">{request.requestId}</span>
                       </td>
                       <td className="px-5 py-4">
-                        <p className="font-medium text-neutral-900 truncate max-w-xs">{request.name}</p>
-                        <p className="text-xs text-neutral-500 truncate max-w-xs mt-0.5">
+                        <p className="font-medium text-content truncate max-w-xs">{request.name}</p>
+                        <p className="text-xs text-content-muted truncate max-w-xs mt-0.5">
                           {stripHtml(request.description).slice(0, 50)}...
                         </p>
                       </td>
                       <td className="px-5 py-4">
-                        <p className="text-sm text-neutral-800">{request.email}</p>
+                        <p className="text-sm text-content">{request.email}</p>
                       </td>
                       <td className="px-5 py-4">
-                        <span className="inline-flex px-2.5 py-1 bg-neutral-100 text-neutral-700 rounded-full text-xs font-medium">
+                        <span className="inline-flex px-2.5 py-1 bg-surface-hover text-content-secondary rounded-full text-xs font-medium">
                           {request.dataDomain}
                         </span>
                       </td>
@@ -342,10 +342,10 @@ function ScenarioRequestsManagement() {
                         {getStatusBadge(request.status)}
                       </td>
                       <td className="px-5 py-4">
-                        <span className="text-sm text-neutral-700">{request.team || '-'}</span>
+                        <span className="text-sm text-content-secondary">{request.team || '-'}</span>
                       </td>
                       <td className="px-5 py-4">
-                        <span className="text-sm text-neutral-700">{request.assignee_name || '-'}</span>
+                        <span className="text-sm text-content-secondary">{request.assignee_name || '-'}</span>
                       </td>
                       <td className="px-5 py-4">
                         {(request.jira?.ticket_key || request.jira_integration?.ticket_key) ? (
@@ -375,21 +375,21 @@ function ScenarioRequestsManagement() {
                               </a>
                             ))}
                             {request.jira_links.length > 2 && (
-                              <span className="text-xs text-neutral-500">+{request.jira_links.length - 2} more</span>
+                              <span className="text-xs text-content-muted">+{request.jira_links.length - 2} more</span>
                             )}
                           </div>
                         ) : (
-                          <span className="text-neutral-400 text-sm">-</span>
+                          <span className="text-content-muted text-sm">-</span>
                         )}
                       </td>
-                      <td className="px-5 py-4 text-sm text-neutral-600">
+                      <td className="px-5 py-4 text-sm text-content-muted">
                         {formatDate(request.row_add_stp)}
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => navigate(`${basePath}/scenario-requests/${request.requestId}`)}
-                            className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-600 transition-colors"
+                            className="p-2 rounded-lg hover:bg-surface-hover text-content-muted transition-colors"
                             title="View"
                           >
                             <Eye size={16} />
@@ -400,7 +400,7 @@ function ScenarioRequestsManagement() {
                               setNewStatus(request.status);
                               setShowStatusModal(true);
                             }}
-                            className="p-2 rounded-lg hover:bg-red-100 text-red-600 transition-colors"
+                            className="p-2 rounded-lg hover:bg-primary-100 text-primary-600 transition-colors"
                             title="Update Status"
                           >
                             <Edit size={16} />
@@ -415,25 +415,25 @@ function ScenarioRequestsManagement() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 border-t border-neutral-200 bg-neutral-50">
-                <p className="text-sm text-neutral-600">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 border-t border-edge bg-surface-secondary">
+                <p className="text-sm text-content-muted">
                   Showing {pagination.page * pagination.limit + 1} to {Math.min((pagination.page + 1) * pagination.limit, pagination.total)} of {pagination.total}
                 </p>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
                     disabled={pagination.page === 0}
-                    className="p-2 rounded-lg border border-neutral-300 hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="p-2 rounded-lg border border-edge hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <ChevronLeft size={18} />
                   </button>
-                  <span className="px-4 py-2 text-sm text-neutral-600">
+                  <span className="px-4 py-2 text-sm text-content-muted">
                     Page {pagination.page + 1} of {totalPages}
                   </span>
                   <button
                     onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
                     disabled={pagination.page >= totalPages - 1}
-                    className="p-2 rounded-lg border border-neutral-300 hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="p-2 rounded-lg border border-edge hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <ChevronRight size={18} />
                   </button>
@@ -449,15 +449,15 @@ function ScenarioRequestsManagement() {
       <Modal isOpen={true} onClose={() => setShowStatusModal(false)} title="Update Status" size="sm">
             <div className="p-5 space-y-4">
               <div>
-                <p className="text-sm text-neutral-500 mb-1">Request</p>
-                <p className="font-medium text-neutral-900">{selectedRequest.requestId} - {selectedRequest.name}</p>
+                <p className="text-sm text-content-muted mb-1">Request</p>
+                <p className="font-medium text-content">{selectedRequest.requestId} - {selectedRequest.name}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">New Status</label>
+                <label className="block text-sm font-medium text-content-secondary mb-2">New Status</label>
                 <select
                   value={newStatus}
                   onChange={(e) => setNewStatus(e.target.value)}
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900"
+                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
                 >
                   {statuses.map(status => (
                     <option key={status.value} value={status.value}>{status.label}</option>
@@ -465,17 +465,17 @@ function ScenarioRequestsManagement() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">Comment (optional)</label>
+                <label className="block text-sm font-medium text-content-secondary mb-2">Comment (optional)</label>
                 <textarea
                   value={statusComment}
                   onChange={(e) => setStatusComment(e.target.value)}
                   rows={3}
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white text-neutral-900 resize-none"
+                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content resize-none"
                   placeholder="Add a comment about this status change..."
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-3 px-5 py-4 border-t bg-neutral-50 rounded-b-xl">
+            <div className="flex justify-end gap-3 px-5 py-4 border-t bg-surface-secondary rounded-b-xl">
               <button
                 onClick={() => setShowStatusModal(false)}
                 className="btn-secondary"

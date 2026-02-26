@@ -135,9 +135,9 @@ function ScenariosManagement() {
   if (!isSuperAdmin()) {
     return (
       <div className="text-center py-12">
-        <FileText className="mx-auto text-neutral-400 mb-4" size={48} />
-        <h2 className="text-xl font-semibold text-neutral-800 mb-2">Access Denied</h2>
-        <p className="text-neutral-500">Only Super Administrators can manage scenarios.</p>
+        <FileText className="mx-auto text-content-muted mb-4" size={48} />
+        <h2 className="text-xl font-semibold text-content mb-2">Access Denied</h2>
+        <p className="text-content-muted">Only Super Administrators can manage scenarios.</p>
       </div>
     );
   }
@@ -145,7 +145,7 @@ function ScenariosManagement() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-neutral-900">Scenarios Management</h1>
+        <h1 className="text-2xl font-bold text-content">Scenarios Management</h1>
         <button onClick={openCreateModal} className="btn-primary flex items-center gap-2">
           <Plus size={18} />
           Add Scenario
@@ -155,7 +155,7 @@ function ScenariosManagement() {
       {/* Filters */}
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
           <input
             type="text"
             placeholder="Search scenarios..."
@@ -165,7 +165,7 @@ function ScenariosManagement() {
           />
         </div>
         <div className="relative">
-          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
           <select
             value={filterDomain}
             onChange={(e) => setFilterDomain(e.target.value)}
@@ -189,8 +189,8 @@ function ScenariosManagement() {
           </div>
         ) : filteredScenarios.length === 0 ? (
           <div className="text-center py-12">
-            <FileText className="mx-auto text-neutral-400 mb-4" size={48} />
-            <p className="text-neutral-500">No scenarios found</p>
+            <FileText className="mx-auto text-content-muted mb-4" size={48} />
+            <p className="text-content-muted">No scenarios found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -207,16 +207,16 @@ function ScenariosManagement() {
               </thead>
               <tbody>
                 {filteredScenarios.map((scenario) => (
-                  <tr key={scenario.key} className="border-b hover:bg-neutral-50">
+                  <tr key={scenario.key} className="border-b hover:bg-surface-hover">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                           <FileText className="text-purple-600" size={20} />
                         </div>
                         <div>
-                          <p className="font-medium text-neutral-800">{scenario.name}</p>
+                          <p className="font-medium text-content">{scenario.name}</p>
                           {scenario.description && (
-                            <p className="text-sm text-neutral-500 line-clamp-1">
+                            <p className="text-sm text-content-muted line-clamp-1">
                               {scenario.description}
                             </p>
                           )}
@@ -224,7 +224,7 @@ function ScenariosManagement() {
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <code className="text-sm bg-neutral-100 px-2 py-1 rounded">
+                      <code className="text-sm bg-surface-hover px-2 py-1 rounded">
                         {scenario.key}
                       </code>
                     </td>
@@ -233,7 +233,7 @@ function ScenariosManagement() {
                         {scenario.dataDomain}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-sm text-neutral-600">
+                    <td className="py-3 px-4 text-sm text-content-muted">
                       {scenario.order || 0}
                     </td>
                     <td className="py-3 px-4">
@@ -241,7 +241,7 @@ function ScenariosManagement() {
                         className={`px-2 py-1 text-xs rounded-full ${
                           scenario.status === 'A'
                             ? 'bg-green-100 text-green-800'
-                            : 'bg-neutral-100 text-neutral-800'
+                            : 'bg-surface-hover text-content'
                         }`}
                       >
                         {scenario.status === 'A' ? 'Active' : 'Inactive'}
@@ -251,14 +251,14 @@ function ScenariosManagement() {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => openEditModal(scenario)}
-                          className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="Edit"
                         >
                           <Edit2 size={18} />
                         </button>
                         <button
                           onClick={() => handleDelete(scenario)}
-                          className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete"
                         >
                           <Trash2 size={18} />
@@ -277,7 +277,7 @@ function ScenariosManagement() {
       <Modal isOpen={modalOpen} onClose={closeModal} title={editingScenario ? 'Edit Scenario' : 'Create Scenario'} size="md">
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                <label className="block text-sm font-medium text-content-secondary mb-1">
                   Key *
                 </label>
                 <input
@@ -293,7 +293,7 @@ function ScenariosManagement() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                <label className="block text-sm font-medium text-content-secondary mb-1">
                   Name *
                 </label>
                 <input
@@ -308,7 +308,7 @@ function ScenariosManagement() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                <label className="block text-sm font-medium text-content-secondary mb-1">
                   Domain *
                 </label>
                 <select
@@ -328,7 +328,7 @@ function ScenariosManagement() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                <label className="block text-sm font-medium text-content-secondary mb-1">
                   Description
                 </label>
                 <textarea
@@ -342,7 +342,7 @@ function ScenariosManagement() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                <label className="block text-sm font-medium text-content-secondary mb-1">
                   Full Description
                 </label>
                 <textarea
@@ -357,7 +357,7 @@ function ScenariosManagement() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  <label className="block text-sm font-medium text-content-secondary mb-1">
                     Path
                   </label>
                   <input
@@ -370,7 +370,7 @@ function ScenariosManagement() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  <label className="block text-sm font-medium text-content-secondary mb-1">
                     Order
                   </label>
                   <input

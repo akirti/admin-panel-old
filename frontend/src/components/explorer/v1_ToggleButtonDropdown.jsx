@@ -46,27 +46,27 @@ const V1ToggleButtonDropdown = ({
     <div className="relative w-full" ref={dropdownRef}>
       <button
         type="button"
-        className={`border border-neutral-300 rounded-md h-10 px-3 py-2 w-full text-left bg-white flex justify-between items-center shadow-sm transition-colors ${
+        className={`border border-edge rounded-md h-10 px-3 py-2 w-full text-left bg-surface flex justify-between items-center shadow-sm transition-colors ${
           disabled
             ? 'opacity-50 cursor-not-allowed'
-            : 'hover:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500'
+            : 'hover:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500'
         }`}
         onClick={() => !disabled && setIsOpen((o) => !o)}
         disabled={disabled}
       >
-        <span className="text-sm text-neutral-900 truncate">
+        <span className="text-sm text-content truncate">
           {trimLabel(selectedLabel)}
         </span>
         <span className="ml-2 flex-shrink-0">
           {isOpen ? (
-            <ChevronUp className="w-4 h-4 text-neutral-400" />
+            <ChevronUp className="w-4 h-4 text-content-muted" />
           ) : (
-            <ChevronDown className="w-4 h-4 text-neutral-400" />
+            <ChevronDown className="w-4 h-4 text-content-muted" />
           )}
         </span>
       </button>
       {isOpen && (
-        <div className="absolute z-20 mt-1 w-full bg-white border border-neutral-200 rounded-md shadow-lg overflow-hidden">
+        <div className="absolute z-20 mt-1 w-full bg-surface border border-edge rounded-md shadow-lg overflow-hidden">
           <div className="max-h-48 overflow-auto">
             {options.map((opt, idx) => {
               const toggleId = `${id}-toggle-${idx}`;
@@ -75,7 +75,7 @@ const V1ToggleButtonDropdown = ({
                 <div
                   key={toggleId}
                   className={`flex items-center px-3 py-2.5 cursor-pointer transition-colors text-sm ${
-                    disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-neutral-50'
+                    disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-surface-hover'
                   }`}
                   onClick={(e) => {
                     if (disabled) return;
@@ -119,7 +119,7 @@ const V1ToggleButtonDropdown = ({
                       />
                       <span
                         className={`block w-10 h-6 rounded-full transition-colors duration-200 ${
-                          isOn ? 'bg-red-500' : 'bg-neutral-300'
+                          isOn ? 'bg-primary-500' : 'bg-neutral-300'
                         }`}
                       />
                       <span
@@ -130,7 +130,7 @@ const V1ToggleButtonDropdown = ({
                     </span>
                     <label
                       className={`cursor-pointer select-none ${
-                        isOn ? 'font-medium text-neutral-900' : 'text-neutral-600'
+                        isOn ? 'font-medium text-content' : 'text-content-secondary'
                       }`}
                       htmlFor={toggleId}
                     >
@@ -142,14 +142,14 @@ const V1ToggleButtonDropdown = ({
             })}
           </div>
           {handleToggleSelectAll && (
-            <div className="border-t border-neutral-200 px-3 py-2 bg-neutral-50 flex items-center">
+            <div className="border-t border-edge px-3 py-2 bg-surface-secondary flex items-center">
               <button
                 type="button"
                 onClick={handleToggleSelectAll}
                 className={`w-full px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
                   allSelected
-                    ? 'bg-white text-neutral-700 hover:bg-neutral-100 border-neutral-300'
-                    : 'bg-red-600 text-white hover:bg-red-700 border-red-600'
+                    ? 'bg-surface text-content-secondary hover:bg-surface-hover border-edge'
+                    : 'bg-primary-600 text-white hover:bg-primary-700 border-primary-600'
                 }`}
               >
                 {allSelected ? 'Disable All' : 'Enable All'}

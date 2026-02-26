@@ -91,21 +91,21 @@ const BulkUploadPage = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-neutral-900">Bulk Upload</h1>
-        <p className="text-neutral-500 mt-1">Import data from CSV or Excel files</p>
+        <h1 className="text-2xl font-bold text-content">Bulk Upload</h1>
+        <p className="text-content-muted mt-1">Import data from CSV or Excel files</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Upload Form */}
         <div className="card p-6">
-          <h3 className="text-lg font-semibold text-neutral-900 mb-4 flex items-center gap-2">
-            <Upload className="w-5 h-5 text-red-600" />
+          <h3 className="text-lg font-semibold text-content mb-4 flex items-center gap-2">
+            <Upload className="w-5 h-5 text-primary-600" />
             Upload File
           </h3>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Entity Type</label>
+              <label className="block text-sm font-medium text-content-secondary mb-1">Entity Type</label>
               <select
                 value={entityType}
                 onChange={(e) => {
@@ -113,7 +113,7 @@ const BulkUploadPage = () => {
                   setFile(null);
                   setResult(null);
                 }}
-                className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-3 py-2 border border-edge rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 {entityTypes.map(type => (
                   <option key={type.value} value={type.value}>{type.label}</option>
@@ -122,15 +122,15 @@ const BulkUploadPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">File</label>
+              <label className="block text-sm font-medium text-content-secondary mb-2">File</label>
               <div className="flex items-center justify-center w-full">
-                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-neutral-300 border-dashed rounded-lg cursor-pointer bg-neutral-50 hover:bg-neutral-100">
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-edge border-dashed rounded-lg cursor-pointer bg-surface-secondary hover:bg-surface-hover">
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <FileSpreadsheet className="w-8 h-8 mb-2 text-neutral-400" />
-                    <p className="mb-2 text-sm text-neutral-500">
+                    <FileSpreadsheet className="w-8 h-8 mb-2 text-content-muted" />
+                    <p className="mb-2 text-sm text-content-muted">
                       <span className="font-semibold">Click to upload</span> or drag and drop
                     </p>
-                    <p className="text-xs text-neutral-500">CSV, XLS, or XLSX</p>
+                    <p className="text-xs text-content-muted">CSV, XLS, or XLSX</p>
                   </div>
                   <input
                     type="file"
@@ -141,7 +141,7 @@ const BulkUploadPage = () => {
                 </label>
               </div>
               {file && (
-                <p className="mt-2 text-sm text-neutral-600 flex items-center gap-2">
+                <p className="mt-2 text-sm text-content-muted flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500" />
                   Selected: {file.name}
                 </p>
@@ -149,12 +149,12 @@ const BulkUploadPage = () => {
             </div>
 
             {entityType === 'users' && (
-              <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
-                <span className="text-sm text-neutral-700">Send password emails to new users</span>
+              <div className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg">
+                <span className="text-sm text-content-secondary">Send password emails to new users</span>
                 <button
                   type="button"
                   onClick={() => setSendPasswordEmails(!sendPasswordEmails)}
-                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ${sendPasswordEmails ? 'bg-red-600' : 'bg-neutral-200'}`}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${sendPasswordEmails ? 'bg-primary-600' : 'bg-base-secondary'}`}
                 >
                   <span
                     className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${sendPasswordEmails ? 'translate-x-5' : 'translate-x-0'}`}
@@ -166,7 +166,7 @@ const BulkUploadPage = () => {
             <button
               onClick={handleUpload}
               disabled={!file || uploading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {uploading ? (
                 <>
@@ -185,25 +185,25 @@ const BulkUploadPage = () => {
 
         {/* Download Templates */}
         <div className="card p-6">
-          <h3 className="text-lg font-semibold text-neutral-900 mb-4 flex items-center gap-2">
-            <Download className="w-5 h-5 text-red-600" />
+          <h3 className="text-lg font-semibold text-content mb-4 flex items-center gap-2">
+            <Download className="w-5 h-5 text-primary-600" />
             Download Templates
           </h3>
-          <p className="text-sm text-neutral-500 mb-4">
+          <p className="text-sm text-content-muted mb-4">
             Download a template file with the correct columns for your selected entity type.
           </p>
 
           <div className="flex space-x-3">
             <button
               onClick={() => handleDownloadTemplate('xlsx')}
-              className="flex items-center gap-2 px-4 py-2 border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50"
+              className="flex items-center gap-2 px-4 py-2 border border-edge rounded-md text-content-secondary hover:bg-surface-hover"
             >
               <FileSpreadsheet size={16} />
               Excel Template
             </button>
             <button
               onClick={() => handleDownloadTemplate('csv')}
-              className="flex items-center gap-2 px-4 py-2 border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50"
+              className="flex items-center gap-2 px-4 py-2 border border-edge rounded-md text-content-secondary hover:bg-surface-hover"
             >
               <Download size={16} />
               CSV Template
@@ -211,9 +211,9 @@ const BulkUploadPage = () => {
           </div>
 
           {/* GCS Upload */}
-          <div className="mt-6 pt-6 border-t border-neutral-200">
+          <div className="mt-6 pt-6 border-t border-edge">
             <div className="flex items-center justify-between mb-4">
-              <h4 className="text-md font-medium text-neutral-900">Upload from GCS</h4>
+              <h4 className="text-md font-medium text-content">Upload from GCS</h4>
               <Badge variant={gcsStatus?.configured ? 'success' : 'warning'}>
                 {gcsStatus?.configured ? 'Configured' : 'Not Configured'}
               </Badge>
@@ -222,10 +222,10 @@ const BulkUploadPage = () => {
             {gcsStatus?.configured ? (
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">GCS File Path</label>
+                  <label className="block text-sm font-medium text-content-secondary mb-1">GCS File Path</label>
                   <input
                     type="text"
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full px-3 py-2 border border-edge rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="path/to/file.csv"
                     value={gcsPath}
                     onChange={(e) => setGcsPath(e.target.value)}
@@ -234,13 +234,13 @@ const BulkUploadPage = () => {
                 <button
                   onClick={() => toast.error('GCS upload not implemented')}
                   disabled={!gcsPath || uploading}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-edge rounded-md text-content-secondary hover:bg-surface-hover disabled:opacity-50"
                 >
                   Upload from GCS
                 </button>
               </div>
             ) : (
-              <p className="text-sm text-neutral-500">
+              <p className="text-sm text-content-muted">
                 GCS is not configured. Set the GCS_CREDENTIALS_JSON environment variable to enable this feature.
               </p>
             )}
@@ -251,12 +251,12 @@ const BulkUploadPage = () => {
       {/* Results */}
       {result && (
         <div className="card p-6">
-          <h3 className="text-lg font-semibold text-neutral-900 mb-4">Upload Results</h3>
+          <h3 className="text-lg font-semibold text-content mb-4">Upload Results</h3>
 
           <div className="grid grid-cols-3 gap-4 mb-4">
-            <div className="p-4 bg-neutral-50 rounded-lg text-center">
-              <p className="text-2xl font-bold text-neutral-900">{result.total}</p>
-              <p className="text-sm text-neutral-500">Total Records</p>
+            <div className="p-4 bg-surface-secondary rounded-lg text-center">
+              <p className="text-2xl font-bold text-content">{result.total}</p>
+              <p className="text-sm text-content-muted">Total Records</p>
             </div>
             <div className="p-4 bg-green-50 rounded-lg text-center">
               <p className="text-2xl font-bold text-green-600">{result.successful}</p>
@@ -270,7 +270,7 @@ const BulkUploadPage = () => {
 
           {result.errors && result.errors.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium text-neutral-900 mb-2">Errors</h4>
+              <h4 className="text-sm font-medium text-content mb-2">Errors</h4>
               <div className="max-h-48 overflow-y-auto bg-red-50 rounded-lg p-3">
                 {result.errors.map((error, index) => (
                   <div key={index} className="text-sm text-red-600 py-1 border-b border-red-100 last:border-0 flex items-start gap-2">
@@ -286,8 +286,8 @@ const BulkUploadPage = () => {
 
       {/* Instructions */}
       <div className="card p-6">
-        <h3 className="text-lg font-semibold text-neutral-900 mb-4">Instructions</h3>
-        <ul className="list-disc list-inside space-y-2 text-sm text-neutral-600">
+        <h3 className="text-lg font-semibold text-content mb-4">Instructions</h3>
+        <ul className="list-disc list-inside space-y-2 text-sm text-content-muted">
           <li>Download the template for your entity type to see the required columns.</li>
           <li>Fill in the data following the column headers exactly.</li>
           <li>For array fields (like permissions, roles), use comma-separated values.</li>

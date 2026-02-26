@@ -192,8 +192,8 @@ const DistributionListManagement = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Distribution Lists</h1>
-          <p className="text-neutral-500 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-content">Distribution Lists</h1>
+          <p className="text-content-muted text-sm mt-1">
             Manage email distribution lists for notifications ({pagination.total || 0} total)
           </p>
         </div>
@@ -207,7 +207,7 @@ const DistributionListManagement = () => {
       <div className="card">
         <div className="flex items-center gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
             <input
               type="text"
               placeholder="Search by name or key..."
@@ -232,10 +232,10 @@ const DistributionListManagement = () => {
       {/* Distribution Lists Table */}
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-neutral-500">Loading distribution lists...</div>
+          <div className="p-8 text-center text-content-muted">Loading distribution lists...</div>
         ) : lists.length === 0 ? (
-          <div className="p-8 text-center text-neutral-500">
-            <Mail className="mx-auto mb-4 text-neutral-400" size={48} />
+          <div className="p-8 text-center text-content-muted">
+            <Mail className="mx-auto mb-4 text-content-muted" size={48} />
             <p>No distribution lists found. Click "Add Distribution List" to create one.</p>
           </div>
         ) : (
@@ -250,12 +250,12 @@ const DistributionListManagement = () => {
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-200">
+              <tbody className="divide-y divide-edge">
                 {lists.map((item) => (
-                  <tr key={item._id} className="hover:bg-neutral-50">
+                  <tr key={item._id} className="hover:bg-surface-hover">
                     <td className="px-4 py-3">
-                      <div className="font-medium text-neutral-900">{item.name}</div>
-                      <div className="text-xs text-neutral-500">{item.key}</div>
+                      <div className="font-medium text-content">{item.name}</div>
+                      <div className="text-xs text-content-muted">{item.key}</div>
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={getTypeBadgeVariant(item.type)}>
@@ -265,7 +265,7 @@ const DistributionListManagement = () => {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
                         <span className="font-medium">{item.emails?.length || 0}</span>
-                        <span className="text-neutral-500 text-sm">emails</span>
+                        <span className="text-content-muted text-sm">emails</span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -276,21 +276,21 @@ const DistributionListManagement = () => {
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-1">
                         <button
-                          className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                           onClick={() => openEditModal(item)}
                           title="Edit"
                         >
                           <Edit2 size={18} />
                         </button>
                         <button
-                          className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${item.is_active ? 'text-neutral-500 hover:text-orange-600 hover:bg-orange-50' : 'text-neutral-500 hover:text-green-600 hover:bg-green-50'}`}
+                          className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${item.is_active ? 'text-content-muted hover:text-orange-600 hover:bg-orange-50' : 'text-content-muted hover:text-green-600 hover:bg-green-50'}`}
                           onClick={() => handleToggleStatus(item)}
                           title={item.is_active ? 'Disable' : 'Enable'}
                         >
                           {item.is_active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
                         </button>
                         <button
-                          className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           onClick={() => handleDelete(item)}
                           title="Delete"
                         >
@@ -308,7 +308,7 @@ const DistributionListManagement = () => {
         {/* Pagination */}
         {pagination.pages > 1 && (
           <div className="px-4 py-3 border-t flex items-center justify-between">
-            <span className="text-sm text-neutral-500">
+            <span className="text-sm text-content-muted">
               Showing {pagination.page * pagination.limit + 1} to {Math.min((pagination.page + 1) * pagination.limit, pagination.total)} of {pagination.total}
             </span>
             <div className="flex gap-2">
@@ -366,7 +366,7 @@ const DistributionListManagement = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Type</label>
+              <label className="block text-sm font-medium text-content-secondary mb-1">Type</label>
               <select
                 className="input w-full"
                 value={formData.type}
@@ -379,16 +379,16 @@ const DistributionListManagement = () => {
             </div>
             <div className="flex items-center gap-2 pt-6">
               <Toggle
-                checked={formData.is_active}
-                onChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
+                enabled={formData.is_active}
+                onChange={(val) => setFormData(prev => ({ ...prev, is_active: val }))}
+                label="Active"
               />
-              <span className="text-sm">Active</span>
             </div>
           </div>
 
           {/* Email Management */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-neutral-700">Email Recipients</label>
+            <label className="block text-sm font-medium text-content-secondary">Email Recipients</label>
             <div className="flex gap-2">
               <input
                 type="email"
@@ -405,7 +405,7 @@ const DistributionListManagement = () => {
             {formData.emails.length > 0 ? (
               <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
                 {formData.emails.map((email, index) => (
-                  <div key={index} className="flex items-center justify-between bg-neutral-50 rounded px-3 py-2">
+                  <div key={index} className="flex items-center justify-between bg-surface-secondary rounded px-3 py-2">
                     <span className="text-sm">{email}</span>
                     <button
                       type="button"
@@ -418,9 +418,9 @@ const DistributionListManagement = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-neutral-500 italic">No emails added yet</p>
+              <p className="text-sm text-content-muted italic">No emails added yet</p>
             )}
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-content-muted">
               {formData.emails.length} recipient{formData.emails.length !== 1 ? 's' : ''} in this list
             </p>
           </div>

@@ -855,21 +855,21 @@ const PlayboardsManagement = () => {
         <div className="flex items-center space-x-2">
           <button
             onClick={(e) => { e.stopPropagation(); handleViewDetails(item); }}
-            className="p-1 text-neutral-500 hover:text-blue-600"
+            className="p-1 text-content-muted hover:text-blue-600"
             title="View JSON"
           >
             <Eye size={16} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleDownload(item); }}
-            className="p-1 text-neutral-500 hover:text-green-600"
+            className="p-1 text-content-muted hover:text-green-600"
             title="Download JSON"
           >
             <Download size={16} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); openEditModal(item); }}
-            className="p-1 text-neutral-500 hover:text-red-600"
+            className="p-1 text-content-muted hover:text-primary-600"
             title="Edit"
           >
             <Pencil size={16} />
@@ -900,8 +900,8 @@ const PlayboardsManagement = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Playboards</h1>
-          <p className="text-neutral-500 mt-1">Manage playboard configurations with widgets, filters, and actions</p>
+          <h1 className="text-2xl font-bold text-content">Playboards</h1>
+          <p className="text-content-muted mt-1">Manage playboard configurations with widgets, filters, and actions</p>
         </div>
         <div className="flex space-x-3">
           <Button variant="secondary" onClick={() => { resetUploadForm(); setUploadModalOpen(true); }}>
@@ -947,7 +947,7 @@ const PlayboardsManagement = () => {
       >
         <form onSubmit={editingItem ? handleUpdate : handleCreate}>
           {/* Tabs */}
-          <div className="border-b border-neutral-200 mb-4">
+          <div className="border-b border-edge mb-4">
             <nav className="flex space-x-4 overflow-x-auto">
               {tabs.map((tab) => (
                 <button
@@ -956,8 +956,8 @@ const PlayboardsManagement = () => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`py-2 px-3 text-sm font-medium border-b-2 whitespace-nowrap ${
                     activeTab === tab.id
-                      ? 'border-red-500 text-red-600'
-                      : 'border-transparent text-neutral-500 hover:text-neutral-700'
+                      ? 'border-primary-500 text-primary-600'
+                      : 'border-transparent text-content-muted hover:text-content-secondary'
                   }`}
                 >
                   {tab.label}
@@ -1045,9 +1045,9 @@ const PlayboardsManagement = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">Description</label>
+                <label className="block text-sm font-medium text-content-secondary mb-1">Description</label>
                 <textarea
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   rows={3}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -1057,7 +1057,7 @@ const PlayboardsManagement = () => {
 
               {/* Addon Configurations */}
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">Addon Configurations</label>
+                <label className="block text-sm font-medium text-content-secondary mb-2">Addon Configurations</label>
                 <div className="flex space-x-2 mb-2">
                   <Input
                     value={addonInput}
@@ -1087,8 +1087,8 @@ const PlayboardsManagement = () => {
             <div className="space-y-4">
               {/* Existing Filters */}
               {formData.widgets.filters.length > 0 && (
-                <div className="bg-neutral-50 rounded-lg p-4 mb-4">
-                  <h4 className="font-medium text-neutral-900 mb-2">Configured Filters ({formData.widgets.filters.length})</h4>
+                <div className="bg-surface-secondary rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-content mb-2">Configured Filters ({formData.widgets.filters.length})</h4>
                   <div className="space-y-2">
                     {formData.widgets.filters.map((filter, idx) => {
                       // Handle both array and object formats for attributes (support both 'name' and 'key')
@@ -1106,10 +1106,10 @@ const PlayboardsManagement = () => {
                       const attrCount = Array.isArray(filter.attributes) ? filter.attributes.length : 0;
                       const isEditing = editingFilterIndex === idx;
                       return (
-                      <div key={idx} className={`flex items-center justify-between bg-white p-3 rounded border ${isEditing ? 'ring-2 ring-blue-500' : ''}`}>
+                      <div key={idx} className={`flex items-center justify-between bg-surface p-3 rounded border ${isEditing ? 'ring-2 ring-blue-500' : ''}`}>
                         <div>
                           <span className="font-medium">{filter.displayName}</span>
-                          <span className="text-neutral-500 text-sm ml-2">({filter.name})</span>
+                          <span className="text-content-muted text-sm ml-2">({filter.name})</span>
                           <Badge variant="default" className="ml-2">
                             {getFilterType()}
                           </Badge>
@@ -1149,7 +1149,7 @@ const PlayboardsManagement = () => {
 
               {/* Add/Edit Filter */}
               <div className={`border rounded-lg p-4 ${editingFilterIndex !== null ? 'border-blue-500 bg-blue-50' : ''}`}>
-                <h4 className="font-medium text-neutral-900 mb-3">
+                <h4 className="font-medium text-content mb-3">
                   {editingFilterIndex !== null ? `Edit Filter: ${currentFilter.displayName || currentFilter.name}` : 'Add New Filter'}
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
@@ -1211,7 +1211,7 @@ const PlayboardsManagement = () => {
                 {/* Options for Select type */}
                 {currentFilter.type === 'select' && (
                   <div className="mt-4 border-t pt-4">
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">Options</label>
+                    <label className="block text-sm font-medium text-content-secondary mb-2">Options</label>
                     <div className="flex space-x-2 mb-2">
                       <Input
                         placeholder="Value (e.g., 01)"
@@ -1226,7 +1226,7 @@ const PlayboardsManagement = () => {
                       <Button type="button" onClick={addOption} variant="secondary">Add</Button>
                     </div>
                     {currentFilter.options.length > 0 && (
-                      <div className="bg-neutral-50 rounded p-2 max-h-32 overflow-y-auto">
+                      <div className="bg-surface-secondary rounded p-2 max-h-32 overflow-y-auto">
                         {currentFilter.options.map((opt, idx) => (
                           <div key={idx} className="flex items-center justify-between py-1">
                             <span className="text-sm">{opt.value} - {opt.name}</span>
@@ -1248,16 +1248,16 @@ const PlayboardsManagement = () => {
 
                 {/* Custom Attributes */}
                 <div className="mt-4 border-t pt-4">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-sm font-medium text-content-secondary mb-2">
                     Custom Attributes
-                    <span className="text-neutral-400 font-normal ml-2">(name-value pairs)</span>
+                    <span className="text-content-muted font-normal ml-2">(name-value pairs)</span>
                   </label>
                   <div className="grid grid-cols-2 gap-2 mb-2">
                     <div>
                       <input
                         list="attribute-names"
                         type="text"
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                        className="w-full px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                         placeholder="Name (e.g., width)"
                         value={filterAttributeInput.name}
                         onChange={(e) => setFilterAttributeInput({ ...filterAttributeInput, name: e.target.value })}
@@ -1271,7 +1271,7 @@ const PlayboardsManagement = () => {
                     <div className="flex space-x-2">
                       <input
                         type="text"
-                        className="flex-1 px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                        className="flex-1 px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                         placeholder="Value (e.g., 200px)"
                         value={filterAttributeInput.value}
                         onChange={(e) => setFilterAttributeInput({ ...filterAttributeInput, value: e.target.value })}
@@ -1280,13 +1280,13 @@ const PlayboardsManagement = () => {
                     </div>
                   </div>
                   {currentFilter.attributes.length > 0 && (
-                    <div className="bg-neutral-50 rounded p-2 max-h-32 overflow-y-auto space-y-1">
+                    <div className="bg-surface-secondary rounded p-2 max-h-32 overflow-y-auto space-y-1">
                       {currentFilter.attributes.map((attr, idx) => (
-                        <div key={idx} className="flex items-center justify-between bg-white p-2 rounded border text-sm">
+                        <div key={idx} className="flex items-center justify-between bg-surface p-2 rounded border text-sm">
                           <span>
-                            <span className="font-medium text-neutral-700">{attr.name}</span>
+                            <span className="font-medium text-content-secondary">{attr.name}</span>
                             <span className="mx-2">:</span>
-                            <span className="text-neutral-600">{typeof attr.value === 'object' ? JSON.stringify(attr.value) : attr.value}</span>
+                            <span className="text-content-muted">{typeof attr.value === 'object' ? JSON.stringify(attr.value) : attr.value}</span>
                           </span>
                           <button type="button" onClick={() => removeFilterAttribute(idx)} className="text-red-500 hover:text-red-700">
                             <X size={16} />
@@ -1295,7 +1295,7 @@ const PlayboardsManagement = () => {
                       ))}
                     </div>
                   )}
-                  <p className="text-xs text-neutral-500 mt-1">
+                  <p className="text-xs text-content-muted mt-1">
                     All filter attributes are shown here. Standard attributes (type, defaultValue, regex, options) are also editable via the form fields above.
                   </p>
                 </div>
@@ -1328,18 +1328,18 @@ const PlayboardsManagement = () => {
             <div className="space-y-4">
               {/* Existing Actions */}
               {(formData.widgets?.grid?.actions?.rowActions?.events?.length || 0) > 0 && (
-                <div className="bg-neutral-50 rounded-lg p-4 mb-4">
-                  <h4 className="font-medium text-neutral-900 mb-2">Configured Row Actions ({formData.widgets?.grid?.actions?.rowActions?.events?.length || 0})</h4>
+                <div className="bg-surface-secondary rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-content mb-2">Configured Row Actions ({formData.widgets?.grid?.actions?.rowActions?.events?.length || 0})</h4>
                   <div className="space-y-2">
                     {(formData.widgets?.grid?.actions?.rowActions?.events || []).map((action, idx) => {
                       const isEditing = editingRowActionIndex === idx;
                       return (
-                      <div key={idx} className={`bg-white p-3 rounded border ${isEditing ? 'ring-2 ring-blue-500' : ''}`}>
+                      <div key={idx} className={`bg-surface p-3 rounded border ${isEditing ? 'ring-2 ring-blue-500' : ''}`}>
                         <div className="flex items-center justify-between">
                           <div>
                             <span className="font-medium">{action.name}</span>
-                            <span className="text-neutral-500 text-sm ml-2">({action.key})</span>
-                            <span className="text-neutral-500 text-sm ml-2">-&gt; {action.path}</span>
+                            <span className="text-content-muted text-sm ml-2">({action.key})</span>
+                            <span className="text-content-muted text-sm ml-2">-&gt; {action.path}</span>
                             <Badge variant={action.status === 'active' ? 'success' : 'danger'} className="ml-2">
                               {action.status === 'active' ? 'Active' : 'Inactive'}
                             </Badge>
@@ -1370,7 +1370,7 @@ const PlayboardsManagement = () => {
                           </div>
                         </div>
                         {action.filters && action.filters.length > 0 && (
-                          <div className="mt-2 pt-2 border-t text-xs text-neutral-500">
+                          <div className="mt-2 pt-2 border-t text-xs text-content-muted">
                             {action.filters.map((f, i) => (
                               <span key={i} className="mr-3">
                                 {f.inputKey} -&gt; {f.dataKey}
@@ -1387,7 +1387,7 @@ const PlayboardsManagement = () => {
 
               {/* Add/Edit Action */}
               <div className={`border rounded-lg p-4 ${editingRowActionIndex !== null ? 'border-blue-500 bg-blue-50' : ''}`}>
-                <h4 className="font-medium text-neutral-900 mb-3">
+                <h4 className="font-medium text-content mb-3">
                   {editingRowActionIndex !== null ? `Edit Row Action: ${currentRowAction.name}` : 'Add New Row Action'}
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
@@ -1437,7 +1437,7 @@ const PlayboardsManagement = () => {
 
                 {/* Action Filters */}
                 <div className="mt-4 border-t pt-4">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-sm font-medium text-content-secondary mb-2">
                     Filters (maps row data to navigation params)
                   </label>
                   <div className="flex space-x-2 mb-2">
@@ -1454,13 +1454,13 @@ const PlayboardsManagement = () => {
                     <Button type="button" onClick={addActionFilter} variant="secondary">Add</Button>
                   </div>
                   {currentRowAction.filters.length > 0 && (
-                    <div className="bg-neutral-50 rounded p-2 space-y-1">
+                    <div className="bg-surface-secondary rounded p-2 space-y-1">
                       {currentRowAction.filters.map((filter, idx) => (
-                        <div key={idx} className="flex items-center justify-between bg-white p-2 rounded border text-sm">
+                        <div key={idx} className="flex items-center justify-between bg-surface p-2 rounded border text-sm">
                           <span>
-                            <span className="text-neutral-500">inputKey:</span> <span className="font-medium">{filter.inputKey}</span>
+                            <span className="text-content-muted">inputKey:</span> <span className="font-medium">{filter.inputKey}</span>
                             <span className="mx-2">-&gt;</span>
-                            <span className="text-neutral-500">dataKey:</span> <span className="font-medium">{filter.dataKey}</span>
+                            <span className="text-content-muted">dataKey:</span> <span className="font-medium">{filter.dataKey}</span>
                           </span>
                           <button type="button" onClick={() => removeActionFilter(idx)} className="text-red-500 hover:text-red-700">x</button>
                         </div>
@@ -1574,7 +1574,7 @@ const PlayboardsManagement = () => {
 
               {/* Pagination Widget Settings */}
               <div className="border-t pt-4 mt-4">
-                <h4 className="font-medium text-neutral-900 mb-3">Pagination Widget</h4>
+                <h4 className="font-medium text-content mb-3">Pagination Widget</h4>
                 {(() => {
                   const paginationItem = formData.widgets?.pagination?.[0] || {
                     name: 'pagination_limit',
@@ -1688,14 +1688,14 @@ const PlayboardsManagement = () => {
                       {/* Show all pagination attributes */}
                       {paginationItem.attributes && paginationItem.attributes.length > 0 && (
                         <div className="mt-4">
-                          <label className="block text-sm font-medium text-neutral-700 mb-2">All Attributes</label>
-                          <div className="bg-neutral-50 rounded p-2 max-h-32 overflow-y-auto space-y-1">
+                          <label className="block text-sm font-medium text-content-secondary mb-2">All Attributes</label>
+                          <div className="bg-surface-secondary rounded p-2 max-h-32 overflow-y-auto space-y-1">
                             {paginationItem.attributes.map((attr, idx) => (
-                              <div key={idx} className="flex items-center justify-between bg-white p-2 rounded border text-sm">
+                              <div key={idx} className="flex items-center justify-between bg-surface p-2 rounded border text-sm">
                                 <span>
-                                  <span className="font-medium text-neutral-700">{attr.name || attr.key}</span>
+                                  <span className="font-medium text-content-secondary">{attr.name || attr.key}</span>
                                   <span className="mx-2">:</span>
-                                  <span className="text-neutral-600">{typeof attr.value === 'object' ? JSON.stringify(attr.value) : attr.value}</span>
+                                  <span className="text-content-muted">{typeof attr.value === 'object' ? JSON.stringify(attr.value) : attr.value}</span>
                                 </span>
                               </div>
                             ))}
@@ -1714,14 +1714,14 @@ const PlayboardsManagement = () => {
             <div className="space-y-4">
               {/* Existing Descriptions */}
               {formData.scenarioDescription.length > 0 && (
-                <div className="bg-neutral-50 rounded-lg p-4 mb-4">
-                  <h4 className="font-medium text-neutral-900 mb-2">Scenario Description Items</h4>
+                <div className="bg-surface-secondary rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-content mb-2">Scenario Description Items</h4>
                   <div className="space-y-2">
                     {formData.scenarioDescription.map((desc, idx) => (
-                      <div key={idx} className="flex items-center justify-between bg-white p-3 rounded border">
+                      <div key={idx} className="flex items-center justify-between bg-surface p-3 rounded border">
                         <div>
                           <Badge variant="default" className="mr-2">{desc.type}</Badge>
-                          <span className="text-neutral-700">{desc.text || '(empty)'}</span>
+                          <span className="text-content-secondary">{desc.text || '(empty)'}</span>
                         </div>
                         <button
                           type="button"
@@ -1738,7 +1738,7 @@ const PlayboardsManagement = () => {
 
               {/* Add New Description */}
               <div className="border rounded-lg p-4">
-                <h4 className="font-medium text-neutral-900 mb-3">Add Description Element</h4>
+                <h4 className="font-medium text-content mb-3">Add Description Element</h4>
                 <div className="grid grid-cols-4 gap-4">
                   <Select
                     label="Type"
@@ -1817,7 +1817,7 @@ const PlayboardsManagement = () => {
       >
         <form onSubmit={handleFileUpload} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-2">JSON File *</label>
+            <label className="block text-sm font-medium text-content-secondary mb-2">JSON File *</label>
             <FileUpload
               accept=".json"
               label="Select playboard JSON file"
@@ -1847,9 +1847,9 @@ const PlayboardsManagement = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Description (optional)</label>
+            <label className="block text-sm font-medium text-content-secondary mb-1">Description (optional)</label>
             <textarea
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               rows={2}
               value={uploadDescription}
               onChange={(e) => setUploadDescription(e.target.value)}
@@ -1860,38 +1860,38 @@ const PlayboardsManagement = () => {
           {/* JSON Preview */}
           {jsonPreview && (
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">JSON Preview</label>
-              <div className="bg-neutral-50 rounded-lg p-4 border">
+              <label className="block text-sm font-medium text-content-secondary mb-2">JSON Preview</label>
+              <div className="bg-surface-secondary rounded-lg p-4 border">
                 <div className="grid grid-cols-2 gap-4 text-sm mb-3">
                   <div>
-                    <span className="text-neutral-500">Key:</span>{' '}
+                    <span className="text-content-muted">Key:</span>{' '}
                     <span className="font-medium">{jsonPreview.key || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-neutral-500">Scenario:</span>{' '}
+                    <span className="text-content-muted">Scenario:</span>{' '}
                     <span className="font-medium">{jsonPreview.scenarioKey || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-neutral-500">Data Domain:</span>{' '}
+                    <span className="text-content-muted">Data Domain:</span>{' '}
                     <span className="font-medium">{jsonPreview.dataDomain || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-neutral-500">Status:</span>{' '}
+                    <span className="text-content-muted">Status:</span>{' '}
                     <Badge variant={jsonPreview.status === 'active' ? 'success' : 'danger'}>
                       {jsonPreview.status === 'active' ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
                   <div>
-                    <span className="text-neutral-500">Filters:</span>{' '}
+                    <span className="text-content-muted">Filters:</span>{' '}
                     <Badge variant="primary">{jsonPreview.widgets?.filters?.length || 0}</Badge>
                   </div>
                   <div>
-                    <span className="text-neutral-500">Row Actions:</span>{' '}
+                    <span className="text-content-muted">Row Actions:</span>{' '}
                     <Badge variant="success">{jsonPreview.widgets?.grid?.actions?.rowActions?.events?.length || 0}</Badge>
                   </div>
                 </div>
                 <details className="mt-2">
-                  <summary className="cursor-pointer text-sm text-red-600 hover:text-red-700">
+                  <summary className="cursor-pointer text-sm text-primary-600 hover:text-primary-700">
                     View Full JSON
                   </summary>
                   <pre className="mt-2 bg-neutral-900 text-green-400 p-3 rounded text-xs overflow-auto max-h-48">
@@ -1941,8 +1941,8 @@ const PlayboardsManagement = () => {
         {selectedPlayboard && (
           <div>
             <div className="mb-4">
-              <h3 className="font-medium text-neutral-900">{selectedPlayboard.name}</h3>
-              <p className="text-neutral-500 text-sm">{selectedPlayboard.description}</p>
+              <h3 className="font-medium text-content">{selectedPlayboard.name}</h3>
+              <p className="text-content-muted text-sm">{selectedPlayboard.description}</p>
             </div>
             <pre className="bg-neutral-900 text-green-400 p-4 rounded-lg overflow-auto max-h-[60vh] text-xs">
               {JSON.stringify(selectedPlayboard.data || selectedPlayboard, null, 2)}

@@ -223,8 +223,8 @@ const UsersManagement = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Users</h1>
-          <p className="text-neutral-500 mt-1">Manage user accounts and access</p>
+          <h1 className="text-2xl font-bold text-content">Users</h1>
+          <p className="text-content-muted mt-1">Manage user accounts and access</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -252,7 +252,7 @@ const UsersManagement = () => {
       <div className="card p-4">
         <div className="flex flex-wrap gap-4">
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
             <input
               type="text"
               value={search}
@@ -262,7 +262,7 @@ const UsersManagement = () => {
             />
           </div>
           <div className="flex items-center gap-2">
-            <Filter size={18} className="text-neutral-400" />
+            <Filter size={18} className="text-content-muted" />
             <select
               className="input-field min-w-[150px]"
               value={filterRole}
@@ -313,7 +313,7 @@ const UsersManagement = () => {
       <div className="card overflow-hidden p-0">
         {loading ? (
           <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
           </div>
         ) : (
           <>
@@ -354,7 +354,7 @@ const UsersManagement = () => {
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => openEditModal(user)}
-                            className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="Edit"
                           >
                             <Edit2 size={18} />
@@ -390,8 +390,8 @@ const UsersManagement = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-200">
-                <p className="text-sm text-neutral-500">
+              <div className="flex items-center justify-between px-4 py-3 border-t border-edge">
+                <p className="text-sm text-content-muted">
                   Showing {pagination.page * pagination.limit + 1} to{' '}
                   {Math.min((pagination.page + 1) * pagination.limit, pagination.total)} of{' '}
                   {pagination.total} users
@@ -400,17 +400,17 @@ const UsersManagement = () => {
                   <button
                     onClick={() => handlePageChange(pagination.page - 1)}
                     disabled={pagination.page === 0}
-                    className="p-2 rounded-lg hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-600"
+                    className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-content-muted"
                   >
                     <ChevronLeft size={20} />
                   </button>
-                  <span className="text-sm text-neutral-600">
+                  <span className="text-sm text-content-muted">
                     Page {pagination.page + 1} of {totalPages}
                   </span>
                   <button
                     onClick={() => handlePageChange(pagination.page + 1)}
                     disabled={pagination.page >= totalPages - 1}
-                    className="p-2 rounded-lg hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-600"
+                    className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-content-muted"
                   >
                     <ChevronRight size={20} />
                   </button>
@@ -426,18 +426,18 @@ const UsersManagement = () => {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Email *</label>
+                  <label className="block text-sm font-medium text-content-secondary mb-1">Email *</label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
                     disabled={!!editingUser}
-                    className="input-field w-full disabled:bg-neutral-100"
+                    className="input-field w-full disabled:bg-surface-hover"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Username *</label>
+                  <label className="block text-sm font-medium text-content-secondary mb-1">Username *</label>
                   <input
                     type="text"
                     value={formData.username}
@@ -449,7 +449,7 @@ const UsersManagement = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">Full Name *</label>
+                <label className="block text-sm font-medium text-content-secondary mb-1">Full Name *</label>
                 <input
                   type="text"
                   value={formData.full_name}
@@ -461,7 +461,7 @@ const UsersManagement = () => {
 
               {!editingUser && (
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Password *</label>
+                  <label className="block text-sm font-medium text-content-secondary mb-1">Password *</label>
                   <input
                     type="password"
                     value={formData.password}
@@ -475,27 +475,27 @@ const UsersManagement = () => {
               {/* Roles Selection */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-neutral-700">
+                  <label className="block text-sm font-medium text-content-secondary">
                     Roles ({formData.roles.length} selected)
                   </label>
                   <div className="space-x-2">
-                    <button type="button" onClick={selectAllRoles} className="text-xs text-red-600 hover:text-red-700 font-medium">
+                    <button type="button" onClick={selectAllRoles} className="text-xs text-primary-600 hover:text-primary-700 font-medium">
                       Select All
                     </button>
-                    <button type="button" onClick={clearAllRoles} className="text-xs text-neutral-600 hover:text-neutral-700 font-medium">
+                    <button type="button" onClick={clearAllRoles} className="text-xs text-content-muted hover:text-content-secondary font-medium">
                       Clear All
                     </button>
                   </div>
                 </div>
-                <div className="border border-neutral-200 rounded-xl max-h-40 overflow-y-auto p-3 bg-neutral-50">
+                <div className="border border-edge rounded-xl max-h-40 overflow-y-auto p-3 bg-surface-secondary">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     {roles.map((role) => (
                       <label
                         key={role._id || role.roleId}
                         className={`flex items-center p-2 rounded-lg border cursor-pointer transition-colors ${
                           isRoleSelected(role)
-                            ? 'bg-red-50 border-red-300'
-                            : 'bg-white border-neutral-200 hover:border-neutral-300'
+                            ? 'bg-primary-50 border-primary-300'
+                            : 'bg-surface border-edge hover:border-edge'
                         }`}
                       >
                         <input
@@ -508,14 +508,14 @@ const UsersManagement = () => {
                               setFormData({ ...formData, roles: formData.roles.filter(r => r !== role._id && r !== role.roleId) });
                             }
                           }}
-                          className="h-4 w-4 text-red-600 rounded"
+                          className="h-4 w-4 text-primary-600 rounded"
                         />
-                        <span className="ml-2 text-sm text-neutral-700">{role.name}</span>
+                        <span className="ml-2 text-sm text-content-secondary">{role.name}</span>
                       </label>
                     ))}
                   </div>
                   {roles.length === 0 && (
-                    <p className="text-neutral-500 text-sm text-center py-4">No roles available</p>
+                    <p className="text-content-muted text-sm text-center py-4">No roles available</p>
                   )}
                 </div>
               </div>
@@ -523,19 +523,19 @@ const UsersManagement = () => {
               {/* Groups Selection */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-neutral-700">
+                  <label className="block text-sm font-medium text-content-secondary">
                     Groups ({formData.groups.length} selected)
                   </label>
                   <div className="space-x-2">
-                    <button type="button" onClick={selectAllGroups} className="text-xs text-red-600 hover:text-red-700 font-medium">
+                    <button type="button" onClick={selectAllGroups} className="text-xs text-primary-600 hover:text-primary-700 font-medium">
                       Select All
                     </button>
-                    <button type="button" onClick={clearAllGroups} className="text-xs text-neutral-600 hover:text-neutral-700 font-medium">
+                    <button type="button" onClick={clearAllGroups} className="text-xs text-content-muted hover:text-content-secondary font-medium">
                       Clear All
                     </button>
                   </div>
                 </div>
-                <div className="border border-neutral-200 rounded-xl max-h-40 overflow-y-auto p-3 bg-neutral-50">
+                <div className="border border-edge rounded-xl max-h-40 overflow-y-auto p-3 bg-surface-secondary">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     {groups.map((group) => (
                       <label
@@ -543,7 +543,7 @@ const UsersManagement = () => {
                         className={`flex items-center p-2 rounded-lg border cursor-pointer transition-colors ${
                           isGroupSelected(group)
                             ? 'bg-green-50 border-green-300'
-                            : 'bg-white border-neutral-200 hover:border-neutral-300'
+                            : 'bg-surface border-edge hover:border-edge'
                         }`}
                       >
                         <input
@@ -558,12 +558,12 @@ const UsersManagement = () => {
                           }}
                           className="h-4 w-4 text-green-600 rounded"
                         />
-                        <span className="ml-2 text-sm text-neutral-700">{group.name}</span>
+                        <span className="ml-2 text-sm text-content-secondary">{group.name}</span>
                       </label>
                     ))}
                   </div>
                   {groups.length === 0 && (
-                    <p className="text-neutral-500 text-sm text-center py-4">No groups available</p>
+                    <p className="text-content-muted text-sm text-center py-4">No groups available</p>
                   )}
                 </div>
               </div>
@@ -571,19 +571,19 @@ const UsersManagement = () => {
               {/* Customers Selection */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-neutral-700">
+                  <label className="block text-sm font-medium text-content-secondary">
                     Customers ({formData.customers.length} selected)
                   </label>
                   <div className="space-x-2">
-                    <button type="button" onClick={selectAllCustomers} className="text-xs text-red-600 hover:text-red-700 font-medium">
+                    <button type="button" onClick={selectAllCustomers} className="text-xs text-primary-600 hover:text-primary-700 font-medium">
                       Select All
                     </button>
-                    <button type="button" onClick={clearAllCustomers} className="text-xs text-neutral-600 hover:text-neutral-700 font-medium">
+                    <button type="button" onClick={clearAllCustomers} className="text-xs text-content-muted hover:text-content-secondary font-medium">
                       Clear All
                     </button>
                   </div>
                 </div>
-                <div className="border border-neutral-200 rounded-xl max-h-48 overflow-y-auto p-3 bg-neutral-50">
+                <div className="border border-edge rounded-xl max-h-48 overflow-y-auto p-3 bg-surface-secondary">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     {customers.map((customer) => (
                       <label
@@ -591,7 +591,7 @@ const UsersManagement = () => {
                         className={`flex items-center p-2 rounded-lg border cursor-pointer transition-colors ${
                           isCustomerSelected(customer)
                             ? 'bg-blue-50 border-blue-300'
-                            : 'bg-white border-neutral-200 hover:border-neutral-300'
+                            : 'bg-surface border-edge hover:border-edge'
                         }`}
                       >
                         <input
@@ -606,12 +606,12 @@ const UsersManagement = () => {
                           }}
                           className="h-4 w-4 text-blue-600 rounded"
                         />
-                        <span className="ml-2 text-sm text-neutral-700">{customer.name}</span>
+                        <span className="ml-2 text-sm text-content-secondary">{customer.name}</span>
                       </label>
                     ))}
                   </div>
                   {customers.length === 0 && (
-                    <p className="text-neutral-500 text-sm text-center py-4">No customers available</p>
+                    <p className="text-content-muted text-sm text-center py-4">No customers available</p>
                   )}
                 </div>
               </div>
@@ -622,9 +622,9 @@ const UsersManagement = () => {
                     type="checkbox"
                     checked={formData.is_active}
                     onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                    className="h-4 w-4 text-red-600 rounded"
+                    className="h-4 w-4 text-primary-600 rounded"
                   />
-                  <span className="text-sm text-neutral-700">Active</span>
+                  <span className="text-sm text-content-secondary">Active</span>
                 </label>
                 {!editingUser && (
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -632,14 +632,14 @@ const UsersManagement = () => {
                       type="checkbox"
                       checked={formData.send_password_email}
                       onChange={(e) => setFormData({ ...formData, send_password_email: e.target.checked })}
-                      className="h-4 w-4 text-red-600 rounded"
+                      className="h-4 w-4 text-primary-600 rounded"
                     />
-                    <span className="text-sm text-neutral-700">Send password email</span>
+                    <span className="text-sm text-content-secondary">Send password email</span>
                   </label>
                 )}
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200">
+              <div className="flex justify-end gap-3 pt-4 border-t border-edge">
                 <button type="button" onClick={() => { setModalOpen(false); resetForm(); }} className="btn-secondary">
                   Cancel
                 </button>

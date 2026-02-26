@@ -79,8 +79,8 @@ const ActivityLogsPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Activity Logs</h1>
-          <p className="text-neutral-500 mt-1">View and audit all system activities</p>
+          <h1 className="text-2xl font-bold text-content">Activity Logs</h1>
+          <p className="text-content-muted mt-1">View and audit all system activities</p>
         </div>
         <div className="flex items-center gap-2">
           <ExportButton
@@ -101,7 +101,7 @@ const ActivityLogsPage = () => {
               setDays(parseInt(e.target.value));
               setPagination(prev => ({ ...prev, page: 0 }));
             }}
-            className="px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="px-3 py-2 border border-edge rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value={1}>Last 24 Hours</option>
             <option value={7}>Last 7 Days</option>
@@ -117,15 +117,15 @@ const ActivityLogsPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="card">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <Activity size={20} className="text-red-600" />
+              <div className="p-2 bg-primary-100 rounded-lg">
+                <Activity size={20} className="text-primary-600" />
               </div>
               <div>
-                <div className="text-sm text-neutral-500">Total Activities</div>
-                <div className="text-2xl font-bold text-neutral-900">{stats.total_activities}</div>
+                <div className="text-sm text-content-muted">Total Activities</div>
+                <div className="text-2xl font-bold text-content">{stats.total_activities}</div>
               </div>
             </div>
-            <div className="text-xs text-neutral-400 mt-2">Last {stats.period_days} days</div>
+            <div className="text-xs text-content-muted mt-2">Last {stats.period_days} days</div>
           </div>
           <div className="card">
             <div className="flex items-center gap-3">
@@ -133,8 +133,8 @@ const ActivityLogsPage = () => {
                 <TrendingUp size={20} className="text-blue-600" />
               </div>
               <div>
-                <div className="text-sm text-neutral-500">Action Types</div>
-                <div className="text-2xl font-bold text-neutral-900">{stats.actions?.length || 0}</div>
+                <div className="text-sm text-content-muted">Action Types</div>
+                <div className="text-2xl font-bold text-content">{stats.actions?.length || 0}</div>
               </div>
             </div>
             <div className="flex flex-wrap gap-1 mt-2">
@@ -151,8 +151,8 @@ const ActivityLogsPage = () => {
                 <Filter size={20} className="text-green-600" />
               </div>
               <div>
-                <div className="text-sm text-neutral-500">Entity Types</div>
-                <div className="text-2xl font-bold text-neutral-900">{stats.entities?.length || 0}</div>
+                <div className="text-sm text-content-muted">Entity Types</div>
+                <div className="text-2xl font-bold text-content">{stats.entities?.length || 0}</div>
               </div>
             </div>
             <div className="flex flex-wrap gap-1 mt-2">
@@ -169,11 +169,11 @@ const ActivityLogsPage = () => {
                 <User size={20} className="text-purple-600" />
               </div>
               <div>
-                <div className="text-sm text-neutral-500">Active Users</div>
-                <div className="text-2xl font-bold text-neutral-900">{stats.top_users?.length || 0}</div>
+                <div className="text-sm text-content-muted">Active Users</div>
+                <div className="text-2xl font-bold text-content">{stats.top_users?.length || 0}</div>
               </div>
             </div>
-            <div className="text-xs text-neutral-400 mt-2 truncate">
+            <div className="text-xs text-content-muted mt-2 truncate">
               Top: {stats.top_users?.[0]?.user_email || 'N/A'}
             </div>
           </div>
@@ -184,7 +184,7 @@ const ActivityLogsPage = () => {
       <div className="card">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">User Email</label>
+            <label className="block text-sm font-medium text-content-secondary mb-1">User Email</label>
             <input
               type="text"
               value={userEmail}
@@ -193,18 +193,18 @@ const ActivityLogsPage = () => {
                 setPagination(prev => ({ ...prev, page: 0 }));
               }}
               placeholder="Filter by user email..."
-              className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border border-edge rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Entity Type</label>
+            <label className="block text-sm font-medium text-content-secondary mb-1">Entity Type</label>
             <select
               value={entityType}
               onChange={(e) => {
                 setEntityType(e.target.value);
                 setPagination(prev => ({ ...prev, page: 0 }));
               }}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border border-edge rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">All Entity Types</option>
               {entityTypes.map(et => (
@@ -213,14 +213,14 @@ const ActivityLogsPage = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Action</label>
+            <label className="block text-sm font-medium text-content-secondary mb-1">Action</label>
             <select
               value={action}
               onChange={(e) => {
                 setAction(e.target.value);
                 setPagination(prev => ({ ...prev, page: 0 }));
               }}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border border-edge rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">All Actions</option>
               {actions.map(a => (
@@ -242,11 +242,11 @@ const ActivityLogsPage = () => {
               return (
                 <div key={item.date} className="flex-1 flex flex-col items-center">
                   <div
-                    className="w-full bg-red-500 rounded-t hover:bg-red-600 transition-colors"
+                    className="w-full bg-primary-500 rounded-t hover:bg-primary-600 transition-colors"
                     style={{ height: `${height}%`, minHeight: item.count > 0 ? '4px' : '0' }}
                     title={`${item.date}: ${item.count} activities`}
                   />
-                  <span className="text-xs text-neutral-500 mt-1 transform -rotate-45 origin-top-left whitespace-nowrap">
+                  <span className="text-xs text-content-muted mt-1 transform -rotate-45 origin-top-left whitespace-nowrap">
                     {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </span>
                 </div>
@@ -260,11 +260,11 @@ const ActivityLogsPage = () => {
       <div className="card overflow-hidden p-0">
         {loading ? (
           <div className="flex items-center justify-center h-48">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-neutral-200">
+            <table className="min-w-full divide-y divide-edge">
               <thead>
                 <tr className="table-header">
                   <th className="px-6 py-3 text-left">Time</th>
@@ -275,17 +275,17 @@ const ActivityLogsPage = () => {
                   <th className="px-6 py-3 text-left">Changes</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-neutral-200">
+              <tbody className="bg-surface divide-y divide-edge">
                 {logs.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-neutral-500">
+                    <td colSpan={6} className="px-6 py-8 text-center text-content-muted">
                       No activity logs found
                     </td>
                   </tr>
                 ) : (
                   logs.map((log) => (
-                    <tr key={log._id} className="hover:bg-neutral-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
+                    <tr key={log._id} className="hover:bg-surface-hover">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-content">
                         {new Date(log.timestamp).toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -299,14 +299,14 @@ const ActivityLogsPage = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="font-mono text-sm text-neutral-600">
+                        <span className="font-mono text-sm text-content-muted">
                           {log.entity_id?.length > 20 ? `${log.entity_id.slice(0, 20)}...` : log.entity_id}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-content">
                         {log.user_email}
                       </td>
-                      <td className="px-6 py-4 text-xs text-neutral-600 max-w-xs truncate">
+                      <td className="px-6 py-4 text-xs text-content-muted max-w-xs truncate">
                         {formatChanges(log.changes)}
                       </td>
                     </tr>
@@ -319,23 +319,23 @@ const ActivityLogsPage = () => {
 
         {/* Pagination */}
         {pagination.pages > 1 && (
-          <div className="bg-white px-4 py-3 border-t border-neutral-200 sm:px-6">
+          <div className="bg-surface px-4 py-3 border-t border-edge sm:px-6">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-neutral-700">
+              <div className="text-sm text-content-secondary">
                 Showing {pagination.page * pagination.limit + 1} to {Math.min((pagination.page + 1) * pagination.limit, pagination.total)} of {pagination.total}
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => handlePageChange(pagination.page - 1)}
                   disabled={pagination.page === 0}
-                  className="px-3 py-1 border border-neutral-300 rounded text-sm disabled:opacity-50"
+                  className="px-3 py-1 border border-edge rounded text-sm disabled:opacity-50"
                 >
                   Previous
                 </button>
                 <button
                   onClick={() => handlePageChange(pagination.page + 1)}
                   disabled={pagination.page >= pagination.pages - 1}
-                  className="px-3 py-1 border border-neutral-300 rounded text-sm disabled:opacity-50"
+                  className="px-3 py-1 border border-edge rounded text-sm disabled:opacity-50"
                 >
                   Next
                 </button>

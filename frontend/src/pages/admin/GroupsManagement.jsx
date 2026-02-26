@@ -375,9 +375,9 @@ const GroupsManagement = () => {
   if (!isSuperAdmin()) {
     return (
       <div className="text-center py-12">
-        <Shield className="mx-auto text-neutral-400 mb-4" size={48} />
-        <h2 className="text-xl font-semibold text-neutral-800 mb-2">Access Denied</h2>
-        <p className="text-neutral-500">Only Super Administrators can access this page.</p>
+        <Shield className="mx-auto text-content-muted mb-4" size={48} />
+        <h2 className="text-xl font-semibold text-content mb-2">Access Denied</h2>
+        <p className="text-content-muted">Only Super Administrators can access this page.</p>
       </div>
     );
   }
@@ -387,8 +387,8 @@ const GroupsManagement = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Groups Management</h1>
-          <p className="text-neutral-500 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-content">Groups Management</h1>
+          <p className="text-content-muted text-sm mt-1">
             Manage user groups and their permissions ({total} total)
           </p>
         </div>
@@ -403,10 +403,10 @@ const GroupsManagement = () => {
             </button>
             <div
               id="export-menu-groups"
-              className="hidden absolute right-0 mt-1 bg-white border rounded-lg shadow-lg z-10"
+              className="hidden absolute right-0 mt-1 bg-surface border rounded-lg shadow-lg z-10"
             >
               <button
-                className="block w-full px-4 py-2 text-left hover:bg-neutral-100"
+                className="block w-full px-4 py-2 text-left hover:bg-surface-hover"
                 onClick={() => {
                   handleExport('csv');
                   document.getElementById('export-menu-groups').classList.add('hidden');
@@ -415,7 +415,7 @@ const GroupsManagement = () => {
                 Export as CSV
               </button>
               <button
-                className="block w-full px-4 py-2 text-left hover:bg-neutral-100"
+                className="block w-full px-4 py-2 text-left hover:bg-surface-hover"
                 onClick={() => {
                   handleExport('json');
                   document.getElementById('export-menu-groups').classList.add('hidden');
@@ -450,7 +450,7 @@ const GroupsManagement = () => {
       <div className="card">
         <div className="flex flex-wrap gap-4">
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
             <input
               type="text"
               placeholder="Search groups by name or ID..."
@@ -460,7 +460,7 @@ const GroupsManagement = () => {
             />
           </div>
           <div className="flex items-center gap-2">
-            <Filter size={18} className="text-neutral-400" />
+            <Filter size={18} className="text-content-muted" />
             <select
               className="input min-w-[150px]"
               value={filterDomain}
@@ -510,9 +510,9 @@ const GroupsManagement = () => {
       {/* Groups Table */}
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-neutral-500">Loading groups...</div>
+          <div className="p-8 text-center text-content-muted">Loading groups...</div>
         ) : groups.length === 0 ? (
-          <div className="p-8 text-center text-neutral-500">
+          <div className="p-8 text-center text-content-muted">
             No groups found. Click "Add Group" to create one.
           </div>
         ) : (
@@ -533,15 +533,15 @@ const GroupsManagement = () => {
               </thead>
               <tbody className="divide-y">
                 {groups.map((group) => (
-                  <tr key={group._id || group.groupId} className="hover:bg-neutral-50">
+                  <tr key={group._id || group.groupId} className="hover:bg-surface-hover">
                     <td className="px-4 py-3">
-                      <span className="font-mono text-sm text-neutral-600">{group.groupId}</span>
+                      <span className="font-mono text-sm text-content-muted">{group.groupId}</span>
                     </td>
                     <td className="px-4 py-3">
                       <div>
-                        <div className="font-medium text-neutral-800">{group.name}</div>
+                        <div className="font-medium text-content">{group.name}</div>
                         {group.description && (
-                          <div className="text-xs text-neutral-500 truncate max-w-xs">
+                          <div className="text-xs text-content-muted truncate max-w-xs">
                             {group.description}
                           </div>
                         )}
@@ -552,7 +552,7 @@ const GroupsManagement = () => {
                         className={`px-2 py-1 text-xs rounded-full ${
                           group.type === 'system'
                             ? 'bg-purple-100 text-purple-700'
-                            : 'bg-neutral-100 text-neutral-700'
+                            : 'bg-surface-hover text-content-secondary'
                         }`}
                       >
                         {group.type || 'custom'}
@@ -569,12 +569,12 @@ const GroupsManagement = () => {
                           </span>
                         ))}
                         {(group.permissions || []).length > 3 && (
-                          <span className="px-2 py-0.5 text-xs bg-neutral-100 text-neutral-600 rounded">
+                          <span className="px-2 py-0.5 text-xs bg-surface-hover text-content-muted rounded">
                             +{group.permissions.length - 3} more
                           </span>
                         )}
                         {(group.permissions || []).length === 0 && (
-                          <span className="text-xs text-neutral-400">None</span>
+                          <span className="text-xs text-content-muted">None</span>
                         )}
                       </div>
                     </td>
@@ -589,12 +589,12 @@ const GroupsManagement = () => {
                           </span>
                         ))}
                         {(group.domains || []).length > 3 && (
-                          <span className="px-2 py-0.5 text-xs bg-neutral-100 text-neutral-600 rounded">
+                          <span className="px-2 py-0.5 text-xs bg-surface-hover text-content-muted rounded">
                             +{group.domains.length - 3} more
                           </span>
                         )}
                         {(group.domains || []).length === 0 && (
-                          <span className="text-xs text-neutral-400">None</span>
+                          <span className="text-xs text-content-muted">None</span>
                         )}
                       </div>
                     </td>
@@ -609,17 +609,17 @@ const GroupsManagement = () => {
                           </span>
                         ))}
                         {(group.customers || []).length > 3 && (
-                          <span className="px-2 py-0.5 text-xs bg-neutral-100 text-neutral-600 rounded">
+                          <span className="px-2 py-0.5 text-xs bg-surface-hover text-content-muted rounded">
                             +{group.customers.length - 3} more
                           </span>
                         )}
                         {(group.customers || []).length === 0 && (
-                          <span className="text-xs text-neutral-400">None</span>
+                          <span className="text-xs text-content-muted">None</span>
                         )}
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm text-neutral-600">{group.priority || 0}</span>
+                      <span className="text-sm text-content-muted">{group.priority || 0}</span>
                     </td>
                     <td className="px-4 py-3">
                       <span
@@ -635,14 +635,14 @@ const GroupsManagement = () => {
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
                         <button
-                          className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           onClick={() => showUsers(group)}
                           title="View Users"
                         >
                           <Users size={18} />
                         </button>
                         <button
-                          className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           onClick={() => openEditModal(group)}
                           title="Edit"
                         >
@@ -652,7 +652,7 @@ const GroupsManagement = () => {
                           className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${
                             group.status === 'active'
                               ? 'text-green-600 hover:bg-green-50'
-                              : 'text-neutral-400 hover:bg-neutral-50'
+                              : 'text-content-muted hover:bg-surface-hover'
                           }`}
                           onClick={() => handleToggleStatus(group)}
                           title={group.status === 'active' ? 'Deactivate' : 'Activate'}
@@ -664,7 +664,7 @@ const GroupsManagement = () => {
                           )}
                         </button>
                         <button
-                          className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           onClick={() => handleDelete(group)}
                           title="Delete"
                         >
@@ -681,8 +681,8 @@ const GroupsManagement = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-200">
-            <p className="text-sm text-neutral-500">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-edge">
+            <p className="text-sm text-content-muted">
               Showing {page * limit + 1} to{' '}
               {Math.min((page + 1) * limit, total)} of{' '}
               {total} groups
@@ -691,17 +691,17 @@ const GroupsManagement = () => {
               <button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="p-2 rounded-lg hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-600"
+                className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-content-muted"
               >
                 <ChevronLeft size={20} />
               </button>
-              <span className="text-sm text-neutral-600">
+              <span className="text-sm text-content-muted">
                 Page {page + 1} of {totalPages}
               </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                className="p-2 rounded-lg hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-600"
+                className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-content-muted"
               >
                 <ChevronRight size={20} />
               </button>
@@ -715,7 +715,7 @@ const GroupsManagement = () => {
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  <label className="block text-sm font-medium text-content-secondary mb-1">
                     Group ID <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -730,7 +730,7 @@ const GroupsManagement = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  <label className="block text-sm font-medium text-content-secondary mb-1">
                     Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -744,7 +744,7 @@ const GroupsManagement = () => {
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  <label className="block text-sm font-medium text-content-secondary mb-1">
                     Description
                   </label>
                   <textarea
@@ -757,7 +757,7 @@ const GroupsManagement = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Type</label>
+                  <label className="block text-sm font-medium text-content-secondary mb-1">Type</label>
                   <select
                     name="type"
                     className="input w-full"
@@ -781,7 +781,7 @@ const GroupsManagement = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Priority</label>
+                  <label className="block text-sm font-medium text-content-secondary mb-1">Priority</label>
                   <input
                     type="number"
                     name="priority"
@@ -790,10 +790,10 @@ const GroupsManagement = () => {
                     onChange={handleInputChange}
                     min={0}
                   />
-                  <p className="text-xs text-neutral-500 mt-1">Lower values = higher priority</p>
+                  <p className="text-xs text-content-muted mt-1">Lower values = higher priority</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Status</label>
+                  <label className="block text-sm font-medium text-content-secondary mb-1">Status</label>
                   <select
                     name="status"
                     className="input w-full"
@@ -809,7 +809,7 @@ const GroupsManagement = () => {
               {/* Permissions Section */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
-                  <label className="block text-sm font-medium text-neutral-700">
+                  <label className="block text-sm font-medium text-content-secondary">
                     Permissions ({formData.permissions.length} selected)
                   </label>
                   <div className="flex gap-2">
@@ -822,21 +822,21 @@ const GroupsManagement = () => {
                     </button>
                     <button
                       type="button"
-                      className="text-xs text-neutral-600 hover:underline"
+                      className="text-xs text-content-muted hover:underline"
                       onClick={() => handleSelectAllPermissions(false)}
                     >
                       Clear All
                     </button>
                   </div>
                 </div>
-                <div className="border rounded-lg p-4 max-h-64 overflow-y-auto bg-neutral-50">
+                <div className="border rounded-lg p-4 max-h-64 overflow-y-auto bg-surface-secondary">
                   {Object.keys(groupedPermissions).length === 0 ? (
-                    <p className="text-sm text-neutral-500">No permissions available</p>
+                    <p className="text-sm text-content-muted">No permissions available</p>
                   ) : (
                     Object.entries(groupedPermissions).map(([module, perms]) => (
                       <div key={module} className="mb-4 last:mb-0">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-neutral-700">{module}</span>
+                          <span className="text-sm font-medium text-content-secondary">{module}</span>
                           <div className="flex gap-2">
                             <button
                               type="button"
@@ -847,7 +847,7 @@ const GroupsManagement = () => {
                             </button>
                             <button
                               type="button"
-                              className="text-xs text-neutral-600 hover:underline"
+                              className="text-xs text-content-muted hover:underline"
                               onClick={() => handleSelectAllModule(module, false)}
                             >
                               None
@@ -864,7 +864,7 @@ const GroupsManagement = () => {
                                   type="checkbox"
                                   checked={isPermissionSelected(perm)}
                                   onChange={() => handlePermissionToggle(perm)}
-                                  className="rounded border-neutral-300"
+                                  className="rounded border-edge"
                                 />
                                 <span className="truncate" title={perm.description}>
                                   {perm.name || perm.key}
@@ -881,7 +881,7 @@ const GroupsManagement = () => {
               {/* Domains Section */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
-                  <label className="block text-sm font-medium text-neutral-700">
+                  <label className="block text-sm font-medium text-content-secondary">
                     Domains ({formData.domains.length} selected)
                   </label>
                   <div className="flex gap-2">
@@ -894,16 +894,16 @@ const GroupsManagement = () => {
                     </button>
                     <button
                       type="button"
-                      className="text-xs text-neutral-600 hover:underline"
+                      className="text-xs text-content-muted hover:underline"
                       onClick={() => handleSelectAllDomains(false)}
                     >
                       Clear All
                     </button>
                   </div>
                 </div>
-                <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-neutral-50">
+                <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-surface-secondary">
                   {domains.length === 0 ? (
-                    <p className="text-sm text-neutral-500">No domains available</p>
+                    <p className="text-sm text-content-muted">No domains available</p>
                   ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                       {domains.map((domain) => (
@@ -915,7 +915,7 @@ const GroupsManagement = () => {
                               type="checkbox"
                               checked={isDomainSelected(domain)}
                               onChange={() => handleDomainToggle(domain)}
-                              className="rounded border-neutral-300"
+                              className="rounded border-edge"
                             />
                             <span className="truncate" title={domain.description}>
                               {domain.name || domain.domainId || domain.key}
@@ -931,7 +931,7 @@ const GroupsManagement = () => {
               {formData.type === 'customers' && (
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
-                    <label className="block text-sm font-medium text-neutral-700">
+                    <label className="block text-sm font-medium text-content-secondary">
                       Customers ({formData.customers.length} selected)
                     </label>
                     <div className="flex gap-2">
@@ -944,7 +944,7 @@ const GroupsManagement = () => {
                       </button>
                       <button
                         type="button"
-                        className="text-xs text-neutral-600 hover:underline"
+                        className="text-xs text-content-muted hover:underline"
                         onClick={() => handleSelectAllCustomers(false)}
                       >
                         Clear All
@@ -953,7 +953,7 @@ const GroupsManagement = () => {
                   </div>
                   {/* Customer search */}
                   <div className="relative mb-3">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={16} />
                     <input
                       type="text"
                       placeholder="Search customers by ID or name..."
@@ -985,9 +985,9 @@ const GroupsManagement = () => {
                       })}
                     </div>
                   )}
-                  <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-neutral-50">
+                  <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-surface-secondary">
                     {filteredCustomers.length === 0 ? (
-                      <p className="text-sm text-neutral-500">No customers found</p>
+                      <p className="text-sm text-content-muted">No customers found</p>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {filteredCustomers.map((customer) => (
@@ -999,12 +999,12 @@ const GroupsManagement = () => {
                               type="checkbox"
                               checked={isCustomerSelected(customer)}
                               onChange={() => handleCustomerToggle(customer)}
-                              className="rounded border-neutral-300"
+                              className="rounded border-edge"
                             />
                             <span className="truncate" title={`${customer.customerId} — ${customer.name}`}>
                               <span className="font-medium">{customer.customerId}</span>
                               {customer.name && (
-                                <span className="text-neutral-500 ml-1">— {customer.name}</span>
+                                <span className="text-content-muted ml-1">— {customer.name}</span>
                               )}
                             </span>
                           </label>
@@ -1035,9 +1035,9 @@ const GroupsManagement = () => {
       <Modal isOpen={usersModalOpen} onClose={() => setUsersModalOpen(false)} title={`Users in Group: ${selectedGroup?.name || ''}`} size="lg">
             <div>
               {loadingUsers ? (
-                <div className="text-center py-8 text-neutral-500">Loading users...</div>
+                <div className="text-center py-8 text-content-muted">Loading users...</div>
               ) : groupUsers.length === 0 ? (
-                <div className="text-center py-8 text-neutral-500">
+                <div className="text-center py-8 text-content-muted">
                   No users are in this group.
                 </div>
               ) : (
@@ -1045,13 +1045,13 @@ const GroupsManagement = () => {
                   {groupUsers.map((user) => (
                     <div
                       key={user._id}
-                      className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg"
+                      className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg"
                     >
                       <div>
-                        <div className="font-medium text-neutral-800">
+                        <div className="font-medium text-content">
                           {user.full_name || user.username || user.email}
                         </div>
-                        <div className="text-sm text-neutral-500">{user.email}</div>
+                        <div className="text-sm text-content-muted">{user.email}</div>
                       </div>
                       <span
                         className={`px-2 py-1 text-xs rounded-full ${

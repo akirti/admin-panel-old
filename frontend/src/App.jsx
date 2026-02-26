@@ -57,7 +57,7 @@ function ProtectedRoute({ children, requireAdmin = false, requireGroupAdmin = fa
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
@@ -84,7 +84,7 @@ function PublicRoute({ children }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
@@ -99,7 +99,16 @@ function PublicRoute({ children }) {
 function App() {
   return (
     <>
-      <Toaster position="top-right" />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: 'var(--color-surface)',
+            color: 'var(--color-text)',
+            border: '1px solid var(--color-border)',
+          },
+        }}
+      />
       <Routes>
         {/* Auth Routes */}
         <Route element={<AuthLayout />}>

@@ -81,11 +81,11 @@ const V1ColumnFilterDropdown = ({
     <div
       ref={dropdownRef}
       style={dropdownStyle}
-      className="bg-white border border-neutral-200 rounded-lg shadow-lg flex flex-col"
+      className="bg-surface border border-edge rounded-lg shadow-lg flex flex-col"
     >
       <div className="max-h-48 overflow-auto">
         {options.length === 0 ? (
-          <div className="px-3 py-2 text-neutral-400 text-sm">No values</div>
+          <div className="px-3 py-2 text-content-muted text-sm">No values</div>
         ) : (
           options.map((option, idx) => {
             const key =
@@ -110,8 +110,8 @@ const V1ColumnFilterDropdown = ({
                 <span
                   className={
                     localSelected.includes(option)
-                      ? "font-medium text-neutral-900"
-                      : "text-neutral-600"
+                      ? "font-medium text-content"
+                      : "text-content-secondary"
                   }
                 >
                   {label}
@@ -122,11 +122,11 @@ const V1ColumnFilterDropdown = ({
         )}
       </div>
       {options.length > 0 && (
-        <div className="flex items-center justify-between border-t border-neutral-100 px-3 py-2">
+        <div className="flex items-center justify-between border-t border-edge-light px-3 py-2">
           <button
             type="button"
             onClick={handleClear}
-            className="text-xs text-neutral-500 hover:text-neutral-700"
+            className="text-xs text-content-muted hover:text-content-secondary"
           >
             Clear
           </button>
@@ -149,7 +149,7 @@ const V1ColumnFilterDropdown = ({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`p-0.5 rounded hover:bg-neutral-200 focus:outline-none ${
-          hasActiveFilter ? "text-blue-600" : "text-neutral-400"
+          hasActiveFilter ? "text-blue-600" : "text-content-muted"
         }`}
         aria-label={`Filter ${columnLabel}`}
         title={`Filter ${columnLabel}`}

@@ -328,9 +328,9 @@ const RolesManagement = () => {
   if (!isSuperAdmin()) {
     return (
       <div className="text-center py-12">
-        <Shield className="mx-auto text-neutral-400 mb-4" size={48} />
-        <h2 className="text-xl font-semibold text-neutral-800 mb-2">Access Denied</h2>
-        <p className="text-neutral-500">Only Super Administrators can access this page.</p>
+        <Shield className="mx-auto text-content-muted mb-4" size={48} />
+        <h2 className="text-xl font-semibold text-content mb-2">Access Denied</h2>
+        <p className="text-content-muted">Only Super Administrators can access this page.</p>
       </div>
     );
   }
@@ -340,8 +340,8 @@ const RolesManagement = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Roles Management</h1>
-          <p className="text-neutral-500 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-content">Roles Management</h1>
+          <p className="text-content-muted text-sm mt-1">
             Manage roles and their permissions ({total} total)
           </p>
         </div>
@@ -356,10 +356,10 @@ const RolesManagement = () => {
             </button>
             <div
               id="export-menu"
-              className="hidden absolute right-0 mt-1 bg-white border rounded-lg shadow-lg z-10"
+              className="hidden absolute right-0 mt-1 bg-surface border rounded-lg shadow-lg z-10"
             >
               <button
-                className="block w-full px-4 py-2 text-left hover:bg-neutral-100"
+                className="block w-full px-4 py-2 text-left hover:bg-surface-hover"
                 onClick={() => {
                   handleExport('csv');
                   document.getElementById('export-menu').classList.add('hidden');
@@ -368,7 +368,7 @@ const RolesManagement = () => {
                 Export as CSV
               </button>
               <button
-                className="block w-full px-4 py-2 text-left hover:bg-neutral-100"
+                className="block w-full px-4 py-2 text-left hover:bg-surface-hover"
                 onClick={() => {
                   handleExport('json');
                   document.getElementById('export-menu').classList.add('hidden');
@@ -403,7 +403,7 @@ const RolesManagement = () => {
       <div className="card">
         <div className="flex flex-wrap gap-4">
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
             <input
               type="text"
               placeholder="Search roles by name or ID..."
@@ -413,7 +413,7 @@ const RolesManagement = () => {
             />
           </div>
           <div className="flex items-center gap-2">
-            <Filter size={18} className="text-neutral-400" />
+            <Filter size={18} className="text-content-muted" />
             <select
               className="input min-w-[150px]"
               value={filterDomain}
@@ -463,9 +463,9 @@ const RolesManagement = () => {
       {/* Roles Table */}
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-neutral-500">Loading roles...</div>
+          <div className="p-8 text-center text-content-muted">Loading roles...</div>
         ) : roles.length === 0 ? (
-          <div className="p-8 text-center text-neutral-500">
+          <div className="p-8 text-center text-content-muted">
             No roles found. Click "Add Role" to create one.
           </div>
         ) : (
@@ -485,15 +485,15 @@ const RolesManagement = () => {
               </thead>
               <tbody className="divide-y">
                 {roles.map((role) => (
-                  <tr key={role._id || role.roleId} className="hover:bg-neutral-50">
+                  <tr key={role._id || role.roleId} className="hover:bg-surface-hover">
                     <td className="px-4 py-3">
-                      <span className="font-mono text-sm text-neutral-600">{role.roleId}</span>
+                      <span className="font-mono text-sm text-content-muted">{role.roleId}</span>
                     </td>
                     <td className="px-4 py-3">
                       <div>
-                        <div className="font-medium text-neutral-800">{role.name}</div>
+                        <div className="font-medium text-content">{role.name}</div>
                         {role.description && (
-                          <div className="text-xs text-neutral-500 truncate max-w-xs">
+                          <div className="text-xs text-content-muted truncate max-w-xs">
                             {role.description}
                           </div>
                         )}
@@ -504,7 +504,7 @@ const RolesManagement = () => {
                         className={`px-2 py-1 text-xs rounded-full ${
                           role.type === 'system'
                             ? 'bg-purple-100 text-purple-700'
-                            : 'bg-neutral-100 text-neutral-700'
+                            : 'bg-surface-hover text-content-secondary'
                         }`}
                       >
                         {role.type || 'custom'}
@@ -521,12 +521,12 @@ const RolesManagement = () => {
                           </span>
                         ))}
                         {(role.permissions || []).length > 3 && (
-                          <span className="px-2 py-0.5 text-xs bg-neutral-100 text-neutral-600 rounded">
+                          <span className="px-2 py-0.5 text-xs bg-surface-hover text-content-muted rounded">
                             +{role.permissions.length - 3} more
                           </span>
                         )}
                         {(role.permissions || []).length === 0 && (
-                          <span className="text-xs text-neutral-400">None</span>
+                          <span className="text-xs text-content-muted">None</span>
                         )}
                       </div>
                     </td>
@@ -541,17 +541,17 @@ const RolesManagement = () => {
                           </span>
                         ))}
                         {(role.domains || []).length > 3 && (
-                          <span className="px-2 py-0.5 text-xs bg-neutral-100 text-neutral-600 rounded">
+                          <span className="px-2 py-0.5 text-xs bg-surface-hover text-content-muted rounded">
                             +{role.domains.length - 3} more
                           </span>
                         )}
                         {(role.domains || []).length === 0 && (
-                          <span className="text-xs text-neutral-400">None</span>
+                          <span className="text-xs text-content-muted">None</span>
                         )}
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm text-neutral-600">{role.priority || 0}</span>
+                      <span className="text-sm text-content-muted">{role.priority || 0}</span>
                     </td>
                     <td className="px-4 py-3">
                       <span
@@ -567,14 +567,14 @@ const RolesManagement = () => {
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
                         <button
-                          className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           onClick={() => showUsers(role)}
                           title="View Users"
                         >
                           <Users size={18} />
                         </button>
                         <button
-                          className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           onClick={() => openEditModal(role)}
                           title="Edit"
                         >
@@ -584,7 +584,7 @@ const RolesManagement = () => {
                           className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${
                             role.status === 'active'
                               ? 'text-green-600 hover:bg-green-50'
-                              : 'text-neutral-400 hover:bg-neutral-50'
+                              : 'text-content-muted hover:bg-surface-hover'
                           }`}
                           onClick={() => handleToggleStatus(role)}
                           title={role.status === 'active' ? 'Deactivate' : 'Activate'}
@@ -596,7 +596,7 @@ const RolesManagement = () => {
                           )}
                         </button>
                         <button
-                          className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           onClick={() => handleDelete(role)}
                           title="Delete"
                         >
@@ -613,8 +613,8 @@ const RolesManagement = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-200">
-            <p className="text-sm text-neutral-500">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-edge">
+            <p className="text-sm text-content-muted">
               Showing {page * limit + 1} to{' '}
               {Math.min((page + 1) * limit, total)} of{' '}
               {total} roles
@@ -623,17 +623,17 @@ const RolesManagement = () => {
               <button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="p-2 rounded-lg hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-600"
+                className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-content-muted"
               >
                 <ChevronLeft size={20} />
               </button>
-              <span className="text-sm text-neutral-600">
+              <span className="text-sm text-content-muted">
                 Page {page + 1} of {totalPages}
               </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                className="p-2 rounded-lg hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-600"
+                className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-content-muted"
               >
                 <ChevronRight size={20} />
               </button>
@@ -647,7 +647,7 @@ const RolesManagement = () => {
             <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  <label className="block text-sm font-medium text-content-secondary mb-1">
                     Role ID <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -662,7 +662,7 @@ const RolesManagement = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  <label className="block text-sm font-medium text-content-secondary mb-1">
                     Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -676,7 +676,7 @@ const RolesManagement = () => {
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  <label className="block text-sm font-medium text-content-secondary mb-1">
                     Description
                   </label>
                   <textarea
@@ -689,7 +689,7 @@ const RolesManagement = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Type</label>
+                  <label className="block text-sm font-medium text-content-secondary mb-1">Type</label>
                   <select
                     name="type"
                     className="input w-full"
@@ -701,7 +701,7 @@ const RolesManagement = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Priority</label>
+                  <label className="block text-sm font-medium text-content-secondary mb-1">Priority</label>
                   <input
                     type="number"
                     name="priority"
@@ -710,10 +710,10 @@ const RolesManagement = () => {
                     onChange={handleInputChange}
                     min={0}
                   />
-                  <p className="text-xs text-neutral-500 mt-1">Lower values = higher priority</p>
+                  <p className="text-xs text-content-muted mt-1">Lower values = higher priority</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Status</label>
+                  <label className="block text-sm font-medium text-content-secondary mb-1">Status</label>
                   <select
                     name="status"
                     className="input w-full"
@@ -729,7 +729,7 @@ const RolesManagement = () => {
               {/* Permissions Section */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
-                  <label className="block text-sm font-medium text-neutral-700">
+                  <label className="block text-sm font-medium text-content-secondary">
                     Permissions ({formData.permissions.length} selected)
                   </label>
                   <div className="flex gap-2">
@@ -742,21 +742,21 @@ const RolesManagement = () => {
                     </button>
                     <button
                       type="button"
-                      className="text-xs text-neutral-600 hover:underline"
+                      className="text-xs text-content-muted hover:underline"
                       onClick={() => handleSelectAllPermissions(false)}
                     >
                       Clear All
                     </button>
                   </div>
                 </div>
-                <div className="border rounded-lg p-4 max-h-64 overflow-y-auto bg-neutral-50">
+                <div className="border rounded-lg p-4 max-h-64 overflow-y-auto bg-surface-secondary">
                   {Object.keys(groupedPermissions).length === 0 ? (
-                    <p className="text-sm text-neutral-500">No permissions available</p>
+                    <p className="text-sm text-content-muted">No permissions available</p>
                   ) : (
                     Object.entries(groupedPermissions).map(([module, perms]) => (
                       <div key={module} className="mb-4 last:mb-0">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-neutral-700">{module}</span>
+                          <span className="text-sm font-medium text-content-secondary">{module}</span>
                           <div className="flex gap-2">
                             <button
                               type="button"
@@ -767,7 +767,7 @@ const RolesManagement = () => {
                             </button>
                             <button
                               type="button"
-                              className="text-xs text-neutral-600 hover:underline"
+                              className="text-xs text-content-muted hover:underline"
                               onClick={() => handleSelectAllModule(module, false)}
                             >
                               None
@@ -784,7 +784,7 @@ const RolesManagement = () => {
                                   type="checkbox"
                                   checked={isPermissionSelected(perm)}
                                   onChange={() => handlePermissionToggle(perm)}
-                                  className="rounded border-neutral-300"
+                                  className="rounded border-edge"
                                 />
                                 <span className="truncate" title={perm.description}>
                                   {perm.name || perm.key}
@@ -801,7 +801,7 @@ const RolesManagement = () => {
               {/* Domains Section */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
-                  <label className="block text-sm font-medium text-neutral-700">
+                  <label className="block text-sm font-medium text-content-secondary">
                     Domains ({formData.domains.length} selected)
                   </label>
                   <div className="flex gap-2">
@@ -814,16 +814,16 @@ const RolesManagement = () => {
                     </button>
                     <button
                       type="button"
-                      className="text-xs text-neutral-600 hover:underline"
+                      className="text-xs text-content-muted hover:underline"
                       onClick={() => handleSelectAllDomains(false)}
                     >
                       Clear All
                     </button>
                   </div>
                 </div>
-                <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-neutral-50">
+                <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-surface-secondary">
                   {domains.length === 0 ? (
-                    <p className="text-sm text-neutral-500">No domains available</p>
+                    <p className="text-sm text-content-muted">No domains available</p>
                   ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                       {domains.map((domain) => (
@@ -835,7 +835,7 @@ const RolesManagement = () => {
                               type="checkbox"
                               checked={isDomainSelected(domain)}
                               onChange={() => handleDomainToggle(domain)}
-                              className="rounded border-neutral-300"
+                              className="rounded border-edge"
                             />
                             <span className="truncate" title={domain.description}>
                               {domain.name || domain.domainId || domain.key}
@@ -867,9 +867,9 @@ const RolesManagement = () => {
       <Modal isOpen={usersModalOpen} onClose={() => setUsersModalOpen(false)} title={`Users with Role: ${selectedRole?.name || ''}`} size="lg">
             <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
               {loadingUsers ? (
-                <div className="text-center py-8 text-neutral-500">Loading users...</div>
+                <div className="text-center py-8 text-content-muted">Loading users...</div>
               ) : roleUsers.length === 0 ? (
-                <div className="text-center py-8 text-neutral-500">
+                <div className="text-center py-8 text-content-muted">
                   No users have this role assigned.
                 </div>
               ) : (
@@ -877,13 +877,13 @@ const RolesManagement = () => {
                   {roleUsers.map((user) => (
                     <div
                       key={user._id}
-                      className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg"
+                      className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg"
                     >
                       <div>
-                        <div className="font-medium text-neutral-800">
+                        <div className="font-medium text-content">
                           {user.full_name || user.username || user.email}
                         </div>
-                        <div className="text-sm text-neutral-500">{user.email}</div>
+                        <div className="text-sm text-content-muted">{user.email}</div>
                       </div>
                       <span
                         className={`px-2 py-1 text-xs rounded-full ${

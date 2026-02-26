@@ -398,10 +398,10 @@ const ApiConfigsManagement = () => {
       render: (val) => (
         <div className="flex flex-wrap gap-1">
           {(val || []).slice(0, 2).map((tag, i) => (
-            <span key={i} className="text-xs bg-neutral-100 px-2 py-0.5 rounded">{tag}</span>
+            <span key={i} className="text-xs bg-surface-hover px-2 py-0.5 rounded">{tag}</span>
           ))}
           {(val || []).length > 2 && (
-            <span className="text-xs text-neutral-400">+{val.length - 2}</span>
+            <span className="text-xs text-content-muted">+{val.length - 2}</span>
           )}
         </div>
       ),
@@ -420,14 +420,14 @@ const ApiConfigsManagement = () => {
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleViewDetails(item); }}
-            className="p-1 text-neutral-500 hover:text-red-600"
+            className="p-1 text-content-muted hover:text-primary-600"
             title="View Details"
           >
             <Eye size={16} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); openEditModal(item); }}
-            className="p-1 text-neutral-500 hover:text-red-600"
+            className="p-1 text-content-muted hover:text-primary-600"
             title="Edit"
           >
             <Pencil size={16} />
@@ -465,8 +465,8 @@ const ApiConfigsManagement = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">API Configurations</h1>
-          <p className="text-neutral-500 mt-1">Manage external API configurations and test connectivity</p>
+          <h1 className="text-2xl font-bold text-content">API Configurations</h1>
+          <p className="text-content-muted mt-1">Manage external API configurations and test connectivity</p>
         </div>
         <div className="flex space-x-3">
           {gcsStatus && (
@@ -596,7 +596,7 @@ const ApiConfigsManagement = () => {
                   type="checkbox"
                   checked={formData.ssl_verify}
                   onChange={(e) => setFormData({ ...formData, ssl_verify: e.target.checked })}
-                  className="rounded border-neutral-300"
+                  className="rounded border-edge"
                 />
                 <span className="text-sm">Verify SSL</span>
               </label>
@@ -605,7 +605,7 @@ const ApiConfigsManagement = () => {
                   type="checkbox"
                   checked={formData.use_proxy}
                   onChange={(e) => setFormData({ ...formData, use_proxy: e.target.checked })}
-                  className="rounded border-neutral-300"
+                  className="rounded border-edge"
                 />
                 <span className="text-sm">Use Proxy</span>
               </label>
@@ -832,16 +832,16 @@ const ApiConfigsManagement = () => {
           {/* Auth Config JSON - For basic, bearer, api_key, mtls, custom */}
           {formData.auth_type !== 'none' && formData.auth_type !== 'login_token' && formData.auth_type !== 'oauth2' && (
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">
+              <label className="block text-sm font-medium text-content-secondary mb-1">
                 Auth Configuration JSON
-                <span className="text-xs text-neutral-400 ml-2">
+                <span className="text-xs text-content-muted ml-2">
                   {formData.auth_type === 'basic' && '{"username": "", "password": ""}'}
                   {formData.auth_type === 'bearer' && '{"token": ""}'}
                   {formData.auth_type === 'api_key' && '{"key_name": "X-API-Key", "key_value": "", "key_location": "header"}'}
                 </span>
               </label>
               <textarea
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 font-mono text-sm"
+                className="w-full px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono text-sm"
                 rows={3}
                 value={authConfigJson}
                 onChange={(e) => setAuthConfigJson(e.target.value)}
@@ -851,9 +851,9 @@ const ApiConfigsManagement = () => {
 
           {/* Headers JSON */}
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Headers JSON</label>
+            <label className="block text-sm font-medium text-content-secondary mb-1">Headers JSON</label>
             <textarea
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 font-mono text-sm"
+              className="w-full px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono text-sm"
               rows={2}
               value={headersJson}
               onChange={(e) => setHeadersJson(e.target.value)}
@@ -864,9 +864,9 @@ const ApiConfigsManagement = () => {
           {/* Params & Body */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Query Params JSON</label>
+              <label className="block text-sm font-medium text-content-secondary mb-1">Query Params JSON</label>
               <textarea
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 font-mono text-sm"
+                className="w-full px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono text-sm"
                 rows={2}
                 value={paramsJson}
                 onChange={(e) => setParamsJson(e.target.value)}
@@ -874,9 +874,9 @@ const ApiConfigsManagement = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Request Body JSON</label>
+              <label className="block text-sm font-medium text-content-secondary mb-1">Request Body JSON</label>
               <textarea
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 font-mono text-sm"
+                className="w-full px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono text-sm"
                 rows={2}
                 value={bodyJson}
                 onChange={(e) => setBodyJson(e.target.value)}
@@ -908,8 +908,8 @@ const ApiConfigsManagement = () => {
           </div>
 
           {/* Ping/Health Check */}
-          <div className="p-4 bg-neutral-50 rounded-lg">
-            <h4 className="text-sm font-medium text-neutral-700 mb-3">Health Check Settings</h4>
+          <div className="p-4 bg-surface-secondary rounded-lg">
+            <h4 className="text-sm font-medium text-content-secondary mb-3">Health Check Settings</h4>
             <div className="grid grid-cols-4 gap-4">
               <div className="col-span-2">
                 <Input
@@ -941,7 +941,7 @@ const ApiConfigsManagement = () => {
                 type="checkbox"
                 checked={formData.cache_enabled}
                 onChange={(e) => setFormData({ ...formData, cache_enabled: e.target.checked })}
-                className="rounded border-neutral-300"
+                className="rounded border-edge"
               />
               <span className="text-sm">Enable Caching</span>
             </label>
@@ -996,8 +996,8 @@ const ApiConfigsManagement = () => {
         <div className="space-y-4">
           {testLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
-              <span className="ml-3 text-neutral-500">Testing API connection...</span>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+              <span className="ml-3 text-content-muted">Testing API connection...</span>
             </div>
           ) : testResult ? (
             <>
@@ -1015,16 +1015,16 @@ const ApiConfigsManagement = () => {
               </div>
 
               <div className="grid grid-cols-3 gap-4">
-                <div className="bg-neutral-50 p-3 rounded-lg">
-                  <p className="text-xs text-neutral-500">Status Code</p>
+                <div className="bg-surface-secondary p-3 rounded-lg">
+                  <p className="text-xs text-content-muted">Status Code</p>
                   <p className="text-lg font-semibold">{testResult.status_code || 'N/A'}</p>
                 </div>
-                <div className="bg-neutral-50 p-3 rounded-lg">
-                  <p className="text-xs text-neutral-500">Response Time</p>
+                <div className="bg-surface-secondary p-3 rounded-lg">
+                  <p className="text-xs text-content-muted">Response Time</p>
                   <p className="text-lg font-semibold">{testResult.response_time_ms ? `${testResult.response_time_ms}ms` : 'N/A'}</p>
                 </div>
-                <div className="bg-neutral-50 p-3 rounded-lg">
-                  <p className="text-xs text-neutral-500">SSL Version</p>
+                <div className="bg-surface-secondary p-3 rounded-lg">
+                  <p className="text-xs text-content-muted">SSL Version</p>
                   <p className="text-lg font-semibold">{testResult.ssl_info?.version || 'N/A'}</p>
                 </div>
               </div>
@@ -1038,7 +1038,7 @@ const ApiConfigsManagement = () => {
 
               {testResult.response_headers && (
                 <div>
-                  <p className="text-sm font-medium text-neutral-700 mb-2">Response Headers</p>
+                  <p className="text-sm font-medium text-content-secondary mb-2">Response Headers</p>
                   <pre className="bg-neutral-900 text-green-400 p-3 rounded-lg overflow-auto max-h-32 text-xs">
                     {JSON.stringify(testResult.response_headers, null, 2)}
                   </pre>
@@ -1047,7 +1047,7 @@ const ApiConfigsManagement = () => {
 
               {testResult.response_body && (
                 <div>
-                  <p className="text-sm font-medium text-neutral-700 mb-2">Response Body</p>
+                  <p className="text-sm font-medium text-content-secondary mb-2">Response Body</p>
                   <pre className="bg-neutral-900 text-green-400 p-3 rounded-lg overflow-auto max-h-48 text-xs">
                     {typeof testResult.response_body === 'string'
                       ? testResult.response_body
@@ -1077,60 +1077,60 @@ const ApiConfigsManagement = () => {
           <div className="space-y-4 max-h-[70vh] overflow-y-auto">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-500">Key</label>
-                <p className="text-neutral-900 font-mono">{selectedConfig.key}</p>
+                <label className="block text-sm font-medium text-content-muted">Key</label>
+                <p className="text-content font-mono">{selectedConfig.key}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-500">Name</label>
-                <p className="text-neutral-900">{selectedConfig.name}</p>
+                <label className="block text-sm font-medium text-content-muted">Name</label>
+                <p className="text-content">{selectedConfig.name}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-500">Status</label>
+                <label className="block text-sm font-medium text-content-muted">Status</label>
                 {getStatusBadge(selectedConfig.status)}
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-500">Auth Type</label>
+                <label className="block text-sm font-medium text-content-muted">Auth Type</label>
                 {getAuthTypeBadge(selectedConfig.auth_type)}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-neutral-500">Endpoint</label>
-              <p className="text-neutral-900 font-mono text-sm break-all">{selectedConfig.endpoint}</p>
+              <label className="block text-sm font-medium text-content-muted">Endpoint</label>
+              <p className="text-content font-mono text-sm break-all">{selectedConfig.endpoint}</p>
             </div>
 
             {selectedConfig.description && (
               <div>
-                <label className="block text-sm font-medium text-neutral-500">Description</label>
-                <p className="text-neutral-900">{selectedConfig.description}</p>
+                <label className="block text-sm font-medium text-content-muted">Description</label>
+                <p className="text-content">{selectedConfig.description}</p>
               </div>
             )}
 
             <div className="grid grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-500">Method</label>
+                <label className="block text-sm font-medium text-content-muted">Method</label>
                 <Badge variant="primary">{selectedConfig.method}</Badge>
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-500">Timeout</label>
-                <p className="text-neutral-900">{selectedConfig.timeout}s</p>
+                <label className="block text-sm font-medium text-content-muted">Timeout</label>
+                <p className="text-content">{selectedConfig.timeout}s</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-500">SSL Verify</label>
-                <p className="text-neutral-900">{selectedConfig.ssl_verify ? 'Yes' : 'No'}</p>
+                <label className="block text-sm font-medium text-content-muted">SSL Verify</label>
+                <p className="text-content">{selectedConfig.ssl_verify ? 'Yes' : 'No'}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-500">Use Proxy</label>
-                <p className="text-neutral-900">{selectedConfig.use_proxy ? 'Yes' : 'No'}</p>
+                <label className="block text-sm font-medium text-content-muted">Use Proxy</label>
+                <p className="text-content">{selectedConfig.use_proxy ? 'Yes' : 'No'}</p>
               </div>
             </div>
 
             {(selectedConfig.tags || []).length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-neutral-500 mb-2">Tags</label>
+                <label className="block text-sm font-medium text-content-muted mb-2">Tags</label>
                 <div className="flex flex-wrap gap-2">
                   {selectedConfig.tags.map((tag, i) => (
-                    <span key={i} className="bg-neutral-100 px-3 py-1 rounded-full text-sm">{tag}</span>
+                    <span key={i} className="bg-surface-hover px-3 py-1 rounded-full text-sm">{tag}</span>
                   ))}
                 </div>
               </div>
@@ -1156,7 +1156,7 @@ const ApiConfigsManagement = () => {
 
             {Object.keys(selectedConfig.headers || {}).length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-neutral-500 mb-2">Headers</label>
+                <label className="block text-sm font-medium text-content-muted mb-2">Headers</label>
                 <pre className="bg-neutral-900 text-green-400 p-3 rounded-lg overflow-auto max-h-32 text-xs">
                   {JSON.stringify(selectedConfig.headers, null, 2)}
                 </pre>
@@ -1165,17 +1165,17 @@ const ApiConfigsManagement = () => {
 
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <label className="block text-sm font-medium text-neutral-500">Created</label>
-                <p className="text-neutral-900">
+                <label className="block text-sm font-medium text-content-muted">Created</label>
+                <p className="text-content">
                   {selectedConfig.created_at ? new Date(selectedConfig.created_at).toLocaleString() : '-'}
-                  {selectedConfig.created_by && <span className="text-neutral-400"> by {selectedConfig.created_by}</span>}
+                  {selectedConfig.created_by && <span className="text-content-muted"> by {selectedConfig.created_by}</span>}
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-500">Updated</label>
-                <p className="text-neutral-900">
+                <label className="block text-sm font-medium text-content-muted">Updated</label>
+                <p className="text-content">
                   {selectedConfig.updated_at ? new Date(selectedConfig.updated_at).toLocaleString() : '-'}
-                  {selectedConfig.updated_by && <span className="text-neutral-400"> by {selectedConfig.updated_by}</span>}
+                  {selectedConfig.updated_by && <span className="text-content-muted"> by {selectedConfig.updated_by}</span>}
                 </p>
               </div>
             </div>
@@ -1216,15 +1216,15 @@ const ApiConfigsManagement = () => {
           />
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-2">Certificate File</label>
+            <label className="block text-sm font-medium text-content-secondary mb-2">Certificate File</label>
             <input
               type="file"
               accept=".pem,.crt,.key"
               onChange={(e) => setCertFile(e.target.files[0])}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg"
+              className="w-full px-3 py-2 border border-edge rounded-lg"
             />
             {certFile && (
-              <p className="mt-2 text-sm text-neutral-500">Selected: {certFile.name}</p>
+              <p className="mt-2 text-sm text-content-muted">Selected: {certFile.name}</p>
             )}
           </div>
 

@@ -41,11 +41,11 @@ function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-2xl p-6 text-white">
+      <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-6 text-white">
         <h2 className="text-2xl font-bold mb-2">
           Welcome back, {user?.full_name || user?.username || 'User'}!
         </h2>
-        <p className="text-red-100">
+        <p className="text-primary-100">
           Here's an overview of your available domains and actions and new scenario requests.
         </p>
       </div>
@@ -149,20 +149,20 @@ function DashboardPage() {
         <div className="card">
           <div className="card-header flex items-center justify-between">
             <h3 className="section-title">Recent Requests</h3>
-            <Link to="/my-requests" className="text-red-600 hover:text-red-700 text-sm font-medium">
+            <Link to="/my-requests" className="text-primary-600 hover:text-primary-700 text-sm font-medium">
               View all →
             </Link>
           </div>
-          <div className="divide-y divide-neutral-100">
+          <div className="divide-y divide-edge">
             {requestStats.recent.map((request) => (
               <Link
                 key={request.requestId}
                 to={`/my-requests/${request.requestId}`}
-                className="flex items-center justify-between p-4 hover:bg-neutral-50 transition-colors"
+                className="flex items-center justify-between p-4 hover:bg-surface-hover transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-sm text-red-600">{request.requestId}</span>
-                  <span className="text-neutral-800">{request.name}</span>
+                  <span className="font-mono text-sm text-primary-600">{request.requestId}</span>
+                  <span className="text-content">{request.name}</span>
                 </div>
                 <Badge variant={
                   request.status === 'submitted' ? 'info' :
@@ -189,55 +189,55 @@ function DashboardPage() {
       )}
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Link to="/ask-scenario" className="card hover:shadow-md hover:border-red-200 transition-all group bg-red-50 border-red-200">
+        <Link to="/ask-scenario" className="card hover:shadow-md hover:border-primary-200 transition-all group bg-primary-50 border-primary-200">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-red-600 flex items-center justify-center text-white">
+            <div className="w-12 h-12 rounded-lg bg-primary-600 flex items-center justify-center text-white">
               <MessageSquarePlus size={24} />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-neutral-800">Ask Scenario</h3>
-              <p className="text-sm text-neutral-500">Request new feature</p>
+              <h3 className="font-semibold text-content">Ask Scenario</h3>
+              <p className="text-sm text-content-muted">Request new feature</p>
             </div>
-            <ArrowRight className="text-red-400 group-hover:text-red-600 transition-colors" size={20} />
+            <ArrowRight className="text-primary-400 group-hover:text-primary-600 transition-colors" size={20} />
           </div>
         </Link>
 
-        <Link to="/my-requests" className="card hover:shadow-md hover:border-red-200 transition-all group">
+        <Link to="/my-requests" className="card hover:shadow-md hover:border-primary-200 transition-all group">
           <div className="flex items-center gap-4">
             <div className="stat-icon">
               <ClipboardList size={24} />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-neutral-800">My Requests</h3>
-              <p className="text-sm text-neutral-500">{requestStats.total} requests</p>
+              <h3 className="font-semibold text-content">My Requests</h3>
+              <p className="text-sm text-content-muted">{requestStats.total} requests</p>
             </div>
-            <ArrowRight className="text-neutral-400 group-hover:text-red-600 transition-colors" size={20} />
+            <ArrowRight className="text-content-muted group-hover:text-primary-600 transition-colors" size={20} />
           </div>
         </Link>
 
-        <Link to="/domains" className="card hover:shadow-md hover:border-red-200 transition-all group">
+        <Link to="/domains" className="card hover:shadow-md hover:border-primary-200 transition-all group">
           <div className="flex items-center gap-4">
             <div className="stat-icon">
               <Layers size={24} />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-neutral-800">My Domains</h3>
-              <p className="text-sm text-neutral-500">{domains.length} available</p>
+              <h3 className="font-semibold text-content">My Domains</h3>
+              <p className="text-sm text-content-muted">{domains.length} available</p>
             </div>
-            <ArrowRight className="text-neutral-400 group-hover:text-red-600 transition-colors" size={20} />
+            <ArrowRight className="text-content-muted group-hover:text-primary-600 transition-colors" size={20} />
           </div>
         </Link>
 
-        <Link to="/profile" className="card hover:shadow-md hover:border-red-200 transition-all group">
+        <Link to="/profile" className="card hover:shadow-md hover:border-primary-200 transition-all group">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-600">
+            <div className="w-12 h-12 rounded-lg bg-surface-hover flex items-center justify-center text-content-secondary">
               <Settings size={24} />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-neutral-800">Profile Settings</h3>
-              <p className="text-sm text-neutral-500">Manage your account</p>
+              <h3 className="font-semibold text-content">Profile Settings</h3>
+              <p className="text-sm text-content-muted">Manage your account</p>
             </div>
-            <ArrowRight className="text-neutral-400 group-hover:text-red-600 transition-colors" size={20} />
+            <ArrowRight className="text-content-muted group-hover:text-primary-600 transition-colors" size={20} />
           </div>
         </Link>
       </div>
@@ -246,21 +246,21 @@ function DashboardPage() {
         {canManageUsers() && (
           <Link 
             to={isSuperAdmin() ? '/admin' : '/management'} 
-            className="card hover:shadow-md hover:border-red-200 transition-all group"
+            className="card hover:shadow-md hover:border-primary-200 transition-all group"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center text-red-600">
+              <div className="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center text-primary-600">
                 <FileText size={24} />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-neutral-800">
+                <h3 className="font-semibold text-content">
                   {isSuperAdmin() ? 'Admin Panel' : 'Management'}
                 </h3>
-                <p className="text-sm text-neutral-500">
+                <p className="text-sm text-content-muted">
                   {isSuperAdmin() ? 'Full system access' : 'Manage your area'}
                 </p>
               </div>
-              <ArrowRight className="text-neutral-400 group-hover:text-red-600 transition-colors" size={20} />
+              <ArrowRight className="text-content-muted group-hover:text-primary-600 transition-colors" size={20} />
             </div>
           </Link>
         )}
@@ -270,17 +270,17 @@ function DashboardPage() {
       <div className="card">
         <div className="card-header flex items-center justify-between">
           <h3 className="section-title">Your Domains</h3>
-          <Link to="/domains" className="text-red-600 hover:text-red-700 text-sm font-medium">
+          <Link to="/domains" className="text-primary-600 hover:text-primary-700 text-sm font-medium">
             View all →
           </Link>
         </div>
 
         {loading ? (
           <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
           </div>
         ) : domains.length === 0 ? (
-          <p className="text-neutral-500 text-center py-8">
+          <p className="text-content-muted text-center py-8">
             No domains available. Contact your administrator.
           </p>
         ) : (
@@ -289,15 +289,15 @@ function DashboardPage() {
               <Link
                 key={domain.key}
                 to={`/domains/${domain.key}`}
-                className="p-4 border border-neutral-200 rounded-xl hover:border-red-300 hover:bg-red-50 transition-all"
+                className="p-4 border border-edge rounded-xl hover:border-primary-300 hover:bg-primary-50 transition-all"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                    <Layers className="text-red-600" size={20} />
+                  <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
+                    <Layers className="text-primary-600" size={20} />
                   </div>
                   <div>
-                    <h4 className="font-medium text-neutral-800">{domain.name}</h4>
-                    <p className="text-sm text-neutral-500">{domain.key}</p>
+                    <h4 className="font-medium text-content">{domain.name}</h4>
+                    <p className="text-sm text-content-muted">{domain.key}</p>
                   </div>
                 </div>
               </Link>
@@ -311,7 +311,7 @@ function DashboardPage() {
         <h3 className="section-title mb-4">Your Access</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
-            <p className="text-sm text-neutral-500 mb-2">Roles</p>
+            <p className="text-sm text-content-muted mb-2">Roles</p>
             <div className="flex flex-wrap gap-1">
               {user?.roles?.map((role) => (
                 <Badge key={role} variant="primary">
@@ -321,19 +321,19 @@ function DashboardPage() {
             </div>
           </div>
           <div>
-            <p className="text-sm text-neutral-500 mb-2">Groups</p>
+            <p className="text-sm text-content-muted mb-2">Groups</p>
             <div className="flex flex-wrap gap-1">
               {user?.groups?.length > 0 ? user.groups.map((group) => (
                 <Badge key={group} variant="success">
                   {group}
                 </Badge>
               )) : (
-                <span className="text-neutral-400 text-sm">None</span>
+                <span className="text-content-muted text-sm">None</span>
               )}
             </div>
           </div>
           <div>
-            <p className="text-sm text-neutral-500 mb-2">Domains Access</p>
+            <p className="text-sm text-content-muted mb-2">Domains Access</p>
             <div className="flex flex-wrap gap-1">
               {user?.domains?.length > 0 ? user.domains.map((domain) => (
                 <Badge key={domain} variant="warning">
@@ -347,8 +347,8 @@ function DashboardPage() {
             </div>
           </div>
           <div>
-            <p className="text-sm text-neutral-500 mb-2">Email</p>
-            <p className="text-neutral-800 truncate">{user?.email}</p>
+            <p className="text-sm text-content-muted mb-2">Email</p>
+            <p className="text-content truncate">{user?.email}</p>
           </div>
         </div>
       </div>

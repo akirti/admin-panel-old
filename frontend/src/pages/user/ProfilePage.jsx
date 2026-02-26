@@ -86,15 +86,15 @@ function ProfilePage() {
               Email
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
               <input
                 type="email"
                 value={user?.email || ''}
-                className="input-field pl-10 bg-neutral-50"
+                className="input-field pl-10 bg-surface-secondary"
                 disabled
               />
             </div>
-            <p className="text-xs text-neutral-500 mt-1">Email cannot be changed</p>
+            <p className="text-xs text-content-muted mt-1">Email cannot be changed</p>
           </div>
 
           <div>
@@ -102,7 +102,7 @@ function ProfilePage() {
               Full Name
             </label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
               <input
                 type="text"
                 name="full_name"
@@ -119,7 +119,7 @@ function ProfilePage() {
               Username
             </label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
               <input
                 type="text"
                 name="username"
@@ -150,7 +150,7 @@ function ProfilePage() {
         
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-neutral-700 mb-2 block">
+            <label className="text-sm font-medium text-content-secondary mb-2 block">
               Roles
             </label>
             <div className="flex flex-wrap gap-2">
@@ -164,7 +164,7 @@ function ProfilePage() {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-neutral-700 mb-2 block">
+            <label className="text-sm font-medium text-content-secondary mb-2 block">
               Groups
             </label>
             <div className="flex flex-wrap gap-2">
@@ -173,13 +173,13 @@ function ProfilePage() {
                   {group}
                 </Badge>
               )) : (
-                <span className="text-neutral-500 text-sm">No groups assigned</span>
+                <span className="text-content-muted text-sm">No groups assigned</span>
               )}
             </div>
           </div>
 
           <div>
-            <label className="text-sm font-medium text-neutral-700 mb-2 block">
+            <label className="text-sm font-medium text-content-secondary mb-2 block">
               Domain Access
             </label>
             <div className="flex flex-wrap gap-2">
@@ -196,7 +196,7 @@ function ProfilePage() {
           </div>
         </div>
 
-        <p className="text-xs text-neutral-500 mt-4">
+        <p className="text-xs text-content-muted mt-4">
           Contact your administrator to change roles or access levels.
         </p>
       </div>
@@ -213,7 +213,7 @@ function ProfilePage() {
               Current Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
               <input
                 type={showPasswords ? 'text' : 'password'}
                 name="password"
@@ -226,7 +226,7 @@ function ProfilePage() {
               <button
                 type="button"
                 onClick={() => setShowPasswords(!showPasswords)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-content-muted hover:text-content-secondary"
               >
                 {showPasswords ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -238,7 +238,7 @@ function ProfilePage() {
               New Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
               <input
                 type={showPasswords ? 'text' : 'password'}
                 name="new_password"
@@ -256,7 +256,7 @@ function ProfilePage() {
               Confirm New Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
               <input
                 type={showPasswords ? 'text' : 'password'}
                 name="confirm_password"

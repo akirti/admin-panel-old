@@ -39,19 +39,19 @@ const V1Pagination = ({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-3 bg-white px-4 py-3 rounded-lg shadow-sm border border-neutral-200">
+    <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-3 bg-surface px-4 py-3 rounded-lg shadow-sm border border-edge">
       {/* Left: Items per page + Download */}
       <div className="flex items-center gap-3">
-        <span className="text-sm text-neutral-600">Rows per page:</span>
+        <span className="text-sm text-content-secondary">Rows per page:</span>
         <div className="relative" ref={dropdownRef}>
           <button
             type="button"
-            className="border border-neutral-300 rounded-md px-3 py-1.5 text-sm bg-white hover:bg-neutral-50 flex items-center gap-1 min-w-[60px] justify-between focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-edge rounded-md px-3 py-1.5 text-sm bg-surface hover:bg-surface-hover flex items-center gap-1 min-w-[60px] justify-between focus:outline-none focus:ring-2 focus:ring-blue-500"
             onClick={() => setDropdownOpen((o) => !o)}
           >
             {pageSize}
             <svg
-              className={`w-3.5 h-3.5 text-neutral-500 transition-transform ${
+              className={`w-3.5 h-3.5 text-content-muted transition-transform ${
                 dropdownOpen ? "rotate-180" : ""
               }`}
               fill="none"
@@ -67,14 +67,14 @@ const V1Pagination = ({
             </svg>
           </button>
           {dropdownOpen && (
-            <ul className="absolute z-10 bottom-full mb-1 w-full bg-white border border-neutral-200 rounded-md shadow-lg max-h-48 overflow-auto">
+            <ul className="absolute z-10 bottom-full mb-1 w-full bg-surface border border-edge rounded-md shadow-lg max-h-48 overflow-auto">
               {paginationOptions.map((size) => (
                 <li
                   key={size}
                   className={`px-3 py-1.5 cursor-pointer text-sm hover:bg-blue-50 ${
                     size === pageSize
                       ? "bg-blue-100 font-semibold text-blue-700"
-                      : "text-neutral-700"
+                      : "text-content-secondary"
                   }`}
                   onClick={() => {
                     setDropdownOpen(false);
@@ -102,24 +102,24 @@ const V1Pagination = ({
 
       {/* Center: Total records */}
       {totalRecords !== undefined && totalRecords >= 0 && (
-        <span className="text-sm text-neutral-500">
+        <span className="text-sm text-content-muted">
           {totalRecords.toLocaleString()} total records
         </span>
       )}
 
       {/* Right: Page navigation */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-neutral-600">
+        <span className="text-sm text-content-secondary">
           Page{" "}
-          <span className="font-semibold text-neutral-900">{page}</span> of{" "}
-          <span className="font-semibold text-neutral-900">{totalPages}</span>
+          <span className="font-semibold text-content">{page}</span> of{" "}
+          <span className="font-semibold text-content">{totalPages}</span>
         </span>
         <div className="flex gap-1">
           <button
             type="button"
             onClick={handlePrev}
             disabled={page <= 1}
-            className="p-1.5 rounded-md border border-neutral-300 bg-white hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            className="p-1.5 rounded-md border border-edge bg-surface hover:bg-surface-hover disabled:opacity-40 disabled:cursor-not-allowed transition"
             aria-label="Previous page"
           >
             <ChevronLeft size={16} />
@@ -128,7 +128,7 @@ const V1Pagination = ({
             type="button"
             onClick={handleNext}
             disabled={page >= totalPages}
-            className="p-1.5 rounded-md border border-neutral-300 bg-white hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            className="p-1.5 rounded-md border border-edge bg-surface hover:bg-surface-hover disabled:opacity-40 disabled:cursor-not-allowed transition"
             aria-label="Next page"
           >
             <ChevronRight size={16} />

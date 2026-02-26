@@ -55,7 +55,7 @@ const FilterLabel = ({ filter }) => {
 
   return (
     <div className="flex items-center gap-1.5 mb-1.5" ref={ref}>
-      <label className="text-sm font-medium text-neutral-700">
+      <label className="text-sm font-medium text-content-secondary">
         {trimCellValue(filter.displayName)}
       </label>
       {hasDescription && (
@@ -66,19 +66,19 @@ const FilterLabel = ({ filter }) => {
               e.stopPropagation();
               setOpen((prev) => !prev);
             }}
-            className="text-neutral-400 hover:text-red-500 transition-colors focus:outline-none"
+            className="text-content-muted hover:text-primary-500 transition-colors focus:outline-none"
             title="View filter info"
           >
             <Info size={14} />
           </button>
           {open && (
-            <div className="absolute left-0 top-full mt-1.5 z-50 w-72 bg-white border border-neutral-200 rounded-lg shadow-lg p-3 text-sm text-neutral-700">
+            <div className="absolute left-0 top-full mt-1.5 z-50 w-72 bg-surface border border-edge rounded-lg shadow-lg p-3 text-sm text-content-secondary">
               <div className="flex items-start justify-between gap-2 mb-1">
-                <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Info</span>
+                <span className="text-xs font-semibold text-content-muted uppercase tracking-wide">Info</span>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="text-neutral-400 hover:text-neutral-600"
+                  className="text-content-muted hover:text-content-secondary"
                 >
                   <X size={12} />
                 </button>
@@ -346,12 +346,12 @@ const V1FilterSection = ({
       <div className="card p-0">
         {/* Accordion Header */}
         <div
-          className="flex items-center justify-between px-5 py-3.5 cursor-pointer select-none hover:bg-neutral-50 transition-colors border-b border-neutral-100"
+          className="flex items-center justify-between px-5 py-3.5 cursor-pointer select-none hover:bg-surface-hover transition-colors border-b border-edge-light"
           onClick={() => setShow((s) => !s)}
         >
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-neutral-500" />
-            <h5 className="text-sm font-semibold text-neutral-800 m-0">
+            <Filter className="w-4 h-4 text-content-muted" />
+            <h5 className="text-sm font-semibold text-content m-0">
               Filters
             </h5>
           </div>
@@ -366,15 +366,15 @@ const V1FilterSection = ({
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
                   useCustomerSuggest
-                    ? 'bg-red-50 border-red-300 text-red-700'
-                    : 'bg-neutral-50 border-neutral-300 text-neutral-500'
+                    ? 'bg-primary-50 border-primary-300 text-primary-700'
+                    : 'bg-surface-secondary border-edge text-content-muted'
                 }`}
               >
                 <Users className="w-3.5 h-3.5" />
                 {useCustomerSuggest ? 'Assigned Customers' : 'No Preference'}
               </button>
             )}
-            <div className="text-neutral-400">
+            <div className="text-content-muted">
               {show ? (
                 <ChevronUp size={20} />
               ) : (
@@ -389,7 +389,7 @@ const V1FilterSection = ({
           <div className="px-5 py-4">
             {externalLoading ? (
               <div className="flex justify-center items-center min-h-[120px]">
-                <div className="w-8 h-8 border-4 border-neutral-200 border-t-red-600 rounded-full animate-spin" />
+                <div className="w-8 h-8 border-4 border-neutral-200 border-t-primary-600 rounded-full animate-spin" />
               </div>
             ) : filterError ? (
               <div className="flex items-center justify-center py-4">
@@ -398,7 +398,7 @@ const V1FilterSection = ({
                 </div>
               </div>
             ) : filterConfig.length === 0 ? (
-              <div className="text-center py-8 text-neutral-400 text-sm">
+              <div className="text-center py-8 text-content-muted text-sm">
                 No filters available.
               </div>
             ) : (
@@ -459,14 +459,14 @@ const V1FilterSection = ({
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-neutral-600 bg-white border border-neutral-300 rounded-md hover:bg-neutral-50 hover:text-neutral-800 transition-colors shadow-sm"
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-content-secondary bg-surface border border-edge rounded-md hover:bg-surface-hover hover:text-content transition-colors shadow-sm"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     Reset
                   </button>
                   <button
                     onClick={handleSubmit}
-                    className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     type="button"
                     disabled={externalLoading}
                   >
