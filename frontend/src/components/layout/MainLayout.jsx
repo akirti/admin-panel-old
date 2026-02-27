@@ -104,6 +104,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
   };
 
   const navItems = getNavItems();
+  const iconSize = sidebarOpen ? 20 : 24;
 
   const isActive = (path, exact = false) => {
     if (exact) {
@@ -131,7 +132,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-2 rounded-lg hover:bg-surface-hover text-content-secondary"
           >
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            {sidebarOpen ? <X size={20} /> : <Menu size={24} />}
           </button>
         </div>
 
@@ -149,17 +150,17 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
                       href={item.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="sidebar-link"
+                      className={`sidebar-link ${!sidebarOpen ? 'justify-center' : ''}`}
                     >
-                      <Icon size={20} />
+                      <Icon size={iconSize} className="shrink-0" />
                       {sidebarOpen && <span>{item.label}</span>}
                     </a>
                   ) : (
                     <Link
                       to={item.path}
-                      className={`sidebar-link ${active ? 'active' : ''}`}
+                      className={`sidebar-link ${active ? 'active' : ''} ${!sidebarOpen ? 'justify-center' : ''}`}
                     >
-                      <Icon size={20} />
+                      <Icon size={iconSize} className="shrink-0" />
                       {sidebarOpen && <span>{item.label}</span>}
                     </Link>
                   )}
@@ -182,20 +183,20 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
           <div className="relative">
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-surface-hover"
+              className={`w-full flex items-center gap-3 p-2 rounded-lg hover:bg-surface-hover min-w-0 ${!sidebarOpen ? 'justify-center' : ''}`}
             >
-              <div className="avatar">
-                <User size={20} />
+              <div className="avatar shrink-0">
+                <User size={iconSize} />
               </div>
               {sidebarOpen && (
                 <>
-                  <div className="flex-1 text-left">
+                  <div className="flex-1 min-w-0 text-left">
                     <p className="text-sm font-medium text-content truncate">
                       {user?.full_name || user?.username || 'User'}
                     </p>
                     <p className="text-xs text-content-muted truncate">{user?.email}</p>
                   </div>
-                  <ChevronDown size={16} className={`text-content-muted transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={16} className={`shrink-0 text-content-muted transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </>
               )}
             </button>

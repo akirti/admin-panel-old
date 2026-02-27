@@ -1,0 +1,111 @@
+{
+  "globals":{
+    "databases":{
+      "default":{
+        "max_pool_size":"{globals.databases.default.max_pool_size}",
+        "min_pool_size":"{globals.databases.default.min_pool_size}",
+        "max_idle_time_ms":"{globals.databases.default.max_idle_time_ms}",
+        "server_selection_timeout_ms":"{globals.databases.default.server_selection_timeout_ms}",
+        "connect_timeout_ms":"{globals.databases.default.connect_timeout_ms}",
+        "socket_timeout_ms":"{globals.databases.default.socket_timeout_ms}",
+        "heartbeat_frequency_ms":"{globals.databases.default.heartbeat_frequency_ms}",
+        "wait_queue_timeout_ms":"{globals.databases.default.wait_queue_timeout_ms}",
+        "max_result_size":"{globals.databases.default.max_result_size}",
+        "retry_writes":true,
+        "retry_reads":true
+      }
+    }
+  },
+  "databases": {
+    "authentication": {
+      "type": "db",
+      "db_info": {
+        "type": "mongodb",
+        "connectionScheme": "mongodb",
+        "username": "{databases.authentication.db_info.username}",
+        "password": "{databases.authentication.db_info.password}",
+        "host": "{databases.authentication.db_info.host}",
+        "database": "{databases.authentication.db_info.database}",
+        "collections": "{databases.authentication.db_info.collections}"
+      }
+    }
+  },
+  "environment":{
+        "app_name":"easylife-admin-panel",
+        "app_version":"1.0.0",
+        "debug":true,
+        "log_level":"DEBUG",
+        "port":8000,
+        "space":"{environment.space}",
+        "smtp":{
+        "smtp_server":"localhost",
+        "smtp_port":25,
+        "email":"noreply@easylife.com",
+        "password":"",
+        "recipients":"{environment.smtp.recipients}",
+        "email_from":"{environment.smtp.email_from}",
+        "email_from_name":"{environment.smtp.email_from_name}"
+        },
+        "app_secrets": {
+        "auth_secret_key": "{environment.app_secrets.auth_secret_key}"
+        },
+        "authentication": {
+        "access_token_expiry_minutes": 30,
+        "refresh_token_expiry_minutes": 60
+        },
+        "storage": {
+        "type": "{environment.storage.gcs.type}",
+        "gcp": {   
+            "project_name": "{environment.storage.gcs.project_name}",
+            "bucket_name": "{environment.storage.gcs.bucket_name}",
+            "upload_folder": "{environment.storage.gcs.upload_folder}",
+            "config_folder": "{environment.storage.gcs.config_folder}",
+            "project_id": "{environment.storage.gcs.project_id}",
+            "credentials_path": "config/gcs_credentials.json",
+            "credentials_json":{
+                "type": "{environment.storage.gcs.credentials_json.type}",
+                "project_id": "{environment.storage.gcs.credentials_json.project_id}",
+                "private_key_id": "{environment.storage.gcs.credentials_json.private_key_id}",
+                "private_key": "{environment.storage.gcs.credentials_json.private_key}",
+                "client_email": "{environment.storage.gcs.credentials_json.client_email}",
+                "client_id": "{environment.storage.gcs.credentials_json.client_id}",
+                "auth_uri": "{environment.storage.gcs.credentials_json.auth_uri}",
+                "token_uri": "{environment.storage.gcs.credentials_json.token_uri}",
+                "auth_provider_x509_cert_url": "{environment.storage.gcs.credentials_json.auth_provider_x509_cert_url}",
+                "client_x509_cert_url": "{environment.storage.gcs.credentials_json.client_x509_cert_url}",
+                "universe_domain": "{environment.storage.gcs.credentials_json.universe_domain}"
+            }        
+        }
+        },
+        "cors": {
+        "origins": "{environment.cors.origins}"
+        },
+        "jira":{
+        "base_url": "{environment.jira.base_url}",
+        "username": "{environment.jira.username}",
+        "password": "{environment.jira.password}",
+        "api_token": "{environment.jira.api_token}",
+        "email": "{environment.jira.email}",
+        "project_key": "{environment.jira.project_key}",
+        "issue_type": "{environment.jira.issue_type}",
+        "components": "{environment.jira.components}",
+        "assignee": "{environment.jira.assignee}",
+        "reporter": "{environment.jira.reporter}",
+        "default_team": "{environment.jira.default_team}",
+        "default_assignee": "{environment.jira.default_assignee}",
+        "default_assignee_name": "{environment.jira.default_assignee_name}",
+        "default_epic": "{environment.jira.default_epic}",
+        "default_watchers": "{environment.jira.default_watchers}",
+        "default_priority": "{environment.jira.default_priority}",
+        "default_task_environment": "{environment.jira.default_task_environment}",
+        "default_task_labels": "{environment.jira.default_task_labels}",
+        "default_target_days": "{environment.jira.default_target_days}",
+        "ssl": {
+            "enabled": "{environment.jira.ssl.enabled}",
+            "bundle_path": "{environment.jira.ssl.bundle_path}",
+            "bundle_file_name": "{environment.jira.ssl.bundle_file_name}",
+            "bundle_data": "{environment.jira.ssl.bundle_data}"
+        }
+        }
+    }    
+  }

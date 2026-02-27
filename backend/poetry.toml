@@ -11,6 +11,3 @@ no-binary = false
 
 [solver]
 lazy-wheel = true
-
-[repositories.pypi]
-url = "https://pypi.org/simple/"

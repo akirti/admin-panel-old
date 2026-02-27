@@ -43,39 +43,10 @@ services:
     container_name: easylife-backend
     restart: unless-stopped
     stop_grace_period: 10s
-    env_file:
-      - ./backend/.env
     environment:
-      # Database - simplified env vars
-      MONGODB_SCHEME: mongodb
-      MONGODB_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
-      MONGODB_PASSWORD: ${MONGO_ROOT_PASSWORD:-password123}
-      MONGODB_HOST: mongodb:27017
-      MONGODB_DATABASE: ${MONGO_DATABASE:-easylife_auth}
-      # Auth
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-super-secret-jwt-key-change-in-production}
-      EASYLIFE_SPECS_AUTH_TOKEN_TIMEOUT: ${TOKEN_TIMEOUT:-30}
-      # SMTP (optional)
-      SMTP_SERVER: ${SMTP_SERVER:-mailpit}
-      SMTP_PORT: ${SMTP_PORT:-1025}
-      SMTP_EMAIL: ${SMTP_EMAIL:-noreply@easylife.local}
-      # App
-      WEBAPP_HOST: ${WEBAPP_HOST:-http://localhost:3000/}
-      # CORS_ORIGINS is loaded from backend/.env file via env_file
-      ENVIRONMENT: ${ENVIRONMENT:-production}
-      # File Storage Configuration
-      # FILE_STORAGE_TYPE: "gcs" or "local" (default: local)
-      FILE_STORAGE_TYPE: ${FILE_STORAGE_TYPE:-local}
-      LOCAL_UPLOAD_PATH: ${LOCAL_UPLOAD_PATH:-/tmp/easylife_uploads}
-      # GCS Configuration (required if FILE_STORAGE_TYPE=gcs)
-      GCS_CREDENTIALS_JSON: ${GCS_CREDENTIALS_JSON:-}
-      GCS_BUCKET_NAME: ${GCS_BUCKET_NAME:-}
-      # Jira Integration (optional)
-      JIRA_BASE_URL: ${JIRA_BASE_URL:-}
-      JIRA_EMAIL: ${JIRA_EMAIL:-}
-      JIRA_API_TOKEN: ${JIRA_API_TOKEN:-}
-      JIRA_PROJECT_KEY: ${JIRA_PROJECT_KEY:-SCEN}
-      JIRA_ISSUE_TYPE: ${JIRA_ISSUE_TYPE:-Task}
+      # Config pipeline: pick environment, point to config folder inside container
+      EASYLIFE_ENVIRONMENT: ${EASYLIFE_ENVIRONMENT:-production}
+      CONFIG_PATH: /app/config
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:
