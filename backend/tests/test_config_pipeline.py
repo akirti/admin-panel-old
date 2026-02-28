@@ -6,7 +6,10 @@ import json
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
+from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX
 from easylifeauth.utils.config import ConfigurationLoader, ConfigValueSimulator
+
+ENV_PREFIX = f"{ENVIRONEMNT_VARIABLE_PREFIX}_"
 
 
 class TestLoadJsonFile:
@@ -340,7 +343,7 @@ class TestConfigurationLoaderInit:
         (tmp_path / "production.json").write_text("{}")
 
         clean_env = {k: v for k, v in os.environ.items()
-                     if not k.startswith("EASYLIFE_")}
+                     if not k.startswith(ENV_PREFIX)}
         with patch.dict(os.environ, clean_env, clear=True):
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
@@ -393,7 +396,7 @@ class TestLoadEnvironmentPipeline:
         (tmp_path / "config.json").write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
-                     if not k.startswith("EASYLIFE_")}
+                     if not k.startswith(ENV_PREFIX)}
         with patch.dict(os.environ, clean_env, clear=True):
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
@@ -407,7 +410,7 @@ class TestLoadEnvironmentPipeline:
         (tmp_path / "config.json").write_text('{"static": "value"}')
 
         clean_env = {k: v for k, v in os.environ.items()
-                     if not k.startswith("EASYLIFE_")}
+                     if not k.startswith(ENV_PREFIX)}
         with patch.dict(os.environ, clean_env, clear=True):
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
@@ -421,7 +424,7 @@ class TestLoadEnvironmentPipeline:
         (tmp_path / "staging.json").write_text('{"extra_from_env": "added"}')
 
         clean_env = {k: v for k, v in os.environ.items()
-                     if not k.startswith("EASYLIFE_")}
+                     if not k.startswith(ENV_PREFIX)}
         with patch.dict(os.environ, clean_env, clear=True):
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
@@ -443,7 +446,7 @@ class TestLoadEnvironmentPipeline:
         (tmp_path / "config.json").write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
-                     if not k.startswith("EASYLIFE_")}
+                     if not k.startswith(ENV_PREFIX)}
         with patch.dict(os.environ, clean_env, clear=True):
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
@@ -463,7 +466,7 @@ class TestLoadEnvironmentPipeline:
         (tmp_path / "config.json").write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
-                     if not k.startswith("EASYLIFE_")}
+                     if not k.startswith(ENV_PREFIX)}
         with patch.dict(os.environ, clean_env, clear=True):
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
@@ -485,7 +488,7 @@ class TestAuthenticationTypoFix:
         (tmp_path / "config.json").write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
-                     if not k.startswith("EASYLIFE_")}
+                     if not k.startswith(ENV_PREFIX)}
         with patch.dict(os.environ, clean_env, clear=True):
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
@@ -503,7 +506,7 @@ class TestAuthenticationTypoFix:
         (tmp_path / "config.json").write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
-                     if not k.startswith("EASYLIFE_")}
+                     if not k.startswith(ENV_PREFIX)}
         with patch.dict(os.environ, clean_env, clear=True):
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
@@ -517,7 +520,7 @@ class TestEnvVarOverrides:
     """Tests for OS environment variable overrides in the config pipeline"""
 
     def test_env_var_overrides_simulator_value(self, tmp_path):
-        """Test that EASYLIFE_* env vars override simulator values"""
+        """Test that env prefix env vars override simulator values"""
         env = "dev"
         sim = {"db.host": "sim-host", "db.port": 5432}
         (tmp_path / f"server.env.{env}.json").write_text(json.dumps(sim))
@@ -526,8 +529,8 @@ class TestEnvVarOverrides:
         (tmp_path / "config.json").write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
-                     if not k.startswith("EASYLIFE_")}
-        clean_env["EASYLIFE_DB_HOST"] = "docker-host"
+                     if not k.startswith(ENV_PREFIX)}
+        clean_env[f"{ENVIRONEMNT_VARIABLE_PREFIX}_DB_HOST"] = "docker-host"
         with patch.dict(os.environ, clean_env, clear=True):
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
@@ -544,10 +547,10 @@ class TestEnvVarOverrides:
         (tmp_path / "config.json").write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
-                     if not k.startswith("EASYLIFE_")}
+                     if not k.startswith(ENV_PREFIX)}
         # Set env vars that match the placeholder keys
-        clean_env["EASYLIFE_DB_HOST"] = "env-only-host"
-        clean_env["EASYLIFE_DB_PORT"] = "3307"
+        clean_env[f"{ENVIRONEMNT_VARIABLE_PREFIX}_DB_HOST"] = "env-only-host"
+        clean_env[f"{ENVIRONEMNT_VARIABLE_PREFIX}_DB_PORT"] = "3307"
         with patch.dict(os.environ, clean_env, clear=True):
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
@@ -566,9 +569,9 @@ class TestEnvVarOverrides:
         (tmp_path / "config.json").write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
-                     if not k.startswith("EASYLIFE_")}
+                     if not k.startswith(ENV_PREFIX)}
         # This env var name is ambiguous without the reverse map
-        clean_env["EASYLIFE_DATABASES_AUTH_DB_INFO_HOST"] = "docker-db"
+        clean_env[f"{ENVIRONEMNT_VARIABLE_PREFIX}_DATABASES_AUTH_DB_INFO_HOST"] = "docker-db"
         with patch.dict(os.environ, clean_env, clear=True):
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
@@ -577,18 +580,18 @@ class TestEnvVarOverrides:
         assert loader.configuration["host"] == "docker-db"
 
     def test_env_var_skips_meta_keys(self, tmp_path):
-        """Test that EASYLIFE_ENVIRONMENT is not treated as a config value"""
+        """Test that {prefix}_ENVIRONMENT is not treated as a config value"""
         env = "dev"
         config = {"name": "app"}
         (tmp_path / "config.json").write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
-                     if not k.startswith("EASYLIFE_")}
-        clean_env["EASYLIFE_ENVIRONMENT"] = "production"
+                     if not k.startswith(ENV_PREFIX)}
+        clean_env[f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT"] = "production"
         with patch.dict(os.environ, clean_env, clear=True):
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
                 environment=env,
             )
-        # EASYLIFE_ENVIRONMENT should not inject "environment" key into config
+        # {prefix}_ENVIRONMENT should not inject "environment" key into config
         assert "environment" not in loader.configuration or loader.configuration.get("environment") != "production"

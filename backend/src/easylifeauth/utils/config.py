@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 from copy import deepcopy
 
 from .dict_util import DictUtil
+from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX
 
 
 class ConfigurationLoader:
@@ -16,7 +17,7 @@ class ConfigurationLoader:
         self,
         config_path: Optional[str] = None,
         config_file: str = "config.json",
-        env_prefix: str = "EASYLIFE",
+        env_prefix: str = ENVIRONEMNT_VARIABLE_PREFIX,
         environment: Optional[str] = None
     ):
         self.config_path = config_path or os.getcwd()
@@ -294,7 +295,7 @@ class ConfigValueSimulator:
     @staticmethod
     def load_simulator_file(
         file_path: str,
-        prefix: str = "EASYLIFE"
+        prefix: str = ENVIRONEMNT_VARIABLE_PREFIX
     ) -> Dict[str, Any]:
         """Load simulator JSON file and set env vars.
         File format: flat dict {\"dot.path.key\": value, ...}
@@ -324,7 +325,7 @@ class ConfigValueSimulator:
     @staticmethod
     def set_os_environment(
         values: Dict[str, Any],
-        prefix: str = "EASYLIFE"
+        prefix: str = ENVIRONEMNT_VARIABLE_PREFIX
     ) -> None:
         """Set environment variables from dictionary"""
         def flatten(d: Dict, parent_key: str = '') -> Dict[str, str]:

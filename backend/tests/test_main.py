@@ -12,6 +12,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX
+
+ENV_PREFIX = f"{ENVIRONEMNT_VARIABLE_PREFIX}_"
+
 
 # ---------------------------------------------------------------------------
 # Path to the real main.py source file
@@ -69,7 +73,7 @@ def _run_main(env_overrides=None, config_values=None, name_override=None):
     env_overrides = env_overrides or {}
 
     # Build a clean copy of os.environ without variables main.py reads
-    prefixes_to_strip = ("CONFIG_PATH", "EASYLIFE_")
+    prefixes_to_strip = ("CONFIG_PATH", ENV_PREFIX)
     clean_env = {
         k: v for k, v in os.environ.items()
         if not any(k.startswith(p) for p in prefixes_to_strip)
@@ -89,6 +93,9 @@ def _run_main(env_overrides=None, config_values=None, name_override=None):
 
     # -- Patch imports ---------------------------------------------------------
     patched_source = source.replace(
+        "from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX",
+        "pass  # ENVIRONEMNT_VARIABLE_PREFIX injected",
+    ).replace(
         "from easylifeauth.app import create_app",
         "pass  # create_app injected",
     ).replace(
@@ -100,6 +107,7 @@ def _run_main(env_overrides=None, config_values=None, name_override=None):
         "__name__": name_override or "src.main",
         "__file__": str(_MAIN_PY),
         "__builtins__": __builtins__,
+        "ENVIRONEMNT_VARIABLE_PREFIX": ENVIRONEMNT_VARIABLE_PREFIX,
         "create_app": mock_create_app,
         "ConfigurationLoader": mock_config_loader_cls,
     }
@@ -133,18 +141,18 @@ class TestConfigurationLoaderConstruction:
         assert kwargs["config_path"] == "/custom/config"
 
     def test_custom_environment(self):
-        """EASYLIFE_ENVIRONMENT env var should override the environment."""
+        """{prefix}_ENVIRONMENT env var should override the environment."""
         _, _, mock_cl = _run_main(
-            env_overrides={"EASYLIFE_ENVIRONMENT": "staging"},
+            env_overrides={f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT": "staging"},
         )
         kwargs = mock_cl.call_args[1]
         assert kwargs["environment"] == "staging"
 
     def test_both_custom_env_vars(self):
-        """Both CONFIG_PATH and EASYLIFE_ENVIRONMENT should be forwarded."""
+        """Both CONFIG_PATH and {prefix}_ENVIRONMENT should be forwarded."""
         _, _, mock_cl = _run_main(env_overrides={
             "CONFIG_PATH": "/etc/myapp",
-            "EASYLIFE_ENVIRONMENT": "test",
+            f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT": "test",
         })
         kwargs = mock_cl.call_args[1]
         assert kwargs["config_path"] == "/etc/myapp"
@@ -521,6 +529,9 @@ class TestMainBlock:
 
         source = _MAIN_PY.read_text()
         patched_source = source.replace(
+            "from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX",
+            "pass  # ENVIRONEMNT_VARIABLE_PREFIX injected",
+        ).replace(
             "from easylifeauth.app import create_app",
             "pass  # create_app injected",
         ).replace(
@@ -535,6 +546,7 @@ class TestMainBlock:
             "__name__": "__main__",
             "__file__": str(_MAIN_PY),
             "__builtins__": __builtins__,
+            "ENVIRONEMNT_VARIABLE_PREFIX": ENVIRONEMNT_VARIABLE_PREFIX,
             "create_app": MagicMock(),
             "ConfigurationLoader": MagicMock(),
             "uvicorn": mock_uvicorn,
@@ -542,7 +554,7 @@ class TestMainBlock:
 
         clean_env = {
             k: v for k, v in os.environ.items()
-            if not any(k.startswith(p) for p in ("CONFIG_PATH", "EASYLIFE_"))
+            if not any(k.startswith(p) for p in ("CONFIG_PATH", ENV_PREFIX))
         }
 
         with patch.dict(os.environ, clean_env, clear=True):

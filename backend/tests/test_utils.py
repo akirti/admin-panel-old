@@ -5,8 +5,11 @@ import json
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 
+from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX
 from easylifeauth.utils.dict_util import DictUtil
 from easylifeauth.utils.config import ConfigurationLoader
+
+ENV_PREFIX = f"{ENVIRONEMNT_VARIABLE_PREFIX}_"
 from easylifeauth.utils.args_util import (
     convert_str, is_stringified_json, get_stringified_json_to_dict,
     is_valid_value_list, parse_key_path, assign_nested, parse_url_args,
@@ -280,7 +283,7 @@ class TestConfigurationLoader:
 
     def test_init_default_path(self):
         """Test initialization with default path"""
-        clean_env = {k: v for k, v in os.environ.items() if not k.startswith("EASYLIFE_")}
+        clean_env = {k: v for k, v in os.environ.items() if not k.startswith(ENV_PREFIX)}
         with patch.object(Path, 'exists', return_value=False):
             with patch.dict(os.environ, clean_env, clear=True):
                 loader = ConfigurationLoader()
@@ -412,9 +415,9 @@ class TestConfigurationLoader:
     def test_load_from_environment(self):
         """Test loading config from environment"""
         with patch.object(Path, 'exists', return_value=False):
-            with patch.dict(os.environ, {"EASYLIFE_TEST_KEY": "env_value"}, clear=False):
+            with patch.dict(os.environ, {f"{ENVIRONEMNT_VARIABLE_PREFIX}_TEST_KEY": "env_value"}, clear=False):
                 loader = ConfigurationLoader()
-                # _apply_env_vars is called in __init__ and converts EASYLIFE_TEST_KEY to test.key
+                # _apply_env_vars is called in __init__ and converts {prefix}_TEST_KEY to test.key
                 assert loader.configuration.get("test", {}).get("key") == "env_value"
 
     def test_convert_value_bool_uppercase(self):
@@ -439,73 +442,73 @@ class TestConfigValueSimulator:
         from easylifeauth.utils.config import ConfigValueSimulator
 
         # Clear any existing test env vars
-        test_vars = ["EASYLIFE_SIMPLE_KEY", "EASYLIFE_NESTED_LEVEL1_LEVEL2"]
+        test_vars = [f"{ENVIRONEMNT_VARIABLE_PREFIX}_SIMPLE_KEY", f"{ENVIRONEMNT_VARIABLE_PREFIX}_NESTED_LEVEL1_LEVEL2"]
         for var in test_vars:
             os.environ.pop(var, None)
 
         ConfigValueSimulator.set_os_environment(
             {"simple_key": "value1"},
-            prefix="EASYLIFE"
+            prefix=ENVIRONEMNT_VARIABLE_PREFIX
         )
 
-        assert "EASYLIFE_SIMPLE_KEY" in os.environ
-        assert os.environ["EASYLIFE_SIMPLE_KEY"] == "value1"
+        assert f"{ENVIRONEMNT_VARIABLE_PREFIX}_SIMPLE_KEY" in os.environ
+        assert os.environ[f"{ENVIRONEMNT_VARIABLE_PREFIX}_SIMPLE_KEY"] == "value1"
 
         # Clean up
-        os.environ.pop("EASYLIFE_SIMPLE_KEY", None)
+        os.environ.pop(f"{ENVIRONEMNT_VARIABLE_PREFIX}_SIMPLE_KEY", None)
 
     def test_set_os_environment_nested(self):
         """Test setting nested environment variables"""
         from easylifeauth.utils.config import ConfigValueSimulator
 
         # Clear any existing test env vars
-        os.environ.pop("EASYLIFE_NESTED_LEVEL1_LEVEL2", None)
+        os.environ.pop(f"{ENVIRONEMNT_VARIABLE_PREFIX}_NESTED_LEVEL1_LEVEL2", None)
 
         ConfigValueSimulator.set_os_environment(
             {"nested": {"level1": {"level2": "deep_value"}}},
-            prefix="EASYLIFE"
+            prefix=ENVIRONEMNT_VARIABLE_PREFIX
         )
 
-        assert "EASYLIFE_NESTED_LEVEL1_LEVEL2" in os.environ
-        assert os.environ["EASYLIFE_NESTED_LEVEL1_LEVEL2"] == "deep_value"
+        assert f"{ENVIRONEMNT_VARIABLE_PREFIX}_NESTED_LEVEL1_LEVEL2" in os.environ
+        assert os.environ[f"{ENVIRONEMNT_VARIABLE_PREFIX}_NESTED_LEVEL1_LEVEL2"] == "deep_value"
 
         # Clean up
-        os.environ.pop("EASYLIFE_NESTED_LEVEL1_LEVEL2", None)
+        os.environ.pop(f"{ENVIRONEMNT_VARIABLE_PREFIX}_NESTED_LEVEL1_LEVEL2", None)
 
     def test_set_os_environment_with_list(self):
         """Test setting environment variable with list value"""
         from easylifeauth.utils.config import ConfigValueSimulator
 
-        os.environ.pop("EASYLIFE_ITEMS", None)
+        os.environ.pop(f"{ENVIRONEMNT_VARIABLE_PREFIX}_ITEMS", None)
 
         ConfigValueSimulator.set_os_environment(
             {"items": [1, 2, 3]},
-            prefix="EASYLIFE"
+            prefix=ENVIRONEMNT_VARIABLE_PREFIX
         )
 
-        assert "EASYLIFE_ITEMS" in os.environ
-        assert os.environ["EASYLIFE_ITEMS"] == "[1, 2, 3]"
+        assert f"{ENVIRONEMNT_VARIABLE_PREFIX}_ITEMS" in os.environ
+        assert os.environ[f"{ENVIRONEMNT_VARIABLE_PREFIX}_ITEMS"] == "[1, 2, 3]"
 
         # Clean up
-        os.environ.pop("EASYLIFE_ITEMS", None)
+        os.environ.pop(f"{ENVIRONEMNT_VARIABLE_PREFIX}_ITEMS", None)
 
     def test_set_os_environment_with_dict_value(self):
         """Test setting environment variable with dict value"""
         from easylifeauth.utils.config import ConfigValueSimulator
 
-        os.environ.pop("EASYLIFE_CONFIG", None)
+        os.environ.pop(f"{ENVIRONEMNT_VARIABLE_PREFIX}_CONFIG", None)
 
         ConfigValueSimulator.set_os_environment(
             {"config": {"key": "value"}},
-            prefix="EASYLIFE"
+            prefix=ENVIRONEMNT_VARIABLE_PREFIX
         )
 
         # Dict values should be JSON stringified
-        assert "EASYLIFE_CONFIG_KEY" in os.environ
-        assert os.environ["EASYLIFE_CONFIG_KEY"] == "value"
+        assert f"{ENVIRONEMNT_VARIABLE_PREFIX}_CONFIG_KEY" in os.environ
+        assert os.environ[f"{ENVIRONEMNT_VARIABLE_PREFIX}_CONFIG_KEY"] == "value"
 
         # Clean up
-        os.environ.pop("EASYLIFE_CONFIG_KEY", None)
+        os.environ.pop(f"{ENVIRONEMNT_VARIABLE_PREFIX}_CONFIG_KEY", None)
 
     def test_set_os_environment_custom_prefix(self):
         """Test setting environment variables with custom prefix"""

@@ -3,12 +3,13 @@ import os
 import json
 from pathlib import Path
 
+from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX
 from easylifeauth.app import create_app
 from easylifeauth.utils.config import ConfigurationLoader
 
 # Determine paths
 config_path = os.environ.get("CONFIG_PATH", str(Path(__file__).parent.parent / "config"))
-environment = os.environ.get("EASYLIFE_ENVIRONMENT", "production")
+environment = os.environ.get(f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT", "production")
 
 # Load configuration through pipeline
 config_loader = ConfigurationLoader(config_path=config_path, environment=environment)
