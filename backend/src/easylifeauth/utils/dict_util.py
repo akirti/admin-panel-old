@@ -2,18 +2,20 @@
 from functools import reduce
 from typing import Any, Dict, Optional
 
+from easylifeauth import OS_PROPERTY_SEPRATOR
+
 
 class DictUtil:
     """Dictionary utility class for deep nested operations"""
-    
+
     def deep_get(self, dictionary: Dict, keys: str, default: Any = None) -> Any:
         """Get value from nested dictionary using dot notation"""
         return reduce(
             lambda d, key: d.get(key, default) if isinstance(d, dict) else default,
-            keys.split("."),
+            keys.split(OS_PROPERTY_SEPRATOR),
             dictionary
         )
-    
+
     def get_deep_nested_value(
         self,
         dictionary: Dict,
@@ -21,7 +23,7 @@ class DictUtil:
         default: Any = None
     ) -> Any:
         """Get deeply nested value with list support"""
-        keys = key_path.split(".")
+        keys = key_path.split(OS_PROPERTY_SEPRATOR)
         try:
             return reduce(
                 lambda d, key: (

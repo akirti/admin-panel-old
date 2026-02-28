@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from copy import deepcopy
 
 from .dict_util import DictUtil
-from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX
+from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX, OS_PROPERTY_SEPRATOR
 
 
 class ConfigurationLoader:
@@ -44,11 +44,12 @@ class ConfigurationLoader:
     @staticmethod
     def _flatten_to_dot_paths(d: Any, parent: str = "") -> Dict[str, Any]:
         """Flatten nested dict to {\"a.b.c\": value} dot-path lookup"""
+        sep = OS_PROPERTY_SEPRATOR
         items: Dict[str, Any] = {}
         if not isinstance(d, dict):
             return items
         for key, value in d.items():
-            new_key = f"{parent}.{key}" if parent else key
+            new_key = f"{parent}{sep}{key}" if parent else key
             if isinstance(value, dict):
                 items.update(ConfigurationLoader._flatten_to_dot_paths(value, new_key))
             else:
@@ -126,11 +127,12 @@ class ConfigurationLoader:
         underscore ambiguity (e.g. db_info vs db.info).
         Falls back to simple underscore→dot conversion for unknown keys.
         """
-        # Build reverse map: ENV_VAR_NAME → original dot.path
+        sep = OS_PROPERTY_SEPRATOR
+        # Build reverse map: ENV_VAR_NAME → original property path
         reverse_map: Dict[str, str] = {}
-        for dot_path in known_dot_paths:
-            env_key = f"{prefix}_{dot_path.replace('.', '_')}".upper()
-            reverse_map[env_key] = dot_path
+        for prop_path in known_dot_paths:
+            env_key = f"{prefix}_{prop_path.replace(sep, '_')}".upper()
+            reverse_map[env_key] = prop_path
 
         # Meta env vars to skip (not config values)
         skip_keys = {f"{prefix}_ENVIRONMENT", "CONFIG_PATH"}
@@ -141,11 +143,11 @@ class ConfigurationLoader:
             if not key.startswith(env_prefix) or key in skip_keys:
                 continue
             if key in reverse_map:
-                dot_path = reverse_map[key]
+                prop_path = reverse_map[key]
             else:
-                # Fallback: simple underscore → dot conversion
-                dot_path = key[len(env_prefix):].lower().replace("_", ".")
-            overrides[dot_path] = self._convert_value(value)
+                # Fallback: simple underscore → separator conversion
+                prop_path = key[len(env_prefix):].lower().replace("_", sep)
+            overrides[prop_path] = self._convert_value(value)
         return overrides
 
     def load_environment(self, config_path: str, environment: str) -> None:
@@ -212,17 +214,17 @@ class ConfigurationLoader:
     def _apply_env_vars(self) -> None:
         """Apply environment variables to configuration"""
         prefix = f"{self.env_prefix}_"
+        sep = OS_PROPERTY_SEPRATOR
 
         for key, value in os.environ.items():
             if key.startswith(prefix):
-                # Convert EASYLIFE_SPECS_DB_HOST to specs.db.host
-                # Use underscore as separator (Docker style)
-                config_key = key[len(prefix):].lower().replace("_", ".")
+                # Convert EASYLIFE_SPECS_DB_HOST to specs{sep}db{sep}host
+                config_key = key[len(prefix):].lower().replace("_", sep)
                 self._set_nested_value(config_key, self._convert_value(value))
 
     def _set_nested_value(self, key_path: str, value: Any) -> None:
         """Set a nested value in configuration"""
-        keys = key_path.split(".")
+        keys = key_path.split(OS_PROPERTY_SEPRATOR)
         d = self.configuration
         for key in keys[:-1]:
             if key not in d:
@@ -309,7 +311,7 @@ class ConfigValueSimulator:
             simulator_data = json.load(f)
 
         for dot_path, value in simulator_data.items():
-            env_key = f"{prefix}_{dot_path.replace('.', '_')}".upper()
+            env_key = f"{prefix}_{dot_path.replace(OS_PROPERTY_SEPRATOR, '_')}".upper()
             # Only set if not already present — existing env vars (e.g. from
             # Docker) take priority over simulator defaults.
             if env_key not in os.environ:
