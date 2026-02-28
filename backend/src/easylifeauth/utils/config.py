@@ -344,5 +344,5 @@ class ConfigValueSimulator:
 
         flat_values = flatten(values)
         for key, value in flat_values.items():
-            env_key = f"{prefix}_{key.replace(sep, '_')}".upper()
+            env_key = f"{prefix}_{key}".upper()
             os.environ[env_key] = value

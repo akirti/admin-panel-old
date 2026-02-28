@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+from easylifeauth import OS_PROPERTY_SEPRATOR
 from easylifeauth.utils.config import ConfigurationLoader, ConfigValueSimulator
 
 
@@ -382,10 +383,11 @@ class TestConfigValueSimulator:
         assert os.environ.get("TESTBOOL_FEATURE_DEBUG") == "false"
 
     def test_set_os_environment(self):
+        sep = OS_PROPERTY_SEPRATOR
         values = {"db": {"host": "localhost", "port": "5432"}, "name": "app"}
         ConfigValueSimulator.set_os_environment(values, "TESTSET")
-        assert os.environ.get("TESTSET_DB_HOST") == "localhost"
-        assert os.environ.get("TESTSET_DB_PORT") == "5432"
+        assert os.environ.get(f"TESTSET_DB{sep}HOST") == "localhost"
+        assert os.environ.get(f"TESTSET_DB{sep}PORT") == "5432"
         assert os.environ.get("TESTSET_NAME") == "app"
 
 

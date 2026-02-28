@@ -5,7 +5,7 @@ import json
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 
-from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX
+from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX, OS_PROPERTY_SEPRATOR
 from easylifeauth.utils.dict_util import DictUtil
 from easylifeauth.utils.config import ConfigurationLoader
 
@@ -461,19 +461,21 @@ class TestConfigValueSimulator:
         """Test setting nested environment variables"""
         from easylifeauth.utils.config import ConfigValueSimulator
 
+        sep = OS_PROPERTY_SEPRATOR
+        env_key = f"{ENVIRONEMNT_VARIABLE_PREFIX}_NESTED{sep}LEVEL1{sep}LEVEL2"
         # Clear any existing test env vars
-        os.environ.pop(f"{ENVIRONEMNT_VARIABLE_PREFIX}_NESTED_LEVEL1_LEVEL2", None)
+        os.environ.pop(env_key, None)
 
         ConfigValueSimulator.set_os_environment(
             {"nested": {"level1": {"level2": "deep_value"}}},
             prefix=ENVIRONEMNT_VARIABLE_PREFIX
         )
 
-        assert f"{ENVIRONEMNT_VARIABLE_PREFIX}_NESTED_LEVEL1_LEVEL2" in os.environ
-        assert os.environ[f"{ENVIRONEMNT_VARIABLE_PREFIX}_NESTED_LEVEL1_LEVEL2"] == "deep_value"
+        assert env_key in os.environ
+        assert os.environ[env_key] == "deep_value"
 
         # Clean up
-        os.environ.pop(f"{ENVIRONEMNT_VARIABLE_PREFIX}_NESTED_LEVEL1_LEVEL2", None)
+        os.environ.pop(env_key, None)
 
     def test_set_os_environment_with_list(self):
         """Test setting environment variable with list value"""
@@ -496,19 +498,20 @@ class TestConfigValueSimulator:
         """Test setting environment variable with dict value"""
         from easylifeauth.utils.config import ConfigValueSimulator
 
-        os.environ.pop(f"{ENVIRONEMNT_VARIABLE_PREFIX}_CONFIG", None)
+        sep = OS_PROPERTY_SEPRATOR
+        env_key = f"{ENVIRONEMNT_VARIABLE_PREFIX}_CONFIG{sep}KEY"
+        os.environ.pop(env_key, None)
 
         ConfigValueSimulator.set_os_environment(
             {"config": {"key": "value"}},
             prefix=ENVIRONEMNT_VARIABLE_PREFIX
         )
 
-        # Dict values should be JSON stringified
-        assert f"{ENVIRONEMNT_VARIABLE_PREFIX}_CONFIG_KEY" in os.environ
-        assert os.environ[f"{ENVIRONEMNT_VARIABLE_PREFIX}_CONFIG_KEY"] == "value"
+        assert env_key in os.environ
+        assert os.environ[env_key] == "value"
 
         # Clean up
-        os.environ.pop(f"{ENVIRONEMNT_VARIABLE_PREFIX}_CONFIG_KEY", None)
+        os.environ.pop(env_key, None)
 
     def test_set_os_environment_custom_prefix(self):
         """Test setting environment variables with custom prefix"""
