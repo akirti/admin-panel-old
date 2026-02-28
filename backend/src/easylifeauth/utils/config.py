@@ -96,42 +96,103 @@ class ConfigurationLoader:
         else:
             return config
 
+    @staticmethod
+    def _extract_placeholder_keys(*configs: Any) -> set:
+        """Extract all {dot.path} placeholder keys from config structures."""
+        keys: set = set()
+
+        def _scan(obj: Any) -> None:
+            if isinstance(obj, dict):
+                for v in obj.values():
+                    _scan(v)
+            elif isinstance(obj, list):
+                for item in obj:
+                    _scan(item)
+            elif isinstance(obj, str):
+                for m in re.finditer(r'\{([^{}]+)\}', obj):
+                    keys.add(m.group(1))
+
+        for config in configs:
+            _scan(config)
+        return keys
+
+    def _collect_env_overrides(
+        self, known_dot_paths: set, prefix: str
+    ) -> Dict[str, Any]:
+        """Scan OS env vars with prefix and map back to dot-path keys.
+
+        Uses known_dot_paths to build an accurate reverse map that handles
+        underscore ambiguity (e.g. db_info vs db.info).
+        Falls back to simple underscore→dot conversion for unknown keys.
+        """
+        # Build reverse map: ENV_VAR_NAME → original dot.path
+        reverse_map: Dict[str, str] = {}
+        for dot_path in known_dot_paths:
+            env_key = f"{prefix}_{dot_path.replace('.', '_')}".upper()
+            reverse_map[env_key] = dot_path
+
+        # Meta env vars to skip (not config values)
+        skip_keys = {f"{prefix}_ENVIRONMENT", "CONFIG_PATH"}
+
+        overrides: Dict[str, Any] = {}
+        env_prefix = f"{prefix}_"
+        for key, value in os.environ.items():
+            if not key.startswith(env_prefix) or key in skip_keys:
+                continue
+            if key in reverse_map:
+                dot_path = reverse_map[key]
+            else:
+                # Fallback: simple underscore → dot conversion
+                dot_path = key[len(env_prefix):].lower().replace("_", ".")
+            overrides[dot_path] = self._convert_value(value)
+        return overrides
+
     def load_environment(self, config_path: str, environment: str) -> None:
         """Main config pipeline:
-        simulator → env vars → localenv resolution → env resolution → config.json resolution
+        simulator → env var overrides → localenv → env → config.json resolution
+
+        Works with or without the simulator file. When the simulator is
+        missing, OS environment variables alone populate the values lookup.
+        Environment variables always override simulator values.
         """
         base = Path(config_path)
 
-        # a) Load simulator → set env vars, get flat lookup
-        simulator_path = base / "server.env.simulator.json"
+        # a) Load simulator file (empty dict if missing — that's OK)
+        simulator_path = base / f"server.env.{environment}.json"
         simulator_data = ConfigValueSimulator.load_simulator_file(
             str(simulator_path), self.env_prefix
         )
 
-        # b) Build values_lookup from simulator
-        values_lookup = dict(simulator_data)
-
-        # c) Load localenv-{environment}.json → resolve with simulator values
+        # b) Load all template files (raw, unresolved)
         localenv_path = base / f"localenv-{environment}.json"
         localenv_raw = self._load_json_file(str(localenv_path))
-        localenv_config = self._resolve_placeholders(localenv_raw, values_lookup)
+        env_path = base / f"{environment}.json"
+        env_raw = self._load_json_file(str(env_path))
+        config_json_path = base / "config.json"
+        config_raw = self._load_json_file(str(config_json_path))
 
-        # d) Flatten localenv → merge into values_lookup (localenv wins)
+        # c) Collect all known dot-path keys (simulator keys + template placeholders)
+        known_dot_paths = set(simulator_data.keys())
+        known_dot_paths.update(
+            self._extract_placeholder_keys(localenv_raw, env_raw, config_raw)
+        )
+
+        # d) Build values_lookup: simulator first, then env vars override
+        values_lookup = dict(simulator_data)
+        env_overrides = self._collect_env_overrides(known_dot_paths, self.env_prefix)
+        values_lookup.update(env_overrides)
+
+        # e) Resolve localenv-{environment}.json
+        localenv_config = self._resolve_placeholders(localenv_raw, values_lookup)
         localenv_flat = self._flatten_to_dot_paths(localenv_config)
         values_lookup.update(localenv_flat)
 
-        # e) Load {environment}.json → resolve with updated lookup
-        env_path = base / f"{environment}.json"
-        env_raw = self._load_json_file(str(env_path))
+        # f) Resolve {environment}.json
         env_config = self._resolve_placeholders(env_raw, values_lookup)
-
-        # f) Flatten env_config → merge into values_lookup (env wins)
         env_flat = self._flatten_to_dot_paths(env_config)
         values_lookup.update(env_flat)
 
-        # g) Load config.json → resolve with final lookup
-        config_json_path = base / "config.json"
-        config_raw = self._load_json_file(str(config_json_path))
+        # g) Resolve config.json with final lookup
         resolved_config = self._resolve_placeholders(config_raw, values_lookup)
 
         # h) Merge extra properties from env_config into resolved_config
@@ -248,12 +309,15 @@ class ConfigValueSimulator:
 
         for dot_path, value in simulator_data.items():
             env_key = f"{prefix}_{dot_path.replace('.', '_')}".upper()
-            if isinstance(value, (dict, list)):
-                os.environ[env_key] = json.dumps(value)
-            elif isinstance(value, bool):
-                os.environ[env_key] = str(value).lower()
-            else:
-                os.environ[env_key] = str(value)
+            # Only set if not already present — existing env vars (e.g. from
+            # Docker) take priority over simulator defaults.
+            if env_key not in os.environ:
+                if isinstance(value, (dict, list)):
+                    os.environ[env_key] = json.dumps(value)
+                elif isinstance(value, bool):
+                    os.environ[env_key] = str(value).lower()
+                else:
+                    os.environ[env_key] = str(value)
 
         return simulator_data
 

@@ -375,40 +375,32 @@ class TestLoadEnvironmentPipeline:
 
     def test_full_pipeline(self, tmp_path):
         """Test full config pipeline: simulator → localenv → env → config.json"""
+        env = "dev"
         # Simulator: flat key-values
         sim = {"db.host": "simhost", "db.port": 5432}
-        (tmp_path / "server.env.simulator.json").write_text(json.dumps(sim))
+        (tmp_path / f"server.env.{env}.json").write_text(json.dumps(sim))
 
         # localenv-dev.json: references simulator values
         localenv = {"database": {"host": "{db.host}", "port": "{db.port}"}}
-        (tmp_path / "localenv-dev.json").write_text(json.dumps(localenv))
+        (tmp_path / f"localenv-{env}.json").write_text(json.dumps(localenv))
 
         # dev.json: references localenv-flattened values
         env_json = {"connection_string": "mongodb://{database.host}:{database.port}/app"}
-        (tmp_path / "dev.json").write_text(json.dumps(env_json))
+        (tmp_path / f"{env}.json").write_text(json.dumps(env_json))
 
         # config.json: uses env-resolved values
         config = {"db_url": "{connection_string}", "db_host": "{database.host}"}
         (tmp_path / "config.json").write_text(json.dumps(config))
 
-        env_keys = ["EASYLIFE_DB_HOST", "EASYLIFE_DB_PORT"]
-        for k in env_keys:
-            os.environ.pop(k, None)
-
         clean_env = {k: v for k, v in os.environ.items()
                      if not k.startswith("EASYLIFE_")}
-
-        try:
-            with patch.dict(os.environ, clean_env, clear=True):
-                loader = ConfigurationLoader(
-                    config_path=str(tmp_path),
-                    environment="dev",
-                )
-            assert loader.configuration["db_url"] == "mongodb://simhost:5432/app"
-            assert loader.configuration["db_host"] == "simhost"
-        finally:
-            for k in env_keys:
-                os.environ.pop(k, None)
+        with patch.dict(os.environ, clean_env, clear=True):
+            loader = ConfigurationLoader(
+                config_path=str(tmp_path),
+                environment=env,
+            )
+        assert loader.configuration["db_url"] == "mongodb://simhost:5432/app"
+        assert loader.configuration["db_host"] == "simhost"
 
     def test_missing_files_graceful(self, tmp_path):
         """Test that missing localenv/env/simulator files don't crash"""
@@ -440,31 +432,24 @@ class TestLoadEnvironmentPipeline:
 
     def test_localenv_wins_over_simulator(self, tmp_path):
         """Test that localenv values override simulator values in lookup"""
+        env = "dev"
         sim = {"db.host": "sim-host"}
-        (tmp_path / "server.env.simulator.json").write_text(json.dumps(sim))
+        (tmp_path / f"server.env.{env}.json").write_text(json.dumps(sim))
 
         localenv = {"db": {"host": "local-host"}}
-        (tmp_path / "localenv-dev.json").write_text(json.dumps(localenv))
+        (tmp_path / f"localenv-{env}.json").write_text(json.dumps(localenv))
 
         config = {"host": "{db.host}"}
         (tmp_path / "config.json").write_text(json.dumps(config))
 
-        env_keys = ["EASYLIFE_DB_HOST"]
-        for k in env_keys:
-            os.environ.pop(k, None)
-
         clean_env = {k: v for k, v in os.environ.items()
                      if not k.startswith("EASYLIFE_")}
-        try:
-            with patch.dict(os.environ, clean_env, clear=True):
-                loader = ConfigurationLoader(
-                    config_path=str(tmp_path),
-                    environment="dev",
-                )
-            assert loader.configuration["host"] == "local-host"
-        finally:
-            for k in env_keys:
-                os.environ.pop(k, None)
+        with patch.dict(os.environ, clean_env, clear=True):
+            loader = ConfigurationLoader(
+                config_path=str(tmp_path),
+                environment=env,
+            )
+        assert loader.configuration["host"] == "local-host"
 
     def test_env_json_wins_over_localenv(self, tmp_path):
         """Test that env.json values override localenv values in lookup"""
@@ -492,51 +477,118 @@ class TestAuthenticationTypoFix:
 
     def test_resolved_config_uses_correct_spelling(self, tmp_path):
         """Test that placeholder paths use authentication, not authenitcation"""
+        env = "dev"
         sim = {"environment.authentication.secret": "s3cret"}
-        (tmp_path / "server.env.simulator.json").write_text(json.dumps(sim))
+        (tmp_path / f"server.env.{env}.json").write_text(json.dumps(sim))
 
         config = {"auth_secret": "{environment.authentication.secret}"}
         (tmp_path / "config.json").write_text(json.dumps(config))
 
-        env_keys = ["EASYLIFE_ENVIRONMENT_AUTHENTICATION_SECRET"]
-        for k in env_keys:
-            os.environ.pop(k, None)
-
         clean_env = {k: v for k, v in os.environ.items()
                      if not k.startswith("EASYLIFE_")}
-        try:
-            with patch.dict(os.environ, clean_env, clear=True):
-                loader = ConfigurationLoader(
-                    config_path=str(tmp_path),
-                    environment="dev",
-                )
-            assert loader.configuration["auth_secret"] == "s3cret"
-        finally:
-            for k in env_keys:
-                os.environ.pop(k, None)
+        with patch.dict(os.environ, clean_env, clear=True):
+            loader = ConfigurationLoader(
+                config_path=str(tmp_path),
+                environment=env,
+            )
+        assert loader.configuration["auth_secret"] == "s3cret"
 
     def test_typo_path_does_not_resolve(self, tmp_path):
         """Test that the old typo 'authenitcation' would NOT resolve"""
+        env = "dev"
         sim = {"environment.authentication.secret": "correct"}
-        (tmp_path / "server.env.simulator.json").write_text(json.dumps(sim))
+        (tmp_path / f"server.env.{env}.json").write_text(json.dumps(sim))
 
         config = {"auth_secret": "{environment.authenitcation.secret}"}
         (tmp_path / "config.json").write_text(json.dumps(config))
 
-        env_keys = ["EASYLIFE_ENVIRONMENT_AUTHENTICATION_SECRET"]
-        for k in env_keys:
-            os.environ.pop(k, None)
+        clean_env = {k: v for k, v in os.environ.items()
+                     if not k.startswith("EASYLIFE_")}
+        with patch.dict(os.environ, clean_env, clear=True):
+            loader = ConfigurationLoader(
+                config_path=str(tmp_path),
+                environment=env,
+            )
+        # Typo placeholder should stay unresolved
+        assert loader.configuration["auth_secret"] == "{environment.authenitcation.secret}"
+
+
+class TestEnvVarOverrides:
+    """Tests for OS environment variable overrides in the config pipeline"""
+
+    def test_env_var_overrides_simulator_value(self, tmp_path):
+        """Test that EASYLIFE_* env vars override simulator values"""
+        env = "dev"
+        sim = {"db.host": "sim-host", "db.port": 5432}
+        (tmp_path / f"server.env.{env}.json").write_text(json.dumps(sim))
+
+        config = {"host": "{db.host}", "port": "{db.port}"}
+        (tmp_path / "config.json").write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
                      if not k.startswith("EASYLIFE_")}
-        try:
-            with patch.dict(os.environ, clean_env, clear=True):
-                loader = ConfigurationLoader(
-                    config_path=str(tmp_path),
-                    environment="dev",
-                )
-            # Typo placeholder should stay unresolved
-            assert loader.configuration["auth_secret"] == "{environment.authenitcation.secret}"
-        finally:
-            for k in env_keys:
-                os.environ.pop(k, None)
+        clean_env["EASYLIFE_DB_HOST"] = "docker-host"
+        with patch.dict(os.environ, clean_env, clear=True):
+            loader = ConfigurationLoader(
+                config_path=str(tmp_path),
+                environment=env,
+            )
+        assert loader.configuration["host"] == "docker-host"
+        assert loader.configuration["port"] == 5432
+
+    def test_env_vars_work_without_simulator_file(self, tmp_path):
+        """Test that config resolves from env vars alone when simulator is missing"""
+        env = "dev"
+        # No simulator file — only config.json template
+        config = {"db": {"host": "{db.host}", "port": "{db.port}"}}
+        (tmp_path / "config.json").write_text(json.dumps(config))
+
+        clean_env = {k: v for k, v in os.environ.items()
+                     if not k.startswith("EASYLIFE_")}
+        # Set env vars that match the placeholder keys
+        clean_env["EASYLIFE_DB_HOST"] = "env-only-host"
+        clean_env["EASYLIFE_DB_PORT"] = "3307"
+        with patch.dict(os.environ, clean_env, clear=True):
+            loader = ConfigurationLoader(
+                config_path=str(tmp_path),
+                environment=env,
+            )
+        assert loader.configuration["db"]["host"] == "env-only-host"
+        assert loader.configuration["db"]["port"] == 3307
+
+    def test_env_var_with_underscore_key_uses_reverse_map(self, tmp_path):
+        """Test that db_info underscore is preserved via reverse map, not split to db.info"""
+        env = "dev"
+        sim = {"databases.auth.db_info.host": "sim-host"}
+        (tmp_path / f"server.env.{env}.json").write_text(json.dumps(sim))
+
+        config = {"host": "{databases.auth.db_info.host}"}
+        (tmp_path / "config.json").write_text(json.dumps(config))
+
+        clean_env = {k: v for k, v in os.environ.items()
+                     if not k.startswith("EASYLIFE_")}
+        # This env var name is ambiguous without the reverse map
+        clean_env["EASYLIFE_DATABASES_AUTH_DB_INFO_HOST"] = "docker-db"
+        with patch.dict(os.environ, clean_env, clear=True):
+            loader = ConfigurationLoader(
+                config_path=str(tmp_path),
+                environment=env,
+            )
+        assert loader.configuration["host"] == "docker-db"
+
+    def test_env_var_skips_meta_keys(self, tmp_path):
+        """Test that EASYLIFE_ENVIRONMENT is not treated as a config value"""
+        env = "dev"
+        config = {"name": "app"}
+        (tmp_path / "config.json").write_text(json.dumps(config))
+
+        clean_env = {k: v for k, v in os.environ.items()
+                     if not k.startswith("EASYLIFE_")}
+        clean_env["EASYLIFE_ENVIRONMENT"] = "production"
+        with patch.dict(os.environ, clean_env, clear=True):
+            loader = ConfigurationLoader(
+                config_path=str(tmp_path),
+                environment=env,
+            )
+        # EASYLIFE_ENVIRONMENT should not inject "environment" key into config
+        assert "environment" not in loader.configuration or loader.configuration.get("environment") != "production"
