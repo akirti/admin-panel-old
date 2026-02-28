@@ -330,10 +330,12 @@ class ConfigValueSimulator:
         prefix: str = ENVIRONEMNT_VARIABLE_PREFIX
     ) -> None:
         """Set environment variables from dictionary"""
+        sep = OS_PROPERTY_SEPRATOR
+
         def flatten(d: Dict, parent_key: str = '') -> Dict[str, str]:
             items = []
             for k, v in d.items():
-                new_key = f"{parent_key}_{k}" if parent_key else k
+                new_key = f"{parent_key}{sep}{k}" if parent_key else k
                 if isinstance(v, dict):
                     items.extend(flatten(v, new_key).items())
                 else:
@@ -342,5 +344,5 @@ class ConfigValueSimulator:
 
         flat_values = flatten(values)
         for key, value in flat_values.items():
-            env_key = f"{prefix}_{key}".upper()
+            env_key = f"{prefix}_{key.replace(sep, '_')}".upper()
             os.environ[env_key] = value
