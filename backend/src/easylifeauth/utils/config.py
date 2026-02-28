@@ -131,7 +131,7 @@ class ConfigurationLoader:
         # Build reverse map: ENV_VAR_NAME → original property path
         reverse_map: Dict[str, str] = {}
         for prop_path in known_dot_paths:
-            env_key = f"{prefix}_{prop_path.replace(sep, '_')}".upper()
+            env_key = f"{prefix}_{prop_path}".upper()
             reverse_map[env_key] = prop_path
 
         # Meta env vars to skip (not config values)
@@ -145,8 +145,8 @@ class ConfigurationLoader:
             if key in reverse_map:
                 prop_path = reverse_map[key]
             else:
-                # Fallback: simple underscore → separator conversion
-                prop_path = key[len(env_prefix):].lower().replace("_", sep)
+                # Fallback: strip prefix and lowercase
+                prop_path = key[len(env_prefix):].lower()
             overrides[prop_path] = self._convert_value(value)
         return overrides
 
@@ -218,8 +218,7 @@ class ConfigurationLoader:
 
         for key, value in os.environ.items():
             if key.startswith(prefix):
-                # Convert EASYLIFE_SPECS_DB_HOST to specs{sep}db{sep}host
-                config_key = key[len(prefix):].lower().replace("_", sep)
+                config_key = key[len(prefix):].lower()
                 self._set_nested_value(config_key, self._convert_value(value))
 
     def _set_nested_value(self, key_path: str, value: Any) -> None:
@@ -311,7 +310,7 @@ class ConfigValueSimulator:
             simulator_data = json.load(f)
 
         for dot_path, value in simulator_data.items():
-            env_key = f"{prefix}_{dot_path.replace(OS_PROPERTY_SEPRATOR, '_')}".upper()
+            env_key = f"{prefix}_{dot_path}".upper()
             # Only set if not already present — existing env vars (e.g. from
             # Docker) take priority over simulator defaults.
             if env_key not in os.environ:

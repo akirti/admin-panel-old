@@ -348,39 +348,42 @@ class TestConfigValueSimulator:
     """Tests for ConfigValueSimulator."""
 
     def test_load_simulator_sets_env_vars(self, tmp_path):
+        sep = OS_PROPERTY_SEPRATOR
         sim_file = tmp_path / "sim.json"
         sim_file.write_text(json.dumps({
-            "app.name": "test",
-            "db.port": 5432,
+            f"app{sep}name": "test",
+            f"db{sep}port": 5432,
         }))
         result = ConfigValueSimulator.load_simulator_file(str(sim_file), "TESTSIM")
-        assert os.environ.get("TESTSIM_APP_NAME") == "test"
-        assert os.environ.get("TESTSIM_DB_PORT") == "5432"
-        assert result == {"app.name": "test", "db.port": 5432}
+        assert os.environ.get(f"TESTSIM_APP{sep}NAME") == "test"
+        assert os.environ.get(f"TESTSIM_DB{sep}PORT") == "5432"
+        assert result == {f"app{sep}name": "test", f"db{sep}port": 5432}
 
     def test_load_simulator_handles_missing_file(self):
         result = ConfigValueSimulator.load_simulator_file("/nonexistent/file.json")
         assert result == {}
 
     def test_load_simulator_handles_complex_values(self, tmp_path):
+        sep = OS_PROPERTY_SEPRATOR
         sim_file = tmp_path / "sim.json"
         sim_file.write_text(json.dumps({
-            "db.collections": ["users", "tokens"],
-            "feature.flags": {"debug": True},
+            f"db{sep}collections": ["users", "tokens"],
+            f"feature{sep}flags": {"debug": True},
         }))
         ConfigValueSimulator.load_simulator_file(str(sim_file), "TESTCPLX")
-        assert os.environ.get("TESTCPLX_DB_COLLECTIONS") == '["users", "tokens"]'
-        assert os.environ.get("TESTCPLX_FEATURE_FLAGS") == '{"debug": true}'
+        assert os.environ.get(f"TESTCPLX_DB{sep}COLLECTIONS") == '["users", "tokens"]'
+        assert os.environ.get(f"TESTCPLX_FEATURE{sep}FLAGS") == '{"debug": true}'
 
     def test_load_simulator_handles_booleans(self, tmp_path):
+        sep = OS_PROPERTY_SEPRATOR
         sim_file = tmp_path / "sim.json"
         sim_file.write_text(json.dumps({
-            "feature.enabled": True,
-            "feature.debug": False,
+            f"feature{sep}enabled": True,
+            f"feature{sep}debug": False,
         }))
         ConfigValueSimulator.load_simulator_file(str(sim_file), "TESTBOOL")
-        assert os.environ.get("TESTBOOL_FEATURE_ENABLED") == "true"
-        assert os.environ.get("TESTBOOL_FEATURE_DEBUG") == "false"
+        assert os.environ.get(f"TESTBOOL_FEATURE{sep}ENABLED") == "true"
+        assert os.environ.get(f"TESTBOOL_FEATURE{sep}DEBUG") == "false"
 
     def test_set_os_environment(self):
         sep = OS_PROPERTY_SEPRATOR

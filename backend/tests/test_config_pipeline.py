@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX
+from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX, OS_PROPERTY_SEPRATOR
 from easylifeauth.utils.config import ConfigurationLoader, ConfigValueSimulator
 
 ENV_PREFIX = f"{ENVIRONEMNT_VARIABLE_PREFIX}_"
@@ -260,10 +260,11 @@ class TestLoadSimulatorFile:
 
     def test_loads_flat_json_and_returns_data(self, tmp_path):
         """Test loading flat JSON returns raw data dict"""
-        data = {"db.host": "localhost", "db.port": 5432}
+        sep = OS_PROPERTY_SEPRATOR
+        data = {f"db{sep}host": "localhost", f"db{sep}port": 5432}
         f = tmp_path / "sim.json"
         f.write_text(json.dumps(data))
-        env_keys = ["TEST_DB_HOST", "TEST_DB_PORT"]
+        env_keys = [f"TEST_DB{sep}HOST", f"TEST_DB{sep}PORT"]
         self._cleanup_env(env_keys)
         try:
             result = ConfigValueSimulator.load_simulator_file(str(f), "TEST")
@@ -273,9 +274,10 @@ class TestLoadSimulatorFile:
 
     def test_sets_string_env_var(self, tmp_path):
         """Test that string values are set correctly as env vars"""
+        sep = OS_PROPERTY_SEPRATOR
         f = tmp_path / "sim.json"
-        f.write_text(json.dumps({"app.name": "myapp"}))
-        env_key = "TEST_APP_NAME"
+        f.write_text(json.dumps({f"app{sep}name": "myapp"}))
+        env_key = f"TEST_APP{sep}NAME"
         self._cleanup_env([env_key])
         try:
             ConfigValueSimulator.load_simulator_file(str(f), "TEST")
@@ -285,9 +287,10 @@ class TestLoadSimulatorFile:
 
     def test_sets_int_env_var(self, tmp_path):
         """Test that integer values are converted to string env vars"""
+        sep = OS_PROPERTY_SEPRATOR
         f = tmp_path / "sim.json"
-        f.write_text(json.dumps({"server.port": 8080}))
-        env_key = "TEST_SERVER_PORT"
+        f.write_text(json.dumps({f"server{sep}port": 8080}))
+        env_key = f"TEST_SERVER{sep}PORT"
         self._cleanup_env([env_key])
         try:
             ConfigValueSimulator.load_simulator_file(str(f), "TEST")
@@ -297,22 +300,24 @@ class TestLoadSimulatorFile:
 
     def test_sets_bool_env_var(self, tmp_path):
         """Test that bool values are set as lowercase strings"""
+        sep = OS_PROPERTY_SEPRATOR
         f = tmp_path / "sim.json"
-        f.write_text(json.dumps({"feature.on": True, "feature.off": False}))
-        env_keys = ["TEST_FEATURE_ON", "TEST_FEATURE_OFF"]
+        f.write_text(json.dumps({f"feature{sep}on": True, f"feature{sep}off": False}))
+        env_keys = [f"TEST_FEATURE{sep}ON", f"TEST_FEATURE{sep}OFF"]
         self._cleanup_env(env_keys)
         try:
             ConfigValueSimulator.load_simulator_file(str(f), "TEST")
-            assert os.environ["TEST_FEATURE_ON"] == "true"
-            assert os.environ["TEST_FEATURE_OFF"] == "false"
+            assert os.environ[f"TEST_FEATURE{sep}ON"] == "true"
+            assert os.environ[f"TEST_FEATURE{sep}OFF"] == "false"
         finally:
             self._cleanup_env(env_keys)
 
     def test_sets_list_env_var_as_json(self, tmp_path):
         """Test that list values are JSON-serialized in env vars"""
+        sep = OS_PROPERTY_SEPRATOR
         f = tmp_path / "sim.json"
-        f.write_text(json.dumps({"allowed.hosts": ["a", "b"]}))
-        env_key = "TEST_ALLOWED_HOSTS"
+        f.write_text(json.dumps({f"allowed{sep}hosts": ["a", "b"]}))
+        env_key = f"TEST_ALLOWED{sep}HOSTS"
         self._cleanup_env([env_key])
         try:
             ConfigValueSimulator.load_simulator_file(str(f), "TEST")
@@ -322,9 +327,10 @@ class TestLoadSimulatorFile:
 
     def test_sets_dict_env_var_as_json(self, tmp_path):
         """Test that dict values are JSON-serialized in env vars"""
+        sep = OS_PROPERTY_SEPRATOR
         f = tmp_path / "sim.json"
-        f.write_text(json.dumps({"db.options": {"ssl": True}}))
-        env_key = "TEST_DB_OPTIONS"
+        f.write_text(json.dumps({f"db{sep}options": {"ssl": True}}))
+        env_key = f"TEST_DB{sep}OPTIONS"
         self._cleanup_env([env_key])
         try:
             ConfigValueSimulator.load_simulator_file(str(f), "TEST")
@@ -521,16 +527,17 @@ class TestEnvVarOverrides:
 
     def test_env_var_overrides_simulator_value(self, tmp_path):
         """Test that env prefix env vars override simulator values"""
+        sep = OS_PROPERTY_SEPRATOR
         env = "dev"
-        sim = {"db.host": "sim-host", "db.port": 5432}
+        sim = {f"db{sep}host": "sim-host", f"db{sep}port": 5432}
         (tmp_path / f"server.env.{env}.json").write_text(json.dumps(sim))
 
-        config = {"host": "{db.host}", "port": "{db.port}"}
+        config = {"host": f"{{db{sep}host}}", "port": f"{{db{sep}port}}"}
         (tmp_path / "config.json").write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
                      if not k.startswith(ENV_PREFIX)}
-        clean_env[f"{ENVIRONEMNT_VARIABLE_PREFIX}_DB_HOST"] = "docker-host"
+        clean_env[f"{ENVIRONEMNT_VARIABLE_PREFIX}_DB{sep}HOST"] = "docker-host"
         with patch.dict(os.environ, clean_env, clear=True):
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
@@ -541,16 +548,17 @@ class TestEnvVarOverrides:
 
     def test_env_vars_work_without_simulator_file(self, tmp_path):
         """Test that config resolves from env vars alone when simulator is missing"""
+        sep = OS_PROPERTY_SEPRATOR
         env = "dev"
         # No simulator file — only config.json template
-        config = {"db": {"host": "{db.host}", "port": "{db.port}"}}
+        config = {"db": {"host": f"{{db{sep}host}}", "port": f"{{db{sep}port}}"}}
         (tmp_path / "config.json").write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
                      if not k.startswith(ENV_PREFIX)}
         # Set env vars that match the placeholder keys
-        clean_env[f"{ENVIRONEMNT_VARIABLE_PREFIX}_DB_HOST"] = "env-only-host"
-        clean_env[f"{ENVIRONEMNT_VARIABLE_PREFIX}_DB_PORT"] = "3307"
+        clean_env[f"{ENVIRONEMNT_VARIABLE_PREFIX}_DB{sep}HOST"] = "env-only-host"
+        clean_env[f"{ENVIRONEMNT_VARIABLE_PREFIX}_DB{sep}PORT"] = "3307"
         with patch.dict(os.environ, clean_env, clear=True):
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
@@ -560,18 +568,19 @@ class TestEnvVarOverrides:
         assert loader.configuration["db"]["port"] == 3307
 
     def test_env_var_with_underscore_key_uses_reverse_map(self, tmp_path):
-        """Test that db_info underscore is preserved via reverse map, not split to db.info"""
+        """Test that db_info underscore is preserved via reverse map"""
+        sep = OS_PROPERTY_SEPRATOR
         env = "dev"
-        sim = {"databases.auth.db_info.host": "sim-host"}
+        sim = {f"databases{sep}auth{sep}db_info{sep}host": "sim-host"}
         (tmp_path / f"server.env.{env}.json").write_text(json.dumps(sim))
 
-        config = {"host": "{databases.auth.db_info.host}"}
+        config = {"host": f"{{databases{sep}auth{sep}db_info{sep}host}}"}
         (tmp_path / "config.json").write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
                      if not k.startswith(ENV_PREFIX)}
-        # This env var name is ambiguous without the reverse map
-        clean_env[f"{ENVIRONEMNT_VARIABLE_PREFIX}_DATABASES_AUTH_DB_INFO_HOST"] = "docker-db"
+        # Env var key uses separator: EASYLIFE_DATABASES.AUTH.DB_INFO.HOST
+        clean_env[f"{ENVIRONEMNT_VARIABLE_PREFIX}_DATABASES{sep}AUTH{sep}DB_INFO{sep}HOST"] = "docker-db"
         with patch.dict(os.environ, clean_env, clear=True):
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),

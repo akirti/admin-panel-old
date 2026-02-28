@@ -414,10 +414,12 @@ class TestConfigurationLoader:
 
     def test_load_from_environment(self):
         """Test loading config from environment"""
+        sep = OS_PROPERTY_SEPRATOR
+        env_key = f"{ENVIRONEMNT_VARIABLE_PREFIX}_TEST{sep}KEY"
         with patch.object(Path, 'exists', return_value=False):
-            with patch.dict(os.environ, {f"{ENVIRONEMNT_VARIABLE_PREFIX}_TEST_KEY": "env_value"}, clear=False):
+            with patch.dict(os.environ, {env_key: "env_value"}, clear=False):
                 loader = ConfigurationLoader()
-                # _apply_env_vars is called in __init__ and converts {prefix}_TEST_KEY to test.key
+                # _apply_env_vars is called in __init__ and converts {prefix}_TEST.KEY to test.key
                 assert loader.configuration.get("test", {}).get("key") == "env_value"
 
     def test_convert_value_bool_uppercase(self):
