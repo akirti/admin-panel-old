@@ -331,7 +331,7 @@ class TestStorageConfig:
         """GCS storage with credentials as a dict should build gcs_config."""
         storage = {
             "type": "gcs",
-            "gcp": {
+            "gcs": {
                 "credentials_json": {"type": "service_account", "project_id": "test"},
                 "bucket_name": "my-bucket",
                 "upload_folder": "uploads",
@@ -364,7 +364,7 @@ class TestStorageConfig:
         """GCS storage with credentials as a JSON string."""
         storage = {
             "type": "gcs",
-            "gcp": {
+            "gcs": {
                 "credentials_json": '{"type":"service_account"}',
                 "bucket_name": "bucket",
             },
@@ -376,7 +376,7 @@ class TestStorageConfig:
 
     def test_gcs_without_credentials_stays_local(self):
         """GCS type but no credentials -> stays local."""
-        storage = {"type": "gcs", "gcp": {}}
+        storage = {"type": "gcs", "gcs": {}}
         _, mock_app, _ = _run_main(config_values={"environment.storage": storage})
         fsc = mock_app.call_args[1]["file_storage_config"]
         assert fsc["type"] == "local"
@@ -384,7 +384,7 @@ class TestStorageConfig:
 
     def test_storage_type_defaults_to_local(self):
         """Storage without explicit type defaults to 'local'."""
-        storage = {"gcp": {}}
+        storage = {"gcs": {}}
         _, mock_app, _ = _run_main(config_values={"environment.storage": storage})
         fsc = mock_app.call_args[1]["file_storage_config"]
         assert fsc["type"] == "local"

@@ -54,8 +54,8 @@
             "refresh_token_expiry_minutes": "{environment.authentication.refresh_token_expiry_minutes}"
         },
         "storage": {
-            "type": "{environment.storage.gcs.type}",
-            "gcp": {   
+            "type": "{environment.storage.type}",
+            "gcs": {   
                 "project_name": "{environment.storage.gcs.project_name}",
                 "bucket_name": "{environment.storage.gcs.bucket_name}",
                 "upload_folder": "{environment.storage.gcs.upload_folder}",

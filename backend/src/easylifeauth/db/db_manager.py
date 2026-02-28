@@ -79,7 +79,7 @@ class DatabaseManager:
 
     def _create_client(self, config: Dict[str, Any]) -> None:
         """Create the MongoDB client with proper settings"""
-        scheme = config.get('connectionScheme', 'mongodb')
+        scheme = config.get('connection_scheme', 'mongodb')
         username = config.get('username')
         password = config.get('password')
         host = config.get('host')

@@ -21,7 +21,7 @@
       "type": "db",
       "db_info": {
         "type": "mongodb",
-        "connectionScheme": "{databases.authentication.db_info.connectionScheme}",
+        "connection_scheme": "{databases.authentication.db_info.connection_scheme}",
         "username": "{databases.authentication.db_info.username}",
         "password": "{databases.authentication.db_info.password}",
         "host": "{databases.authentication.db_info.host}",
@@ -54,8 +54,8 @@
             "refresh_token_expiry_minutes": "{environment.authentication.refresh_token_expiry_minutes}"
         },
         "storage": {
-            "type": "{environment.storage.gcs.type}",
-            "gcp": {   
+            "type": "{environment.storage.type}",
+            "gcs": {   
                 "project_name": "{environment.storage.gcs.project_name}",
                 "bucket_name": "{environment.storage.gcs.bucket_name}",
                 "upload_folder": "{environment.storage.gcs.upload_folder}",

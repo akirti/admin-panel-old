@@ -47,7 +47,7 @@ gcs_config = None
 file_storage_config = {"type": "local", "base_path": "/tmp/easylife_uploads"}
 if storage_config:
     storage_type = storage_config.get("type", "local")
-    gcp = storage_config.get("gcp", {})
+    gcp = storage_config.get("gcs", {})
     if storage_type == "gcs" and gcp.get("credentials_json"):
         creds = gcp["credentials_json"]
         gcs_config = {

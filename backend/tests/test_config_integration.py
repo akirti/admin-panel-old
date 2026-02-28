@@ -424,7 +424,7 @@ class TestRealConfigFiles:
         assert db_config["host"] == "mongodb"
         assert db_config["database"] == "easylife_auth"
         assert db_config["username"] == "admin"
-        assert db_config["connectionScheme"] == "mongodb"
+        assert db_config["connection_scheme"] == "mongodb"
 
     def test_token_secret_resolved(self, config_path):
         loader = ConfigurationLoader(config_path=config_path, environment="production")
