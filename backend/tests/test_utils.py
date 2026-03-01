@@ -443,91 +443,79 @@ class TestConfigValueSimulator:
         """Test setting simple environment variables"""
         from easylifeauth.utils.config import ConfigValueSimulator
 
-        # Clear any existing test env vars
-        test_vars = [f"{ENVIRONEMNT_VARIABLE_PREFIX}_SIMPLE_KEY", f"{ENVIRONEMNT_VARIABLE_PREFIX}_NESTED_LEVEL1_LEVEL2"]
-        for var in test_vars:
-            os.environ.pop(var, None)
+        env_key = f"{ENVIRONEMNT_VARIABLE_PREFIX}_SIMPLE_KEY"
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop(env_key, None)
 
-        ConfigValueSimulator.set_os_environment(
-            {"simple_key": "value1"},
-            prefix=ENVIRONEMNT_VARIABLE_PREFIX
-        )
+            ConfigValueSimulator.set_os_environment(
+                {"simple_key": "value1"},
+                prefix=ENVIRONEMNT_VARIABLE_PREFIX
+            )
 
-        assert f"{ENVIRONEMNT_VARIABLE_PREFIX}_SIMPLE_KEY" in os.environ
-        assert os.environ[f"{ENVIRONEMNT_VARIABLE_PREFIX}_SIMPLE_KEY"] == "value1"
-
-        # Clean up
-        os.environ.pop(f"{ENVIRONEMNT_VARIABLE_PREFIX}_SIMPLE_KEY", None)
+            assert env_key in os.environ
+            assert os.environ[env_key] == "value1"
 
     def test_set_os_environment_nested(self):
         """Test setting nested environment variables"""
         from easylifeauth.utils.config import ConfigValueSimulator
 
         sep = OS_PROPERTY_SEPRATOR
-        env_key = f"{ENVIRONEMNT_VARIABLE_PREFIX}_NESTED{sep}LEVEL1{sep}LEVEL2"
-        # Clear any existing test env vars
-        os.environ.pop(env_key, None)
+        env_key = f"{ENVIRONEMNT_VARIABLE_PREFIX}_NESTED{sep}LEVEL1{sep}LEVEL2".upper()
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop(env_key, None)
 
-        ConfigValueSimulator.set_os_environment(
-            {"nested": {"level1": {"level2": "deep_value"}}},
-            prefix=ENVIRONEMNT_VARIABLE_PREFIX
-        )
+            ConfigValueSimulator.set_os_environment(
+                {"nested": {"level1": {"level2": "deep_value"}}},
+                prefix=ENVIRONEMNT_VARIABLE_PREFIX
+            )
 
-        assert env_key in os.environ
-        assert os.environ[env_key] == "deep_value"
-
-        # Clean up
-        os.environ.pop(env_key, None)
+            assert env_key in os.environ
+            assert os.environ[env_key] == "deep_value"
 
     def test_set_os_environment_with_list(self):
         """Test setting environment variable with list value"""
         from easylifeauth.utils.config import ConfigValueSimulator
 
-        os.environ.pop(f"{ENVIRONEMNT_VARIABLE_PREFIX}_ITEMS", None)
+        env_key = f"{ENVIRONEMNT_VARIABLE_PREFIX}_ITEMS"
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop(env_key, None)
 
-        ConfigValueSimulator.set_os_environment(
-            {"items": [1, 2, 3]},
-            prefix=ENVIRONEMNT_VARIABLE_PREFIX
-        )
+            ConfigValueSimulator.set_os_environment(
+                {"items": [1, 2, 3]},
+                prefix=ENVIRONEMNT_VARIABLE_PREFIX
+            )
 
-        assert f"{ENVIRONEMNT_VARIABLE_PREFIX}_ITEMS" in os.environ
-        assert os.environ[f"{ENVIRONEMNT_VARIABLE_PREFIX}_ITEMS"] == "[1, 2, 3]"
-
-        # Clean up
-        os.environ.pop(f"{ENVIRONEMNT_VARIABLE_PREFIX}_ITEMS", None)
+            assert env_key in os.environ
+            assert os.environ[env_key] == "[1, 2, 3]"
 
     def test_set_os_environment_with_dict_value(self):
         """Test setting environment variable with dict value"""
         from easylifeauth.utils.config import ConfigValueSimulator
 
         sep = OS_PROPERTY_SEPRATOR
-        env_key = f"{ENVIRONEMNT_VARIABLE_PREFIX}_CONFIG{sep}KEY"
-        os.environ.pop(env_key, None)
+        env_key = f"{ENVIRONEMNT_VARIABLE_PREFIX}_CONFIG{sep}KEY".upper()
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop(env_key, None)
 
-        ConfigValueSimulator.set_os_environment(
-            {"config": {"key": "value"}},
-            prefix=ENVIRONEMNT_VARIABLE_PREFIX
-        )
+            ConfigValueSimulator.set_os_environment(
+                {"config": {"key": "value"}},
+                prefix=ENVIRONEMNT_VARIABLE_PREFIX
+            )
 
-        assert env_key in os.environ
-        assert os.environ[env_key] == "value"
-
-        # Clean up
-        os.environ.pop(env_key, None)
+            assert env_key in os.environ
+            assert os.environ[env_key] == "value"
 
     def test_set_os_environment_custom_prefix(self):
         """Test setting environment variables with custom prefix"""
         from easylifeauth.utils.config import ConfigValueSimulator
 
-        os.environ.pop("CUSTOM_TEST_KEY", None)
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("CUSTOM_TEST_KEY", None)
 
-        ConfigValueSimulator.set_os_environment(
-            {"test_key": "custom_value"},
-            prefix="CUSTOM"
-        )
+            ConfigValueSimulator.set_os_environment(
+                {"test_key": "custom_value"},
+                prefix="CUSTOM"
+            )
 
-        assert "CUSTOM_TEST_KEY" in os.environ
-        assert os.environ["CUSTOM_TEST_KEY"] == "custom_value"
-
-        # Clean up
-        os.environ.pop("CUSTOM_TEST_KEY", None)
+            assert "CUSTOM_TEST_KEY" in os.environ
+            assert os.environ["CUSTOM_TEST_KEY"] == "custom_value"

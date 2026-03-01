@@ -183,7 +183,7 @@ class TestResolveDomains:
     async def test_valid_object_id_resolves(self):
         """Lines 61-65: A valid ObjectId string is looked up by _id in data_domains."""
         db = MagicMock()
-        db.data_domains = MagicMock()
+        db.data_domains = AsyncMock()
         db.data_domains.find_one = AsyncMock(
             return_value={"_id": ObjectId(VALID_OID), "domainId": "domain.finance"}
         )
@@ -196,7 +196,7 @@ class TestResolveDomains:
     async def test_domain_id_key_resolves(self):
         """Lines 68-70: A non-ObjectId string is looked up by domainId key."""
         db = MagicMock()
-        db.data_domains = MagicMock()
+        db.data_domains = AsyncMock()
         db.data_domains.find_one = AsyncMock(
             return_value={"_id": ObjectId(VALID_OID), "domainId": "domain.hr"}
         )
@@ -209,7 +209,7 @@ class TestResolveDomains:
     async def test_unknown_ref_kept_as_is(self):
         """Lines 71-73: When a domain ref is not found, the original value is kept."""
         db = MagicMock()
-        db.data_domains = MagicMock()
+        db.data_domains = AsyncMock()
         db.data_domains.find_one = AsyncMock(return_value=None)
 
         result = await resolve_domains(db, ["unknown.domain"])
@@ -219,7 +219,7 @@ class TestResolveDomains:
     async def test_valid_oid_not_found_falls_through(self):
         """Valid ObjectId not found by _id falls through to domainId lookup, then not found."""
         db = MagicMock()
-        db.data_domains = MagicMock()
+        db.data_domains = AsyncMock()
         db.data_domains.find_one = AsyncMock(return_value=None)
 
         result = await resolve_domains(db, [VALID_OID])
@@ -231,7 +231,7 @@ class TestResolveDomains:
     async def test_mixed_domain_refs(self):
         """Multiple domain refs of different types resolved correctly."""
         db = MagicMock()
-        db.data_domains = MagicMock()
+        db.data_domains = AsyncMock()
 
         oid = VALID_OID
 
@@ -344,9 +344,9 @@ class TestRolesRoutesExtended:
         mock_users_cursor.to_list = AsyncMock(return_value=[])
         db.users.find = MagicMock(return_value=mock_users_cursor)
         db.users.update_many = AsyncMock()
-        db.permissions = MagicMock()
+        db.permissions = AsyncMock()
         db.permissions.find_one = AsyncMock(return_value=None)
-        db.data_domains = MagicMock()
+        db.data_domains = AsyncMock()
         db.data_domains.find_one = AsyncMock(return_value=None)
         return db
 

@@ -9,7 +9,7 @@ from easylifeauth.utils.config import ConfigurationLoader
 
 # Determine paths
 config_path = os.environ.get("CONFIG_PATH", str(Path(__file__).parent.parent / "config"))
-environment = os.environ.get(f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT", "production")
+environment = os.environ.get(f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT", "dev")
 
 # Load configuration through pipeline
 config_loader = ConfigurationLoader(config_path=config_path, environment=environment)

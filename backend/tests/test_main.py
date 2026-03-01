@@ -7,6 +7,7 @@ gives full control over every dependency that main.py touches.
 """
 import json
 import os
+import re
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -21,6 +22,27 @@ ENV_PREFIX = f"{ENVIRONEMNT_VARIABLE_PREFIX}_"
 # Path to the real main.py source file
 # ---------------------------------------------------------------------------
 _MAIN_PY = Path(__file__).resolve().parent.parent / "src" / "main.py"
+
+
+def _read_default_environment():
+    """Read the default environment value from main.py source.
+
+    Parses the ``os.environ.get(...)`` call for the environment variable
+    to extract the fallback value.  Returns ``None`` when no explicit
+    default is provided (i.e. ``os.environ.get(key)`` without a second arg).
+    """
+    source = _MAIN_PY.read_text()
+    # Match patterns like:
+    #   os.environ.get(f"..._ENVIRONMENT", "production")
+    #   os.environ.get(f"..._ENVIRONMENT")
+    m = re.search(
+        r'''environment\s*=\s*os\.environ\.get\([^,)]+'''
+        r'''(?:,\s*["']([^"']*)["'])?\)''',
+        source,
+    )
+    if m and m.group(1) is not None:
+        return m.group(1)
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -93,7 +115,15 @@ def _run_main(env_overrides=None, config_values=None, name_override=None):
     source = source.replace("\r\n", "\n")  # Normalize CRLF → LF
 
     # -- Patch imports ---------------------------------------------------------
+    # Replace ALL import lines so the exec namespace is the single source of
+    # truth — prevents re-import from overriding injected mocks/modules.
     patched_source = source.replace(
+        "import os\n", "pass  # os injected\n",
+    ).replace(
+        "import json\n", "pass  # json injected\n",
+    ).replace(
+        "from pathlib import Path\n", "pass  # Path injected\n",
+    ).replace(
         "from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX",
         "pass  # ENVIRONEMNT_VARIABLE_PREFIX injected",
     ).replace(
@@ -131,12 +161,15 @@ class TestConfigurationLoaderConstruction:
     """ConfigurationLoader should be instantiated with the correct arguments."""
 
     def test_default_config_path_and_environment(self):
-        """Without env vars, uses default config path and 'production' environment."""
+        """Without env vars, uses default config path and default environment from source."""
         _, _, mock_cl = _run_main()
         mock_cl.assert_called_once()
         kwargs = mock_cl.call_args[1]
         assert Path(kwargs["config_path"]).name == "config"
-        assert kwargs["environment"] == "production"
+        # The default environment is read from the actual main.py source so
+        # the test stays in sync even when the default is changed.
+        expected_env = _read_default_environment()
+        assert kwargs["environment"] == expected_env
 
     def test_custom_config_path(self):
         """CONFIG_PATH env var should override the config path."""
@@ -534,6 +567,12 @@ class TestMainBlock:
         source = _MAIN_PY.read_text()
         source = source.replace("\r\n", "\n")  # Normalize CRLF → LF
         patched_source = source.replace(
+            "import os\n", "pass  # os injected\n",
+        ).replace(
+            "import json\n", "pass  # json injected\n",
+        ).replace(
+            "from pathlib import Path\n", "pass  # Path injected\n",
+        ).replace(
             "from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX",
             "pass  # ENVIRONEMNT_VARIABLE_PREFIX injected",
         ).replace(
