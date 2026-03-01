@@ -90,6 +90,7 @@ def _run_main(env_overrides=None, config_values=None, name_override=None):
 
     # -- Read the source -------------------------------------------------------
     source = _MAIN_PY.read_text()
+    source = source.replace("\r\n", "\n")  # Normalize CRLF → LF
 
     # -- Patch imports ---------------------------------------------------------
     patched_source = source.replace(
@@ -107,6 +108,9 @@ def _run_main(env_overrides=None, config_values=None, name_override=None):
         "__name__": name_override or "src.main",
         "__file__": str(_MAIN_PY),
         "__builtins__": __builtins__,
+        "os": os,
+        "json": json,
+        "Path": Path,
         "ENVIRONEMNT_VARIABLE_PREFIX": ENVIRONEMNT_VARIABLE_PREFIX,
         "create_app": mock_create_app,
         "ConfigurationLoader": mock_config_loader_cls,
@@ -528,6 +532,7 @@ class TestMainBlock:
         mock_uvicorn = MagicMock()
 
         source = _MAIN_PY.read_text()
+        source = source.replace("\r\n", "\n")  # Normalize CRLF → LF
         patched_source = source.replace(
             "from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX",
             "pass  # ENVIRONEMNT_VARIABLE_PREFIX injected",
@@ -546,6 +551,9 @@ class TestMainBlock:
             "__name__": "__main__",
             "__file__": str(_MAIN_PY),
             "__builtins__": __builtins__,
+            "os": os,
+            "json": json,
+            "Path": Path,
             "ENVIRONEMNT_VARIABLE_PREFIX": ENVIRONEMNT_VARIABLE_PREFIX,
             "create_app": MagicMock(),
             "ConfigurationLoader": MagicMock(),

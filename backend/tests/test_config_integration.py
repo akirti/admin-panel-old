@@ -12,6 +12,13 @@ import pytest
 
 from easylifeauth import OS_PROPERTY_SEPRATOR
 from easylifeauth.utils.config import ConfigurationLoader, ConfigValueSimulator
+from tests.test_config_values import (
+    EXPECTED_DB_HOST, EXPECTED_DB_DATABASE, EXPECTED_DB_USERNAME,
+    EXPECTED_DB_PASSWORD, EXPECTED_DB_CONNECTION_SCHEME, EXPECTED_COLLECTIONS,
+    EXPECTED_MAX_POOL_SIZE, EXPECTED_MIN_POOL_SIZE,
+    EXPECTED_SECRET_KEY, EXPECTED_SMTP_SERVER, EXPECTED_SMTP_PORT,
+    EXPECTED_CORS_ORIGINS, EXPECTED_JIRA_BASE_URL,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -411,8 +418,8 @@ class TestRealConfigFiles:
         loader = ConfigurationLoader(config_path=config_path, environment="production")
         db = loader.get_config_by_path("databases.authentication.db_info")
         assert db is not None
-        assert db["host"] == "mongodb"
-        assert db["database"] == "easylife_auth"
+        assert db["host"] == EXPECTED_DB_HOST
+        assert db["database"] == EXPECTED_DB_DATABASE
         assert isinstance(db["collections"], list)
         assert "users" in db["collections"]
 
@@ -421,10 +428,10 @@ class TestRealConfigFiles:
         loader = ConfigurationLoader(config_path=config_path, environment="production")
         db_config = loader.get_DB_config("authentication")
         assert db_config is not None
-        assert db_config["host"] == "mongodb"
-        assert db_config["database"] == "easylife_auth"
-        assert db_config["username"] == "admin"
-        assert db_config["connection_scheme"] == "mongodb"
+        assert db_config["host"] == EXPECTED_DB_HOST
+        assert db_config["database"] == EXPECTED_DB_DATABASE
+        assert db_config["username"] == EXPECTED_DB_USERNAME
+        assert db_config["connection_scheme"] == EXPECTED_DB_CONNECTION_SCHEME
 
     def test_token_secret_resolved(self, config_path):
         loader = ConfigurationLoader(config_path=config_path, environment="production")
@@ -450,8 +457,8 @@ class TestRealConfigFiles:
         loader = ConfigurationLoader(config_path=config_path, environment="production")
         pool = loader.get_config_by_path("globals.databases.default")
         assert pool is not None
-        assert pool["max_pool_size"] == 50
-        assert pool["min_pool_size"] == 5
+        assert pool["max_pool_size"] == EXPECTED_MAX_POOL_SIZE
+        assert pool["min_pool_size"] == EXPECTED_MIN_POOL_SIZE
 
     def test_storage_config_resolved(self, config_path):
         loader = ConfigurationLoader(config_path=config_path, environment="production")
@@ -489,9 +496,9 @@ class TestRealConfigFiles:
 
         # Verify all resolved correctly
         assert db_config is not None
-        assert db_config["maxPoolSize"] == 50
-        assert db_config["minPoolSize"] == 5
-        assert db_config["host"] == "mongodb"
+        assert db_config["maxPoolSize"] == EXPECTED_MAX_POOL_SIZE
+        assert db_config["minPoolSize"] == EXPECTED_MIN_POOL_SIZE
+        assert db_config["host"] == EXPECTED_DB_HOST
         assert token_secret is not None
         assert smtp_config is not None
         assert isinstance(cors_origins, list)
@@ -503,10 +510,4 @@ class TestRealConfigFiles:
         db_config = loader.get_DB_config("authentication")
         assert db_config is not None
         collections = db_config["collections"]
-        expected = [
-            "users", "tokens", "reset_tokens", "sessions", "roles", "groups",
-            "permissions", "customers", "scenario_requests", "feedbacks", "domains",
-            "domain_scenarios", "playboards", "configurations", "activity_logs",
-            "api_configs", "distribution_lists", "error_logs", "error_log_archives",
-        ]
-        assert collections == expected
+        assert collections == EXPECTED_COLLECTIONS

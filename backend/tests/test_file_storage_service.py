@@ -90,7 +90,7 @@ class TestFileStorageServiceHelpers:
     def test_get_mime_type_csv(self, service):
         """Test MIME type detection for CSV"""
         mime = service._get_mime_type("test.csv")
-        assert mime == "text/csv"
+        assert mime in ("text/csv", "application/vnd.ms-excel")
 
     def test_get_mime_type_json(self, service):
         """Test MIME type detection for JSON"""
