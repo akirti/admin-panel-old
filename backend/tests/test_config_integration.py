@@ -13,6 +13,7 @@ import pytest
 from easylifeauth import OS_PROPERTY_SEPRATOR
 from easylifeauth.utils.config import ConfigurationLoader, ConfigValueSimulator
 from tests.test_config_values import (
+    SIMULATOR_DATA, CONFIG_JSON,
     EXPECTED_DB_HOST, EXPECTED_DB_DATABASE, EXPECTED_DB_USERNAME,
     EXPECTED_DB_PASSWORD, EXPECTED_DB_CONNECTION_SCHEME, EXPECTED_COLLECTIONS,
     EXPECTED_MAX_POOL_SIZE, EXPECTED_MIN_POOL_SIZE,
@@ -402,16 +403,25 @@ class TestConfigValueSimulator:
 
 
 # ============================================================================
-# Tests with real project config files
+# Full pipeline tests with self-contained fixture data (CI/CD safe)
 # ============================================================================
 
 
 class TestRealConfigFiles:
-    """Test ConfigurationLoader with the actual project config files."""
+    """Test ConfigurationLoader with the full config pipeline.
+
+    Uses temporary config files created from test_config_values fixtures,
+    so tests work on any machine without real project config files.
+    """
 
     @pytest.fixture
-    def config_path(self):
-        return str(Path(__file__).resolve().parent.parent / "config")
+    def config_path(self, tmp_path):
+        return _create_config_dir(tmp_path, {
+            "server.env.production.json": SIMULATOR_DATA,
+            "config.json": CONFIG_JSON,
+            "production.json": {},
+            "localenv-production.json": {},
+        })
 
     def test_loads_production_environment(self, config_path):
         """Loading 'production' environment should produce valid resolved config."""
@@ -438,20 +448,20 @@ class TestRealConfigFiles:
         secret = loader.get_config_by_path("environment.app_secrets.auth_secret_key")
         assert secret is not None
         assert isinstance(secret, str)
-        assert len(secret) > 0
+        assert secret == EXPECTED_SECRET_KEY
 
     def test_smtp_config_resolved(self, config_path):
         loader = ConfigurationLoader(config_path=config_path, environment="production")
         smtp = loader.get_config_by_path("environment.smtp")
         assert smtp is not None
-        assert "smtp_server" in smtp
-        assert "smtp_port" in smtp
+        assert smtp["smtp_server"] == EXPECTED_SMTP_SERVER
+        assert smtp["smtp_port"] == EXPECTED_SMTP_PORT
 
     def test_cors_origins_resolved(self, config_path):
         loader = ConfigurationLoader(config_path=config_path, environment="production")
         origins = loader.get_config_by_path("environment.cors.origins")
         assert isinstance(origins, list)
-        assert len(origins) > 0
+        assert origins == EXPECTED_CORS_ORIGINS
 
     def test_globals_pool_settings_resolved(self, config_path):
         loader = ConfigurationLoader(config_path=config_path, environment="production")
@@ -470,10 +480,10 @@ class TestRealConfigFiles:
         loader = ConfigurationLoader(config_path=config_path, environment="production")
         jira = loader.get_config_by_path("environment.jira")
         assert jira is not None
-        assert "base_url" in jira
+        assert jira["base_url"] == EXPECTED_JIRA_BASE_URL
 
     def test_full_main_py_wiring_simulation(self, config_path):
-        """Simulate the full main.py extraction logic with real config."""
+        """Simulate the full main.py extraction logic with test config."""
         loader = ConfigurationLoader(config_path=config_path, environment="production")
 
         # DB
@@ -499,7 +509,7 @@ class TestRealConfigFiles:
         assert db_config["maxPoolSize"] == EXPECTED_MAX_POOL_SIZE
         assert db_config["minPoolSize"] == EXPECTED_MIN_POOL_SIZE
         assert db_config["host"] == EXPECTED_DB_HOST
-        assert token_secret is not None
+        assert token_secret == EXPECTED_SECRET_KEY
         assert smtp_config is not None
         assert isinstance(cors_origins, list)
         assert len(cors_origins) > 0
