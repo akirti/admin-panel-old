@@ -1,3 +1,4 @@
+from mock_data import MOCK_EMAIL
 """Tests for File Storage Service"""
 import pytest
 import os
@@ -155,14 +156,14 @@ class TestFileStorageServiceLocalOps:
             file_name="test.csv",
             file_content=b"col1,col2\n1,2",
             folder="files",
-            uploaded_by="test@example.com"
+            uploaded_by=MOCK_EMAIL
         )
 
         assert result is not None
         assert result["file_name"] == "test.csv"
         assert result["file_type"] == "csv"
         assert result["status"] == "A"
-        assert result["uploaded_by"] == "test@example.com"
+        assert result["uploaded_by"] == MOCK_EMAIL
         assert result["gcs_path"].startswith("file://")
 
     @pytest.mark.asyncio

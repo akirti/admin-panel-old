@@ -7,6 +7,7 @@ import jwt
 
 from easylifeauth.services.token_manager import TokenManager
 from easylifeauth.errors.auth_error import AuthError
+from mock_data import MOCK_EMAIL
 
 
 class TestTokenManager:
@@ -34,7 +35,7 @@ class TestTokenManager:
         """Test generating tokens"""
         result = await token_manager.generate_tokens(
             user_id="507f1f77bcf86cd799439011",
-            email="test@example.com",
+            email=MOCK_EMAIL,
             roles=["user"]
         )
 
@@ -47,7 +48,7 @@ class TestTokenManager:
         """Test generating tokens with groups and domains"""
         result = await token_manager.generate_tokens(
             user_id="507f1f77bcf86cd799439011",
-            email="test@example.com",
+            email=MOCK_EMAIL,
             roles=["admin"],
             groups=["administrators"],
             domains=["domain1"]
@@ -62,7 +63,7 @@ class TestTokenManager:
         now = datetime.now(timezone.utc)
         payload = {
             "user_id": "507f1f77bcf86cd799439011",
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "roles": ["user"],
             "groups": [],
             "domains": [],
@@ -75,7 +76,7 @@ class TestTokenManager:
         # Mock backend validation
         mock_db.tokens.find_one = AsyncMock(return_value={
             "user_id": "507f1f77bcf86cd799439011",
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "token_hash": token,
             "refresh_token_hash": "refresh_token",
             "expires_at": now + timedelta(hours=1)
@@ -90,7 +91,7 @@ class TestTokenManager:
         now = datetime.now(timezone.utc)
         payload = {
             "user_id": "507f1f77bcf86cd799439011",
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "roles": ["user"],
             "iat": now - timedelta(hours=2),
             "exp": now - timedelta(hours=1),
@@ -115,7 +116,7 @@ class TestTokenManager:
         now = datetime.now(timezone.utc)
         payload = {
             "user_id": "507f1f77bcf86cd799439011",
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "roles": ["user"],
             "iat": now,
             "exp": now + timedelta(minutes=15),
@@ -133,7 +134,7 @@ class TestTokenManager:
         now = datetime.now(timezone.utc)
         payload = {
             "user_id": "507f1f77bcf86cd799439011",
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "roles": ["user"],
             "iat": now,
             "exp": now + timedelta(minutes=15),
@@ -153,7 +154,7 @@ class TestTokenManager:
         """Test refreshing access token - mock verify_token to isolate test"""
         sample_user_data = {
             "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "roles": ["user"],
             "groups": ["viewer"],
             "domains": []
@@ -168,7 +169,7 @@ class TestTokenManager:
         async def mock_verify_token(token, token_type="access"):
             return {
                 "user_id": "507f1f77bcf86cd799439011",
-                "email": "test@example.com",
+                "email": MOCK_EMAIL,
                 "roles": ["user"],
                 "type": "refresh"
             }
@@ -187,7 +188,7 @@ class TestTokenManager:
         async def mock_verify_token(token, token_type="access"):
             return {
                 "user_id": "507f1f77bcf86cd799439011",
-                "email": "test@example.com",
+                "email": MOCK_EMAIL,
                 "roles": ["user"],
                 "type": "refresh"
             }
@@ -204,14 +205,14 @@ class TestTokenManager:
         now = datetime.now(timezone.utc)
         mock_db.tokens.find_one = AsyncMock(return_value={
             "user_id": "507f1f77bcf86cd799439011",
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "token_hash": "token",
             "expires_at": now + timedelta(hours=1)
         })
 
         result = await token_manager.validate_backend_token(
             user_id="507f1f77bcf86cd799439011",
-            email="test@example.com",
+            email=MOCK_EMAIL,
             token="token",
             token_type="access",
             db=mock_db
@@ -238,14 +239,14 @@ class TestTokenManager:
         now = datetime.now(timezone.utc)
         mock_db.tokens.find_one = AsyncMock(return_value={
             "user_id": "507f1f77bcf86cd799439011",
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "refresh_token_hash": "refresh_token",
             "expires_at": now + timedelta(hours=1)
         })
 
         result = await token_manager.validate_backend_token(
             user_id="507f1f77bcf86cd799439011",
-            email="test@example.com",
+            email=MOCK_EMAIL,
             token="refresh_token",
             token_type="refresh",
             db=mock_db
@@ -261,7 +262,7 @@ class TestTokenManager:
 
         result = await token_manager.sync_access_token(
             user_id="507f1f77bcf86cd799439011",
-            email="test@example.com",
+            email=MOCK_EMAIL,
             access_token="access_token",
             refresh_token="refresh_token",
             db=mock_db
@@ -275,13 +276,13 @@ class TestTokenManager:
         """Test syncing access token (update existing)"""
         mock_db.tokens.find_one = AsyncMock(return_value={
             "user_id": "507f1f77bcf86cd799439011",
-            "email": "test@example.com"
+            "email": MOCK_EMAIL
         })
         mock_db.tokens.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
 
         result = await token_manager.sync_access_token(
             user_id="507f1f77bcf86cd799439011",
-            email="test@example.com",
+            email=MOCK_EMAIL,
             access_token="new_access_token",
             refresh_token="new_refresh_token",
             db=mock_db
@@ -298,7 +299,7 @@ class TestTokenManager:
 
         result = await token_manager.sync_access_token(
             user_id="507f1f77bcf86cd799439011",
-            email="test@example.com",
+            email=MOCK_EMAIL,
             access_token="access_token",
             refresh_token="refresh_token",
             db=None  # Uses default self.db
@@ -311,7 +312,7 @@ class TestTokenManager:
         now = datetime.now(timezone.utc)
         payload = {
             "user_id": "507f1f77bcf86cd799439011",
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "roles": ["user"],
             "iat": now,
             "exp": now + timedelta(minutes=15),
@@ -332,7 +333,7 @@ class TestTokenManager:
         now = datetime.now(timezone.utc)
         payload = {
             "user_id": "507f1f77bcf86cd799439011",
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "type": "access"
         }
         token = jwt.encode(payload, "wrong_secret", algorithm="HS256")

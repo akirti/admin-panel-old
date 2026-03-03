@@ -11,6 +11,7 @@ from easylifeauth.api.domain_routes import (
 )
 from easylifeauth.api import dependencies
 from easylifeauth.security.access_control import CurrentUser, require_super_admin, get_current_user
+from mock_data import MOCK_EMAIL_ADMIN, MOCK_EMAIL_USER
 
 
 class TestDomainsPaginationMeta:
@@ -53,7 +54,7 @@ class TestGetUserAccessibleDomains:
 
         current_user = CurrentUser(
             user_id="test",
-            email="admin@example.com",
+            email=MOCK_EMAIL_ADMIN,
             roles=["super-administrator"],
             groups=[],
             domains=[]
@@ -71,7 +72,7 @@ class TestGetUserAccessibleDomains:
 
         current_user = CurrentUser(
             user_id="test",
-            email="user@example.com",
+            email=MOCK_EMAIL_USER,
             roles=["user"],
             groups=[],
             domains=[]
@@ -86,14 +87,14 @@ class TestGetUserAccessibleDomains:
         mock_db = MagicMock()
         mock_db.users.find_one = AsyncMock(return_value={
             "_id": ObjectId(),
-            "email": "user@example.com"
+            "email": MOCK_EMAIL_USER
         })
         mock_user_service = MagicMock()
         mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain1", "domain2"])
 
         current_user = CurrentUser(
             user_id="test",
-            email="user@example.com",
+            email=MOCK_EMAIL_USER,
             roles=["user"],
             groups=[],
             domains=[]
@@ -111,7 +112,7 @@ class TestDomainsRoutes:
         """Create mock super admin user"""
         return CurrentUser(
             user_id="507f1f77bcf86cd799439011",
-            email="admin@example.com",
+            email=MOCK_EMAIL_ADMIN,
             roles=["super_admin", "super-administrator"],
             groups=[],
             domains=[]
@@ -122,7 +123,7 @@ class TestDomainsRoutes:
         """Create mock regular user"""
         return CurrentUser(
             user_id="507f1f77bcf86cd799439012",
-            email="user@example.com",
+            email=MOCK_EMAIL_USER,
             roles=["user"],
             groups=["viewer"],
             domains=["domain1"]

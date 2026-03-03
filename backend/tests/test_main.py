@@ -14,6 +14,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX
+from mock_data import MOCK_EMAIL_BOT, MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV, MOCK_URL_JIRA_EXAMPLE, MOCK_URL_JIRA_TEST
 
 ENV_PREFIX = f"{ENVIRONEMNT_VARIABLE_PREFIX}_"
 
@@ -333,14 +334,14 @@ class TestCORSOrigins:
             "environment.cors.origins": None,
         })
         assert mock_app.call_args[1]["cors_origins"] == [
-            "http://localhost:3000", "http://localhost:5173"
+            MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV
         ]
 
     def test_cors_origins_fallback_when_not_set(self):
         """When cors.origins is not in config at all, should fallback."""
         _, mock_app, _ = _run_main()
         assert mock_app.call_args[1]["cors_origins"] == [
-            "http://localhost:3000", "http://localhost:5173"
+            MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV
         ]
 
     def test_cors_empty_list_triggers_fallback(self):
@@ -349,7 +350,7 @@ class TestCORSOrigins:
             "environment.cors.origins": [],
         })
         assert mock_app.call_args[1]["cors_origins"] == [
-            "http://localhost:3000", "http://localhost:5173"
+            MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV
         ]
 
 
@@ -441,8 +442,8 @@ class TestJiraConfig:
     def test_jira_config_with_all_fields(self):
         """Jira config should be built when base_url is present."""
         jira_raw = {
-            "base_url": "https://jira.example.com",
-            "email": "bot@test.com",
+            "base_url": MOCK_URL_JIRA_EXAMPLE,
+            "email": MOCK_EMAIL_BOT,
             "api_token": "tok123",
             "project_key": "PROJ",
             "issue_type": "Bug",
@@ -462,8 +463,8 @@ class TestJiraConfig:
 
         jira = mock_app.call_args[1]["jira_config"]
         assert jira is not None
-        assert jira["base_url"] == "https://jira.example.com"
-        assert jira["email"] == "bot@test.com"
+        assert jira["base_url"] == MOCK_URL_JIRA_EXAMPLE
+        assert jira["email"] == MOCK_EMAIL_BOT
         assert jira["api_token"] == "tok123"
         assert jira["project_key"] == "PROJ"
         assert jira["issue_type"] == "Bug"
@@ -482,8 +483,8 @@ class TestJiraConfig:
     def test_jira_config_defaults(self):
         """Jira config should use defaults for optional fields."""
         jira_raw = {
-            "base_url": "https://jira.test.com",
-            "email": "bot@test.com",
+            "base_url": MOCK_URL_JIRA_TEST,
+            "email": MOCK_EMAIL_BOT,
             "api_token": "tok",
         }
         _, mock_app, _ = _run_main(config_values={"environment.jira": jira_raw})
@@ -501,7 +502,7 @@ class TestJiraConfig:
 
     def test_jira_config_none_when_no_base_url(self):
         """Jira config should be None when base_url is missing."""
-        jira_raw = {"email": "bot@test.com", "api_token": "tok"}
+        jira_raw = {"email": MOCK_EMAIL_BOT, "api_token": "tok"}
         _, mock_app, _ = _run_main(config_values={"environment.jira": jira_raw})
         assert mock_app.call_args[1]["jira_config"] is None
 
@@ -523,7 +524,7 @@ class TestJiraConfig:
 
     def test_jira_target_days_string_conversion(self):
         """target_days should be converted to int even if string."""
-        jira_raw = {"base_url": "https://jira.test.com", "default_target_days": "21"}
+        jira_raw = {"base_url": MOCK_URL_JIRA_TEST, "default_target_days": "21"}
         _, mock_app, _ = _run_main(config_values={"environment.jira": jira_raw})
         jira = mock_app.call_args[1]["jira_config"]
         assert jira["target_days"] == 21
@@ -632,7 +633,7 @@ class TestEdgeCases:
         assert kwargs["jira_config"] is None
         assert kwargs["gcs_config"] is None
         assert kwargs["cors_origins"] == [
-            "http://localhost:3000", "http://localhost:5173"
+            MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV
         ]
         assert kwargs["file_storage_config"]["type"] == "local"
         assert kwargs["file_storage_config"]["base_path"] == "/tmp/easylife_uploads"

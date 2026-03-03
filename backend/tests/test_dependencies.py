@@ -1,3 +1,4 @@
+from mock_data import MOCK_EMAIL, MOCK_URL_JIRA_BASE
 """Tests for API Dependencies"""
 import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
@@ -409,8 +410,8 @@ class TestInitDependencies:
         mock_init_activity.return_value = MagicMock()
 
         jira_config = {
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "token"
         }
 

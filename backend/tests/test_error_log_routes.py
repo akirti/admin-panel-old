@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from easylifeauth.api.error_log_routes import router, create_pagination_meta
 from easylifeauth.api.dependencies import get_error_log_service
 from easylifeauth.security.access_control import require_super_admin
+from mock_data import MOCK_EMAIL_ADMIN_TEST
 
 
 class TestCreatePaginationMeta:
@@ -92,7 +93,7 @@ class TestErrorLogRoutes:
         """Create a mock super admin user."""
         user = MagicMock()
         user.user_id = "admin_001"
-        user.email = "admin@test.com"
+        user.email = MOCK_EMAIL_ADMIN_TEST
         user.roles = ["super-administrator"]
         user.groups = []
         user.domains = []

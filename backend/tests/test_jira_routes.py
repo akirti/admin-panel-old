@@ -1,3 +1,4 @@
+from mock_data import MOCK_EMAIL, MOCK_URL_FILE_HTTPS, MOCK_URL_JIRA_BROWSE_1, MOCK_URL_JIRA_BROWSE_EXISTING
 """Tests for Jira API Routes"""
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -14,7 +15,7 @@ def mock_current_user():
     """Create mock current user"""
     return CurrentUser(
         user_id="507f1f77bcf86cd799439011",
-        email="test@example.com",
+        email=MOCK_EMAIL,
         roles=["administrator"],
         groups=[],
         domains=[]
@@ -49,7 +50,7 @@ def mock_jira_service():
             "updated": "2024-01-02",
             "reporter": "Test User",
             "assignee": None,
-            "url": "https://jira.example.com/browse/TEST-1"
+            "url": MOCK_URL_JIRA_BROWSE_1
         }
     ])
     mock.get_tasks_by_request_id = AsyncMock(return_value=[
@@ -64,7 +65,7 @@ def mock_jira_service():
             "updated": "2024-01-02",
             "reporter": None,
             "assignee": None,
-            "url": "https://jira.example.com/browse/TEST-1"
+            "url": MOCK_URL_JIRA_BROWSE_1
         }
     ])
     mock.create_ticket = AsyncMock(return_value={
@@ -285,7 +286,7 @@ class TestJiraCreateTaskRoute:
             "jira_integration": {
                 "ticket_id": "existing-123",
                 "ticket_key": "TEST-EXISTING",
-                "ticket_url": "https://jira.example.com/browse/TEST-EXISTING",
+                "ticket_url": MOCK_URL_JIRA_BROWSE_EXISTING,
                 "project_key": "TEST"
             }
         })
@@ -414,7 +415,7 @@ class TestJiraAttachmentRoute:
             "/api/v1/jira/attachments/add",
             json={
                 "ticket_key": "TEST-1",
-                "file_url": "https://example.com/file.txt",
+                "file_url": MOCK_URL_FILE_HTTPS,
                 "file_name": "test.txt"
             }
         )
@@ -430,7 +431,7 @@ class TestJiraAttachmentRoute:
             "/api/v1/jira/attachments/add",
             json={
                 "ticket_key": "TEST-1",
-                "file_url": "https://example.com/file.txt",
+                "file_url": MOCK_URL_FILE_HTTPS,
                 "file_name": "test.txt"
             }
         )
@@ -444,7 +445,7 @@ class TestJiraAttachmentRoute:
             "/api/v1/jira/attachments/add",
             json={
                 "ticket_key": "TEST-1",
-                "file_url": "https://example.com/file.txt",
+                "file_url": MOCK_URL_FILE_HTTPS,
                 "file_name": "test.txt"
             }
         )
@@ -510,7 +511,7 @@ class TestJiraSyncRequestRoute:
             "jira_integration": {
                 "ticket_id": "existing-123",
                 "ticket_key": "TEST-EXISTING",
-                "ticket_url": "https://jira.example.com/browse/TEST-EXISTING",
+                "ticket_url": MOCK_URL_JIRA_BROWSE_EXISTING,
                 "project_key": "TEST"
             }
         })

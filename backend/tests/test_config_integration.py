@@ -20,6 +20,7 @@ from tests.test_config_values import (
     EXPECTED_SECRET_KEY, EXPECTED_SMTP_SERVER, EXPECTED_SMTP_PORT,
     EXPECTED_CORS_ORIGINS, EXPECTED_JIRA_BASE_URL,
 )
+from mock_data import MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV
 
 
 # ---------------------------------------------------------------------------
@@ -501,7 +502,7 @@ class TestRealConfigFiles:
 
         # CORS
         cors_origins = loader.get_config_by_path("environment.cors.origins") or [
-            "http://localhost:3000", "http://localhost:5173"
+            MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV
         ]
 
         # Verify all resolved correctly

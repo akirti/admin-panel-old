@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch, AsyncMock
 import asyncio
 
 from easylifeauth.services.gcs_service import GCSService
+from mock_data import MOCK_URL_SIGNED, MOCK_URL_SIGNED_SHORT
 
 
 class TestGCSServiceInit:
@@ -219,14 +220,14 @@ class TestGCSServiceConfiguredOperations:
     def test_sync_get_signed_url_success(self, mock_service):
         """Test sync get signed URL success"""
         mock_blob = MagicMock()
-        mock_blob.generate_signed_url.return_value = "https://signed-url.example.com"
+        mock_blob.generate_signed_url.return_value = MOCK_URL_SIGNED
         mock_bucket = MagicMock()
         mock_bucket.blob.return_value = mock_blob
 
         mock_service.client.bucket.return_value = mock_bucket
 
         result = mock_service._sync_get_signed_url("path/file.txt", 60, "test-bucket")
-        assert result == "https://signed-url.example.com"
+        assert result == MOCK_URL_SIGNED
 
     def test_sync_get_signed_url_exception(self, mock_service):
         """Test sync get signed URL with exception"""
@@ -371,13 +372,13 @@ class TestGCSServiceAsyncMethods:
     async def test_get_signed_url_success(self, mock_service):
         """Test async get signed URL"""
         mock_blob = MagicMock()
-        mock_blob.generate_signed_url.return_value = "https://signed.url"
+        mock_blob.generate_signed_url.return_value = MOCK_URL_SIGNED_SHORT
         mock_bucket = MagicMock()
         mock_bucket.blob.return_value = mock_blob
         mock_service.client.bucket.return_value = mock_bucket
 
         result = await mock_service.get_signed_url("path/file.txt", 30)
-        assert result == "https://signed.url"
+        assert result == MOCK_URL_SIGNED_SHORT
 
 
 class TestGCSServiceInitWithMockedLibraries:

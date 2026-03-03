@@ -1,3 +1,4 @@
+from mock_data import MOCK_EMAIL, MOCK_EMAIL_ADMIN, MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_CREATOR, MOCK_EMAIL_NOTFOUND, MOCK_EMAIL_USER, MOCK_EMAIL_USER_TEST, MOCK_EMAIL_VIEWER, MOCK_URL_JIRA_LINK
 """Tests for New Scenarios Service"""
 import pytest
 from datetime import datetime, timezone
@@ -21,7 +22,7 @@ class TestNewScenarioService:
         """Sample user data for tests"""
         return {
             "user_id": "507f1f77bcf86cd799439011",
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "full_name": "Test User",
             "username": "testuser",
             "roles": ["user"]
@@ -32,7 +33,7 @@ class TestNewScenarioService:
         """Sample admin user data for tests"""
         return {
             "user_id": "507f1f77bcf86cd799439012",
-            "email": "admin@example.com",
+            "email": MOCK_EMAIL_ADMIN,
             "full_name": "Admin User",
             "username": "admin",
             "roles": ["administrator"]
@@ -87,7 +88,7 @@ class TestNewScenarioService:
                 "name": "Test Scenario",
                 "description": "Test Description",
                 "dataDomain": "test-domain",
-                "email": "test@example.com"
+                "email": MOCK_EMAIL
             },
             current_user=sample_user
         )
@@ -254,7 +255,7 @@ class TestNewScenarioService:
         sample_user_data["_id"] = ObjectId(sample_user_data["_id"])
         mock_db.users.find_one = AsyncMock(return_value=sample_user_data)
 
-        result = await scenario_service.get_user_by_id("test@example.com")
+        result = await scenario_service.get_user_by_id(MOCK_EMAIL)
 
         assert result is not None
 
@@ -263,7 +264,7 @@ class TestNewScenarioService:
         """Test getting non-existent user"""
         mock_db.users.find_one = AsyncMock(return_value=None)
 
-        result = await scenario_service.get_user_by_id("notfound@example.com")
+        result = await scenario_service.get_user_by_id(MOCK_EMAIL_NOTFOUND)
 
         assert result is None
 
@@ -272,7 +273,7 @@ class TestNewScenarioService:
         """Test getting user with exception"""
         mock_db.users.find_one = AsyncMock(side_effect=Exception("DB Error"))
 
-        result = await scenario_service.get_user_by_id("test@example.com")
+        result = await scenario_service.get_user_by_id(MOCK_EMAIL)
 
         assert result is None
 
@@ -351,7 +352,7 @@ class TestNewScenarioService:
         """Test getting user info by ID"""
         mock_db.users.find_one = AsyncMock(return_value={
             "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "email": "user@example.com",
+            "email": MOCK_EMAIL_USER,
             "full_name": "Test User",
             "username": "testuser"
         })
@@ -359,7 +360,7 @@ class TestNewScenarioService:
         result = await scenario_service._get_user_info("507f1f77bcf86cd799439011")
 
         assert result is not None
-        assert result["email"] == "user@example.com"
+        assert result["email"] == MOCK_EMAIL_USER
         assert result["user_id"] == "507f1f77bcf86cd799439011"
 
     @pytest.mark.asyncio
@@ -400,7 +401,7 @@ class TestNewScenarioService:
         service = NewScenarioService(mock_db, mock_token_manager, email_service=None)
 
         # Should not raise
-        await service._send_notifications({"email": "test@example.com"}, "created")
+        await service._send_notifications({"email": MOCK_EMAIL}, "created")
 
     @pytest.mark.asyncio
     async def test_send_notifications_with_recipients(self, scenario_service, mock_email_service):
@@ -409,7 +410,7 @@ class TestNewScenarioService:
 
         await scenario_service._send_notifications(
             {
-                "email": "creator@example.com",
+                "email": MOCK_EMAIL_CREATOR,
                 "email_recipients": ["recipient1@example.com", "recipient2@example.com"],
                 "work_flow": [
                     {"assigned_to_email": "assignee@example.com"}
@@ -431,7 +432,7 @@ class TestNewScenarioService:
 
         # Should not raise, just log the error
         await scenario_service._send_notifications(
-            {"email": "test@example.com"},
+            {"email": MOCK_EMAIL},
             "created"
         )
 
@@ -664,8 +665,8 @@ class TestNewScenarioService:
             request_id="REQ-SCR-0001",
             from_status="S",
             to_status="P",
-            assigned_by={"user_id": "123", "email": "admin@test.com", "full_name": "Admin"},
-            assigned_to={"user_id": "456", "email": "user@test.com", "full_name": "User"},
+            assigned_by={"user_id": "123", "email": MOCK_EMAIL_ADMIN_TEST, "full_name": "Admin"},
+            assigned_to={"user_id": "456", "email": MOCK_EMAIL_USER_TEST, "full_name": "User"},
             comment="Status changed"
         )
 
@@ -686,7 +687,7 @@ class TestNewScenarioService:
             request_id="REQ-SCR-0001",
             from_status="P",
             to_status="A",
-            assigned_by={"user_id": "123", "email": "admin@test.com", "username": "admin"}
+            assigned_by={"user_id": "123", "email": MOCK_EMAIL_ADMIN_TEST, "username": "admin"}
         )
 
         assert result["flowOrder"] == 2
@@ -783,7 +784,7 @@ class TestNewScenarioServiceFileOperations:
         """Sample user data"""
         return {
             "user_id": "507f1f77bcf86cd799439011",
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "roles": ["user"]
         }
 
@@ -792,7 +793,7 @@ class TestNewScenarioServiceFileOperations:
         """Sample admin data"""
         return {
             "user_id": "507f1f77bcf86cd799439012",
-            "email": "admin@example.com",
+            "email": MOCK_EMAIL_ADMIN,
             "roles": ["administrator"]
         }
 
@@ -1042,7 +1043,7 @@ class TestNewScenarioServiceUpdateAdvanced:
         """Sample admin data"""
         return {
             "user_id": "507f1f77bcf86cd799439012",
-            "email": "admin@example.com",
+            "email": MOCK_EMAIL_ADMIN,
             "full_name": "Admin User",
             "roles": ["administrator"]
         }
@@ -1104,7 +1105,7 @@ class TestNewScenarioServiceUpdateAdvanced:
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
             "requestId": "REQ-SCR-0001",
             "user_id": "creator_user_id",
-            "email": "creator@example.com",
+            "email": MOCK_EMAIL_CREATOR,
             "status": "S",
             "_id": ObjectId(),
             "comments": []
@@ -1113,7 +1114,7 @@ class TestNewScenarioServiceUpdateAdvanced:
 
         non_creator = {
             "user_id": "different_user_id",
-            "email": "viewer@example.com",
+            "email": MOCK_EMAIL_VIEWER,
             "full_name": "Viewer User",
             "roles": ["viewer"]
         }
@@ -1135,14 +1136,14 @@ class TestNewScenarioServiceUpdateAdvanced:
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
             "requestId": "REQ-SCR-0001",
             "user_id": "creator_user_id",
-            "email": "creator@example.com",
+            "email": MOCK_EMAIL_CREATOR,
             "status": "S",
             "_id": ObjectId()
         })
 
         non_creator = {
             "user_id": "different_user_id",
-            "email": "viewer@example.com",
+            "email": MOCK_EMAIL_VIEWER,
             "roles": ["viewer"]
         }
 
@@ -1201,7 +1202,7 @@ class TestNewScenarioServiceUpdateAdvanced:
             {
                 "request_id": "REQ-SCR-0001",
                 "jira_links": [
-                    {"url": "https://jira.example.com/JIRA-123", "description": "Related ticket"}
+                    {"url": MOCK_URL_JIRA_LINK, "description": "Related ticket"}
                 ]
             },
             sample_admin
@@ -1218,7 +1219,7 @@ class TestNewScenarioServiceUpdateAdvanced:
             "requestId": "REQ-SCR-0001",
             "status": "S",
             "_id": ObjectId(),
-            "jira_links": [{"url": "https://jira.example.com/JIRA-123"}]
+            "jira_links": [{"url": MOCK_URL_JIRA_LINK}]
         })
         mock_db.scenario_requests.update_one = AsyncMock()
 

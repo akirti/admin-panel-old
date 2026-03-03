@@ -10,6 +10,7 @@ from easylifeauth.api.scenario_request_routes import router
 from easylifeauth.api.dependencies import get_current_user, get_scenario_request_service
 from easylifeauth.security.access_control import require_admin_or_editor
 from easylifeauth.errors.auth_error import AuthError
+from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_EDITOR_TEST, MOCK_EMAIL_OTHER_TEST, MOCK_EMAIL_USER_TEST, MOCK_EMAIL_VIEWER_TEST
 
 
 class TestScenarioRequestRoutes:
@@ -29,7 +30,7 @@ class TestScenarioRequestRoutes:
         # Default get returns matching user for ownership checks on edit/upload
         service.get = AsyncMock(return_value={
             "user_id": "user_123",
-            "email": "user@test.com",
+            "email": MOCK_EMAIL_USER_TEST,
             "request_id": "req_123"
         })
         return service
@@ -38,11 +39,11 @@ class TestScenarioRequestRoutes:
     def mock_user(self):
         """Create mock user"""
         user = MagicMock()
-        user.email = "user@test.com"
+        user.email = MOCK_EMAIL_USER_TEST
         user.user_id = "user_123"
         user.roles = ["user"]
         user.model_dump = MagicMock(return_value={
-            "email": "user@test.com",
+            "email": MOCK_EMAIL_USER_TEST,
             "user_id": "user_123",
             "roles": ["user"]
         })
@@ -52,11 +53,11 @@ class TestScenarioRequestRoutes:
     def mock_admin(self):
         """Create mock admin user"""
         user = MagicMock()
-        user.email = "admin@test.com"
+        user.email = MOCK_EMAIL_ADMIN_TEST
         user.user_id = "admin_123"
         user.roles = ["administrator"]
         user.model_dump = MagicMock(return_value={
-            "email": "admin@test.com",
+            "email": MOCK_EMAIL_ADMIN_TEST,
             "user_id": "admin_123",
             "roles": ["administrator"]
         })
@@ -220,17 +221,17 @@ class TestScenarioRequestRoutes:
         # Mock service returns a request owned by a different user
         mock_scenario_request_service.get = AsyncMock(return_value={
             "user_id": "other_user_456",
-            "email": "other@test.com",
+            "email": MOCK_EMAIL_OTHER_TEST,
             "request_id": "req_123"
         })
         mock_scenario_request_service.update = AsyncMock(return_value={})
 
         other_user = MagicMock()
-        other_user.email = "viewer@test.com"
+        other_user.email = MOCK_EMAIL_VIEWER_TEST
         other_user.user_id = "viewer_789"
         other_user.roles = ["user"]
         other_user.model_dump = MagicMock(return_value={
-            "email": "viewer@test.com",
+            "email": MOCK_EMAIL_VIEWER_TEST,
             "user_id": "viewer_789",
             "roles": ["user"]
         })
@@ -256,7 +257,7 @@ class TestScenarioRequestRoutes:
             "title": "Test Request",
             "status": "new",
             "user_id": "user_123",
-            "email": "user@test.com"
+            "email": MOCK_EMAIL_USER_TEST
         }
         mock_scenario_request_service.get = AsyncMock(return_value=result)
 
@@ -272,15 +273,15 @@ class TestScenarioRequestRoutes:
             "request_id": "req_456",
             "title": "Someone Else's Request",
             "user_id": "other_user_999",
-            "email": "other@test.com"
+            "email": MOCK_EMAIL_OTHER_TEST
         })
 
         viewer = MagicMock()
-        viewer.email = "viewer@test.com"
+        viewer.email = MOCK_EMAIL_VIEWER_TEST
         viewer.user_id = "viewer_123"
         viewer.roles = ["user"]
         viewer.model_dump = MagicMock(return_value={
-            "email": "viewer@test.com",
+            "email": MOCK_EMAIL_VIEWER_TEST,
             "user_id": "viewer_123",
             "roles": ["user"]
         })
@@ -322,16 +323,16 @@ class TestScenarioRequestRoutes:
         """Test that non-creator regular user cannot upload to another user's request"""
         mock_scenario_request_service.get = AsyncMock(return_value={
             "user_id": "other_user_456",
-            "email": "other@test.com",
+            "email": MOCK_EMAIL_OTHER_TEST,
             "request_id": "req_123"
         })
 
         other_user = MagicMock()
-        other_user.email = "viewer@test.com"
+        other_user.email = MOCK_EMAIL_VIEWER_TEST
         other_user.user_id = "viewer_789"
         other_user.roles = ["user"]
         other_user.model_dump = MagicMock(return_value={
-            "email": "viewer@test.com",
+            "email": MOCK_EMAIL_VIEWER_TEST,
             "user_id": "viewer_789",
             "roles": ["user"]
         })
@@ -540,11 +541,11 @@ class TestScenarioRequestRoutesEditorUser:
     def mock_editor(self):
         """Create mock editor user"""
         user = MagicMock()
-        user.email = "editor@test.com"
+        user.email = MOCK_EMAIL_EDITOR_TEST
         user.user_id = "editor_123"
         user.roles = ["editor"]
         user.model_dump = MagicMock(return_value={
-            "email": "editor@test.com",
+            "email": MOCK_EMAIL_EDITOR_TEST,
             "user_id": "editor_123",
             "roles": ["editor"]
         })
@@ -575,7 +576,7 @@ class TestScenarioRequestRoutesEditorUser:
         # Service get returns a request from another user
         mock_scenario_request_service.get = AsyncMock(return_value={
             "user_id": "other_user_999",
-            "email": "other@test.com",
+            "email": MOCK_EMAIL_OTHER_TEST,
             "request_id": "req_456"
         })
         mock_scenario_request_service.update = AsyncMock(return_value={
@@ -605,11 +606,11 @@ class TestScenarioRequestRoutesAdminEndpoints:
     def mock_admin(self):
         """Create mock admin user"""
         user = MagicMock()
-        user.email = "admin@test.com"
+        user.email = MOCK_EMAIL_ADMIN_TEST
         user.user_id = "admin_123"
         user.roles = ["administrator"]
         user.model_dump = MagicMock(return_value={
-            "email": "admin@test.com",
+            "email": MOCK_EMAIL_ADMIN_TEST,
             "user_id": "admin_123",
             "roles": ["administrator"]
         })

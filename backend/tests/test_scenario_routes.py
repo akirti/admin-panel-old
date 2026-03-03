@@ -18,6 +18,7 @@ from easylifeauth.api.dependencies import (
 )
 from easylifeauth.security.access_control import require_admin_or_editor
 from easylifeauth.errors.scenario_error import ScenarioNotFoundError, ScenarioError, ScenarioBadError
+from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_EDITOR_TEST, MOCK_EMAIL_USER_TEST
 
 
 class TestHelperFunctions:
@@ -45,7 +46,7 @@ class TestGetUserAccessibleDomains:
         """Test super admin gets 'all' access"""
         mock_user = MagicMock()
         mock_user.roles = ["super-administrator"]
-        mock_user.email = "admin@test.com"
+        mock_user.email = MOCK_EMAIL_ADMIN_TEST
 
         mock_db = MagicMock()
         mock_user_service = MagicMock()
@@ -58,10 +59,10 @@ class TestGetUserAccessibleDomains:
         """Test regular user gets resolved domains"""
         mock_user = MagicMock()
         mock_user.roles = ["user"]
-        mock_user.email = "user@test.com"
+        mock_user.email = MOCK_EMAIL_USER_TEST
 
         mock_db = MagicMock()
-        mock_db.users.find_one = AsyncMock(return_value={"email": "user@test.com"})
+        mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
 
         mock_user_service = MagicMock()
         mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain-a", "domain-b"])
@@ -74,7 +75,7 @@ class TestGetUserAccessibleDomains:
         """Test user not found returns empty list"""
         mock_user = MagicMock()
         mock_user.roles = ["user"]
-        mock_user.email = "user@test.com"
+        mock_user.email = MOCK_EMAIL_USER_TEST
 
         mock_db = MagicMock()
         mock_db.users.find_one = AsyncMock(return_value=None)
@@ -117,7 +118,7 @@ class TestScenarioRoutes:
     def mock_super_admin(self):
         """Create mock super admin user"""
         user = MagicMock()
-        user.email = "admin@test.com"
+        user.email = MOCK_EMAIL_ADMIN_TEST
         user.user_id = "user_123"
         user.roles = ["super-administrator"]
         return user
@@ -126,7 +127,7 @@ class TestScenarioRoutes:
     def mock_regular_user(self):
         """Create mock regular user"""
         user = MagicMock()
-        user.email = "user@test.com"
+        user.email = MOCK_EMAIL_USER_TEST
         user.user_id = "user_456"
         user.roles = ["user"]
         return user
@@ -135,7 +136,7 @@ class TestScenarioRoutes:
     def mock_editor(self):
         """Create mock editor user"""
         user = MagicMock()
-        user.email = "editor@test.com"
+        user.email = MOCK_EMAIL_EDITOR_TEST
         user.user_id = "user_789"
         user.roles = ["administrator"]
         return user
@@ -175,7 +176,7 @@ class TestScenarioRoutes:
         app.dependency_overrides[get_current_user] = lambda: mock_regular_user
 
         # User is found and has domain access
-        mock_db.users.find_one = AsyncMock(return_value={"email": "user@test.com"})
+        mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
         mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain-a"])
 
         scenarios = [{"key": "scenario-1", "dataDomain": "domain-a", "status": "A"}]
@@ -222,7 +223,7 @@ class TestScenarioRoutes:
         app.dependency_overrides[get_user_service] = lambda: mock_user_service
         app.dependency_overrides[get_current_user] = lambda: mock_regular_user
 
-        mock_db.users.find_one = AsyncMock(return_value={"email": "user@test.com"})
+        mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
         mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain-b"])  # Has access to domain-b
 
         client = TestClient(app)
@@ -357,7 +358,7 @@ class TestScenarioRoutes:
         }
         mock_scenario_service.get = AsyncMock(return_value=result)
 
-        mock_db.users.find_one = AsyncMock(return_value={"email": "user@test.com"})
+        mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
         mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain-b"])
 
         client = TestClient(app)

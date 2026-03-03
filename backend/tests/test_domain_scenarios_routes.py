@@ -14,6 +14,7 @@ from easylifeauth.api.domain_scenarios_routes import (
 )
 from easylifeauth.api.dependencies import get_db, get_user_service
 from easylifeauth.security.access_control import get_current_user, require_super_admin
+from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_USER_TEST
 
 
 class TestHelperFunctions:
@@ -54,7 +55,7 @@ class TestHelperFunctions:
         """Test get_user_accessible_domains for super admin"""
         current_user = MagicMock()
         current_user.roles = ["super-administrator"]
-        current_user.email = "admin@test.com"
+        current_user.email = MOCK_EMAIL_ADMIN_TEST
 
         db = MagicMock()
         user_service = MagicMock()
@@ -67,11 +68,11 @@ class TestHelperFunctions:
         """Test get_user_accessible_domains for regular user"""
         current_user = MagicMock()
         current_user.roles = ["user"]
-        current_user.email = "user@test.com"
+        current_user.email = MOCK_EMAIL_USER_TEST
 
         db = MagicMock()
         db.users = MagicMock()
-        db.users.find_one = AsyncMock(return_value={"email": "user@test.com"})
+        db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
 
         user_service = MagicMock()
         user_service.resolve_user_domains = AsyncMock(return_value=["domain1"])
@@ -84,7 +85,7 @@ class TestHelperFunctions:
         """Test get_user_accessible_domains when user not found"""
         current_user = MagicMock()
         current_user.roles = ["user"]
-        current_user.email = "user@test.com"
+        current_user.email = MOCK_EMAIL_USER_TEST
 
         db = MagicMock()
         db.users = MagicMock()
@@ -127,7 +128,7 @@ class TestDomainScenariosRoutes:
     def mock_super_admin(self):
         """Create mock super admin user"""
         user = MagicMock()
-        user.email = "admin@test.com"
+        user.email = MOCK_EMAIL_ADMIN_TEST
         user.roles = ["super-administrator"]
         return user
 
@@ -214,7 +215,7 @@ class TestDomainScenariosRoutes:
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario.copy())
-        mock_db.users.find_one = AsyncMock(return_value={"email": "admin@test.com"})
+        mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_ADMIN_TEST})
 
         response = client.get(f"/domain-scenarios/{scenario_id}")
         assert response.status_code == 200
@@ -237,7 +238,7 @@ class TestDomainScenariosRoutes:
         # First call with ObjectId returns None (not found), then lookup by key succeeds
         # Note: The route catches exceptions, so we use a working ObjectId that returns None
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario.copy())
-        mock_db.users.find_one = AsyncMock(return_value={"email": "admin@test.com"})
+        mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_ADMIN_TEST})
 
         response = client.get("/domain-scenarios/scenario1")
         assert response.status_code == 200
@@ -573,7 +574,7 @@ class TestDomainScenariosRoutes:
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
-        mock_db.users.find_one = AsyncMock(return_value={"email": "admin@test.com"})
+        mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_ADMIN_TEST})
 
         mock_cursor = MagicMock()
         mock_cursor.__aiter__ = lambda self: self
@@ -629,7 +630,7 @@ class TestDomainScenariosRoutesRegularUser:
     def mock_regular_user(self):
         """Create mock regular user"""
         user = MagicMock()
-        user.email = "user@test.com"
+        user.email = MOCK_EMAIL_USER_TEST
         user.roles = ["user"]
         return user
 
@@ -651,7 +652,7 @@ class TestDomainScenariosRoutesRegularUser:
 
     def test_list_scenarios_domain_filter_no_access(self, client, mock_db, mock_user_service):
         """Test list scenarios with domain filter but no access"""
-        mock_db.users.find_one = AsyncMock(return_value={"email": "user@test.com"})
+        mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
         mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain1"])
 
         response = client.get("/domain-scenarios?domain_key=domain2")
@@ -668,7 +669,7 @@ class TestDomainScenariosRoutesRegularUser:
 
     def test_count_scenarios_domain_filter_no_access(self, client, mock_db, mock_user_service):
         """Test count scenarios with domain filter but no access"""
-        mock_db.users.find_one = AsyncMock(return_value={"email": "user@test.com"})
+        mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
         mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain1"])
 
         response = client.get("/domain-scenarios/count?domain_key=domain2")
@@ -690,7 +691,7 @@ class TestDomainScenariosRoutesRegularUser:
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
-        mock_db.users.find_one = AsyncMock(return_value={"email": "user@test.com"})
+        mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
         mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain1"])
 
         response = client.get(f"/domain-scenarios/{scenario_id}")
@@ -706,7 +707,7 @@ class TestDomainScenariosRoutesRegularUser:
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
-        mock_db.users.find_one = AsyncMock(return_value={"email": "user@test.com"})
+        mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
         mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain1"])
 
         response = client.get(f"/domain-scenarios/{scenario_id}/playboards")

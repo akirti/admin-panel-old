@@ -9,7 +9,7 @@ from bson import ObjectId
 from easylifeauth.api.users_routes import router, create_pagination_meta
 from easylifeauth.api import dependencies
 from easylifeauth.security.access_control import CurrentUser, require_super_admin, require_admin, require_group_admin, get_current_user
-from mock_data import MOCK_PASSWORD, MOCK_PASSWORD_HASH
+from mock_data import MOCK_EMAIL, MOCK_EMAIL_ADMIN, MOCK_EMAIL_ALICE, MOCK_EMAIL_BOB, MOCK_EMAIL_EXISTING, MOCK_EMAIL_GROUPADMIN, MOCK_EMAIL_NEW, MOCK_EMAIL_NEWUSER, MOCK_EMAIL_TARGET, MOCK_EMAIL_USER, MOCK_PASSWORD, MOCK_PASSWORD_HASH
 
 
 class TestPaginationMeta:
@@ -58,7 +58,7 @@ class TestUsersRoutes:
         """Create mock super admin user"""
         return CurrentUser(
             user_id="507f1f77bcf86cd799439011",
-            email="admin@example.com",
+            email=MOCK_EMAIL_ADMIN,
             roles=["super-administrator"],
             groups=[],
             domains=[]
@@ -175,7 +175,7 @@ class TestUsersRoutes:
         """Test getting a specific user"""
         user_data = {
             "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "username": "testuser",
             "full_name": "Test User",
             "is_active": True,
@@ -190,7 +190,7 @@ class TestUsersRoutes:
         response = client.get("/users/507f1f77bcf86cd799439011")
         assert response.status_code == 200
         data = response.json()
-        assert data["email"] == "test@example.com"
+        assert data["email"] == MOCK_EMAIL
 
     def test_get_user_not_found(self, client, mock_db):
         """Test getting non-existent user"""
@@ -207,7 +207,7 @@ class TestUsersRoutes:
         )
 
         response = client.post("/users", json={
-            "email": "newuser@example.com",
+            "email": MOCK_EMAIL_NEWUSER,
             "username": "newuser",
             "password": MOCK_PASSWORD,
             "full_name": "New User",
@@ -220,15 +220,15 @@ class TestUsersRoutes:
 
         assert response.status_code == 201
         data = response.json()
-        assert data["email"] == "newuser@example.com"
+        assert data["email"] == MOCK_EMAIL_NEWUSER
         mock_activity_log.log.assert_called_once()
 
     def test_create_user_email_exists(self, client, mock_db):
         """Test creating user with existing email"""
-        mock_db.users.find_one.return_value = {"email": "existing@example.com"}
+        mock_db.users.find_one.return_value = {"email": MOCK_EMAIL_EXISTING}
 
         response = client.post("/users", json={
-            "email": "existing@example.com",
+            "email": MOCK_EMAIL_EXISTING,
             "username": "newuser",
             "password": MOCK_PASSWORD,
             "full_name": "New User",
@@ -248,7 +248,7 @@ class TestUsersRoutes:
         mock_db.users.find_one.side_effect = [None, {"username": "existinguser"}]
 
         response = client.post("/users", json={
-            "email": "new@example.com",
+            "email": MOCK_EMAIL_NEW,
             "username": "existinguser",
             "password": MOCK_PASSWORD,
             "full_name": "New User",
@@ -269,7 +269,7 @@ class TestUsersRoutes:
         )
 
         response = client.post("/users", json={
-            "email": "newuser@example.com",
+            "email": MOCK_EMAIL_NEWUSER,
             "username": "newuser",
             "password": MOCK_PASSWORD,
             "full_name": "New User",
@@ -287,7 +287,7 @@ class TestUsersRoutes:
         """Test updating a user"""
         existing_user = {
             "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "username": "testuser",
             "full_name": "Test User",
             "is_active": True,
@@ -321,7 +321,7 @@ class TestUsersRoutes:
         """Test deleting a user"""
         mock_db.users.find_one.return_value = {
             "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "email": "test@example.com"
+            "email": MOCK_EMAIL
         }
         mock_db.users.delete_one.return_value = MagicMock(deleted_count=1)
 
@@ -342,7 +342,7 @@ class TestUsersRoutes:
         """Test toggling user status"""
         mock_db.users.find_one.return_value = {
             "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "is_active": True
         }
 
@@ -362,7 +362,7 @@ class TestUsersRoutes:
         """Test sending password reset email"""
         mock_db.users.find_one.return_value = {
             "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "full_name": "Test User"
         }
 
@@ -374,7 +374,7 @@ class TestUsersRoutes:
         """Test password reset without sending email"""
         mock_db.users.find_one.return_value = {
             "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "full_name": "Test User"
         }
 
@@ -388,7 +388,7 @@ class TestUsersRoutes:
         """Test admin resetting user password"""
         mock_db.users.find_one.return_value = {
             "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "full_name": "Test User"
         }
 
@@ -401,7 +401,7 @@ class TestUsersRoutes:
         """Test admin reset password without email"""
         mock_db.users.find_one.return_value = {
             "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "full_name": "Test User"
         }
 
@@ -532,7 +532,7 @@ class TestAssignedCustomers:
     def mock_user(self):
         return CurrentUser(
             user_id="507f1f77bcf86cd799439011",
-            email="user@example.com",
+            email=MOCK_EMAIL_USER,
             roles=["user"],
             groups=["group-a"],
             domains=[]
@@ -740,7 +740,7 @@ class TestCustomerTags:
     def mock_user(self):
         return CurrentUser(
             user_id="507f1f77bcf86cd799439011",
-            email="user@example.com",
+            email=MOCK_EMAIL_USER,
             roles=["user"],
             groups=["group-a"],
             domains=[]
@@ -874,7 +874,7 @@ class TestSendPasswordResetEmailExtended:
     def mock_super_admin(self):
         return CurrentUser(
             user_id="507f1f77bcf86cd799439011",
-            email="admin@example.com",
+            email=MOCK_EMAIL_ADMIN,
             roles=["super-administrator"],
             groups=[],
             domains=[]
@@ -918,10 +918,10 @@ class TestSendPasswordResetEmailExtended:
 
     def test_send_password_reset_email_lookup_by_email(self, client, mock_db, mock_email_service):
         """Test password reset falls back to email lookup (lines 526-527)."""
-        # ObjectId("test@example.com") raises before find_one is called in the try block,
+        # ObjectId(MOCK_EMAIL) raises before find_one is called in the try block,
         # so find_one is only called once in the except block (email lookup).
         mock_db.users.find_one = AsyncMock(return_value=
-            {"_id": ObjectId(), "email": "test@example.com", "full_name": "Test User"}
+            {"_id": ObjectId(), "email": MOCK_EMAIL, "full_name": "Test User"}
         )
 
         response = client.post("/users/test@example.com/send-password-reset?send_email=true")
@@ -939,7 +939,7 @@ class TestSendPasswordResetEmailExtended:
         """Test password reset when email sending fails (lines 545-546)."""
         mock_db.users.find_one = AsyncMock(return_value={
             "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "full_name": "Test User"
         })
         mock_email_service.send_password_reset_email = AsyncMock(
@@ -955,7 +955,7 @@ class TestSendPasswordResetEmailExtended:
         """Test password reset when email service is None."""
         mock_db.users.find_one = AsyncMock(return_value={
             "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "full_name": "Test User"
         })
         # Override email service to None
@@ -974,7 +974,7 @@ class TestAdminResetPasswordExtended:
     def mock_super_admin(self):
         return CurrentUser(
             user_id="507f1f77bcf86cd799439011",
-            email="admin@example.com",
+            email=MOCK_EMAIL_ADMIN,
             roles=["super-administrator"],
             groups=[],
             domains=[]
@@ -1020,7 +1020,7 @@ class TestAdminResetPasswordExtended:
         """Test admin reset password when email delivery fails (lines 589-591)."""
         mock_db.users.find_one = AsyncMock(return_value={
             "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "full_name": "Test User"
         })
         mock_email_service.send_welcome_email = AsyncMock(
@@ -1036,7 +1036,7 @@ class TestAdminResetPasswordExtended:
         """Test admin reset password when email service is None (lines 592-593)."""
         mock_db.users.find_one = AsyncMock(return_value={
             "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "full_name": "Test User"
         })
         # Override email service to None
@@ -1051,9 +1051,9 @@ class TestAdminResetPasswordExtended:
     def test_admin_reset_password_lookup_by_email_fallback(self, client, mock_db, mock_email_service):
         """Test admin reset password falls back to email lookup."""
         user_doc = {
-            "_id": ObjectId(), "email": "test@example.com", "full_name": "Test User"
+            "_id": ObjectId(), "email": MOCK_EMAIL, "full_name": "Test User"
         }
-        # ObjectId("test@example.com") raises before find_one, so only one find_one call
+        # ObjectId(MOCK_EMAIL) raises before find_one, so only one find_one call
         mock_db.users.find_one = AsyncMock(return_value=user_doc)
 
         response = client.post("/users/test@example.com/reset-password?send_email=true")
@@ -1069,7 +1069,7 @@ class TestUpdateUserPrivilegeEscalation:
         """A group-admin user who is NOT super-administrator."""
         return CurrentUser(
             user_id="507f1f77bcf86cd799439012",
-            email="groupadmin@example.com",
+            email=MOCK_EMAIL_GROUPADMIN,
             roles=["group-administrator"],
             groups=["group-a"],
             domains=[]
@@ -1079,7 +1079,7 @@ class TestUpdateUserPrivilegeEscalation:
     def mock_super_admin(self):
         return CurrentUser(
             user_id="507f1f77bcf86cd799439011",
-            email="admin@example.com",
+            email=MOCK_EMAIL_ADMIN,
             roles=["super-administrator"],
             groups=[],
             domains=[]
@@ -1119,7 +1119,7 @@ class TestUpdateUserPrivilegeEscalation:
         """Non-super-admin cannot assign administrator role (lines 399-408)."""
         existing_user = {
             "_id": ObjectId("507f1f77bcf86cd799439013"),
-            "email": "target@example.com",
+            "email": MOCK_EMAIL_TARGET,
             "username": "target",
             "full_name": "Target User",
             "is_active": True,
@@ -1145,7 +1145,7 @@ class TestUpdateUserPrivilegeEscalation:
         """Non-super-admin cannot assign super-administrator role (lines 401-405)."""
         existing_user = {
             "_id": ObjectId("507f1f77bcf86cd799439013"),
-            "email": "target@example.com",
+            "email": MOCK_EMAIL_TARGET,
             "username": "target",
             "full_name": "Target User",
             "is_active": True,
@@ -1170,7 +1170,7 @@ class TestUpdateUserPrivilegeEscalation:
         """Super-admin CAN assign administrator role (line 402 guard passes)."""
         existing_user = {
             "_id": ObjectId("507f1f77bcf86cd799439013"),
-            "email": "target@example.com",
+            "email": MOCK_EMAIL_TARGET,
             "username": "target",
             "full_name": "Target User",
             "is_active": True,
@@ -1198,7 +1198,7 @@ class TestUpdateUserPrivilegeEscalation:
         """Test that updating user groups triggers resolve_groups (line 410)."""
         existing_user = {
             "_id": ObjectId("507f1f77bcf86cd799439013"),
-            "email": "target@example.com",
+            "email": MOCK_EMAIL_TARGET,
             "username": "target",
             "full_name": "Target User",
             "is_active": True,
@@ -1231,7 +1231,7 @@ class TestListUsersExtended:
     def mock_super_admin(self):
         return CurrentUser(
             user_id="507f1f77bcf86cd799439011",
-            email="admin@example.com",
+            email=MOCK_EMAIL_ADMIN,
             roles=["super-administrator"],
             groups=[],
             domains=[]
@@ -1309,7 +1309,7 @@ class TestListUsersExtended:
         users = [
             {
                 "_id": ObjectId("507f1f77bcf86cd799439011"),
-                "email": "alice@example.com",
+                "email": MOCK_EMAIL_ALICE,
                 "username": "alice",
                 "full_name": "Alice",
                 "is_active": True,
@@ -1322,7 +1322,7 @@ class TestListUsersExtended:
             },
             {
                 "_id": ObjectId("507f1f77bcf86cd799439012"),
-                "email": "bob@example.com",
+                "email": MOCK_EMAIL_BOB,
                 "username": "bob",
                 "full_name": "Bob",
                 "is_active": True,
@@ -1375,7 +1375,7 @@ class TestCreateUserExtended:
     def mock_super_admin(self):
         return CurrentUser(
             user_id="507f1f77bcf86cd799439011",
-            email="admin@example.com",
+            email=MOCK_EMAIL_ADMIN,
             roles=["super-administrator"],
             groups=[],
             domains=[]
@@ -1430,7 +1430,7 @@ class TestCreateUserExtended:
         mock_db.groups.find_one = AsyncMock(return_value={"groupId": "team-a"})
 
         response = client.post("/users", json={
-            "email": "newuser@example.com",
+            "email": MOCK_EMAIL_NEWUSER,
             "username": "newuser",
             "password": MOCK_PASSWORD,
             "full_name": "New User",
@@ -1451,7 +1451,7 @@ class TestCreateUserExtended:
         )
 
         response = client.post("/users", json={
-            "email": "newuser@example.com",
+            "email": MOCK_EMAIL_NEWUSER,
             "username": "newuser",
             "password": MOCK_PASSWORD,
             "full_name": "New User",
@@ -1465,7 +1465,7 @@ class TestCreateUserExtended:
         # User creation should still succeed even if email fails
         assert response.status_code == 201
         data = response.json()
-        assert data["email"] == "newuser@example.com"
+        assert data["email"] == MOCK_EMAIL_NEWUSER
         mock_email_service.send_welcome_email.assert_called_once()
         mock_activity_log.log.assert_called_once()
 

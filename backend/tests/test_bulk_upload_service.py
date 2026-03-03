@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 from bson import ObjectId
 
 from easylifeauth.services.bulk_upload_service import BulkUploadService, BulkUploadResult
-from mock_data import MOCK_PASSWORD_HASH
+from mock_data import MOCK_EMAIL, MOCK_PASSWORD_HASH
 
 
 class TestBulkUploadResult:
@@ -81,7 +81,7 @@ class TestBulkUploadService:
 
     def test_validate_columns_valid(self, service):
         """Test column validation with valid columns"""
-        df = pd.DataFrame({"email": ["test@example.com"]})
+        df = pd.DataFrame({"email": [MOCK_EMAIL]})
         missing = service.validate_columns(df, "users")
         assert len(missing) == 0
 
@@ -96,7 +96,7 @@ class TestBulkUploadService:
         csv_content = b"email,username\ntest@example.com,testuser"
         df = service.parse_file(csv_content, "test.csv")
         assert len(df) == 1
-        assert df.iloc[0]["email"] == "test@example.com"
+        assert df.iloc[0]["email"] == MOCK_EMAIL
 
     def test_parse_file_unsupported_format(self, service):
         """Test parsing unsupported file format"""
@@ -169,7 +169,7 @@ class TestBulkUploadService:
 
     def test_validate_email_valid(self, service):
         """Test email validation with valid email"""
-        assert service._validate_email("test@example.com") is True
+        assert service._validate_email(MOCK_EMAIL) is True
 
     def test_validate_email_invalid(self, service):
         """Test email validation with invalid email"""
@@ -185,7 +185,7 @@ class TestBulkUploadService:
     async def test_process_users_success(self, service, mock_db):
         """Test processing users successfully"""
         df = pd.DataFrame({
-            "email": ["test@example.com"],
+            "email": [MOCK_EMAIL],
             "username": ["testuser"],
             "full_name": ["Test User"],
             "roles": ["user"],
@@ -223,10 +223,10 @@ class TestBulkUploadService:
     @pytest.mark.asyncio
     async def test_process_users_existing_user(self, service, mock_db):
         """Test processing existing user (update)"""
-        mock_db.users.find_one = AsyncMock(return_value={"email": "test@example.com"})
+        mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL})
 
         df = pd.DataFrame({
-            "email": ["test@example.com"],
+            "email": [MOCK_EMAIL],
             "username": ["testuser"]
         })
 
@@ -238,7 +238,7 @@ class TestBulkUploadService:
     async def test_process_users_invalid_username(self, service, mock_db):
         """Test processing user with invalid username"""
         df = pd.DataFrame({
-            "email": ["test@example.com"],
+            "email": [MOCK_EMAIL],
             "username": ["test@user!"]  # Invalid characters
         })
 
@@ -252,7 +252,7 @@ class TestBulkUploadService:
         service = BulkUploadService(mock_db, password_hasher=hasher)
 
         df = pd.DataFrame({
-            "email": ["test@example.com"],
+            "email": [MOCK_EMAIL],
             "username": ["testuser"]
         })
 
@@ -268,7 +268,7 @@ class TestBulkUploadService:
         service = BulkUploadService(mock_db, email_service=email_service)
 
         df = pd.DataFrame({
-            "email": ["test@example.com"],
+            "email": [MOCK_EMAIL],
             "username": ["testuser"]
         })
 
@@ -284,7 +284,7 @@ class TestBulkUploadService:
         service = BulkUploadService(mock_db, email_service=email_service)
 
         df = pd.DataFrame({
-            "email": ["test@example.com"],
+            "email": [MOCK_EMAIL],
             "username": ["testuser"]
         })
 

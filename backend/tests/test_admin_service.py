@@ -6,7 +6,7 @@ from bson import ObjectId
 
 from easylifeauth.services.admin_service import AdminService
 from easylifeauth.errors.auth_error import AuthError
-from mock_data import MOCK_PASSWORD_HASH
+from mock_data import MOCK_EMAIL, MOCK_EMAIL_DELETE, MOCK_PASSWORD_HASH
 
 
 class TestAdminService:
@@ -698,7 +698,7 @@ class TestAdminService:
         user_id = "507f1f77bcf86cd799439011"
         user_data = {
             "_id": ObjectId(user_id),
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "username": "testuser",
             "password_hash": MOCK_PASSWORD_HASH,
             "roles": ["user"]
@@ -710,7 +710,7 @@ class TestAdminService:
 
         assert result is not None
         assert result["_id"] == user_id
-        assert result["email"] == "test@example.com"
+        assert result["email"] == MOCK_EMAIL
         assert "password_hash" not in result
 
     @pytest.mark.asyncio
@@ -737,7 +737,7 @@ class TestAdminService:
         target_user_id = "507f1f77bcf86cd799439011"
         target_user = {
             "_id": ObjectId(target_user_id),
-            "email": "delete@example.com"
+            "email": MOCK_EMAIL_DELETE
         }
 
         mock_db.users.find_one = AsyncMock(return_value=target_user)
@@ -806,7 +806,7 @@ class TestAdminService:
         target_user_id = "507f1f77bcf86cd799439011"
         target_user = {
             "_id": ObjectId(target_user_id),
-            "email": "delete@example.com"
+            "email": MOCK_EMAIL_DELETE
         }
 
         mock_db.users.find_one = AsyncMock(return_value=target_user)
@@ -828,7 +828,7 @@ class TestAdminService:
         target_user_id = "507f1f77bcf86cd799439011"
         target_user = {
             "_id": ObjectId(target_user_id),
-            "email": "delete@example.com"
+            "email": MOCK_EMAIL_DELETE
         }
 
         mock_db.users.find_one = AsyncMock(return_value=target_user)

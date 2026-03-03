@@ -15,6 +15,7 @@ from easylifeauth.api.export_routes import (
 )
 from easylifeauth.api.dependencies import get_db
 from easylifeauth.security.access_control import require_super_admin
+from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_USER1_TEST, MOCK_EMAIL_USER2_TEST
 
 
 class TestHelperFunctions:
@@ -136,7 +137,7 @@ class TestExportRoutes:
     def mock_super_admin(self):
         """Create mock super admin user"""
         user = MagicMock()
-        user.email = "admin@test.com"
+        user.email = MOCK_EMAIL_ADMIN_TEST
         user.roles = ["super-administrator"]
         return user
 
@@ -160,8 +161,8 @@ class TestExportRoutes:
     def test_export_users_csv(self, client, mock_db):
         """Test export users to CSV"""
         users = [
-            {"_id": ObjectId(), "email": "user1@test.com", "name": "User 1"},
-            {"_id": ObjectId(), "email": "user2@test.com", "name": "User 2"}
+            {"_id": ObjectId(), "email": MOCK_EMAIL_USER1_TEST, "name": "User 1"},
+            {"_id": ObjectId(), "email": MOCK_EMAIL_USER2_TEST, "name": "User 2"}
         ]
 
         mock_collection = MagicMock()
@@ -174,7 +175,7 @@ class TestExportRoutes:
 
     def test_export_users_csv_with_filter(self, client, mock_db):
         """Test export users to CSV with filter"""
-        users = [{"_id": ObjectId(), "email": "user1@test.com", "is_active": True}]
+        users = [{"_id": ObjectId(), "email": MOCK_EMAIL_USER1_TEST, "is_active": True}]
 
         mock_collection = MagicMock()
         mock_collection.find = MagicMock(return_value=self._create_mock_cursor(users))
@@ -186,8 +187,8 @@ class TestExportRoutes:
     def test_export_users_json(self, client, mock_db):
         """Test export users to JSON"""
         users = [
-            {"_id": ObjectId(), "email": "user1@test.com", "name": "User 1"},
-            {"_id": ObjectId(), "email": "user2@test.com", "name": "User 2"}
+            {"_id": ObjectId(), "email": MOCK_EMAIL_USER1_TEST, "name": "User 1"},
+            {"_id": ObjectId(), "email": MOCK_EMAIL_USER2_TEST, "name": "User 2"}
         ]
 
         mock_collection = MagicMock()
@@ -363,7 +364,7 @@ class TestExportRoutesEmptyData:
     def mock_super_admin(self):
         """Create mock super admin user"""
         user = MagicMock()
-        user.email = "admin@test.com"
+        user.email = MOCK_EMAIL_ADMIN_TEST
         user.roles = ["super-administrator"]
         return user
 

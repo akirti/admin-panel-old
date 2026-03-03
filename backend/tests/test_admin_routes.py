@@ -1,3 +1,4 @@
+from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_SUPERADMIN, MOCK_EMAIL_USER1_TEST, MOCK_EMAIL_USER2_TEST, MOCK_EMAIL_USER_TEST
 """Tests for Admin Management Routes"""
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -32,13 +33,13 @@ def app(mock_admin_service):
     async def mock_require_group_admin():
         return MagicMock(
             user_id="admin_user_id",
-            email="admin@test.com",
+            email=MOCK_EMAIL_ADMIN_TEST,
             roles=["administrator"],
             groups=["administrator"],
             domains=["*"],
             model_dump=lambda: {
                 "user_id": "admin_user_id",
-                "email": "admin@test.com",
+                "email": MOCK_EMAIL_ADMIN_TEST,
                 "roles": ["administrator"],
                 "groups": ["administrator"],
                 "domains": ["*"]
@@ -48,13 +49,13 @@ def app(mock_admin_service):
     async def mock_require_super_admin():
         return MagicMock(
             user_id="super_admin_id",
-            email="superadmin@test.com",
+            email=MOCK_EMAIL_SUPERADMIN,
             roles=["super-administrator"],
             groups=["administrator"],
             domains=["*"],
             model_dump=lambda: {
                 "user_id": "super_admin_id",
-                "email": "superadmin@test.com",
+                "email": MOCK_EMAIL_SUPERADMIN,
                 "roles": ["super-administrator"],
                 "groups": ["administrator"],
                 "domains": ["*"]
@@ -81,8 +82,8 @@ class TestGetAllUsers:
         """Test successful get all users"""
         result = {
             "users": [
-                {"user_id": "1", "email": "user1@test.com"},
-                {"user_id": "2", "email": "user2@test.com"}
+                {"user_id": "1", "email": MOCK_EMAIL_USER1_TEST},
+                {"user_id": "2", "email": MOCK_EMAIL_USER2_TEST}
             ],
             "total": 2,
             "page": 0,
@@ -99,7 +100,7 @@ class TestGetAllUsers:
     def test_get_all_users_with_pagination(self, client, mock_admin_service):
         """Test get all users with pagination"""
         result = {
-            "users": [{"user_id": "1", "email": "user1@test.com"}],
+            "users": [{"user_id": "1", "email": MOCK_EMAIL_USER1_TEST}],
             "total": 100,
             "page": 2,
             "limit": 10
@@ -128,7 +129,7 @@ class TestGetUser:
         user_id = str(ObjectId())
         result = {
             "user_id": user_id,
-            "email": "user@test.com",
+            "email": MOCK_EMAIL_USER_TEST,
             "username": "testuser",
             "full_name": "Test User",
             "roles": ["user"],
@@ -140,7 +141,7 @@ class TestGetUser:
         response = client.get(f"{API_BASE_ROUTE}/admin/management/users/{user_id}")
         assert response.status_code == 200
         data = response.json()
-        assert data["email"] == "user@test.com"
+        assert data["email"] == MOCK_EMAIL_USER_TEST
 
     def test_get_user_not_found(self, client, mock_admin_service):
         """Test get user not found"""

@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from bson import ObjectId
 
 from easylifeauth.services.distribution_list_service import DistributionListService
+from mock_data import MOCK_EMAIL, MOCK_EMAIL_ALICE, MOCK_EMAIL_BOB, MOCK_EMAIL_CHARLIE, MOCK_EMAIL_NEW, MOCK_EMAIL_SHARED
 
 
 VALID_OID = "507f1f77bcf86cd799439011"
@@ -38,7 +39,7 @@ class TestDistributionListService:
             "name": "Dev Team",
             "description": "Development team distribution list",
             "type": "team",
-            "emails": ["alice@example.com", "bob@example.com"],
+            "emails": [MOCK_EMAIL_ALICE, MOCK_EMAIL_BOB],
             "is_active": True,
             "created_at": datetime(2025, 1, 1, tzinfo=timezone.utc),
             "created_by": USER_ID,
@@ -55,7 +56,7 @@ class TestDistributionListService:
             "name": "QA Team",
             "description": "QA team distribution list",
             "type": "team",
-            "emails": ["charlie@example.com", "bob@example.com"],
+            "emails": [MOCK_EMAIL_CHARLIE, MOCK_EMAIL_BOB],
             "is_active": True,
             "created_at": datetime(2025, 1, 2, tzinfo=timezone.utc),
             "created_by": USER_ID,
@@ -309,7 +310,7 @@ class TestDistributionListService:
 
         result = await service.get_emails_by_key("dev-team")
 
-        assert result == ["alice@example.com", "bob@example.com"]
+        assert result == [MOCK_EMAIL_ALICE, MOCK_EMAIL_BOB]
 
     @pytest.mark.asyncio
     async def test_get_emails_by_key_not_found(self, service, mock_db):
@@ -355,7 +356,7 @@ class TestDistributionListService:
 
         # bob@example.com appears in both lists but should be deduplicated
         assert sorted(result) == sorted(
-            ["alice@example.com", "bob@example.com", "charlie@example.com"]
+            [MOCK_EMAIL_ALICE, MOCK_EMAIL_BOB, MOCK_EMAIL_CHARLIE]
         )
 
     @pytest.mark.asyncio
@@ -376,13 +377,13 @@ class TestDistributionListService:
         list_a = {
             "_id": ObjectId(VALID_OID),
             "key": "list-a",
-            "emails": ["shared@example.com", "a@example.com"],
+            "emails": [MOCK_EMAIL_SHARED, "a@example.com"],
             "is_active": True,
         }
         list_b = {
             "_id": ObjectId(VALID_OID_2),
             "key": "list-b",
-            "emails": ["shared@example.com", "b@example.com"],
+            "emails": [MOCK_EMAIL_SHARED, "b@example.com"],
             "is_active": True,
         }
         mock_cursor = MagicMock()
@@ -393,7 +394,7 @@ class TestDistributionListService:
         result = await service.get_emails_by_type("team")
 
         assert len(result) == 3
-        assert set(result) == {"shared@example.com", "a@example.com", "b@example.com"}
+        assert set(result) == {MOCK_EMAIL_SHARED, "a@example.com", "b@example.com"}
 
     @pytest.mark.asyncio
     async def test_get_emails_by_type_missing_emails_field(self, service, mock_db):
@@ -432,7 +433,7 @@ class TestDistributionListService:
             "name": "Dev Team",
             "description": "Development team",
             "type": "team",
-            "emails": ["alice@example.com", "bob@example.com"],
+            "emails": [MOCK_EMAIL_ALICE, MOCK_EMAIL_BOB],
         }
         result = await service.create(data, user_id=USER_ID)
 
@@ -442,7 +443,7 @@ class TestDistributionListService:
         assert insert_arg["key"] == "dev-team"
         assert insert_arg["name"] == "Dev Team"
         assert insert_arg["type"] == "team"
-        assert insert_arg["emails"] == ["alice@example.com", "bob@example.com"]
+        assert insert_arg["emails"] == [MOCK_EMAIL_ALICE, MOCK_EMAIL_BOB]
         assert insert_arg["is_active"] is True
         assert insert_arg["created_by"] == USER_ID
         assert insert_arg["updated_by"] == USER_ID
@@ -664,18 +665,18 @@ class TestDistributionListService:
         )
         mock_db.distribution_lists.find_one = AsyncMock(return_value=sample_dist_list)
 
-        result = await service.add_email(VALID_OID, "new@example.com", user_id=USER_ID)
+        result = await service.add_email(VALID_OID, MOCK_EMAIL_NEW, user_id=USER_ID)
 
         assert result is not None
         update_call = mock_db.distribution_lists.update_one.call_args
         assert update_call[0][0] == {"_id": ObjectId(VALID_OID)}
-        assert update_call[0][1]["$addToSet"] == {"emails": "new@example.com"}
+        assert update_call[0][1]["$addToSet"] == {"emails": MOCK_EMAIL_NEW}
         assert update_call[0][1]["$set"]["updated_by"] == USER_ID
 
     @pytest.mark.asyncio
     async def test_add_email_invalid_objectid(self, service, mock_db):
         """Test add_email returns None for invalid ObjectId"""
-        result = await service.add_email(INVALID_OID, "test@example.com")
+        result = await service.add_email(INVALID_OID, MOCK_EMAIL)
 
         assert result is None
 
@@ -686,7 +687,7 @@ class TestDistributionListService:
             return_value=MagicMock(matched_count=0)
         )
 
-        result = await service.add_email(VALID_OID, "test@example.com", user_id=USER_ID)
+        result = await service.add_email(VALID_OID, MOCK_EMAIL, user_id=USER_ID)
 
         assert result is None
 
@@ -698,7 +699,7 @@ class TestDistributionListService:
         )
         mock_db.distribution_lists.find_one = AsyncMock(return_value=sample_dist_list)
 
-        await service.add_email(VALID_OID, "new@example.com")
+        await service.add_email(VALID_OID, MOCK_EMAIL_NEW)
 
         update_call = mock_db.distribution_lists.update_one.call_args
         assert update_call[0][1]["$set"]["updated_by"] is None
@@ -711,7 +712,7 @@ class TestDistributionListService:
         )
         mock_db.distribution_lists.find_one = AsyncMock(return_value=sample_dist_list)
 
-        await service.add_email(VALID_OID, "alice@example.com", user_id=USER_ID)
+        await service.add_email(VALID_OID, MOCK_EMAIL_ALICE, user_id=USER_ID)
 
         update_call = mock_db.distribution_lists.update_one.call_args
         assert "$addToSet" in update_call[0][1]
@@ -729,19 +730,19 @@ class TestDistributionListService:
         mock_db.distribution_lists.find_one = AsyncMock(return_value=sample_dist_list)
 
         result = await service.remove_email(
-            VALID_OID, "bob@example.com", user_id=USER_ID
+            VALID_OID, MOCK_EMAIL_BOB, user_id=USER_ID
         )
 
         assert result is not None
         update_call = mock_db.distribution_lists.update_one.call_args
         assert update_call[0][0] == {"_id": ObjectId(VALID_OID)}
-        assert update_call[0][1]["$pull"] == {"emails": "bob@example.com"}
+        assert update_call[0][1]["$pull"] == {"emails": MOCK_EMAIL_BOB}
         assert update_call[0][1]["$set"]["updated_by"] == USER_ID
 
     @pytest.mark.asyncio
     async def test_remove_email_invalid_objectid(self, service, mock_db):
         """Test remove_email returns None for invalid ObjectId"""
-        result = await service.remove_email(INVALID_OID, "test@example.com")
+        result = await service.remove_email(INVALID_OID, MOCK_EMAIL)
 
         assert result is None
 
@@ -753,7 +754,7 @@ class TestDistributionListService:
         )
 
         result = await service.remove_email(
-            VALID_OID, "test@example.com", user_id=USER_ID
+            VALID_OID, MOCK_EMAIL, user_id=USER_ID
         )
 
         assert result is None
@@ -766,7 +767,7 @@ class TestDistributionListService:
         )
         mock_db.distribution_lists.find_one = AsyncMock(return_value=sample_dist_list)
 
-        await service.remove_email(VALID_OID, "bob@example.com")
+        await service.remove_email(VALID_OID, MOCK_EMAIL_BOB)
 
         update_call = mock_db.distribution_lists.update_one.call_args
         assert update_call[0][1]["$set"]["updated_by"] is None
@@ -779,7 +780,7 @@ class TestDistributionListService:
         )
         mock_db.distribution_lists.find_one = AsyncMock(return_value=sample_dist_list)
 
-        await service.remove_email(VALID_OID, "bob@example.com", user_id=USER_ID)
+        await service.remove_email(VALID_OID, MOCK_EMAIL_BOB, user_id=USER_ID)
 
         update_call = mock_db.distribution_lists.update_one.call_args
         assert "$pull" in update_call[0][1]
@@ -1004,7 +1005,7 @@ class TestDistributionListService:
         )
         mock_db.distribution_lists.find_one = AsyncMock(return_value=sample_dist_list)
 
-        result = await service.add_email(VALID_OID, "new@example.com", user_id=USER_ID)
+        result = await service.add_email(VALID_OID, MOCK_EMAIL_NEW, user_id=USER_ID)
 
         assert result["key"] == "dev-team"
 
@@ -1019,7 +1020,7 @@ class TestDistributionListService:
         mock_db.distribution_lists.find_one = AsyncMock(return_value=sample_dist_list)
 
         result = await service.remove_email(
-            VALID_OID, "bob@example.com", user_id=USER_ID
+            VALID_OID, MOCK_EMAIL_BOB, user_id=USER_ID
         )
 
         assert result["key"] == "dev-team"

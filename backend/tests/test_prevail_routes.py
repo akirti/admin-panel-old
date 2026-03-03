@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from easylifeauth.api.prevail_routes import router, get_api_config_service
 from easylifeauth.api.dependencies import get_db, get_gcs_service
 from easylifeauth.security.access_control import get_current_user
+from mock_data import MOCK_URL_PREVAIL
 
 
 class TestExecutePrevailQuery:
@@ -56,7 +57,7 @@ class TestExecutePrevailQuery:
             "_id": "config_abc123",
             "key": "prevail",
             "name": "Prevail API",
-            "endpoint": "https://prevail.example.com/api/query",
+            "endpoint": MOCK_URL_PREVAIL,
             "status": "active",
             "method": "POST",
             "auth_type": "bearer",

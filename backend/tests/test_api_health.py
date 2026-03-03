@@ -11,6 +11,7 @@ from easylifeauth.api.health_routes import (
 )
 from easylifeauth.api.dependencies import get_db
 from easylifeauth.security.access_control import CurrentUser, require_admin
+from mock_data import MOCK_EMAIL_ADMIN_TEST
 
 
 class TestHealthRoutes:
@@ -28,7 +29,7 @@ class TestHealthRoutes:
         """Create mock admin user"""
         return CurrentUser(
             user_id="test",
-            email="admin@test.com",
+            email=MOCK_EMAIL_ADMIN_TEST,
             roles=["administrator"],
             groups=[],
             domains=[]

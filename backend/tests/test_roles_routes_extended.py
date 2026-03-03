@@ -26,6 +26,7 @@ from easylifeauth.api.roles_routes import (
 )
 from easylifeauth.api import dependencies
 from easylifeauth.security.access_control import CurrentUser, require_group_admin
+from mock_data import MOCK_EMAIL_ADMIN, MOCK_EMAIL_NOFULLNAME
 
 
 # ---------------------------------------------------------------------------
@@ -291,7 +292,7 @@ class TestNotifyUsersOfRoleChangeExtended:
         email_service.send_role_change_notification = AsyncMock()
 
         async def user_gen():
-            yield {"_id": ObjectId(), "email": "nofullname@example.com"}
+            yield {"_id": ObjectId(), "email": MOCK_EMAIL_NOFULLNAME}
 
         db.users.find.return_value = user_gen()
 
@@ -299,8 +300,8 @@ class TestNotifyUsersOfRoleChangeExtended:
             db, "role1", {"status": "changed"}, email_service
         )
         email_service.send_role_change_notification.assert_called_once_with(
-            "nofullname@example.com",
-            "nofullname@example.com",  # fallback
+            MOCK_EMAIL_NOFULLNAME,
+            MOCK_EMAIL_NOFULLNAME,  # fallback
             "role",
             {"status": "changed"},
         )
@@ -318,7 +319,7 @@ class TestRolesRoutesExtended:
     def mock_user(self):
         return CurrentUser(
             user_id="507f1f77bcf86cd799439011",
-            email="admin@example.com",
+            email=MOCK_EMAIL_ADMIN,
             roles=["super-administrator"],
             groups=["administrator"],
             domains=["all"],

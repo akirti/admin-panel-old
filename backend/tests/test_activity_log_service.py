@@ -1,3 +1,4 @@
+from mock_data import MOCK_EMAIL, MOCK_EMAIL_ADMIN, MOCK_EMAIL_USER
 """Tests for Activity Log Service"""
 import pytest
 from datetime import datetime
@@ -38,7 +39,7 @@ class TestActivityLogService:
             action="create",
             entity_type="user",
             entity_id="507f1f77bcf86cd799439011",
-            user_email="admin@example.com",
+            user_email=MOCK_EMAIL_ADMIN,
             details={"ip": "127.0.0.1"}
         )
 
@@ -52,7 +53,7 @@ class TestActivityLogService:
             action="update",
             entity_type="user",
             entity_id="507f1f77bcf86cd799439011",
-            user_email="admin@example.com",
+            user_email=MOCK_EMAIL_ADMIN,
             old_values={"name": "Old Name"}
         )
 
@@ -67,7 +68,7 @@ class TestActivityLogService:
             action="update",
             entity_type="user",
             entity_id="507f1f77bcf86cd799439011",
-            user_email="admin@example.com",
+            user_email=MOCK_EMAIL_ADMIN,
             new_values={"name": "New Name"}
         )
 
@@ -82,7 +83,7 @@ class TestActivityLogService:
             action="update",
             entity_type="user",
             entity_id="507f1f77bcf86cd799439011",
-            user_email="admin@example.com",
+            user_email=MOCK_EMAIL_ADMIN,
             old_values={"name": "Old Name"},
             new_values={"name": "New Name"}
         )
@@ -104,7 +105,7 @@ class TestActivityLogService:
             action="create",
             entity_type="user",
             entity_id="123",
-            user_email="test@example.com"
+            user_email=MOCK_EMAIL
         )
 
         assert result is None
@@ -120,7 +121,7 @@ class TestActivityLogService:
             action="create",
             entity_type="user",
             entity_id="123",
-            user_email="test@example.com"
+            user_email=MOCK_EMAIL
         )
 
         assert result is None
@@ -137,7 +138,7 @@ class TestActivityLogService:
             action="create",
             entity_type="user",
             entity_id="123",
-            user_email="test@example.com"
+            user_email=MOCK_EMAIL
         )
 
         assert result is None
@@ -180,7 +181,7 @@ class TestModuleFunctions:
             action="login",
             entity_type="session",
             entity_id="session_123",
-            user_email="user@example.com",
+            user_email=MOCK_EMAIL_USER,
             details={"ip": "192.168.1.1"}
         )
 
@@ -197,7 +198,7 @@ class TestModuleFunctions:
             action="test",
             entity_type="test",
             entity_id="123",
-            user_email="test@example.com"
+            user_email=MOCK_EMAIL
         )
 
         assert result is None

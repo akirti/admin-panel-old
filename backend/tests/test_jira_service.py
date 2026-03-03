@@ -1,3 +1,4 @@
+from mock_data import MOCK_EMAIL, MOCK_EMAIL_USER, MOCK_EMAIL_USER_TEST, MOCK_URL_FILE_HTTP, MOCK_URL_JIRA_BASE
 """Tests for Jira Service"""
 import pytest
 from datetime import datetime, timezone
@@ -27,7 +28,7 @@ class TestJiraServiceInit:
         """Test initialization with partial config (disabled)"""
         from easylifeauth.services.jira_service import JiraService
         config = {
-            "base_url": "https://test.atlassian.net"
+            "base_url": MOCK_URL_JIRA_BASE
         }
         service = JiraService(config)
         assert service.enabled is False
@@ -37,8 +38,8 @@ class TestJiraServiceInit:
         """Test default project key"""
         from easylifeauth.services.jira_service import JiraService
         config = {
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "token"
         }
         service = JiraService(config)
@@ -60,8 +61,8 @@ class TestJiraServiceHelpers:
         """Create enabled service"""
         from easylifeauth.services.jira_service import JiraService
         return JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token",
             "project_key": "TEST"
         })
@@ -74,7 +75,7 @@ class TestJiraServiceHelpers:
             "dataDomain": "finance",
             "status": "pending",
             "description": "Test description",
-            "email": "user@example.com",
+            "email": MOCK_EMAIL_USER,
             "row_add_stp": "2024-01-01"
         }
         desc = service._build_description(request)
@@ -183,8 +184,8 @@ class TestJiraServiceCreateTicket:
         mock_jira.return_value.create_issue.return_value = mock_issue
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token",
             "project_key": "TEST"
         })
@@ -210,8 +211,8 @@ class TestJiraServiceCreateTicket:
         mock_jira.return_value.create_issue.side_effect = JIRAError("API Error")
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token",
             "project_key": "TEST"
         })
@@ -230,8 +231,8 @@ class TestJiraServiceCreateTicket:
         mock_jira.return_value.create_issue.side_effect = Exception("Network error")
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token",
             "project_key": "TEST"
         })
@@ -260,8 +261,8 @@ class TestJiraServiceUpdateTicket:
         """Test update ticket without key"""
         from easylifeauth.services.jira_service import JiraService
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
         result = await service.update_ticket("", {})
@@ -276,8 +277,8 @@ class TestJiraServiceUpdateTicket:
         mock_jira.return_value.add_comment.return_value = MagicMock()
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -296,8 +297,8 @@ class TestJiraServiceUpdateTicket:
         mock_jira.return_value.add_comment.side_effect = JIRAError("Not found")
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -314,8 +315,8 @@ class TestJiraServiceUpdateTicket:
         mock_jira.return_value.add_comment.side_effect = Exception("Connection error")
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -342,8 +343,8 @@ class TestJiraServiceAddAttachment:
         """Test add attachment without key"""
         from easylifeauth.services.jira_service import JiraService
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
         result = await service.add_attachment("", b"content", "file.txt")
@@ -360,8 +361,8 @@ class TestJiraServiceAddAttachment:
         mock_jira.return_value.add_attachment.return_value = mock_attachment
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -380,8 +381,8 @@ class TestJiraServiceAddAttachment:
         mock_jira.return_value.add_attachment.side_effect = JIRAError("File too large")
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -398,8 +399,8 @@ class TestJiraServiceAddAttachment:
         mock_jira.return_value.add_attachment.side_effect = Exception("Upload error")
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -426,8 +427,8 @@ class TestJiraServiceTransitionTicket:
         """Test transition without key"""
         from easylifeauth.services.jira_service import JiraService
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
         result = await service.transition_ticket("", "Done")
@@ -446,8 +447,8 @@ class TestJiraServiceTransitionTicket:
         mock_jira.return_value.transition_issue.return_value = None
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -467,8 +468,8 @@ class TestJiraServiceTransitionTicket:
         ]
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -487,8 +488,8 @@ class TestJiraServiceTransitionTicket:
         mock_jira.return_value.transitions.side_effect = JIRAError("Not found")
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -505,8 +506,8 @@ class TestJiraServiceTransitionTicket:
         mock_jira.return_value.transitions.side_effect = Exception("Network error")
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -535,12 +536,12 @@ class TestJiraServiceTestConnection:
 
         mock_jira.return_value.myself.return_value = {
             "displayName": "Test User",
-            "emailAddress": "test@example.com"
+            "emailAddress": MOCK_EMAIL
         }
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -559,8 +560,8 @@ class TestJiraServiceTestConnection:
         mock_jira.return_value.myself.side_effect = JIRAError("Auth failed")
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -595,8 +596,8 @@ class TestJiraServiceGetProjects:
         mock_jira.return_value.projects.return_value = [mock_project]
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -615,8 +616,8 @@ class TestJiraServiceGetProjects:
         mock_jira.return_value.projects.side_effect = JIRAError("Access denied")
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -634,7 +635,7 @@ class TestJiraServiceGetUserTasks:
         """Test get user tasks when disabled"""
         from easylifeauth.services.jira_service import JiraService
         service = JiraService()
-        result = await service.get_user_tasks("user@test.com")
+        result = await service.get_user_tasks(MOCK_EMAIL_USER_TEST)
         assert result == []
 
     @pytest.mark.asyncio
@@ -661,12 +662,12 @@ class TestJiraServiceGetUserTasks:
         mock_jira.return_value.search_issues.return_value = [mock_issue]
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
-        result = await service.get_user_tasks("user@test.com")
+        result = await service.get_user_tasks(MOCK_EMAIL_USER_TEST)
 
         assert len(result) == 1
         assert result[0]["key"] == "TEST-1"
@@ -680,12 +681,12 @@ class TestJiraServiceGetUserTasks:
         mock_jira.return_value.search_issues.return_value = []
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
-        result = await service.get_user_tasks("user@test.com", project_key="TEST", status="Open")
+        result = await service.get_user_tasks(MOCK_EMAIL_USER_TEST, project_key="TEST", status="Open")
 
         assert result == []
 
@@ -699,12 +700,12 @@ class TestJiraServiceGetUserTasks:
         mock_jira.return_value.search_issues.side_effect = JIRAError("Search failed")
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
-        result = await service.get_user_tasks("user@test.com")
+        result = await service.get_user_tasks(MOCK_EMAIL_USER_TEST)
 
         assert result == []
 
@@ -736,8 +737,8 @@ class TestJiraServiceGetTasksByRequestId:
         mock_jira.return_value.search_issues.return_value = [mock_issue]
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -764,8 +765,8 @@ class TestJiraServiceGetLatestProject:
         mock_jira.return_value.projects.return_value = [mock_project]
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -783,8 +784,8 @@ class TestJiraServiceGetLatestProject:
         mock_jira.return_value.projects.return_value = []
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -818,8 +819,8 @@ class TestJiraServiceGetIssueTypes:
         mock_jira.return_value.issue_types.return_value = [mock_type]
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -855,8 +856,8 @@ class TestJiraServiceGetStatuses:
         mock_jira.return_value.statuses.return_value = [mock_status]
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -896,8 +897,8 @@ class TestJiraServiceSyncStatusChange:
         """Test sync status without key"""
         from easylifeauth.services.jira_service import JiraService
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
         result = await service.sync_status_change("", "approved")
@@ -917,8 +918,8 @@ class TestJiraServiceSyncStatusChange:
         mock_jira.return_value.add_comment.return_value = None
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -939,8 +940,8 @@ class TestJiraServiceSyncStatusChange:
         mock_jira.return_value.add_comment.return_value = None
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -959,8 +960,8 @@ class TestJiraServiceSyncStatusChange:
         mock_jira.return_value.transitions.side_effect = JIRAError("API Error")
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -992,8 +993,8 @@ class TestJiraServiceUpdateDescription:
         mock_jira.return_value.issue.return_value = mock_issue
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -1015,8 +1016,8 @@ class TestJiraServiceUpdateDescription:
         mock_jira.return_value.issue.side_effect = JIRAError("Issue not found")
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -1046,8 +1047,8 @@ class TestJiraServiceAddComment:
         mock_jira.return_value.add_comment.return_value = MagicMock()
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -1066,8 +1067,8 @@ class TestJiraServiceAddComment:
         mock_jira.return_value.add_comment.side_effect = JIRAError("Comment failed")
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -1099,8 +1100,8 @@ class TestJiraServiceUpdateDueDate:
         mock_jira.return_value.issue.return_value = mock_issue
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -1119,8 +1120,8 @@ class TestJiraServiceUpdateDueDate:
         mock_jira.return_value.issue.side_effect = JIRAError("Issue not found")
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -1178,8 +1179,8 @@ class TestJiraServiceInitClient:
         mock_jira.side_effect = JIRAError("Authentication failed")
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "bad_token"
         })
 
@@ -1197,8 +1198,8 @@ class TestJiraServiceInitClient:
         mock_jira.side_effect = Exception("Network error")
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -1226,8 +1227,8 @@ class TestJiraServiceGetClient:
         from easylifeauth.services.jira_service import JiraService
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -1259,8 +1260,8 @@ class TestJiraServiceSetStartDate:
         mock_jira.return_value.issue.return_value = mock_issue
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -1277,7 +1278,7 @@ class TestJiraServiceAddAttachmentFromUrl:
         """Test add attachment from URL when disabled"""
         from easylifeauth.services.jira_service import JiraService
         service = JiraService()
-        result = await service.add_attachment_from_url("TEST-1", "http://example.com/file.txt", "file.txt")
+        result = await service.add_attachment_from_url("TEST-1", MOCK_URL_FILE_HTTP, "file.txt")
         assert result is None
 
     @pytest.mark.asyncio
@@ -1286,11 +1287,11 @@ class TestJiraServiceAddAttachmentFromUrl:
         """Test add attachment from URL without key"""
         from easylifeauth.services.jira_service import JiraService
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
-        result = await service.add_attachment_from_url("", "http://example.com/file.txt", "file.txt")
+        result = await service.add_attachment_from_url("", MOCK_URL_FILE_HTTP, "file.txt")
         assert result is None
 
     @pytest.mark.asyncio
@@ -1311,8 +1312,8 @@ class TestJiraServiceAddAttachmentFromUrl:
         mock_gcs_client.bucket.return_value = mock_bucket
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -1333,8 +1334,8 @@ class TestJiraServiceAddAttachmentFromUrl:
         from easylifeauth.services.jira_service import JiraService
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -1359,8 +1360,8 @@ class TestJiraServiceCreateTicketAdvanced:
         mock_jira.return_value.projects.return_value = []
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token",
             "project_key": None  # No default project
         })
@@ -1383,8 +1384,8 @@ class TestJiraServiceCreateTicketAdvanced:
         mock_jira.return_value.add_comment.return_value = MagicMock()
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token",
             "project_key": "TEST"
         })
@@ -1418,8 +1419,8 @@ class TestJiraServiceCreateTicketAdvanced:
         mock_file_storage.download_file = AsyncMock(return_value=(b"file content", "test.txt"))
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token",
             "project_key": "TEST"
         })
@@ -1446,8 +1447,8 @@ class TestJiraServiceCreateTicketAdvanced:
         mock_jira.return_value.create_issue.return_value = mock_issue
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token",
             "project_key": "TEST"
         })
@@ -1478,8 +1479,8 @@ class TestJiraServiceGetTasksByRequestIdAdvanced:
         mock_jira.return_value.search_issues.return_value = [mock_issue]
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -1497,8 +1498,8 @@ class TestJiraServiceGetTasksByRequestIdAdvanced:
         mock_jira.return_value.search_issues.side_effect = JIRAError("Search failed")
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
@@ -1531,12 +1532,12 @@ class TestJiraServiceGetUserTasksAdvanced:
         mock_jira.return_value.search_issues.return_value = [mock_issue]
 
         service = JiraService({
-            "base_url": "https://test.atlassian.net",
-            "email": "test@example.com",
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
 
-        result = await service.get_user_tasks("user@test.com")
+        result = await service.get_user_tasks(MOCK_EMAIL_USER_TEST)
 
         assert len(result) == 1
         assert result[0]["priority"] == "Medium"  # Default

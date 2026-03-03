@@ -13,7 +13,7 @@ from typing import Dict, Any, List
 
 from fastapi.testclient import TestClient
 from httpx import AsyncClient, ASGITransport
-from mock_data import MOCK_PASSWORD_HASH
+from mock_data import MOCK_EMAIL, MOCK_EMAIL_ADMIN, MOCK_PASSWORD_HASH
 
 # Create mock motor module
 mock_motor = MagicMock()
@@ -58,7 +58,7 @@ def sample_user_data() -> Dict[str, Any]:
     return {
         "_id": "507f1f77bcf86cd799439011",
         "user_id": "507f1f77bcf86cd799439011",
-        "email": "test@example.com",
+        "email": MOCK_EMAIL,
         "username": "testuser",
         "password_hash": MOCK_PASSWORD_HASH,
         "full_name": "Test User",
@@ -78,7 +78,7 @@ def sample_admin_data() -> Dict[str, Any]:
     return {
         "_id": "507f1f77bcf86cd799439012",
         "user_id": "507f1f77bcf86cd799439012",
-        "email": "admin@example.com",
+        "email": MOCK_EMAIL_ADMIN,
         "username": "admin",
         "password_hash": MOCK_PASSWORD_HASH,
         "full_name": "Admin User",
@@ -153,7 +153,7 @@ def sample_feedback_data() -> Dict[str, Any]:
         "rating": 5,
         "improvements": "None needed",
         "suggestions": "Great work!",
-        "email": "test@example.com",
+        "email": MOCK_EMAIL,
         "createdAt": "2024-01-01 12:00:00 PM",
         "updatedAt": None
     }
@@ -175,7 +175,7 @@ def sample_scenario_request_data() -> Dict[str, Any]:
         "filters": ["filter1"],
         "status": "S",
         "user_id": "507f1f77bcf86cd799439011",
-        "email": "test@example.com",
+        "email": MOCK_EMAIL,
         "name": "Test User",
         "rowAddStp": datetime.now(timezone.utc),
         "rowUpdateStp": datetime.now(timezone.utc)
@@ -193,7 +193,7 @@ def mock_token_manager():
     })
     tm.verify_token = MagicMock(return_value={
         "user_id": "507f1f77bcf86cd799439011",
-        "email": "test@example.com",
+        "email": MOCK_EMAIL,
         "roles": ["user"]
     })
     tm.refresh_access_token = AsyncMock(return_value={
@@ -204,7 +204,7 @@ def mock_token_manager():
     tm.sync_access_token = AsyncMock()
     tm.validate_backend_token = AsyncMock(return_value={
         "user_id": "507f1f77bcf86cd799439011",
-        "email": "test@example.com",
+        "email": MOCK_EMAIL,
         "token_hash": "test_access_token",
         "refresh_token_hash": "test_refresh_token",
         "expires_at": datetime.now(timezone.utc)

@@ -1,3 +1,4 @@
+from mock_data import MOCK_EMAIL_USER, MOCK_URL_SIGNED
 """Tests for Error Log Service"""
 import json
 import gzip
@@ -468,7 +469,7 @@ class TestLogError:
         mock_request.url.query = "foo=bar"
         mock_request.client.host = "127.0.0.1"
         mock_request.headers.get.return_value = "TestAgent/1.0"
-        mock_request.state.user_email = "user@example.com"
+        mock_request.state.user_email = MOCK_EMAIL_USER
         mock_request.state.user_id = "uid123"
 
         result = await service.log_error(error=exc, request=mock_request)
@@ -478,7 +479,7 @@ class TestLogError:
         assert call_args["request_context"]["method"] == "POST"
         assert call_args["request_context"]["path"] == "/api/test"
         assert call_args["request_context"]["ip_address"] == "127.0.0.1"
-        assert call_args["request_context"]["user_email"] == "user@example.com"
+        assert call_args["request_context"]["user_email"] == MOCK_EMAIL_USER
         assert call_args["request_context"]["user_id"] == "uid123"
 
     @pytest.mark.asyncio
@@ -1202,7 +1203,7 @@ class TestGetArchiveDownloadUrl:
         gcs = MagicMock()
         gcs.is_configured.return_value = True
         gcs.bucket_name = "test-bucket"
-        gcs.get_signed_url = AsyncMock(return_value="https://signed-url.example.com")
+        gcs.get_signed_url = AsyncMock(return_value=MOCK_URL_SIGNED)
         return gcs
 
     @pytest.mark.asyncio
@@ -1246,7 +1247,7 @@ class TestGetArchiveDownloadUrl:
             service = ErrorLogService(mock_db, gcs_service=mock_gcs)
 
         result = await service.get_archive_download_url("abc123")
-        assert result == "https://signed-url.example.com"
+        assert result == MOCK_URL_SIGNED
         mock_gcs.get_signed_url.assert_awaited_once_with(
             file_path=archive["gcs_path"],
             expiration_minutes=60,

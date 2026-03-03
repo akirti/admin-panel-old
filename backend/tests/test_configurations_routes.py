@@ -1,3 +1,4 @@
+from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_URL_GCS, MOCK_URL_GCS_TEST
 """Tests for Configurations Routes"""
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -142,7 +143,7 @@ class TestConfigurationsRoutes:
     def mock_super_admin(self):
         """Create mock super admin user"""
         user = MagicMock()
-        user.email = "admin@test.com"
+        user.email = MOCK_EMAIL_ADMIN_TEST
         user.roles = ["super-administrator"]
         return user
 
@@ -655,7 +656,7 @@ class TestConfigurationDownload:
     @pytest.fixture
     def mock_super_admin(self):
         user = MagicMock()
-        user.email = "admin@test.com"
+        user.email = MOCK_EMAIL_ADMIN_TEST
         user.roles = ["super-administrator"]
         return user
 
@@ -904,7 +905,7 @@ class TestConfigurationVersions:
     @pytest.fixture
     def mock_super_admin(self):
         user = MagicMock()
-        user.email = "admin@test.com"
+        user.email = MOCK_EMAIL_ADMIN_TEST
         user.roles = ["super-administrator"]
         return user
 
@@ -1013,7 +1014,7 @@ class TestGCSStatus:
     @pytest.fixture
     def mock_super_admin(self):
         user = MagicMock()
-        user.email = "admin@test.com"
+        user.email = MOCK_EMAIL_ADMIN_TEST
         user.roles = ["super-administrator"]
         return user
 
@@ -1105,7 +1106,7 @@ class TestSyncConfigToGCS:
 
         mock_gcs = MagicMock()
         mock_gcs.is_configured.return_value = True
-        mock_gcs.upload_file = AsyncMock(return_value="https://storage.googleapis.com/bucket/path")
+        mock_gcs.upload_file = AsyncMock(return_value=MOCK_URL_GCS)
 
         config = {
             "config_id": "config_123",
@@ -1132,7 +1133,7 @@ class TestSyncConfigToGCS:
 
         mock_gcs = MagicMock()
         mock_gcs.is_configured.return_value = True
-        mock_gcs.upload_file = AsyncMock(return_value="https://storage.googleapis.com/bucket/path")
+        mock_gcs.upload_file = AsyncMock(return_value=MOCK_URL_GCS)
 
         config = {
             "config_id": "config_proc",
@@ -1161,7 +1162,7 @@ class TestSyncConfigToGCS:
 
         mock_gcs = MagicMock()
         mock_gcs.is_configured.return_value = True
-        mock_gcs.upload_file = AsyncMock(return_value="https://storage.googleapis.com/bucket/path")
+        mock_gcs.upload_file = AsyncMock(return_value=MOCK_URL_GCS)
 
         config = {
             "config_id": "config_snap",
@@ -1238,7 +1239,7 @@ class TestConfigurationUpload:
     @pytest.fixture
     def mock_super_admin(self):
         user = MagicMock()
-        user.email = "admin@test.com"
+        user.email = MOCK_EMAIL_ADMIN_TEST
         user.roles = ["super-administrator"]
         return user
 
@@ -1423,7 +1424,7 @@ class TestConfigurationUpload:
         mock_gcs = MagicMock()
         mock_gcs.is_configured.return_value = True
         mock_gcs.bucket_name = "test-bucket"
-        mock_gcs.upload_file = AsyncMock(return_value="https://storage.googleapis.com/test-bucket/path")
+        mock_gcs.upload_file = AsyncMock(return_value=MOCK_URL_GCS_TEST)
 
         with patch("easylifeauth.api.configurations_routes._gcs_service", mock_gcs):
             with patch("easylifeauth.utils.file_validation.validate_upload"):
@@ -1463,7 +1464,7 @@ class TestConfigurationUpload:
         mock_gcs = MagicMock()
         mock_gcs.is_configured.return_value = True
         mock_gcs.bucket_name = "test-bucket"
-        mock_gcs.upload_file = AsyncMock(return_value="https://storage.googleapis.com/test-bucket/path")
+        mock_gcs.upload_file = AsyncMock(return_value=MOCK_URL_GCS_TEST)
 
         with patch("easylifeauth.api.configurations_routes._gcs_service", mock_gcs):
             with patch("easylifeauth.utils.file_validation.validate_upload"):
@@ -1544,7 +1545,7 @@ class TestCreateConfigurationGCSSync:
     @pytest.fixture
     def mock_super_admin(self):
         user = MagicMock()
-        user.email = "admin@test.com"
+        user.email = MOCK_EMAIL_ADMIN_TEST
         user.roles = ["super-administrator"]
         return user
 
@@ -1656,7 +1657,7 @@ class TestUpdateConfigurationGCSSync:
     @pytest.fixture
     def mock_super_admin(self):
         user = MagicMock()
-        user.email = "admin@test.com"
+        user.email = MOCK_EMAIL_ADMIN_TEST
         user.roles = ["super-administrator"]
         return user
 

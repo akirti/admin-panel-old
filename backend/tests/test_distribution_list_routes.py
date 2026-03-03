@@ -1,3 +1,4 @@
+from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_NEW_TEST, MOCK_EMAIL_SUPERADMIN, MOCK_EMAIL_USER1_TEST, MOCK_EMAIL_USER2_TEST, MOCK_EMAIL_USER_TEST
 """Tests for Distribution List Routes"""
 import pytest
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
@@ -28,10 +29,10 @@ def make_dist_list_dict(**overrides):
         "name": "Test Distribution List",
         "description": "A test distribution list",
         "type": "custom",
-        "emails": ["user1@test.com", "user2@test.com"],
+        "emails": [MOCK_EMAIL_USER1_TEST, MOCK_EMAIL_USER2_TEST],
         "is_active": True,
         "created_at": datetime.utcnow().isoformat(),
-        "created_by": "admin@test.com",
+        "created_by": MOCK_EMAIL_ADMIN_TEST,
         "updated_at": None,
         "updated_by": None,
     }
@@ -107,7 +108,7 @@ class TestDistributionListRoutesSuperAdmin:
     def mock_super_admin(self):
         """Create a mock super admin user."""
         user = MagicMock()
-        user.email = "superadmin@test.com"
+        user.email = MOCK_EMAIL_SUPERADMIN
         user.user_id = "superadmin_123"
         user.roles = ["super-administrator"]
         return user
@@ -301,16 +302,16 @@ class TestDistributionListRoutesSuperAdmin:
         list_id = str(ObjectId())
         updated = make_dist_list_dict(
             _id=list_id,
-            emails=["user1@test.com", "user2@test.com", "new@test.com"],
+            emails=[MOCK_EMAIL_USER1_TEST, MOCK_EMAIL_USER2_TEST, MOCK_EMAIL_NEW_TEST],
         )
         mock_service.add_email = AsyncMock(return_value=updated)
 
         response = client.post(
             f"/distribution-lists/{list_id}/emails",
-            json={"email": "new@test.com"},
+            json={"email": MOCK_EMAIL_NEW_TEST},
         )
         assert response.status_code == 200
-        assert "new@test.com" in response.json()["emails"]
+        assert MOCK_EMAIL_NEW_TEST in response.json()["emails"]
 
     def test_add_email_to_list_not_found(self, client, mock_service):
         """Test 404 when adding email to nonexistent list."""
@@ -318,7 +319,7 @@ class TestDistributionListRoutesSuperAdmin:
 
         response = client.post(
             f"/distribution-lists/{ObjectId()}/emails",
-            json={"email": "new@test.com"},
+            json={"email": MOCK_EMAIL_NEW_TEST},
         )
         assert response.status_code == 404
 
@@ -327,16 +328,16 @@ class TestDistributionListRoutesSuperAdmin:
     def test_remove_email_from_list_success(self, client, mock_service):
         """Test removing an email from a distribution list."""
         list_id = str(ObjectId())
-        updated = make_dist_list_dict(_id=list_id, emails=["user1@test.com"])
+        updated = make_dist_list_dict(_id=list_id, emails=[MOCK_EMAIL_USER1_TEST])
         mock_service.remove_email = AsyncMock(return_value=updated)
 
         response = client.request(
             "DELETE",
             f"/distribution-lists/{list_id}/emails",
-            json={"email": "user2@test.com"},
+            json={"email": MOCK_EMAIL_USER2_TEST},
         )
         assert response.status_code == 200
-        assert "user2@test.com" not in response.json()["emails"]
+        assert MOCK_EMAIL_USER2_TEST not in response.json()["emails"]
 
     def test_remove_email_from_list_not_found(self, client, mock_service):
         """Test 404 when removing email from nonexistent list."""
@@ -345,7 +346,7 @@ class TestDistributionListRoutesSuperAdmin:
         response = client.request(
             "DELETE",
             f"/distribution-lists/{ObjectId()}/emails",
-            json={"email": "user@test.com"},
+            json={"email": MOCK_EMAIL_USER_TEST},
         )
         assert response.status_code == 404
 
@@ -533,7 +534,7 @@ class TestDistributionListRoutesGroupAdmin:
     def test_get_emails_by_key_success(self, client, mock_service):
         """Test getting emails by key."""
         mock_service.get_emails_by_key = AsyncMock(
-            return_value=["user1@test.com", "user2@test.com"]
+            return_value=[MOCK_EMAIL_USER1_TEST, MOCK_EMAIL_USER2_TEST]
         )
 
         response = client.get("/distribution-lists/emails/feedback-list")
@@ -598,7 +599,7 @@ class TestDistributionListRoutesGroupAdmin:
         """Test that adding an email requires super admin."""
         response = client.post(
             f"/distribution-lists/{ObjectId()}/emails",
-            json={"email": "new@test.com"},
+            json={"email": MOCK_EMAIL_NEW_TEST},
         )
         assert response.status_code == 403
 
@@ -607,7 +608,7 @@ class TestDistributionListRoutesGroupAdmin:
         response = client.request(
             "DELETE",
             f"/distribution-lists/{ObjectId()}/emails",
-            json={"email": "user@test.com"},
+            json={"email": MOCK_EMAIL_USER_TEST},
         )
         assert response.status_code == 403
 
@@ -645,7 +646,7 @@ class TestDistributionListRoutesAuthEnforcement:
     def mock_regular_user(self):
         """Create a mock regular user (not admin)."""
         user = MagicMock()
-        user.email = "user@test.com"
+        user.email = MOCK_EMAIL_USER_TEST
         user.user_id = "user_123"
         user.roles = ["user"]
         return user

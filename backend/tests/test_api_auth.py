@@ -10,7 +10,7 @@ from easylifeauth.api.auth_routes import router
 from easylifeauth.api import dependencies
 from easylifeauth.errors.auth_error import AuthError
 from easylifeauth.security.access_control import CurrentUser
-from mock_data import MOCK_PASSWORD, MOCK_PASSWORD_WRONG, MOCK_PASSWORD_OLD, MOCK_PASSWORD_NEW
+from mock_data import MOCK_EMAIL, MOCK_PASSWORD, MOCK_PASSWORD_NEW, MOCK_PASSWORD_OLD, MOCK_PASSWORD_WRONG, MOCK_URL_RESET_CUSTOM
 
 
 class TestAuthRoutes:
@@ -88,7 +88,7 @@ class TestAuthRoutes:
         """Test successful user registration"""
         mock_user_service.register_user.return_value = {
             "user_id": "507f1f77bcf86cd799439011",
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "username": "testuser",
             "full_name": "Test User",
             "roles": ["user"],
@@ -100,7 +100,7 @@ class TestAuthRoutes:
         }
 
         response = client.post("/auth/register", json={
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "username": "testuser",
             "password": MOCK_PASSWORD,
             "full_name": "Test User"
@@ -109,14 +109,14 @@ class TestAuthRoutes:
         assert response.status_code == 201
         data = response.json()
         assert "access_token" in data
-        assert data["email"] == "test@example.com"
+        assert data["email"] == MOCK_EMAIL
 
     def test_register_auth_error(self, client, mock_user_service):
         """Test registration with auth error"""
         mock_user_service.register_user.side_effect = AuthError("Email already exists", 400)
 
         response = client.post("/auth/register", json={
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "username": "testuser",
             "password": MOCK_PASSWORD,
             "full_name": "Test User"
@@ -129,7 +129,7 @@ class TestAuthRoutes:
         """Test successful login"""
         mock_user_service.login_user.return_value = {
             "user_id": "507f1f77bcf86cd799439011",
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "username": "testuser",
             "full_name": "Test User",
             "roles": ["user"],
@@ -138,11 +138,11 @@ class TestAuthRoutes:
             "access_token": "test_token",
             "refresh_token": "refresh_token",
             "expires_in": 3600,
-            "user": {"_id": "507f1f77bcf86cd799439011", "email": "test@example.com"}
+            "user": {"_id": "507f1f77bcf86cd799439011", "email": MOCK_EMAIL}
         }
 
         response = client.post("/auth/login", json={
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "password": MOCK_PASSWORD
         })
 
@@ -156,7 +156,7 @@ class TestAuthRoutes:
         mock_user_service.login_user.side_effect = AuthError("Invalid credentials", 401)
 
         response = client.post("/auth/login", json={
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "password": MOCK_PASSWORD_WRONG
         })
 
@@ -168,7 +168,7 @@ class TestAuthRoutes:
         """Test successful token refresh"""
         mock_token_manager.refresh_access_token.return_value = {
             "user_id": "507f1f77bcf86cd799439011",
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "username": "testuser",
             "roles": ["user"],
             "groups": [],
@@ -206,7 +206,7 @@ class TestAuthRoutes:
         }
 
         response = client.post("/auth/forgot_password", json={
-            "email": "test@example.com"
+            "email": MOCK_EMAIL
         })
 
         assert response.status_code == 200
@@ -220,13 +220,13 @@ class TestAuthRoutes:
         }
 
         response = client.post("/auth/forgot_password", json={
-            "email": "test@example.com",
-            "reset_url": "https://custom.com/reset"
+            "email": MOCK_EMAIL,
+            "reset_url": MOCK_URL_RESET_CUSTOM
         })
 
         assert response.status_code == 200
         mock_password_service.request_password_reset.assert_called_with(
-            "test@example.com", "https://custom.com/reset"
+            MOCK_EMAIL, MOCK_URL_RESET_CUSTOM
         )
 
     def test_reset_password_success(self, client, mock_password_service):
@@ -262,7 +262,7 @@ class TestAuthRoutesProtected:
         """Create mock current user"""
         return CurrentUser(
             user_id="507f1f77bcf86cd799439011",
-            email="test@example.com",
+            email=MOCK_EMAIL,
             roles=["user"],
             groups=[],
             domains=[]
@@ -307,7 +307,7 @@ class TestAuthRoutesProtected:
         """Test getting user profile"""
         mock_user_service.get_user_by_id.return_value = {
             "user_id": "507f1f77bcf86cd799439011",
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "username": "testuser",
             "full_name": "Test User",
             "is_active": True,
@@ -319,7 +319,7 @@ class TestAuthRoutesProtected:
         response = client.get("/auth/profile")
         assert response.status_code == 200
         data = response.json()
-        assert data["email"] == "test@example.com"
+        assert data["email"] == MOCK_EMAIL
 
     def test_get_profile_not_found(self, client, mock_user_service):
         """Test getting non-existent profile"""
@@ -332,7 +332,7 @@ class TestAuthRoutesProtected:
         """Test updating user profile"""
         mock_user_service.update_user_data.return_value = {
             "user_id": "507f1f77bcf86cd799439011",
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "username": "testuser",
             "full_name": "Updated Name",
             "is_active": True,
@@ -353,7 +353,7 @@ class TestAuthRoutesProtected:
         """Test updating password"""
         mock_password_service.update_user_password.return_value = {
             "user_id": "507f1f77bcf86cd799439011",
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "username": "testuser",
             "roles": ["user"],
             "groups": [],

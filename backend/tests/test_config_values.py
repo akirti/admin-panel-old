@@ -4,7 +4,7 @@ Provides fake simulator data, config.json template, and expected value
 constants so that TestRealConfigFiles can create temp config files and
 assert against known values — with zero dependency on real project files.
 """
-from mock_data import MOCK_DB_PASSWORD, MOCK_AUTH_SECRET_KEY, MOCK_API_TOKEN
+from mock_data import MOCK_API_TOKEN, MOCK_AUTH_SECRET_KEY, MOCK_DB_PASSWORD, MOCK_EMAIL, MOCK_EMAIL_NOREPLY_LOCAL, MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV, MOCK_URL_JIRA_EXAMPLE_TEST
 
 # ---------------------------------------------------------------------------
 # Fake simulator data (mirrors server.env.production.json structure)
@@ -37,10 +37,10 @@ SIMULATOR_DATA = {
 
     "environment.smtp.smtp_server": "test-mailpit",
     "environment.smtp.smtp_port": 1025,
-    "environment.smtp.email": "noreply@test.local",
+    "environment.smtp.email": MOCK_EMAIL_NOREPLY_LOCAL,
     "environment.smtp.password": "",
     "environment.smtp.recipients": [],
-    "environment.smtp.email_from": "noreply@test.local",
+    "environment.smtp.email_from": MOCK_EMAIL_NOREPLY_LOCAL,
     "environment.smtp.email_from_name": "Test No Reply",
 
     "environment.app_secrets.auth_secret_key": MOCK_AUTH_SECRET_KEY,
@@ -50,12 +50,12 @@ SIMULATOR_DATA = {
 
     "environment.storage.type": "local",
 
-    "environment.cors.origins": ["http://localhost:3000", "http://localhost:5173"],
+    "environment.cors.origins": [MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV],
 
-    "environment.jira.base_url": "https://test-jira.example.com",
+    "environment.jira.base_url": MOCK_URL_JIRA_EXAMPLE_TEST,
     "environment.jira.username": "",
     "environment.jira.password": "",
-    "environment.jira.email": "test@example.com",
+    "environment.jira.email": MOCK_EMAIL,
     "environment.jira.api_token": MOCK_API_TOKEN,
     "environment.jira.project_key": "TEST",
     "environment.jira.issue_type": "Task",

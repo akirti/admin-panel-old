@@ -10,6 +10,7 @@ from easylifeauth.api.feedback_routes import router
 from easylifeauth.api.dependencies import get_current_user, get_feedback_service
 from easylifeauth.security.access_control import require_admin
 from easylifeauth.errors.auth_error import AuthError
+from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_ANONYMOUS, MOCK_EMAIL_SUPERADMIN, MOCK_EMAIL_USER_TEST
 
 
 class TestFeedbackRoutes:
@@ -31,7 +32,7 @@ class TestFeedbackRoutes:
     def mock_user(self):
         """Create mock user"""
         user = MagicMock()
-        user.email = "user@test.com"
+        user.email = MOCK_EMAIL_USER_TEST
         user.user_id = "user_123"
         user.roles = ["user"]
         return user
@@ -40,7 +41,7 @@ class TestFeedbackRoutes:
     def mock_admin(self):
         """Create mock admin user"""
         user = MagicMock()
-        user.email = "admin@test.com"
+        user.email = MOCK_EMAIL_ADMIN_TEST
         user.user_id = "admin_123"
         user.roles = ["administrator"]
         return user
@@ -66,14 +67,14 @@ class TestFeedbackRoutes:
             "id": str(ObjectId()),
             "rating": 5,
             "feedback": "Great app!",
-            "email": "anonymous@test.com"
+            "email": MOCK_EMAIL_ANONYMOUS
         }
         mock_feedback_service.save_public = AsyncMock(return_value=result)
 
         feedback_data = {
             "rating": 5,
             "feedback": "Great app!",
-            "email": "anonymous@test.com"
+            "email": MOCK_EMAIL_ANONYMOUS
         }
 
         response = client.post("/feedback/public", json=feedback_data)
@@ -86,7 +87,7 @@ class TestFeedbackRoutes:
         feedback_data = {
             "rating": 5,
             "feedback": "Great app!",
-            "email": "anonymous@test.com"
+            "email": MOCK_EMAIL_ANONYMOUS
         }
 
         response = client.post("/feedback/public", json=feedback_data)
@@ -192,7 +193,7 @@ class TestFeedbackRoutes:
             "rating": 5,
             "feedback": "Great app!",
             "user_id": "user_123",
-            "email": "user@test.com"
+            "email": MOCK_EMAIL_USER_TEST
         }
         mock_feedback_service.save = AsyncMock(return_value=result)
 
@@ -289,7 +290,7 @@ class TestFeedbackRoutesSuperAdmin:
     def mock_super_admin(self):
         """Create mock super admin user"""
         user = MagicMock()
-        user.email = "superadmin@test.com"
+        user.email = MOCK_EMAIL_SUPERADMIN
         user.user_id = "superadmin_123"
         user.roles = ["super-administrator"]
         return user

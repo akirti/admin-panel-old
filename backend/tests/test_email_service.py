@@ -5,7 +5,7 @@ from email.mime.multipart import MIMEMultipart
 
 from easylifeauth.services.email_service import EmailService
 from easylifeauth.errors.email_error import EmailError
-from mock_data import MOCK_SMTP_PASSWORD, MOCK_PASSWORD_TEMP
+from mock_data import MOCK_EMAIL_NOREPLY, MOCK_EMAIL_NOREPLY_EASYLIFE, MOCK_EMAIL_USER_TEST, MOCK_PASSWORD_TEMP, MOCK_SMTP_PASSWORD, MOCK_URL_RESET
 
 
 class TestEmailService:
@@ -17,7 +17,7 @@ class TestEmailService:
         config = {
             "smtp_server": "smtp.test.com",
             "smtp_port": 587,
-            "email": "noreply@test.com",
+            "email": MOCK_EMAIL_NOREPLY,
             "password": MOCK_SMTP_PASSWORD
         }
         return EmailService(config)
@@ -25,19 +25,19 @@ class TestEmailService:
     def test_prepare_email_template(self, email_service):
         """Test preparing password reset email template"""
         result = email_service._prepare_email_template(
-            to_email="user@test.com",
+            to_email=MOCK_EMAIL_USER_TEST,
             reset_token="abc123",
-            reset_url="http://example.com/reset"
+            reset_url=MOCK_URL_RESET
         )
 
         assert isinstance(result, MIMEMultipart)
-        assert result["To"] == "user@test.com"
+        assert result["To"] == MOCK_EMAIL_USER_TEST
         assert result["Subject"] == "Password Reset Request"
 
     def test_prepare_feedback_email_template(self, email_service):
         """Test preparing feedback email template"""
         result = email_service._prepare_feedback_email_template(
-            to_email="user@test.com",
+            to_email=MOCK_EMAIL_USER_TEST,
             data={
                 "rating": 5,
                 "improvements": "None",
@@ -47,12 +47,12 @@ class TestEmailService:
         )
 
         assert isinstance(result, MIMEMultipart)
-        assert result["To"] == "user@test.com"
+        assert result["To"] == MOCK_EMAIL_USER_TEST
 
     def test_prepare_feedback_email_template_no_data(self, email_service):
         """Test preparing feedback email with no data"""
         result = email_service._prepare_feedback_email_template(
-            to_email="user@test.com",
+            to_email=MOCK_EMAIL_USER_TEST,
             data=None
         )
 
@@ -106,7 +106,7 @@ class TestEmailService:
         }
 
         result = email_service._prepare_scenario_email_template(
-            to_email="user@test.com",
+            to_email=MOCK_EMAIL_USER_TEST,
             data=data
         )
 
@@ -126,7 +126,7 @@ class TestEmailService:
         }
 
         result = email_service._prepare_scenario_email_template(
-            to_email="user@test.com",
+            to_email=MOCK_EMAIL_USER_TEST,
             data=data
         )
 
@@ -140,9 +140,9 @@ class TestEmailService:
 
         # Should not raise
         await email_service.send_reset_email(
-            to_email="user@test.com",
+            to_email=MOCK_EMAIL_USER_TEST,
             reset_token="abc123",
-            reset_url="http://example.com/reset"
+            reset_url=MOCK_URL_RESET
         )
 
         mock_send.assert_called_once()
@@ -155,9 +155,9 @@ class TestEmailService:
 
         with pytest.raises(EmailError):
             await email_service.send_reset_email(
-                to_email="user@test.com",
+                to_email=MOCK_EMAIL_USER_TEST,
                 reset_token="abc123",
-                reset_url="http://example.com/reset"
+                reset_url=MOCK_URL_RESET
             )
 
     @pytest.mark.asyncio
@@ -167,7 +167,7 @@ class TestEmailService:
         mock_send.return_value = AsyncMock()
 
         await email_service.send_feedback_email(
-            to_email="user@test.com",
+            to_email=MOCK_EMAIL_USER_TEST,
             data={"rating": 5}
         )
 
@@ -181,7 +181,7 @@ class TestEmailService:
 
         with pytest.raises(EmailError):
             await email_service.send_feedback_email(
-                to_email="user@test.com",
+                to_email=MOCK_EMAIL_USER_TEST,
                 data={"rating": 5}
             )
 
@@ -192,7 +192,7 @@ class TestEmailService:
         mock_send.return_value = AsyncMock()
 
         await email_service.send_scenario_email(
-            to_email="user@test.com",
+            to_email=MOCK_EMAIL_USER_TEST,
             data={
                 "requestId": "REQ-SCR-0001",
                 "scenarioName": "Test",
@@ -213,7 +213,7 @@ class TestEmailService:
 
         with pytest.raises(EmailError):
             await email_service.send_scenario_email(
-                to_email="user@test.com",
+                to_email=MOCK_EMAIL_USER_TEST,
                 data={
                     "requestId": "REQ-SCR-0001",
                     "scenarioName": "Test",
@@ -230,7 +230,7 @@ class TestEmailService:
         config = {
             "smtp_server": "smtp.test.com",
             "smtp_port": 587,
-            "email": "noreply@test.com",
+            "email": MOCK_EMAIL_NOREPLY,
             "password": MOCK_SMTP_PASSWORD,
             "use_tls": True
         }
@@ -242,32 +242,32 @@ class TestEmailService:
         config = {
             "smtp_server": "localhost",
             "smtp_port": 25,
-            "email": "noreply@test.com",
+            "email": MOCK_EMAIL_NOREPLY,
         }
         return EmailService(config)
 
     def test_prepare_welcome_email_template(self, email_service):
         """Test preparing welcome email template"""
         result = email_service._prepare_welcome_email_template(
-            to_email="user@test.com",
+            to_email=MOCK_EMAIL_USER_TEST,
             full_name="Test User",
             password=MOCK_PASSWORD_TEMP
         )
 
         assert isinstance(result, MIMEMultipart)
-        assert result["To"] == "user@test.com"
+        assert result["To"] == MOCK_EMAIL_USER_TEST
         assert "Welcome" in result["Subject"]
 
     def test_prepare_password_reset_email_template(self, email_service):
         """Test preparing password reset email template"""
         result = email_service._prepare_password_reset_email_template(
-            to_email="user@test.com",
+            to_email=MOCK_EMAIL_USER_TEST,
             full_name="Test User",
             reset_token="abc123"
         )
 
         assert isinstance(result, MIMEMultipart)
-        assert result["To"] == "user@test.com"
+        assert result["To"] == MOCK_EMAIL_USER_TEST
         assert "Password Reset" in result["Subject"]
 
     @pytest.mark.asyncio
@@ -277,7 +277,7 @@ class TestEmailService:
         mock_send.return_value = AsyncMock()
 
         await email_service.send_welcome_email(
-            to_email="user@test.com",
+            to_email=MOCK_EMAIL_USER_TEST,
             full_name="Test User",
             password=MOCK_PASSWORD_TEMP
         )
@@ -292,7 +292,7 @@ class TestEmailService:
 
         with pytest.raises(EmailError):
             await email_service.send_welcome_email(
-                to_email="user@test.com",
+                to_email=MOCK_EMAIL_USER_TEST,
                 full_name="Test User",
                 password=MOCK_PASSWORD_TEMP
             )
@@ -304,7 +304,7 @@ class TestEmailService:
         mock_send.return_value = AsyncMock()
 
         await email_service_with_tls.send_welcome_email(
-            to_email="user@test.com",
+            to_email=MOCK_EMAIL_USER_TEST,
             full_name="Test User",
             password=MOCK_PASSWORD_TEMP
         )
@@ -321,7 +321,7 @@ class TestEmailService:
         mock_send.return_value = AsyncMock()
 
         await email_service.send_password_reset_email(
-            to_email="user@test.com",
+            to_email=MOCK_EMAIL_USER_TEST,
             full_name="Test User",
             reset_token="abc123"
         )
@@ -336,7 +336,7 @@ class TestEmailService:
 
         with pytest.raises(EmailError):
             await email_service.send_password_reset_email(
-                to_email="user@test.com",
+                to_email=MOCK_EMAIL_USER_TEST,
                 full_name="Test User",
                 reset_token="abc123"
             )
@@ -348,7 +348,7 @@ class TestEmailService:
         mock_send.return_value = AsyncMock()
 
         await email_service_with_tls.send_password_reset_email(
-            to_email="user@test.com",
+            to_email=MOCK_EMAIL_USER_TEST,
             full_name="Test User",
             reset_token="abc123"
         )
@@ -364,9 +364,9 @@ class TestEmailService:
         mock_send.return_value = AsyncMock()
 
         await email_service_with_tls.send_reset_email(
-            to_email="user@test.com",
+            to_email=MOCK_EMAIL_USER_TEST,
             reset_token="abc123",
-            reset_url="http://example.com/reset"
+            reset_url=MOCK_URL_RESET
         )
 
         mock_send.assert_called_once()
@@ -380,7 +380,7 @@ class TestEmailService:
         mock_send.return_value = AsyncMock()
 
         await email_service_with_tls.send_feedback_email(
-            to_email="user@test.com",
+            to_email=MOCK_EMAIL_USER_TEST,
             data={"rating": 5}
         )
 
@@ -395,7 +395,7 @@ class TestEmailService:
         mock_send.return_value = AsyncMock()
 
         await email_service_with_tls.send_scenario_email(
-            to_email="user@test.com",
+            to_email=MOCK_EMAIL_USER_TEST,
             data={
                 "requestId": "REQ-SCR-0001",
                 "scenarioName": "Test",
@@ -415,9 +415,9 @@ class TestEmailService:
         mock_send.return_value = AsyncMock()
 
         await email_service_no_auth.send_reset_email(
-            to_email="user@test.com",
+            to_email=MOCK_EMAIL_USER_TEST,
             reset_token="abc123",
-            reset_url="http://example.com/reset"
+            reset_url=MOCK_URL_RESET
         )
 
         mock_send.assert_called_once()
@@ -443,6 +443,6 @@ class TestEmailService:
 
         assert service.smtp_server == "localhost"
         assert service.smtp_port == 25
-        assert service.email == "noreply@easylife.local"
+        assert service.email == MOCK_EMAIL_NOREPLY_EASYLIFE
         assert service.password is None
         assert service.use_tls is False

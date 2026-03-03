@@ -1,3 +1,4 @@
+from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_SUPERADMIN, MOCK_EMAIL_USER_TEST
 """Tests for API Config Routes"""
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -51,7 +52,7 @@ def make_config_dict(**overrides):
         "status": "active",
         "tags": ["test"],
         "created_at": datetime.utcnow().isoformat(),
-        "created_by": "admin@test.com",
+        "created_by": MOCK_EMAIL_ADMIN_TEST,
         "updated_at": None,
         "updated_by": None,
     }
@@ -92,7 +93,7 @@ class TestApiConfigRoutesSuperAdmin:
     def mock_super_admin(self):
         """Create a mock super admin user."""
         user = MagicMock()
-        user.email = "superadmin@test.com"
+        user.email = MOCK_EMAIL_SUPERADMIN
         user.user_id = "superadmin_123"
         user.roles = ["super-administrator"]
         return user
@@ -442,7 +443,7 @@ class TestApiConfigRoutesTestEndpoints:
     def mock_user(self):
         """Create a mock regular user."""
         user = MagicMock()
-        user.email = "user@test.com"
+        user.email = MOCK_EMAIL_USER_TEST
         user.user_id = "user_123"
         user.roles = ["user"]
         return user
@@ -586,7 +587,7 @@ class TestApiConfigRoutesGCSStatus:
     def mock_user(self):
         """Create a mock user."""
         user = MagicMock()
-        user.email = "user@test.com"
+        user.email = MOCK_EMAIL_USER_TEST
         user.user_id = "user_123"
         user.roles = ["user"]
         return user
@@ -669,7 +670,7 @@ class TestApiConfigRoutesAuthEnforcement:
     def mock_regular_user(self):
         """Create a mock regular user (not super admin)."""
         user = MagicMock()
-        user.email = "user@test.com"
+        user.email = MOCK_EMAIL_USER_TEST
         user.user_id = "user_123"
         user.roles = ["user"]
         return user

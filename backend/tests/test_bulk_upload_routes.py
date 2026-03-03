@@ -1,3 +1,4 @@
+from mock_data import MOCK_EMAIL_ADMIN
 """Tests for Bulk Upload API Routes"""
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -23,7 +24,7 @@ def mock_super_admin():
     """Create a mock super-admin user returned by the dependency override."""
     return CurrentUser(
         user_id="507f1f77bcf86cd799439012",
-        email="admin@example.com",
+        email=MOCK_EMAIL_ADMIN,
         roles=["super-administrator"],
         groups=["administrator"],
         domains=["all"],

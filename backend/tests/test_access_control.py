@@ -1,3 +1,4 @@
+from mock_data import MOCK_EMAIL, MOCK_EMAIL_ADMIN, MOCK_EMAIL_EDITOR, MOCK_EMAIL_GROUPADMIN, MOCK_EMAIL_STANDALONE, MOCK_EMAIL_SUPER, MOCK_EMAIL_USER
 """Tests for Access Control"""
 import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
@@ -18,19 +19,19 @@ class TestCurrentUser:
         """Test creating CurrentUser instance"""
         user = CurrentUser(
             user_id="123",
-            email="test@example.com",
+            email=MOCK_EMAIL,
             roles=["user"]
         )
 
         assert user.user_id == "123"
-        assert user.email == "test@example.com"
+        assert user.email == MOCK_EMAIL
         assert user.roles == ["user"]
 
     def test_current_user_defaults(self):
         """Test CurrentUser default values"""
         user = CurrentUser(
             user_id="123",
-            email="test@example.com",
+            email=MOCK_EMAIL,
             roles=["user"]
         )
 
@@ -69,7 +70,7 @@ class TestAccessControlClass:
         """Create access control instance with mock"""
         mock_token_manager.verify_token = AsyncMock(return_value={
             "user_id": "123",
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "roles": ["user"],
             "groups": ["viewer"],
             "domains": []
@@ -80,7 +81,7 @@ class TestAccessControlClass:
         """Test require_admin with admin user"""
         user = CurrentUser(
             user_id="123",
-            email="admin@example.com",
+            email=MOCK_EMAIL_ADMIN,
             roles=["administrator"],
             groups=[],
             domains=[]
@@ -92,7 +93,7 @@ class TestAccessControlClass:
         """Test require_admin with non-admin user"""
         user = CurrentUser(
             user_id="123",
-            email="user@example.com",
+            email=MOCK_EMAIL_USER,
             roles=["user"],
             groups=[],
             domains=[]
@@ -105,7 +106,7 @@ class TestAccessControlClass:
         """Test require_super_admin with super admin"""
         user = CurrentUser(
             user_id="123",
-            email="super@example.com",
+            email=MOCK_EMAIL_SUPER,
             roles=["super-administrator"],
             groups=[],
             domains=[]
@@ -117,7 +118,7 @@ class TestAccessControlClass:
         """Test require_super_admin without super admin role"""
         user = CurrentUser(
             user_id="123",
-            email="admin@example.com",
+            email=MOCK_EMAIL_ADMIN,
             roles=["administrator"],
             groups=[],
             domains=[]
@@ -130,7 +131,7 @@ class TestAccessControlClass:
         """Test require_admin_or_editor with admin"""
         user = CurrentUser(
             user_id="123",
-            email="admin@example.com",
+            email=MOCK_EMAIL_ADMIN,
             roles=["administrator"],
             groups=[],
             domains=[]
@@ -142,7 +143,7 @@ class TestAccessControlClass:
         """Test require_admin_or_editor with editor"""
         user = CurrentUser(
             user_id="123",
-            email="editor@example.com",
+            email=MOCK_EMAIL_EDITOR,
             roles=["editor"],
             groups=[],
             domains=[]
@@ -154,7 +155,7 @@ class TestAccessControlClass:
         """Test require_admin_or_editor without proper role"""
         user = CurrentUser(
             user_id="123",
-            email="user@example.com",
+            email=MOCK_EMAIL_USER,
             roles=["user"],
             groups=[],
             domains=[]
@@ -167,7 +168,7 @@ class TestAccessControlClass:
         """Test require_group_admin with admin"""
         user = CurrentUser(
             user_id="123",
-            email="admin@example.com",
+            email=MOCK_EMAIL_ADMIN,
             roles=["administrator"],
             groups=[],
             domains=[]
@@ -179,7 +180,7 @@ class TestAccessControlClass:
         """Test require_group_admin with group-administrator"""
         user = CurrentUser(
             user_id="123",
-            email="groupadmin@example.com",
+            email=MOCK_EMAIL_GROUPADMIN,
             roles=["group-administrator"],
             groups=[],
             domains=[]
@@ -191,7 +192,7 @@ class TestAccessControlClass:
         """Test require_group_admin without proper role"""
         user = CurrentUser(
             user_id="123",
-            email="user@example.com",
+            email=MOCK_EMAIL_USER,
             roles=["user"],
             groups=[],
             domains=[]
@@ -208,7 +209,7 @@ class TestRequireFunctions:
         """Test require_admin function with admin role"""
         user = CurrentUser(
             user_id="123",
-            email="admin@example.com",
+            email=MOCK_EMAIL_ADMIN,
             roles=["administrator"],
             groups=[],
             domains=[]
@@ -221,7 +222,7 @@ class TestRequireFunctions:
         """Test require_admin function without admin role"""
         user = CurrentUser(
             user_id="123",
-            email="user@example.com",
+            email=MOCK_EMAIL_USER,
             roles=["user"],
             groups=[],
             domains=[]
@@ -234,7 +235,7 @@ class TestRequireFunctions:
         """Test require_super_admin function"""
         user = CurrentUser(
             user_id="123",
-            email="super@example.com",
+            email=MOCK_EMAIL_SUPER,
             roles=["super-administrator"],
             groups=[],
             domains=[]
@@ -246,7 +247,7 @@ class TestRequireFunctions:
         """Test require_super_admin function without super admin"""
         user = CurrentUser(
             user_id="123",
-            email="admin@example.com",
+            email=MOCK_EMAIL_ADMIN,
             roles=["administrator"],
             groups=[],
             domains=[]
@@ -259,7 +260,7 @@ class TestRequireFunctions:
         """Test require_group_admin with admin"""
         user = CurrentUser(
             user_id="123",
-            email="admin@example.com",
+            email=MOCK_EMAIL_ADMIN,
             roles=["administrator"],
             groups=[],
             domains=[]
@@ -271,7 +272,7 @@ class TestRequireFunctions:
         """Test require_group_admin with group-administrator"""
         user = CurrentUser(
             user_id="123",
-            email="groupadmin@example.com",
+            email=MOCK_EMAIL_GROUPADMIN,
             roles=["group-administrator"],
             groups=[],
             domains=[]
@@ -283,7 +284,7 @@ class TestRequireFunctions:
         """Test require_group_admin without proper role"""
         user = CurrentUser(
             user_id="123",
-            email="user@example.com",
+            email=MOCK_EMAIL_USER,
             roles=["user"],
             groups=[],
             domains=[]
@@ -296,7 +297,7 @@ class TestRequireFunctions:
         """Test require_admin_or_editor with admin"""
         user = CurrentUser(
             user_id="123",
-            email="admin@example.com",
+            email=MOCK_EMAIL_ADMIN,
             roles=["administrator"],
             groups=[],
             domains=[]
@@ -308,7 +309,7 @@ class TestRequireFunctions:
         """Test require_admin_or_editor with editor"""
         user = CurrentUser(
             user_id="123",
-            email="editor@example.com",
+            email=MOCK_EMAIL_EDITOR,
             roles=["editor"],
             groups=[],
             domains=[]
@@ -332,7 +333,7 @@ class TestRequireFunctions:
         """Test require_admin_or_editor without proper role"""
         user = CurrentUser(
             user_id="123",
-            email="user@example.com",
+            email=MOCK_EMAIL_USER,
             roles=["user"],
             groups=[],
             domains=[]
@@ -350,7 +351,7 @@ class TestGetCurrentUser:
         """Test AccessControl.get_current_user with valid token"""
         mock_token_manager.verify_token = AsyncMock(return_value={
             "user_id": "user123",
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "roles": ["user", "editor"],
             "groups": ["team-a"],
             "domains": ["finance"]
@@ -366,7 +367,7 @@ class TestGetCurrentUser:
         result = await access_control.get_current_user(request=mock_request, credentials=mock_credentials)
 
         assert result.user_id == "user123"
-        assert result.email == "test@example.com"
+        assert result.email == MOCK_EMAIL
         assert "editor" in result.roles
         assert "team-a" in result.groups
         assert "finance" in result.domains
@@ -395,7 +396,7 @@ class TestGetCurrentUser:
 
         mock_token_manager.verify_token = AsyncMock(return_value={
             "user_id": "user456",
-            "email": "standalone@example.com",
+            "email": MOCK_EMAIL_STANDALONE,
             "roles": ["administrator"],
             "groups": ["admins"],
             "domains": ["all"]
@@ -410,7 +411,7 @@ class TestGetCurrentUser:
         result = await get_current_user(request=mock_request, credentials=mock_credentials)
 
         assert result.user_id == "user456"
-        assert result.email == "standalone@example.com"
+        assert result.email == MOCK_EMAIL_STANDALONE
         assert "administrator" in result.roles
 
     @pytest.mark.asyncio

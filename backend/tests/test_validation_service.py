@@ -1,3 +1,4 @@
+from mock_data import MOCK_EMAIL
 """Tests for Validation Service"""
 import pytest
 
@@ -50,7 +51,7 @@ class TestValidateEmail:
 
     def test_validate_email_valid(self):
         """Test valid email passes"""
-        ValidationService.validate_email("test@example.com")
+        ValidationService.validate_email(MOCK_EMAIL)
 
     def test_validate_email_empty(self):
         """Test empty email fails"""
@@ -265,7 +266,7 @@ class TestValidateUserData:
     def test_validate_user_data_valid(self):
         """Test valid user data passes"""
         errors = ValidationService.validate_user_data({
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "username": "testuser",
             "full_name": "Test User",
             "roles": ["user"],
@@ -289,7 +290,7 @@ class TestValidateUserData:
     def test_validate_user_data_invalid_username(self):
         """Test invalid username fails"""
         errors = ValidationService.validate_user_data({
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "username": "a"  # Too short
         })
         assert any("username" in e.lower() for e in errors)
@@ -297,7 +298,7 @@ class TestValidateUserData:
     def test_validate_user_data_long_full_name(self):
         """Test too long full_name fails"""
         errors = ValidationService.validate_user_data({
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "full_name": "a" * 300
         })
         assert any("full_name" in e.lower() for e in errors)
@@ -305,7 +306,7 @@ class TestValidateUserData:
     def test_validate_user_data_invalid_roles(self):
         """Test invalid roles fails"""
         errors = ValidationService.validate_user_data({
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "roles": "not a list"
         })
         assert any("roles" in e.lower() for e in errors)
@@ -313,7 +314,7 @@ class TestValidateUserData:
     def test_validate_user_data_invalid_is_active(self):
         """Test invalid is_active fails"""
         errors = ValidationService.validate_user_data({
-            "email": "test@example.com",
+            "email": MOCK_EMAIL,
             "is_active": "yes"
         })
         assert any("is_active" in e.lower() for e in errors)

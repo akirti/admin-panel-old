@@ -6,7 +6,7 @@ from bson import ObjectId
 
 from easylifeauth.services.user_service import UserService
 from easylifeauth.errors.auth_error import AuthError
-from mock_data import MOCK_PASSWORD, MOCK_PASSWORD_ALT, MOCK_PASSWORD_WRONG
+from mock_data import MOCK_EMAIL, MOCK_EMAIL_NEW, MOCK_EMAIL_NOTFOUND, MOCK_PASSWORD, MOCK_PASSWORD_ALT, MOCK_PASSWORD_WRONG
 
 
 class TestUserService:
@@ -24,14 +24,14 @@ class TestUserService:
         mock_db.users.insert_one = AsyncMock(return_value=MagicMock(inserted_id=ObjectId()))
         
         result = await user_service.register_user(
-            email="new@example.com",
+            email=MOCK_EMAIL_NEW,
             username="newuser",
             password=MOCK_PASSWORD,
             full_name="New User"
         )
         
         assert "user_id" in result
-        assert result["email"] == "new@example.com"
+        assert result["email"] == MOCK_EMAIL_NEW
         assert "access_token" in result
 
     @pytest.mark.asyncio
@@ -50,7 +50,7 @@ class TestUserService:
         """Test registration with short password"""
         with pytest.raises(AuthError) as exc_info:
             await user_service.register_user(
-                email="test@example.com",
+                email=MOCK_EMAIL,
                 username="testuser",
                 password="short"
             )
@@ -80,12 +80,12 @@ class TestUserService:
         mock_db.users.update_one = AsyncMock()
         
         result = await user_service.login_user(
-            email="test@example.com",
+            email=MOCK_EMAIL,
             password=MOCK_PASSWORD
         )
         
         assert "access_token" in result
-        assert result["email"] == "test@example.com"
+        assert result["email"] == MOCK_EMAIL
 
     @pytest.mark.asyncio
     async def test_login_user_missing_credentials(self, user_service):
@@ -101,7 +101,7 @@ class TestUserService:
         
         with pytest.raises(AuthError) as exc_info:
             await user_service.login_user(
-                email="notfound@example.com",
+                email=MOCK_EMAIL_NOTFOUND,
                 password=MOCK_PASSWORD
             )
         assert exc_info.value.status_code == 401
@@ -114,7 +114,7 @@ class TestUserService:
         
         with pytest.raises(AuthError) as exc_info:
             await user_service.login_user(
-                email="test@example.com",
+                email=MOCK_EMAIL,
                 password=MOCK_PASSWORD
             )
         assert exc_info.value.status_code == 403
@@ -128,7 +128,7 @@ class TestUserService:
         
         with pytest.raises(AuthError) as exc_info:
             await user_service.login_user(
-                email="test@example.com",
+                email=MOCK_EMAIL,
                 password=MOCK_PASSWORD_WRONG
             )
         assert exc_info.value.status_code == 401
@@ -141,7 +141,7 @@ class TestUserService:
         
         result = await user_service.get_user_by_id("507f1f77bcf86cd799439011")
         
-        assert result["email"] == "test@example.com"
+        assert result["email"] == MOCK_EMAIL
         assert "password_hash" not in result
 
     @pytest.mark.asyncio
@@ -216,7 +216,7 @@ class TestUserService:
         
         result = await user_service.logout_user(
             "507f1f77bcf86cd799439011",
-            "test@example.com"
+            MOCK_EMAIL
         )
         
         assert result["message"] == "Logged out successfully"
@@ -228,7 +228,7 @@ class TestUserService:
 
         result = await user_service.logout_user(
             "507f1f77bcf86cd799439011",
-            "test@example.com"
+            MOCK_EMAIL
         )
 
         # Service always returns success regardless of whether tokens existed
@@ -333,10 +333,10 @@ class TestUserService:
         sample_user_data["_id"] = ObjectId(sample_user_data["_id"])
         mock_db.users.find_one = AsyncMock(return_value=sample_user_data)
 
-        result = await user_service.get_user_by_email("test@example.com")
+        result = await user_service.get_user_by_email(MOCK_EMAIL)
 
         assert result is not None
-        assert result["email"] == "test@example.com"
+        assert result["email"] == MOCK_EMAIL
         assert "password_hash" not in result
 
     @pytest.mark.asyncio
@@ -344,7 +344,7 @@ class TestUserService:
         """Test getting non-existent user by email"""
         mock_db.users.find_one = AsyncMock(return_value=None)
 
-        result = await user_service.get_user_by_email("notfound@example.com")
+        result = await user_service.get_user_by_email(MOCK_EMAIL_NOTFOUND)
 
         assert result is None
 
@@ -353,7 +353,7 @@ class TestUserService:
         """Test getting user by email with exception"""
         mock_db.users.find_one = AsyncMock(side_effect=Exception("DB Error"))
 
-        result = await user_service.get_user_by_email("test@example.com")
+        result = await user_service.get_user_by_email(MOCK_EMAIL)
 
         assert result is None
 

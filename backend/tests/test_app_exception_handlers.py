@@ -16,6 +16,7 @@ from fastapi.testclient import TestClient
 from pydantic import BaseModel, ValidationError
 
 from easylifeauth.app import create_app
+from mock_data import MOCK_URL_MONGODB
 
 
 class TestShutdownDbCloseError:
@@ -36,7 +37,7 @@ class TestShutdownDbCloseError:
                 with patch("easylifeauth.app.init_dependencies"):
                     app = create_app(
                         db_config={
-                            "uri": "mongodb://localhost:27017",
+                            "uri": MOCK_URL_MONGODB,
                             "database": "test",
                         },
                         token_secret="test_secret",

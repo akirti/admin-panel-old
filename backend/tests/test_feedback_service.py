@@ -1,3 +1,4 @@
+from mock_data import MOCK_EMAIL, MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_EDITOR_TEST, MOCK_EMAIL_PUBLIC, MOCK_EMAIL_SUPERADMIN, MOCK_EMAIL_USER_TEST
 """Tests for Feedback Service"""
 import pytest
 from datetime import datetime, timezone
@@ -28,7 +29,7 @@ class TestFeedbackService:
             "rating": 5,
             "improvements": "None",
             "suggestions": "Great!",
-            "email": "test@example.com"
+            "email": MOCK_EMAIL
         })
         
         assert result is not None
@@ -72,7 +73,7 @@ class TestFeedbackService:
         # Should not raise, just log the error
         result = await feedback_service.save({
             "rating": 5,
-            "email": "test@example.com"
+            "email": MOCK_EMAIL
         })
 
         assert result is not None
@@ -176,7 +177,7 @@ class TestFeedbackService:
         mock_db.feedbacks.find = MagicMock(return_value=mock_cursor)
 
         result = await feedback_service.get_all(
-            user_email="admin@test.com",
+            user_email=MOCK_EMAIL_ADMIN_TEST,
             user_roles=["administrator"]
         )
 
@@ -193,13 +194,13 @@ class TestFeedbackService:
         mock_db.feedbacks.find = MagicMock(return_value=mock_cursor)
 
         result = await feedback_service.get_all(
-            user_email="user@test.com",
+            user_email=MOCK_EMAIL_USER_TEST,
             user_roles=["user"]
         )
 
         assert len(result) == 1
         # Regular user should only see their own feedback
-        mock_db.feedbacks.find.assert_called_once_with({"email": "user@test.com"})
+        mock_db.feedbacks.find.assert_called_once_with({"email": MOCK_EMAIL_USER_TEST})
 
     @pytest.mark.asyncio
     async def test_get_all_super_admin(self, feedback_service, mock_db, sample_feedback_data):
@@ -210,7 +211,7 @@ class TestFeedbackService:
         mock_db.feedbacks.find = MagicMock(return_value=mock_cursor)
 
         result = await feedback_service.get_all(
-            user_email="superadmin@test.com",
+            user_email=MOCK_EMAIL_SUPERADMIN,
             user_roles=["super-administrator"]
         )
 
@@ -226,7 +227,7 @@ class TestFeedbackService:
         mock_db.feedbacks.find = MagicMock(return_value=mock_cursor)
 
         result = await feedback_service.get_all(
-            user_email="editor@test.com",
+            user_email=MOCK_EMAIL_EDITOR_TEST,
             user_roles=["editor"]
         )
 
@@ -257,7 +258,7 @@ class TestFeedbackService:
         result = await feedback_service.save_public({
             "rating": 4,
             "improvements": "Better UI",
-            "email": "public@example.com"
+            "email": MOCK_EMAIL_PUBLIC
         })
 
         assert result is not None
@@ -299,7 +300,7 @@ class TestFeedbackService:
         # Should not raise, just log the error
         result = await feedback_service.save_public({
             "rating": 4,
-            "email": "public@example.com"
+            "email": MOCK_EMAIL_PUBLIC
         })
 
         assert result is not None
@@ -537,7 +538,7 @@ class TestFeedbackService:
 
         result = await service.save({
             "rating": 5,
-            "email": "test@example.com"
+            "email": MOCK_EMAIL
         })
 
         assert result is not None

@@ -9,6 +9,7 @@ from bson import ObjectId
 from easylifeauth.api.groups_routes import router, create_pagination_meta, notify_users_of_group_change
 from easylifeauth.api import dependencies
 from easylifeauth.security.access_control import CurrentUser, require_super_admin, require_group_admin
+from mock_data import MOCK_EMAIL_ADMIN, MOCK_EMAIL_USER1, MOCK_EMAIL_USER2
 
 
 class TestGroupsPaginationMeta:
@@ -58,12 +59,12 @@ class TestNotifyUsersOfGroupChange:
         async def user_generator():
             yield {
                 "_id": ObjectId(),
-                "email": "user1@example.com",
+                "email": MOCK_EMAIL_USER1,
                 "full_name": "User 1"
             }
             yield {
                 "_id": ObjectId(),
-                "email": "user2@example.com",
+                "email": MOCK_EMAIL_USER2,
                 "full_name": "User 2"
             }
 
@@ -84,7 +85,7 @@ class TestGroupsRoutes:
         """Create mock super admin user"""
         return CurrentUser(
             user_id="507f1f77bcf86cd799439011",
-            email="admin@example.com",
+            email=MOCK_EMAIL_ADMIN,
             roles=["super-administrator"],
             groups=[],
             domains=[]
@@ -384,13 +385,13 @@ class TestGroupsRoutes:
         async def user_cursor():
             yield {
                 "_id": ObjectId(),
-                "email": "user1@example.com",
+                "email": MOCK_EMAIL_USER1,
                 "full_name": "User 1",
                 "groups": ["editors"]
             }
             yield {
                 "_id": ObjectId(),
-                "email": "user2@example.com",
+                "email": MOCK_EMAIL_USER2,
                 "full_name": "User 2",
                 "groups": ["editors"]
             }

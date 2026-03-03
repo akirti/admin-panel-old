@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
 from bson import ObjectId
 
 from easylifeauth.services.api_config_service import ApiConfigService
-from mock_data import MOCK_DB_PASSWORD, MOCK_SECRET, MOCK_PASSWORD_WRONG, MOCK_PASSWORD, MOCK_CLIENT_SECRET
+from mock_data import MOCK_CLIENT_SECRET, MOCK_DB_PASSWORD, MOCK_EMAIL_ADMIN, MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_CREATOR, MOCK_EMAIL_EDITOR, MOCK_EMAIL_USER, MOCK_PASSWORD, MOCK_PASSWORD_WRONG, MOCK_SECRET, MOCK_URL_API, MOCK_URL_API_DATA, MOCK_URL_API_HEALTH, MOCK_URL_AUTH_LOGIN, MOCK_URL_AUTH_OAUTH, MOCK_URL_AUTH_TOKEN, MOCK_URL_PROXY, MOCK_URL_RESOURCE
 
 
 class TestApiConfigServiceInit:
@@ -365,15 +365,15 @@ class TestCreateConfig:
         config_data = {
             "key": "new-api",
             "name": "New API",
-            "endpoint": "https://api.example.com"
+            "endpoint": MOCK_URL_API
         }
 
-        result = await service.create_config(config_data, "admin@example.com")
+        result = await service.create_config(config_data, MOCK_EMAIL_ADMIN)
 
         assert result["key"] == "new-api"
         assert result["name"] == "New API"
-        assert result["created_by"] == "admin@example.com"
-        assert result["updated_by"] == "admin@example.com"
+        assert result["created_by"] == MOCK_EMAIL_ADMIN
+        assert result["updated_by"] == MOCK_EMAIL_ADMIN
         assert "created_at" in result
         assert "updated_at" in result
         assert "_id" in result
@@ -393,7 +393,7 @@ class TestCreateConfig:
         config_data = {"key": "existing-api", "name": "Duplicate"}
 
         with pytest.raises(ValueError, match="already exists"):
-            await service.create_config(config_data, "admin@example.com")
+            await service.create_config(config_data, MOCK_EMAIL_ADMIN)
 
         mock_collection.insert_one.assert_not_called()
 
@@ -402,7 +402,7 @@ class TestCreateConfig:
         """Test that created_at and updated_at are set as UTC datetimes."""
         config_data = {"key": "ts-test", "name": "Timestamp test"}
 
-        result = await service.create_config(config_data, "user@example.com")
+        result = await service.create_config(config_data, MOCK_EMAIL_USER)
 
         assert isinstance(result["created_at"], datetime)
         assert isinstance(result["updated_at"], datetime)
@@ -420,7 +420,7 @@ class TestCreateConfig:
             "auth_type": mock_enum
         }
 
-        result = await service.create_config(config_data, "admin@example.com")
+        result = await service.create_config(config_data, MOCK_EMAIL_ADMIN)
 
         assert result["auth_type"] == "bearer"
 
@@ -433,7 +433,7 @@ class TestCreateConfig:
             "auth_type": "api_key"
         }
 
-        result = await service.create_config(config_data, "admin@example.com")
+        result = await service.create_config(config_data, MOCK_EMAIL_ADMIN)
 
         assert result["auth_type"] == "api_key"
 
@@ -442,10 +442,10 @@ class TestCreateConfig:
         """Test that created_by and updated_by are set to user_email."""
         config_data = {"key": "owner-test", "name": "Owner test"}
 
-        result = await service.create_config(config_data, "creator@example.com")
+        result = await service.create_config(config_data, MOCK_EMAIL_CREATOR)
 
-        assert result["created_by"] == "creator@example.com"
-        assert result["updated_by"] == "creator@example.com"
+        assert result["created_by"] == MOCK_EMAIL_CREATOR
+        assert result["updated_by"] == MOCK_EMAIL_CREATOR
 
 
 class TestUpdateConfig:
@@ -477,11 +477,11 @@ class TestUpdateConfig:
             "_id": oid,
             "key": "test-api",
             "name": "Updated API",
-            "updated_by": "admin@example.com"
+            "updated_by": MOCK_EMAIL_ADMIN
         })
 
         update_data = {"name": "Updated API"}
-        result = await service.update_config(str(oid), update_data, "admin@example.com")
+        result = await service.update_config(str(oid), update_data, MOCK_EMAIL_ADMIN)
 
         assert result is not None
         assert result["name"] == "Updated API"
@@ -499,7 +499,7 @@ class TestUpdateConfig:
         })
 
         update_data = {"name": "Updated", "description": None, "tags": None}
-        await service.update_config(str(oid), update_data, "admin@example.com")
+        await service.update_config(str(oid), update_data, MOCK_EMAIL_ADMIN)
 
         call_args = mock_collection.find_one_and_update.call_args
         set_data = call_args[0][1]["$set"]
@@ -518,7 +518,7 @@ class TestUpdateConfig:
         })
 
         update_data = {"name": None, "description": None}
-        result = await service.update_config(str(oid), update_data, "admin@example.com")
+        result = await service.update_config(str(oid), update_data, MOCK_EMAIL_ADMIN)
 
         assert result is not None
         assert result["name"] == "Existing"
@@ -533,12 +533,12 @@ class TestUpdateConfig:
             "key": "test-api"
         })
 
-        await service.update_config(str(oid), {"name": "New Name"}, "editor@example.com")
+        await service.update_config(str(oid), {"name": "New Name"}, MOCK_EMAIL_EDITOR)
 
         call_args = mock_collection.find_one_and_update.call_args
         set_data = call_args[0][1]["$set"]
         assert "updated_at" in set_data
-        assert set_data["updated_by"] == "editor@example.com"
+        assert set_data["updated_by"] == MOCK_EMAIL_EDITOR
         assert isinstance(set_data["updated_at"], datetime)
 
     @pytest.mark.asyncio
@@ -553,7 +553,7 @@ class TestUpdateConfig:
             "auth_type": "oauth2"
         })
 
-        await service.update_config(str(oid), {"auth_type": mock_enum}, "admin@example.com")
+        await service.update_config(str(oid), {"auth_type": mock_enum}, MOCK_EMAIL_ADMIN)
 
         call_args = mock_collection.find_one_and_update.call_args
         set_data = call_args[0][1]["$set"]
@@ -564,7 +564,7 @@ class TestUpdateConfig:
         """Test updating a non-existent config returns None."""
         mock_collection.find_one_and_update = AsyncMock(return_value=None)
 
-        result = await service.update_config(str(ObjectId()), {"name": "New"}, "admin@example.com")
+        result = await service.update_config(str(ObjectId()), {"name": "New"}, MOCK_EMAIL_ADMIN)
 
         assert result is None
 
@@ -573,7 +573,7 @@ class TestUpdateConfig:
         """Test updating with invalid ObjectId returns None."""
         mock_collection.find_one_and_update = AsyncMock(side_effect=Exception("invalid id"))
 
-        result = await service.update_config("bad-id", {"name": "New"}, "admin@example.com")
+        result = await service.update_config("bad-id", {"name": "New"}, MOCK_EMAIL_ADMIN)
 
         assert result is None
 
@@ -582,7 +582,7 @@ class TestUpdateConfig:
         """Test that DB exceptions are caught and None is returned."""
         mock_collection.find_one_and_update = AsyncMock(side_effect=Exception("DB error"))
 
-        result = await service.update_config(str(ObjectId()), {"name": "X"}, "admin@example.com")
+        result = await service.update_config(str(ObjectId()), {"name": "X"}, MOCK_EMAIL_ADMIN)
 
         assert result is None
 
@@ -595,7 +595,7 @@ class TestUpdateConfig:
             "key": "test"
         })
 
-        await service.update_config(str(oid), {"name": "X"}, "admin@example.com")
+        await service.update_config(str(oid), {"name": "X"}, MOCK_EMAIL_ADMIN)
 
         call_kwargs = mock_collection.find_one_and_update.call_args
         assert call_kwargs[1]["return_document"] is True
@@ -810,7 +810,7 @@ class TestUploadCertificate:
                 cert_type="cert",
                 file_content=file_content,
                 file_name="server.pem",
-                user_email="admin@example.com"
+                user_email=MOCK_EMAIL_ADMIN
             )
 
         assert result["cert_type"] == "cert"
@@ -831,7 +831,7 @@ class TestUploadCertificate:
             cert_type="key",
             file_content=file_content,
             file_name="server.key",
-            user_email="admin@example.com"
+            user_email=MOCK_EMAIL_ADMIN
         )
 
         assert result["cert_type"] == "key"
@@ -852,7 +852,7 @@ class TestUploadCertificate:
                 cert_type="ca",
                 file_content=file_content,
                 file_name="ca.pem",
-                user_email="admin@example.com"
+                user_email=MOCK_EMAIL_ADMIN
             )
 
         assert result["cert_type"] == "ca"
@@ -871,7 +871,7 @@ class TestUploadCertificate:
                 cert_type="cert",
                 file_content=file_content,
                 file_name="bad.pem",
-                user_email="admin@example.com"
+                user_email=MOCK_EMAIL_ADMIN
             )
 
         assert result["expires_at"] is None
@@ -890,7 +890,7 @@ class TestUploadCertificate:
                 cert_type="cert",
                 file_content=b"content",
                 file_name="f.pem",
-                user_email="admin@example.com"
+                user_email=MOCK_EMAIL_ADMIN
             )
 
     @pytest.mark.asyncio
@@ -908,7 +908,7 @@ class TestUploadCertificate:
                 cert_type="cert",
                 file_content=b"content",
                 file_name="f.pem",
-                user_email="admin@example.com"
+                user_email=MOCK_EMAIL_ADMIN
             )
 
     @pytest.mark.asyncio
@@ -920,7 +920,7 @@ class TestUploadCertificate:
                 cert_type="invalid",
                 file_content=b"content",
                 file_name="f.pem",
-                user_email="admin@example.com"
+                user_email=MOCK_EMAIL_ADMIN
             )
 
     @pytest.mark.asyncio
@@ -933,7 +933,7 @@ class TestUploadCertificate:
             cert_type="key",
             file_content=file_content,
             file_name="key.pem",
-            user_email="admin@example.com"
+            user_email=MOCK_EMAIL_ADMIN
         )
 
         gcs_path = result["gcs_path"]
@@ -1151,11 +1151,11 @@ class TestObtainLoginToken:
     async def test_obtain_login_token_success(self, service):
         """Test successful login token retrieval."""
         auth_config = {
-            "login_endpoint": "https://auth.example.com/login",
+            "login_endpoint": MOCK_URL_AUTH_LOGIN,
             "login_method": "POST",
             "username_field": "email",
             "password_field": "password",
-            "username": "user@example.com",
+            "username": MOCK_EMAIL_USER,
             "password": MOCK_SECRET,
             "token_response_path": "access_token"
         }
@@ -1180,7 +1180,7 @@ class TestObtainLoginToken:
     async def test_obtain_login_token_http_error(self, service):
         """Test login token when server returns error status."""
         auth_config = {
-            "login_endpoint": "https://auth.example.com/login",
+            "login_endpoint": MOCK_URL_AUTH_LOGIN,
             "username": "user",
             "password": MOCK_PASSWORD_WRONG
         }
@@ -1205,7 +1205,7 @@ class TestObtainLoginToken:
     async def test_obtain_login_token_invalid_json_response(self, service):
         """Test login token when response is not valid JSON."""
         auth_config = {
-            "login_endpoint": "https://auth.example.com/login",
+            "login_endpoint": MOCK_URL_AUTH_LOGIN,
             "username": "user",
             "password": MOCK_DB_PASSWORD
         }
@@ -1230,7 +1230,7 @@ class TestObtainLoginToken:
     async def test_obtain_login_token_cannot_extract_token(self, service):
         """Test login token when token cannot be extracted from response."""
         auth_config = {
-            "login_endpoint": "https://auth.example.com/login",
+            "login_endpoint": MOCK_URL_AUTH_LOGIN,
             "username": "user",
             "password": MOCK_DB_PASSWORD,
             "token_response_path": "data.token"
@@ -1257,7 +1257,7 @@ class TestObtainLoginToken:
         """Test login token when connection times out."""
         import httpx
         auth_config = {
-            "login_endpoint": "https://auth.example.com/login",
+            "login_endpoint": MOCK_URL_AUTH_LOGIN,
             "username": "user",
             "password": MOCK_DB_PASSWORD
         }
@@ -1279,7 +1279,7 @@ class TestObtainLoginToken:
         """Test login token when connection fails."""
         import httpx
         auth_config = {
-            "login_endpoint": "https://auth.example.com/login",
+            "login_endpoint": MOCK_URL_AUTH_LOGIN,
             "username": "user",
             "password": MOCK_DB_PASSWORD
         }
@@ -1300,7 +1300,7 @@ class TestObtainLoginToken:
     async def test_obtain_login_token_generic_exception(self, service):
         """Test login token when generic exception occurs."""
         auth_config = {
-            "login_endpoint": "https://auth.example.com/login",
+            "login_endpoint": MOCK_URL_AUTH_LOGIN,
             "username": "user",
             "password": MOCK_DB_PASSWORD
         }
@@ -1321,7 +1321,7 @@ class TestObtainLoginToken:
     async def test_obtain_login_token_uses_extra_body(self, service):
         """Test that extra_body fields are included in login request."""
         auth_config = {
-            "login_endpoint": "https://auth.example.com/login",
+            "login_endpoint": MOCK_URL_AUTH_LOGIN,
             "username": "user",
             "password": MOCK_DB_PASSWORD,
             "extra_body": {"grant_type": "password", "scope": "read"}
@@ -1350,8 +1350,8 @@ class TestObtainLoginToken:
     async def test_obtain_login_token_default_field_names(self, service):
         """Test that default username_field and password_field are used."""
         auth_config = {
-            "login_endpoint": "https://auth.example.com/login",
-            "username": "admin@test.com",
+            "login_endpoint": MOCK_URL_AUTH_LOGIN,
+            "username": MOCK_EMAIL_ADMIN_TEST,
             "password": MOCK_PASSWORD
         }
 
@@ -1372,7 +1372,7 @@ class TestObtainLoginToken:
         body = call_kwargs["json"]
         # Default fields are "email" and "password"
         assert "email" in body
-        assert body["email"] == "admin@test.com"
+        assert body["email"] == MOCK_EMAIL_ADMIN_TEST
         assert body["password"] == MOCK_PASSWORD
 
 
@@ -1399,7 +1399,7 @@ class TestObtainOAuth2Token:
     async def test_obtain_oauth2_token_success(self, service):
         """Test successful OAuth2 token retrieval."""
         auth_config = {
-            "token_endpoint": "https://auth.example.com/oauth/token",
+            "token_endpoint": MOCK_URL_AUTH_OAUTH,
             "client_id": "my-client",
             "client_secret": MOCK_CLIENT_SECRET,
             "token_response_path": "access_token"
@@ -1425,11 +1425,11 @@ class TestObtainOAuth2Token:
     async def test_obtain_oauth2_token_with_scope_and_audience(self, service):
         """Test OAuth2 token request includes scope and audience."""
         auth_config = {
-            "token_endpoint": "https://auth.example.com/oauth/token",
+            "token_endpoint": MOCK_URL_AUTH_OAUTH,
             "client_id": "cid",
             "client_secret": MOCK_CLIENT_SECRET,
             "scope": "read write",
-            "audience": "https://api.example.com"
+            "audience": MOCK_URL_API
         }
 
         mock_response = MagicMock()
@@ -1449,13 +1449,13 @@ class TestObtainOAuth2Token:
         call_kwargs = mock_client.post.call_args[1]
         body = call_kwargs["data"]
         assert body["scope"] == "read write"
-        assert body["audience"] == "https://api.example.com"
+        assert body["audience"] == MOCK_URL_API
 
     @pytest.mark.asyncio
     async def test_obtain_oauth2_token_http_error(self, service):
         """Test OAuth2 token when server returns error."""
         auth_config = {
-            "token_endpoint": "https://auth.example.com/oauth/token",
+            "token_endpoint": MOCK_URL_AUTH_OAUTH,
             "client_id": "cid",
             "client_secret": MOCK_CLIENT_SECRET
         }
@@ -1480,7 +1480,7 @@ class TestObtainOAuth2Token:
     async def test_obtain_oauth2_token_invalid_json(self, service):
         """Test OAuth2 token when response is not valid JSON."""
         auth_config = {
-            "token_endpoint": "https://auth.example.com/oauth/token",
+            "token_endpoint": MOCK_URL_AUTH_OAUTH,
             "client_id": "cid",
             "client_secret": MOCK_CLIENT_SECRET
         }
@@ -1506,7 +1506,7 @@ class TestObtainOAuth2Token:
         """Test OAuth2 token when connection times out."""
         import httpx
         auth_config = {
-            "token_endpoint": "https://auth.example.com/oauth/token",
+            "token_endpoint": MOCK_URL_AUTH_OAUTH,
             "client_id": "cid",
             "client_secret": MOCK_CLIENT_SECRET
         }
@@ -1528,7 +1528,7 @@ class TestObtainOAuth2Token:
         """Test OAuth2 token when connection fails."""
         import httpx
         auth_config = {
-            "token_endpoint": "https://auth.example.com/oauth/token",
+            "token_endpoint": MOCK_URL_AUTH_OAUTH,
             "client_id": "cid",
             "client_secret": MOCK_CLIENT_SECRET
         }
@@ -1549,7 +1549,7 @@ class TestObtainOAuth2Token:
     async def test_obtain_oauth2_token_generic_exception(self, service):
         """Test OAuth2 token when generic exception occurs."""
         auth_config = {
-            "token_endpoint": "https://auth.example.com/oauth/token",
+            "token_endpoint": MOCK_URL_AUTH_OAUTH,
             "client_id": "cid",
             "client_secret": MOCK_CLIENT_SECRET
         }
@@ -1570,7 +1570,7 @@ class TestObtainOAuth2Token:
     async def test_obtain_oauth2_token_cannot_extract(self, service):
         """Test OAuth2 token when token cannot be extracted."""
         auth_config = {
-            "token_endpoint": "https://auth.example.com/oauth/token",
+            "token_endpoint": MOCK_URL_AUTH_OAUTH,
             "client_id": "cid",
             "client_secret": MOCK_CLIENT_SECRET,
             "token_response_path": "data.token"
@@ -1596,7 +1596,7 @@ class TestObtainOAuth2Token:
     async def test_obtain_oauth2_token_uses_form_encoded(self, service):
         """Test that OAuth2 request uses form-encoded data (not JSON)."""
         auth_config = {
-            "token_endpoint": "https://auth.example.com/oauth/token",
+            "token_endpoint": MOCK_URL_AUTH_OAUTH,
             "client_id": "cid",
             "client_secret": MOCK_CLIENT_SECRET
         }
@@ -1622,10 +1622,10 @@ class TestObtainOAuth2Token:
     async def test_obtain_oauth2_token_with_extra_params(self, service):
         """Test that extra_params are included in the request body."""
         auth_config = {
-            "token_endpoint": "https://auth.example.com/oauth/token",
+            "token_endpoint": MOCK_URL_AUTH_OAUTH,
             "client_id": "cid",
             "client_secret": MOCK_CLIENT_SECRET,
-            "extra_params": {"resource": "https://resource.example.com"}
+            "extra_params": {"resource": MOCK_URL_RESOURCE}
         }
 
         mock_response = MagicMock()
@@ -1643,7 +1643,7 @@ class TestObtainOAuth2Token:
 
         call_kwargs = mock_client.post.call_args[1]
         body = call_kwargs["data"]
-        assert body["resource"] == "https://resource.example.com"
+        assert body["resource"] == MOCK_URL_RESOURCE
 
 
 class TestTestApi:
@@ -1659,7 +1659,7 @@ class TestTestApi:
     async def test_test_api_simple_get_success(self, service):
         """Test a simple GET request that succeeds."""
         config = {
-            "endpoint": "https://api.example.com/health",
+            "endpoint": MOCK_URL_API_HEALTH,
             "method": "GET",
             "timeout": 10,
             "auth_type": "none"
@@ -1689,8 +1689,8 @@ class TestTestApi:
     async def test_test_api_uses_ping_endpoint(self, service):
         """Test that ping_endpoint takes precedence over endpoint."""
         config = {
-            "endpoint": "https://api.example.com/data",
-            "ping_endpoint": "https://api.example.com/health",
+            "endpoint": MOCK_URL_API_DATA,
+            "ping_endpoint": MOCK_URL_API_HEALTH,
             "ping_method": "HEAD",
             "ping_timeout": 3,
             "ping_expected_status": 204,
@@ -1715,14 +1715,14 @@ class TestTestApi:
         assert result["success"] is True
         assert result["status_code"] == 204
         call_kwargs = mock_client.request.call_args[1]
-        assert call_kwargs["url"] == "https://api.example.com/health"
+        assert call_kwargs["url"] == MOCK_URL_API_HEALTH
         assert call_kwargs["method"] == "HEAD"
 
     @pytest.mark.asyncio
     async def test_test_api_basic_auth(self, service):
         """Test API with basic auth headers."""
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 5,
             "auth_type": "basic",
@@ -1752,7 +1752,7 @@ class TestTestApi:
     async def test_test_api_bearer_auth(self, service):
         """Test API with bearer token auth."""
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 5,
             "auth_type": "bearer",
@@ -1780,7 +1780,7 @@ class TestTestApi:
     async def test_test_api_api_key_in_header(self, service):
         """Test API with API key in header."""
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 5,
             "auth_type": "api_key",
@@ -1812,7 +1812,7 @@ class TestTestApi:
     async def test_test_api_api_key_in_query(self, service):
         """Test API with API key in query params."""
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 5,
             "auth_type": "api_key",
@@ -1844,12 +1844,12 @@ class TestTestApi:
     async def test_test_api_login_token_auth_success(self, service):
         """Test API with login_token auth type."""
         config = {
-            "endpoint": "https://api.example.com/data",
+            "endpoint": MOCK_URL_API_DATA,
             "method": "GET",
             "timeout": 10,
             "auth_type": "login_token",
             "auth_config": {
-                "login_endpoint": "https://auth.example.com/login",
+                "login_endpoint": MOCK_URL_AUTH_LOGIN,
                 "username": "user",
                 "password": MOCK_DB_PASSWORD,
                 "token_type": "Bearer",
@@ -1882,12 +1882,12 @@ class TestTestApi:
     async def test_test_api_login_token_auth_failure(self, service):
         """Test API returns auth error when login_token fails."""
         config = {
-            "endpoint": "https://api.example.com/data",
+            "endpoint": MOCK_URL_API_DATA,
             "method": "GET",
             "timeout": 10,
             "auth_type": "login_token",
             "auth_config": {
-                "login_endpoint": "https://auth.example.com/login",
+                "login_endpoint": MOCK_URL_AUTH_LOGIN,
                 "username": "user",
                 "password": MOCK_PASSWORD_WRONG
             }
@@ -1907,12 +1907,12 @@ class TestTestApi:
     async def test_test_api_oauth2_auth_success(self, service):
         """Test API with oauth2 auth type."""
         config = {
-            "endpoint": "https://api.example.com/data",
+            "endpoint": MOCK_URL_API_DATA,
             "method": "GET",
             "timeout": 10,
             "auth_type": "oauth2",
             "auth_config": {
-                "token_endpoint": "https://auth.example.com/token",
+                "token_endpoint": MOCK_URL_AUTH_TOKEN,
                 "client_id": "cid",
                 "client_secret": MOCK_CLIENT_SECRET,
                 "token_type": "Bearer",
@@ -1945,12 +1945,12 @@ class TestTestApi:
     async def test_test_api_oauth2_auth_failure(self, service):
         """Test API returns auth error when oauth2 fails."""
         config = {
-            "endpoint": "https://api.example.com/data",
+            "endpoint": MOCK_URL_API_DATA,
             "method": "GET",
             "timeout": 10,
             "auth_type": "oauth2",
             "auth_config": {
-                "token_endpoint": "https://auth.example.com/token",
+                "token_endpoint": MOCK_URL_AUTH_TOKEN,
                 "client_id": "cid",
                 "client_secret": MOCK_CLIENT_SECRET
             }
@@ -1969,7 +1969,7 @@ class TestTestApi:
     async def test_test_api_status_mismatch(self, service):
         """Test API where status code does not match expected."""
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 5,
             "auth_type": "none",
@@ -1997,7 +1997,7 @@ class TestTestApi:
     async def test_test_api_non_json_response(self, service):
         """Test API with non-JSON response body."""
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 5,
             "auth_type": "none"
@@ -2024,7 +2024,7 @@ class TestTestApi:
     async def test_test_api_long_text_truncated(self, service):
         """Test API with long non-JSON response is truncated."""
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 5,
             "auth_type": "none"
@@ -2054,7 +2054,7 @@ class TestTestApi:
         """Test API with connection timeout."""
         import httpx
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 1,
             "auth_type": "none"
@@ -2078,7 +2078,7 @@ class TestTestApi:
         """Test API with read timeout."""
         import httpx
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 1,
             "auth_type": "none"
@@ -2101,7 +2101,7 @@ class TestTestApi:
         """Test API with write timeout."""
         import httpx
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "POST",
             "timeout": 1,
             "auth_type": "none"
@@ -2124,7 +2124,7 @@ class TestTestApi:
         """Test API with pool timeout."""
         import httpx
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 1,
             "auth_type": "none"
@@ -2147,7 +2147,7 @@ class TestTestApi:
         """Test API with connection error."""
         import httpx
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 5,
             "auth_type": "none"
@@ -2169,7 +2169,7 @@ class TestTestApi:
     async def test_test_api_ssl_error(self, service):
         """Test API with SSL error."""
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 5,
             "auth_type": "none"
@@ -2191,7 +2191,7 @@ class TestTestApi:
     async def test_test_api_generic_exception(self, service):
         """Test API with unexpected exception."""
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 5,
             "auth_type": "none"
@@ -2213,7 +2213,7 @@ class TestTestApi:
     async def test_test_api_with_test_params_override(self, service):
         """Test that test_params override config params."""
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 5,
             "auth_type": "none",
@@ -2243,7 +2243,7 @@ class TestTestApi:
     async def test_test_api_with_test_body_override(self, service):
         """Test that test_body override config body for POST."""
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "POST",
             "timeout": 5,
             "auth_type": "none",
@@ -2273,7 +2273,7 @@ class TestTestApi:
     async def test_test_api_body_not_sent_for_get(self, service):
         """Test that body is not sent for GET requests."""
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 5,
             "auth_type": "none",
@@ -2301,7 +2301,7 @@ class TestTestApi:
     async def test_test_api_ssl_verify_disabled(self, service):
         """Test API with SSL verification disabled."""
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 5,
             "auth_type": "none",
@@ -2330,12 +2330,12 @@ class TestTestApi:
     async def test_test_api_with_proxy(self, service):
         """Test API with proxy configuration."""
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 5,
             "auth_type": "none",
             "use_proxy": True,
-            "proxy_url": "http://proxy.example.com:8080"
+            "proxy_url": MOCK_URL_PROXY
         }
 
         mock_response = MagicMock()
@@ -2353,18 +2353,18 @@ class TestTestApi:
             await service.test_api(config)
 
         call_kwargs = mock_client_cls.call_args[1]
-        assert call_kwargs["proxy"] == "http://proxy.example.com:8080"
+        assert call_kwargs["proxy"] == MOCK_URL_PROXY
 
     @pytest.mark.asyncio
     async def test_test_api_no_proxy_when_use_proxy_false(self, service):
         """Test that proxy is not used when use_proxy is False."""
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 5,
             "auth_type": "none",
             "use_proxy": False,
-            "proxy_url": "http://proxy.example.com:8080"
+            "proxy_url": MOCK_URL_PROXY
         }
 
         mock_response = MagicMock()
@@ -2388,7 +2388,7 @@ class TestTestApi:
     async def test_test_api_with_custom_headers(self, service):
         """Test API with custom headers from config."""
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 5,
             "auth_type": "none",
@@ -2417,12 +2417,12 @@ class TestTestApi:
     async def test_test_api_login_token_no_token_type(self, service):
         """Test login_token auth with empty token_type (no prefix)."""
         config = {
-            "endpoint": "https://api.example.com/data",
+            "endpoint": MOCK_URL_API_DATA,
             "method": "GET",
             "timeout": 10,
             "auth_type": "login_token",
             "auth_config": {
-                "login_endpoint": "https://auth.example.com/login",
+                "login_endpoint": MOCK_URL_AUTH_LOGIN,
                 "username": "user",
                 "password": MOCK_DB_PASSWORD,
                 "token_type": "",
@@ -2455,7 +2455,7 @@ class TestTestApi:
     async def test_test_api_result_structure(self, service):
         """Test that the result dict always has the expected keys."""
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 5,
             "auth_type": "none"
@@ -2484,7 +2484,7 @@ class TestTestApi:
         """Test API with HTTPStatusError exception."""
         import httpx
         config = {
-            "endpoint": "https://api.example.com",
+            "endpoint": MOCK_URL_API,
             "method": "GET",
             "timeout": 5,
             "auth_type": "none"
@@ -2548,7 +2548,7 @@ class TestToggleStatus:
             "status": "inactive"
         })
 
-        result = await service.toggle_status(str(oid), "admin@example.com")
+        result = await service.toggle_status(str(oid), MOCK_EMAIL_ADMIN)
 
         assert result is not None
         call_args = mock_collection.find_one_and_update.call_args
@@ -2570,7 +2570,7 @@ class TestToggleStatus:
             "status": "active"
         })
 
-        result = await service.toggle_status(str(oid), "admin@example.com")
+        result = await service.toggle_status(str(oid), MOCK_EMAIL_ADMIN)
 
         assert result is not None
         call_args = mock_collection.find_one_and_update.call_args
@@ -2592,7 +2592,7 @@ class TestToggleStatus:
             "status": "active"
         })
 
-        result = await service.toggle_status(str(oid), "admin@example.com")
+        result = await service.toggle_status(str(oid), MOCK_EMAIL_ADMIN)
 
         assert result is not None
         call_args = mock_collection.find_one_and_update.call_args
@@ -2604,7 +2604,7 @@ class TestToggleStatus:
         """Test toggling a non-existent config returns None."""
         mock_collection.find_one = AsyncMock(return_value=None)
 
-        result = await service.toggle_status(str(ObjectId()), "admin@example.com")
+        result = await service.toggle_status(str(ObjectId()), MOCK_EMAIL_ADMIN)
 
         assert result is None
         mock_collection.find_one_and_update.assert_not_called()

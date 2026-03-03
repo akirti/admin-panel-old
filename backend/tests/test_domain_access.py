@@ -27,6 +27,7 @@ from easylifeauth.api.playboard_routes import (
     check_domain_access as playboard_check_domain_access,
     get_scenario_domain_key,
 )
+from mock_data import MOCK_EMAIL_USER
 
 
 # ---------------------------------------------------------------------------
@@ -122,7 +123,7 @@ class TestGetUserAccessibleDomains:
         user = _user("user")
         db = _mock_db()
         db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId(), "email": "user@example.com",
+            "_id": ObjectId(), "email": MOCK_EMAIL_USER,
             "domains": ["finance"],
         })
         svc = _mock_user_service(resolved_domains=["finance", "hr"])
@@ -205,7 +206,7 @@ class TestDomainAllRoute:
         user = _user("user")
         db = _mock_db()
         db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId(), "email": "user@example.com",
+            "_id": ObjectId(), "email": MOCK_EMAIL_USER,
         })
         user_svc = _mock_user_service(resolved_domains=["finance"])
 
@@ -230,7 +231,7 @@ class TestDomainAllRoute:
         user = _user("user")
         db = _mock_db()
         db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId(), "email": "user@example.com",
+            "_id": ObjectId(), "email": MOCK_EMAIL_USER,
         })
         user_svc = _mock_user_service(resolved_domains=[])
 
@@ -289,7 +290,7 @@ class TestDomainGetByIdAccess:
             "path": "/finance", "status": "active", "order": 1,
         })
         db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId(), "email": "user@example.com",
+            "_id": ObjectId(), "email": MOCK_EMAIL_USER,
         })
         user_svc = _mock_user_service(resolved_domains=["finance"])
 
@@ -306,7 +307,7 @@ class TestDomainGetByIdAccess:
             "path": "/hr", "status": "active", "order": 1,
         })
         db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId(), "email": "user@example.com",
+            "_id": ObjectId(), "email": MOCK_EMAIL_USER,
         })
         user_svc = _mock_user_service(resolved_domains=["finance"])
 
@@ -355,7 +356,7 @@ class TestScenarioDomainAccess:
         user = _user("user")
         db = _mock_db()
         db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId(), "email": "user@example.com",
+            "_id": ObjectId(), "email": MOCK_EMAIL_USER,
         })
         svc = _mock_user_service(resolved_domains=["marketing"])
         result = await scenario_get_user_accessible_domains(user, db, svc)

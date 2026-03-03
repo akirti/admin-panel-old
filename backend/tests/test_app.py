@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from easylifeauth.app import create_app
 from easylifeauth.errors.auth_error import AuthError
+from mock_data import MOCK_EMAIL, MOCK_URL_FRONTEND, MOCK_URL_MONGODB
 
 
 class TestCreateApp:
@@ -28,7 +29,7 @@ class TestCreateApp:
 
     def test_create_app_with_cors_origins(self):
         """Test creating app with custom CORS origins"""
-        app = create_app(cors_origins=["http://localhost:3000"])
+        app = create_app(cors_origins=[MOCK_URL_FRONTEND])
         assert app is not None
 
     def test_create_app_default_cors(self):
@@ -138,7 +139,7 @@ class TestLifespanWithConfig:
 
                 with patch('easylifeauth.app.init_dependencies') as mock_init:
                     app = create_app(
-                        db_config={"uri": "mongodb://localhost:27017", "database": "test"},
+                        db_config={"uri": MOCK_URL_MONGODB, "database": "test"},
                         token_secret="test_secret"
                     )
 
@@ -160,7 +161,7 @@ class TestLifespanWithConfig:
             with patch('easylifeauth.app.TokenManager'):
                 with patch('easylifeauth.app.init_dependencies'):
                     app = create_app(
-                        db_config={"uri": "mongodb://localhost:27017", "database": "test"},
+                        db_config={"uri": MOCK_URL_MONGODB, "database": "test"},
                         token_secret="test_secret"
                     )
 
@@ -180,7 +181,7 @@ class TestLifespanWithConfig:
             with patch('easylifeauth.app.TokenManager'):
                 with patch('easylifeauth.app.init_dependencies'):
                     app = create_app(
-                        db_config={"uri": "mongodb://localhost:27017", "database": "test"},
+                        db_config={"uri": MOCK_URL_MONGODB, "database": "test"},
                         token_secret="test_secret"
                     )
 
@@ -203,12 +204,12 @@ class TestLifespanWithConfig:
 
                     with patch('easylifeauth.app.init_dependencies'):
                         app = create_app(
-                            db_config={"uri": "mongodb://localhost:27017", "database": "test"},
+                            db_config={"uri": MOCK_URL_MONGODB, "database": "test"},
                             token_secret="test_secret",
                             smtp_config={
                                 "smtp_server": "smtp.example.com",
                                 "smtp_port": 587,
-                                "email": "test@example.com",
+                                "email": MOCK_EMAIL,
                                 "password": "password"
                             }
                         )

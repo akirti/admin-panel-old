@@ -9,7 +9,7 @@ from bson import ObjectId
 from easylifeauth.api.customers_routes import router, create_pagination_meta
 from easylifeauth.api import dependencies
 from easylifeauth.security.access_control import CurrentUser, require_group_admin
-from mock_data import MOCK_PASSWORD_HASH
+from mock_data import MOCK_EMAIL_GROUPADMIN, MOCK_EMAIL_USER, MOCK_EMAIL_USER1, MOCK_PASSWORD_HASH
 
 
 # ---------------------------------------------------------------------------
@@ -82,7 +82,7 @@ class TestCustomersRoutes:
         """Create a mock group admin user."""
         return CurrentUser(
             user_id="507f1f77bcf86cd799439011",
-            email="groupadmin@example.com",
+            email=MOCK_EMAIL_GROUPADMIN,
             roles=["group-administrator"],
             groups=["group1"],
             domains=["domain1"],
@@ -829,7 +829,7 @@ class TestCustomersRoutes:
         users = [
             {
                 "_id": user_oid,
-                "email": "user1@example.com",
+                "email": MOCK_EMAIL_USER1,
                 "username": "user1",
                 "full_name": "User One",
                 "is_active": True,
@@ -844,7 +844,7 @@ class TestCustomersRoutes:
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
-        assert data[0]["email"] == "user1@example.com"
+        assert data[0]["email"] == MOCK_EMAIL_USER1
         assert data[0]["_id"] == str(user_oid)
 
     def test_get_customer_users_empty(self, client, mock_db):
@@ -895,7 +895,7 @@ class TestCustomersRoutes:
         users = [
             {
                 "_id": user_oid,
-                "email": "user@example.com",
+                "email": MOCK_EMAIL_USER,
                 "username": "testuser",
                 "full_name": "Test User",
                 "is_active": True,
@@ -992,7 +992,7 @@ class TestCustomersRoutes:
 
         response = client.post(
             f"/customers/{str(oid)}/assign-users",
-            json=["user@example.com"],
+            json=[MOCK_EMAIL_USER],
         )
 
         assert response.status_code == 200
@@ -1008,7 +1008,7 @@ class TestCustomersRoutes:
 
         response = client.post(
             "/customers/nonexistent/assign-users",
-            json=["user@example.com"],
+            json=[MOCK_EMAIL_USER],
         )
 
         assert response.status_code == 404
@@ -1106,7 +1106,7 @@ class TestCustomersRoutes:
 
         response = client.post(
             f"/customers/{str(oid)}/remove-users",
-            json=["user@example.com"],
+            json=[MOCK_EMAIL_USER],
         )
 
         assert response.status_code == 200
@@ -1121,7 +1121,7 @@ class TestCustomersRoutes:
 
         response = client.post(
             "/customers/nonexistent/remove-users",
-            json=["user@example.com"],
+            json=[MOCK_EMAIL_USER],
         )
 
         assert response.status_code == 404

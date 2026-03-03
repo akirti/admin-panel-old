@@ -6,7 +6,7 @@ from bson import ObjectId
 
 from easylifeauth.services.password_service import PasswordResetService
 from easylifeauth.errors.auth_error import AuthError
-from mock_data import MOCK_PASSWORD_ALT, MOCK_PASSWORD_NEW, MOCK_PASSWORD_OLD, MOCK_PASSWORD_WRONG
+from mock_data import MOCK_EMAIL, MOCK_EMAIL_NOTFOUND, MOCK_PASSWORD_ALT, MOCK_PASSWORD_NEW, MOCK_PASSWORD_OLD, MOCK_PASSWORD_WRONG, MOCK_URL_RESET
 
 
 class TestPasswordService:
@@ -25,8 +25,8 @@ class TestPasswordService:
         mock_db.reset_tokens.insert_one = AsyncMock()
         
         result = await password_service.request_password_reset(
-            "test@example.com",
-            "http://example.com/reset"
+            MOCK_EMAIL,
+            MOCK_URL_RESET
         )
         
         assert "message" in result
@@ -37,8 +37,8 @@ class TestPasswordService:
         mock_db.users.find_one = AsyncMock(return_value=None)
         
         result = await password_service.request_password_reset(
-            "notfound@example.com",
-            "http://example.com/reset"
+            MOCK_EMAIL_NOTFOUND,
+            MOCK_URL_RESET
         )
         
         # Should still return success message for security
@@ -109,7 +109,7 @@ class TestPasswordService:
         mock_db.users.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
         
         result = await password_service.update_user_password(
-            email="test@example.com",
+            email=MOCK_EMAIL,
             password=MOCK_PASSWORD_OLD,
             new_password=MOCK_PASSWORD_NEW
         )
@@ -134,7 +134,7 @@ class TestPasswordService:
         
         with pytest.raises(AuthError) as exc_info:
             await password_service.update_user_password(
-                email="notfound@example.com",
+                email=MOCK_EMAIL_NOTFOUND,
                 password=MOCK_PASSWORD_OLD,
                 new_password=MOCK_PASSWORD_NEW
             )
@@ -150,7 +150,7 @@ class TestPasswordService:
         
         with pytest.raises(AuthError) as exc_info:
             await password_service.update_user_password(
-                email="test@example.com",
+                email=MOCK_EMAIL,
                 password=MOCK_PASSWORD_WRONG,
                 new_password=MOCK_PASSWORD_NEW
             )

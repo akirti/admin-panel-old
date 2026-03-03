@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from easylifeauth.api.dashboard_routes import router
 from easylifeauth.api.dependencies import get_db
 from easylifeauth.security.access_control import require_super_admin, require_group_admin
+from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_USER_TEST
 
 
 class TestDashboardRoutes:
@@ -41,7 +42,7 @@ class TestDashboardRoutes:
     def mock_super_admin(self):
         """Create mock super admin user"""
         user = MagicMock()
-        user.email = "admin@test.com"
+        user.email = MOCK_EMAIL_ADMIN_TEST
         user.roles = ["super-administrator"]
         return user
 
@@ -137,7 +138,7 @@ class TestDashboardRoutes:
         """Test get recent logins endpoint"""
         user = {
             "_id": ObjectId(),
-            "email": "user@test.com",
+            "email": MOCK_EMAIL_USER_TEST,
             "full_name": "Test User",
             "last_login": datetime.utcnow()
         }
@@ -245,7 +246,7 @@ class TestDashboardRoutes:
         mock_cursor.limit = MagicMock(return_value=mock_cursor)
         mock_cursor.__aiter__ = lambda self: self
         mock_cursor.__anext__ = AsyncMock(side_effect=[
-            {"email": "user@test.com", "full_name": "Test User", "created_at": datetime.utcnow()},
+            {"email": MOCK_EMAIL_USER_TEST, "full_name": "Test User", "created_at": datetime.utcnow()},
             StopAsyncIteration
         ])
 
@@ -292,7 +293,7 @@ class TestDashboardRoutesWithoutOptionalCollections:
     def mock_super_admin(self):
         """Create mock super admin user"""
         user = MagicMock()
-        user.email = "admin@test.com"
+        user.email = MOCK_EMAIL_ADMIN_TEST
         user.roles = ["super-administrator"]
         return user
 
