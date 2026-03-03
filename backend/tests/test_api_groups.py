@@ -140,8 +140,8 @@ class TestGroupsRoutes:
         mock_db.groups.count_documents = AsyncMock(return_value=0)
 
         async def empty_cursor():
-            return
-            yield
+            if False:
+                yield
 
         mock_cursor = MagicMock()
         mock_cursor.skip.return_value = mock_cursor
@@ -160,8 +160,8 @@ class TestGroupsRoutes:
         mock_db.groups.count_documents = AsyncMock(return_value=0)
 
         async def empty_cursor():
-            return
-            yield
+            if False:
+                yield
 
         mock_cursor = MagicMock()
         mock_cursor.skip.return_value = mock_cursor
@@ -279,8 +279,8 @@ class TestGroupsRoutes:
 
         # Mock user notification
         async def empty_cursor():
-            return
-            yield
+            if False:
+                yield
 
         mock_db.users.find.return_value = empty_cursor()
 
@@ -338,8 +338,8 @@ class TestGroupsRoutes:
 
         # Mock user notification
         async def empty_cursor():
-            return
-            yield
+            if False:
+                yield
 
         mock_db.users.find.return_value = empty_cursor()
 
@@ -357,8 +357,8 @@ class TestGroupsRoutes:
         })
 
         async def empty_cursor():
-            return
-            yield
+            if False:
+                yield
 
         mock_db.users.find.return_value = empty_cursor()
 

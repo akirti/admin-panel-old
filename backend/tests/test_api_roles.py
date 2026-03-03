@@ -128,8 +128,8 @@ class TestRolesRoutes:
         mock_db.roles.count_documents = AsyncMock(return_value=0)
 
         async def empty_cursor():
-            return
-            yield
+            if False:
+                yield
 
         mock_cursor = MagicMock()
         mock_cursor.skip.return_value = mock_cursor
@@ -148,8 +148,8 @@ class TestRolesRoutes:
         mock_db.roles.count_documents = AsyncMock(return_value=0)
 
         async def empty_cursor():
-            return
-            yield
+            if False:
+                yield
 
         mock_cursor = MagicMock()
         mock_cursor.skip.return_value = mock_cursor
@@ -269,8 +269,8 @@ class TestRolesRoutes:
 
         # Mock user notification
         async def empty_cursor():
-            return
-            yield
+            if False:
+                yield
 
         mock_db.users.find.return_value = empty_cursor()
 
@@ -361,8 +361,8 @@ class TestRolesRoutes:
 
         # Mock user notification
         async def empty_cursor():
-            return
-            yield
+            if False:
+                yield
 
         mock_db.users.find.return_value = empty_cursor()
 
@@ -380,8 +380,8 @@ class TestRolesRoutes:
         }
 
         async def empty_cursor():
-            return
-            yield
+            if False:
+                yield
 
         mock_db.users.find.return_value = empty_cursor()
 

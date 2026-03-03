@@ -49,8 +49,8 @@ def _mock_db():
 
 def _empty_cursor():
     async def gen():
-        return
-        yield
+        if False:
+            yield
     return gen()
 
 

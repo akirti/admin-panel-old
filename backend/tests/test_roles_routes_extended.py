@@ -63,8 +63,8 @@ def _make_role(
 
 async def _empty_async_gen():
     """Async generator that yields nothing."""
-    return
-    yield  # noqa: unreachable – required to make this an async generator
+    if False:
+        yield
 
 
 # ---------------------------------------------------------------------------

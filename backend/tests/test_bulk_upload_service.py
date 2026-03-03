@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 from bson import ObjectId
 
 from easylifeauth.services.bulk_upload_service import BulkUploadService, BulkUploadResult
+from mock_data import MOCK_PASSWORD_HASH
 
 
 class TestBulkUploadResult:
@@ -247,7 +248,7 @@ class TestBulkUploadService:
     @pytest.mark.asyncio
     async def test_process_users_with_password_hasher(self, mock_db):
         """Test processing users with password hasher"""
-        hasher = MagicMock(return_value="hashed_password")
+        hasher = MagicMock(return_value=MOCK_PASSWORD_HASH)
         service = BulkUploadService(mock_db, password_hasher=hasher)
 
         df = pd.DataFrame({

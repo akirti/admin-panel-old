@@ -91,8 +91,8 @@ def _mock_email_service():
 
 def _empty_cursor():
     async def gen():
-        return
-        yield
+        if False:
+            yield
     return gen()
 
 

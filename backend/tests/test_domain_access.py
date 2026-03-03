@@ -67,8 +67,8 @@ def _mock_user_service(resolved_domains=None):
 
 def _empty_cursor():
     async def gen():
-        return
-        yield
+        if False:
+            yield
     return gen()
 
 

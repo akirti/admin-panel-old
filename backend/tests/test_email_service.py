@@ -5,6 +5,7 @@ from email.mime.multipart import MIMEMultipart
 
 from easylifeauth.services.email_service import EmailService
 from easylifeauth.errors.email_error import EmailError
+from mock_data import MOCK_SMTP_PASSWORD
 
 
 class TestEmailService:
@@ -17,7 +18,7 @@ class TestEmailService:
             "smtp_server": "smtp.test.com",
             "smtp_port": 587,
             "email": "noreply@test.com",
-            "password": "password123"
+            "password": MOCK_SMTP_PASSWORD
         }
         return EmailService(config)
 
@@ -230,7 +231,7 @@ class TestEmailService:
             "smtp_server": "smtp.test.com",
             "smtp_port": 587,
             "email": "noreply@test.com",
-            "password": "password123",
+            "password": MOCK_SMTP_PASSWORD,
             "use_tls": True
         }
         return EmailService(config)

@@ -1,4 +1,10 @@
 """Pytest configuration and fixtures"""
+import os
+import sys
+
+# Ensure tests directory is on path for shared mock_data module
+sys.path.insert(0, os.path.dirname(__file__))
+
 import pytest
 import asyncio
 from datetime import datetime, timezone
@@ -7,10 +13,7 @@ from typing import Dict, Any, List
 
 from fastapi.testclient import TestClient
 from httpx import AsyncClient, ASGITransport
-
-# Mock Motor before importing app
-import sys
-from unittest.mock import MagicMock
+from mock_data import MOCK_PASSWORD_HASH
 
 # Create mock motor module
 mock_motor = MagicMock()
@@ -57,7 +60,7 @@ def sample_user_data() -> Dict[str, Any]:
         "user_id": "507f1f77bcf86cd799439011",
         "email": "test@example.com",
         "username": "testuser",
-        "password_hash": "hashed_password",
+        "password_hash": MOCK_PASSWORD_HASH,
         "full_name": "Test User",
         "roles": ["user"],
         "groups": ["viewer"],
@@ -77,7 +80,7 @@ def sample_admin_data() -> Dict[str, Any]:
         "user_id": "507f1f77bcf86cd799439012",
         "email": "admin@example.com",
         "username": "admin",
-        "password_hash": "hashed_password",
+        "password_hash": MOCK_PASSWORD_HASH,
         "full_name": "Admin User",
         "roles": ["administrator"],
         "groups": ["administrator"],

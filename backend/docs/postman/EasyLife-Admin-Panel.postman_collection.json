@@ -1,0 +1,1434 @@
+{
+  "info": {
+    "name": "EasyLife Admin Panel API",
+    "description": "Complete API collection for EasyLife Admin Panel backend.\n\n## Authentication\nMost endpoints require JWT Bearer token. Use the `/auth/login` endpoint first, then the token is auto-set via collection scripts.\n\n## Environment Variables\n- `base_url`: API base URL (default: http://localhost:8000)\n- `api_prefix`: API version prefix (default: /api/v1)\n- `access_token`: JWT access token (auto-set on login)\n- `refresh_token`: JWT refresh token (auto-set on login)\n- `admin_email`: Admin email for login\n- `admin_password`: Admin password for login",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000" },
+    { "key": "api_prefix", "value": "/api/v1" },
+    { "key": "access_token", "value": "" },
+    { "key": "refresh_token", "value": "" },
+    { "key": "admin_email", "value": "admin@example.com" },
+    { "key": "admin_password", "value": "Admin@123" },
+    { "key": "test_user_id", "value": "" },
+    { "key": "test_role_id", "value": "" },
+    { "key": "test_group_id", "value": "" },
+    { "key": "test_domain_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "description": "Health check and info endpoints (no auth required)",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/health", "host": ["{{base_url}}{{api_prefix}}"], "path": ["health"] },
+            "description": "Comprehensive health check including DB connectivity"
+          },
+          "response": []
+        },
+        {
+          "name": "Liveness Probe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/health/live", "host": ["{{base_url}}{{api_prefix}}"], "path": ["health", "live"] },
+            "description": "Simple liveness probe - returns 200 if app is running"
+          },
+          "response": []
+        },
+        {
+          "name": "Readiness Probe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/health/ready", "host": ["{{base_url}}{{api_prefix}}"], "path": ["health", "ready"] },
+            "description": "Readiness probe - checks DB connectivity"
+          },
+          "response": []
+        },
+        {
+          "name": "Health Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/health/metrics", "host": ["{{base_url}}{{api_prefix}}"], "path": ["health", "metrics"] },
+            "description": "Detailed metrics (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "App Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/info", "host": ["{{base_url}}{{api_prefix}}"], "path": ["info"] },
+            "description": "Application version and info"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "description": "User authentication, registration, and password management",
+      "item": [
+        {
+          "name": "Get CSRF Token",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/auth/csrf-token", "host": ["{{base_url}}{{api_prefix}}"], "path": ["auth", "csrf-token"] },
+            "description": "Get CSRF token for session"
+          },
+          "response": []
+        },
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"SecurePass@123\",\n  \"full_name\": \"New User\",\n  \"username\": \"newuser\"\n}"
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/auth/register", "host": ["{{base_url}}{{api_prefix}}"], "path": ["auth", "register"] },
+            "description": "Register a new user account"
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.access_token);",
+                  "    pm.collectionVariables.set('refresh_token', jsonData.refresh_token);",
+                  "    console.log('Tokens saved successfully');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/auth/login", "host": ["{{base_url}}{{api_prefix}}"], "path": ["auth", "login"] },
+            "description": "Login and get JWT tokens. Tokens are auto-saved to collection variables."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.access_token);",
+                  "    if (jsonData.refresh_token) {",
+                  "        pm.collectionVariables.set('refresh_token', jsonData.refresh_token);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/auth/refresh", "host": ["{{base_url}}{{api_prefix}}"], "path": ["auth", "refresh"] },
+            "description": "Refresh expired access token using refresh token"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/auth/profile", "host": ["{{base_url}}{{api_prefix}}"], "path": ["auth", "profile"] },
+            "description": "Get current authenticated user's profile"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Updated Name\"\n}"
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/auth/profile", "host": ["{{base_url}}{{api_prefix}}"], "path": ["auth", "profile"] },
+            "description": "Update current user's profile"
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/auth/forgot_password", "host": ["{{base_url}}{{api_prefix}}"], "path": ["auth", "forgot_password"] },
+            "description": "Request password reset email"
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"reset_token_here\",\n  \"new_password\": \"NewSecurePass@123\"\n}"
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/auth/reset_password", "host": ["{{base_url}}{{api_prefix}}"], "path": ["auth", "reset_password"] },
+            "description": "Reset password using token from email"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"OldPass@123\",\n  \"new_password\": \"NewPass@123\"\n}"
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/auth/update_password", "host": ["{{base_url}}{{api_prefix}}"], "path": ["auth", "update_password"] },
+            "description": "Update password (requires current password)"
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/auth/logout", "host": ["{{base_url}}{{api_prefix}}"], "path": ["auth", "logout"] },
+            "description": "Logout and invalidate tokens"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "description": "Dashboard statistics and analytics (group-admin+)",
+      "item": [
+        {
+          "name": "Get Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/dashboard/stats", "host": ["{{base_url}}{{api_prefix}}"], "path": ["dashboard", "stats"] },
+            "description": "Get dashboard statistics (user/role/group/domain counts)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/dashboard/summary", "host": ["{{base_url}}{{api_prefix}}"], "path": ["dashboard", "summary"] },
+            "description": "Get detailed entity summary"
+          },
+          "response": []
+        },
+        {
+          "name": "Recent Logins",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/dashboard/recent-logins?limit=10",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["dashboard", "recent-logins"],
+              "query": [{ "key": "limit", "value": "10" }]
+            },
+            "description": "Get recent user login activity"
+          },
+          "response": []
+        },
+        {
+          "name": "Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/dashboard/analytics", "host": ["{{base_url}}{{api_prefix}}"], "path": ["dashboard", "analytics"] },
+            "description": "Get analytics and trends"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "User management (group-admin+)",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/users?page=0&limit=25",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["users"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "limit", "value": "25" },
+                { "key": "is_active", "value": "true", "disabled": true },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "role", "value": "", "disabled": true },
+                { "key": "group", "value": "", "disabled": true }
+              ]
+            },
+            "description": "List users with pagination and filters"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/users/count",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["users", "count"],
+              "query": [{ "key": "is_active", "value": "true", "disabled": true }]
+            },
+            "description": "Get total user count"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/users/{{test_user_id}}", "host": ["{{base_url}}{{api_prefix}}"], "path": ["users", "{{test_user_id}}"] },
+            "description": "Get user by ID or email"
+          },
+          "response": []
+        },
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('test_user_id', jsonData._id || jsonData.user_id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser@example.com\",\n  \"password\": \"TestPass@123\",\n  \"full_name\": \"Test User\",\n  \"username\": \"testuser\",\n  \"roles\": [\"user\"],\n  \"groups\": [\"viewer\"],\n  \"domains\": [],\n  \"is_active\": true\n}"
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/users", "host": ["{{base_url}}{{api_prefix}}"], "path": ["users"] },
+            "description": "Create a new user"
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Updated Test User\",\n  \"roles\": [\"user\", \"editor\"]\n}"
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/users/{{test_user_id}}", "host": ["{{base_url}}{{api_prefix}}"], "path": ["users", "{{test_user_id}}"] },
+            "description": "Update user details"
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle User Status",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/users/{{test_user_id}}/toggle-status", "host": ["{{base_url}}{{api_prefix}}"], "path": ["users", "{{test_user_id}}", "toggle-status"] },
+            "description": "Enable/disable user"
+          },
+          "response": []
+        },
+        {
+          "name": "Send Password Reset",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/users/{{test_user_id}}/send-password-reset?send_email=true",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["users", "{{test_user_id}}", "send-password-reset"],
+              "query": [{ "key": "send_email", "value": "true" }]
+            },
+            "description": "Admin: send password reset email to user"
+          },
+          "response": []
+        },
+        {
+          "name": "My Assigned Customers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/users/me/assigned-customers",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["users", "me", "assigned-customers"],
+              "query": [
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "tag", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Get customers assigned to current user"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/users/{{test_user_id}}", "host": ["{{base_url}}{{api_prefix}}"], "path": ["users", "{{test_user_id}}"] },
+            "description": "Delete user (super-admin only)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Roles",
+      "description": "Role management (group-admin+)",
+      "item": [
+        {
+          "name": "List Roles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/roles?page=0&limit=25",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["roles"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "limit", "value": "25" },
+                { "key": "status", "value": "active", "disabled": true },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "domain", "value": "", "disabled": true },
+                { "key": "permission", "value": "", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Role Count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/roles/count", "host": ["{{base_url}}{{api_prefix}}"], "path": ["roles", "count"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Role by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/roles/{{test_role_id}}", "host": ["{{base_url}}{{api_prefix}}"], "path": ["roles", "{{test_role_id}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Role",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('test_role_id', jsonData._id || jsonData.roleId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roleId\": \"test-role\",\n  \"name\": \"Test Role\",\n  \"description\": \"A test role\",\n  \"permissions\": [\"read\"],\n  \"domains\": [],\n  \"status\": \"active\",\n  \"priority\": 5\n}"
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/roles", "host": ["{{base_url}}{{api_prefix}}"], "path": ["roles"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Test Role\",\n  \"permissions\": [\"read\", \"write\"]\n}"
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/roles/{{test_role_id}}", "host": ["{{base_url}}{{api_prefix}}"], "path": ["roles", "{{test_role_id}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Role Status",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/roles/{{test_role_id}}/toggle-status", "host": ["{{base_url}}{{api_prefix}}"], "path": ["roles", "{{test_role_id}}", "toggle-status"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Role Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/roles/{{test_role_id}}/users", "host": ["{{base_url}}{{api_prefix}}"], "path": ["roles", "{{test_role_id}}", "users"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Role",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/roles/{{test_role_id}}", "host": ["{{base_url}}{{api_prefix}}"], "path": ["roles", "{{test_role_id}}"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Groups",
+      "description": "Group management (group-admin+)",
+      "item": [
+        {
+          "name": "List Groups",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/groups?page=0&limit=25",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["groups"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "limit", "value": "25" },
+                { "key": "status", "value": "active", "disabled": true },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Group Count",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/groups/count", "host": ["{{base_url}}{{api_prefix}}"], "path": ["groups", "count"] } },
+          "response": []
+        },
+        {
+          "name": "Get Group Types",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/groups/types", "host": ["{{base_url}}{{api_prefix}}"], "path": ["groups", "types"] } },
+          "response": []
+        },
+        {
+          "name": "Get Group by ID",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/groups/{{test_group_id}}", "host": ["{{base_url}}{{api_prefix}}"], "path": ["groups", "{{test_group_id}}"] } },
+          "response": []
+        },
+        {
+          "name": "Create Group",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('test_group_id', jsonData._id || jsonData.groupId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"groupId\": \"test-group\",\n  \"name\": \"Test Group\",\n  \"description\": \"A test group\",\n  \"type\": \"standard\",\n  \"permissions\": [\"read\"],\n  \"domains\": [],\n  \"status\": \"active\",\n  \"priority\": 5\n}"
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/groups", "host": ["{{base_url}}{{api_prefix}}"], "path": ["groups"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Group",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated Test Group\"\n}" },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/groups/{{test_group_id}}", "host": ["{{base_url}}{{api_prefix}}"], "path": ["groups", "{{test_group_id}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Group Status",
+          "request": { "method": "POST", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/groups/{{test_group_id}}/toggle-status", "host": ["{{base_url}}{{api_prefix}}"], "path": ["groups", "{{test_group_id}}", "toggle-status"] } },
+          "response": []
+        },
+        {
+          "name": "Get Group Users",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/groups/{{test_group_id}}/users", "host": ["{{base_url}}{{api_prefix}}"], "path": ["groups", "{{test_group_id}}", "users"] } },
+          "response": []
+        },
+        {
+          "name": "Delete Group",
+          "request": { "method": "DELETE", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/groups/{{test_group_id}}", "host": ["{{base_url}}{{api_prefix}}"], "path": ["groups", "{{test_group_id}}"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Permissions",
+      "description": "Permission management (super-admin)",
+      "item": [
+        {
+          "name": "List Permissions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/permissions?page=0&limit=25",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["permissions"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "limit", "value": "25" },
+                { "key": "module", "value": "", "disabled": true },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Permission Modules",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/permissions/modules", "host": ["{{base_url}}{{api_prefix}}"], "path": ["permissions", "modules"] } },
+          "response": []
+        },
+        {
+          "name": "Get Permission Count",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/permissions/count", "host": ["{{base_url}}{{api_prefix}}"], "path": ["permissions", "count"] } },
+          "response": []
+        },
+        {
+          "name": "Create Permission",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"permissionId\": \"test.permission\",\n  \"name\": \"Test Permission\",\n  \"description\": \"A test permission\",\n  \"module\": \"test\"\n}" },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/permissions", "host": ["{{base_url}}{{api_prefix}}"], "path": ["permissions"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Permission",
+          "request": { "method": "DELETE", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/permissions/test.permission", "host": ["{{base_url}}{{api_prefix}}"], "path": ["permissions", "test.permission"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Domains",
+      "description": "Domain management",
+      "item": [
+        {
+          "name": "List Domains",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/domains?page=0&limit=25",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["domains"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "limit", "value": "25" },
+                { "key": "status", "value": "", "disabled": true },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Domains (no pagination)",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/domains/all", "host": ["{{base_url}}{{api_prefix}}"], "path": ["domains", "all"] } },
+          "response": []
+        },
+        {
+          "name": "Get Domain Types",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/domains/types", "host": ["{{base_url}}{{api_prefix}}"], "path": ["domains", "types"] } },
+          "response": []
+        },
+        {
+          "name": "Get Domain Count",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/domains/count", "host": ["{{base_url}}{{api_prefix}}"], "path": ["domains", "count"] } },
+          "response": []
+        },
+        {
+          "name": "Get Domain by ID",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/domains/{{test_domain_id}}", "host": ["{{base_url}}{{api_prefix}}"], "path": ["domains", "{{test_domain_id}}"] } },
+          "response": []
+        },
+        {
+          "name": "Create Domain",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('test_domain_id', jsonData._id || jsonData.key);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"key\": \"test-domain\",\n  \"name\": \"Test Domain\",\n  \"description\": \"A test domain\",\n  \"path\": \"/test\",\n  \"icon\": \"folder\",\n  \"order\": 10,\n  \"defaultSelected\": false,\n  \"actions\": [\"view\"],\n  \"type\": \"standard\",\n  \"subDomain\": [],\n  \"status\": \"A\"\n}"
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/domains", "host": ["{{base_url}}{{api_prefix}}"], "path": ["domains"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Domain",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated Domain\",\n  \"description\": \"Updated description\"\n}" },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/domains/{{test_domain_id}}", "host": ["{{base_url}}{{api_prefix}}"], "path": ["domains", "{{test_domain_id}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Domain Status",
+          "request": { "method": "POST", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/domains/{{test_domain_id}}/toggle-status", "host": ["{{base_url}}{{api_prefix}}"], "path": ["domains", "{{test_domain_id}}", "toggle-status"] } },
+          "response": []
+        },
+        {
+          "name": "Get Domain Scenarios",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/domains/{{test_domain_id}}/scenarios", "host": ["{{base_url}}{{api_prefix}}"], "path": ["domains", "{{test_domain_id}}", "scenarios"] } },
+          "response": []
+        },
+        {
+          "name": "Delete Domain",
+          "request": { "method": "DELETE", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/domains/{{test_domain_id}}", "host": ["{{base_url}}{{api_prefix}}"], "path": ["domains", "{{test_domain_id}}"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Scenarios",
+      "description": "Scenario management",
+      "item": [
+        {
+          "name": "Get All Scenarios",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/scenarios/all", "host": ["{{base_url}}{{api_prefix}}"], "path": ["scenarios", "all"] } },
+          "response": []
+        },
+        {
+          "name": "Get Scenarios by Domain",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/scenarios/all/test-domain", "host": ["{{base_url}}{{api_prefix}}"], "path": ["scenarios", "all", "test-domain"] } },
+          "response": []
+        },
+        {
+          "name": "Create Scenario",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"key\": \"test-scenario\",\n  \"name\": \"Test Scenario\",\n  \"dataDomain\": \"test-domain\",\n  \"description\": \"A test scenario\",\n  \"path\": \"/test/scenario\",\n  \"icon\": \"chart\",\n  \"order\": 1,\n  \"actions\": [\"run\"],\n  \"status\": \"A\"\n}"
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/scenarios", "host": ["{{base_url}}{{api_prefix}}"], "path": ["scenarios"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Scenario by Key",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/scenarios/test-scenario", "host": ["{{base_url}}{{api_prefix}}"], "path": ["scenarios", "test-scenario"] } },
+          "response": []
+        },
+        {
+          "name": "Update Scenario",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated Scenario\"\n}" },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/scenarios/test-scenario", "host": ["{{base_url}}{{api_prefix}}"], "path": ["scenarios", "test-scenario"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Scenario",
+          "request": { "method": "DELETE", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/scenarios/test-scenario", "host": ["{{base_url}}{{api_prefix}}"], "path": ["scenarios", "test-scenario"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Scenario Requests",
+      "description": "Ask Scenario request management",
+      "item": [
+        {
+          "name": "Lookup - Statuses",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/ask_scenarios/lookup/statuses", "host": ["{{base_url}}{{api_prefix}}"], "path": ["ask_scenarios", "lookup", "statuses"] } },
+          "response": []
+        },
+        {
+          "name": "Lookup - Request Types",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/ask_scenarios/lookup/request_types", "host": ["{{base_url}}{{api_prefix}}"], "path": ["ask_scenarios", "lookup", "request_types"] } },
+          "response": []
+        },
+        {
+          "name": "Lookup - Domains",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/ask_scenarios/lookup/domains", "host": ["{{base_url}}{{api_prefix}}"], "path": ["ask_scenarios", "lookup", "domains"] } },
+          "response": []
+        },
+        {
+          "name": "List All Requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/ask_scenarios/all?page=0&limit=25",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["ask_scenarios", "all"],
+              "query": [{ "key": "page", "value": "0" }, { "key": "limit", "value": "25" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Scenario Request",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scenarioName\": \"New Scenario Request\",\n  \"description\": \"Description of the requested scenario\",\n  \"dataDomain\": \"test-domain\",\n  \"databases\": [\"db1\"],\n  \"steps\": [\"Step 1\"],\n  \"resultSize\": 100,\n  \"filters\": [\"filter1\"]\n}"
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/ask_scenarios", "host": ["{{base_url}}{{api_prefix}}"], "path": ["ask_scenarios"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Request by ID",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/ask_scenarios/REQ-SCR-0001", "host": ["{{base_url}}{{api_prefix}}"], "path": ["ask_scenarios", "REQ-SCR-0001"] } },
+          "response": []
+        },
+        {
+          "name": "Add Comment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": { "mode": "urlencoded", "urlencoded": [{ "key": "comment", "value": "This is a test comment" }] },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/ask_scenarios/REQ-SCR-0001/comment", "host": ["{{base_url}}{{api_prefix}}"], "path": ["ask_scenarios", "REQ-SCR-0001", "comment"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Sample File",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": "" }] },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/ask_scenarios/REQ-SCR-0001/files", "host": ["{{base_url}}{{api_prefix}}"], "path": ["ask_scenarios", "REQ-SCR-0001", "files"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Feedback",
+      "description": "Feedback management",
+      "item": [
+        {
+          "name": "Submit Public Feedback",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"rating\": 5,\n  \"improvements\": \"None\",\n  \"suggestions\": \"Great app!\",\n  \"email\": \"anonymous@example.com\"\n}" },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/feedback/public", "host": ["{{base_url}}{{api_prefix}}"], "path": ["feedback", "public"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Feedback Stats",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/feedback/stats", "host": ["{{base_url}}{{api_prefix}}"], "path": ["feedback", "stats"] } },
+          "response": []
+        },
+        {
+          "name": "List Feedback (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/feedback/admin/list?page=0&limit=25",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["feedback", "admin", "list"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "limit", "value": "25" },
+                { "key": "rating", "value": "", "disabled": true },
+                { "key": "sort_by", "value": "createdAt", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Feedback (Authenticated)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"rating\": 4,\n  \"improvements\": \"Add dark mode\",\n  \"suggestions\": \"Good overall\"\n}" },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/feedback", "host": ["{{base_url}}{{api_prefix}}"], "path": ["feedback"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "description": "Customer management (group-admin+)",
+      "item": [
+        {
+          "name": "List Customers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/customers?page=0&limit=25",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["customers"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "limit", "value": "25" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "status", "value": "", "disabled": true },
+                { "key": "tag", "value": "", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Customer Filters",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/customers/filters", "host": ["{{base_url}}{{api_prefix}}"], "path": ["customers", "filters"] } },
+          "response": []
+        },
+        {
+          "name": "Create Customer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"customerId\": \"CUST-001\",\n  \"name\": \"Test Customer\",\n  \"description\": \"A test customer\",\n  \"tags\": [\"test\"],\n  \"location\": \"US\",\n  \"unit\": \"unit-1\",\n  \"status\": \"active\"\n}" },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/customers", "host": ["{{base_url}}{{api_prefix}}"], "path": ["customers"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Jira Integration",
+      "description": "Jira Cloud integration endpoints",
+      "item": [
+        {
+          "name": "Jira Status",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/jira/status", "host": ["{{base_url}}{{api_prefix}}"], "path": ["jira", "status"] } },
+          "response": []
+        },
+        {
+          "name": "Get Projects",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/jira/projects", "host": ["{{base_url}}{{api_prefix}}"], "path": ["jira", "projects"] } },
+          "response": []
+        },
+        {
+          "name": "Get My Tasks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/jira/tasks/my?max_results=50",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["jira", "tasks", "my"],
+              "query": [
+                { "key": "max_results", "value": "50" },
+                { "key": "project_key", "value": "", "disabled": true },
+                { "key": "status", "value": "", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Task from Request",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"request_id\": \"REQ-SCR-0001\",\n  \"project_key\": \"PROJ\",\n  \"summary\": \"New scenario request\",\n  \"description\": \"Details of the request\",\n  \"issue_type\": \"Task\"\n}" },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/jira/tasks/create", "host": ["{{base_url}}{{api_prefix}}"], "path": ["jira", "tasks", "create"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Issue Types",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/jira/issue-types", "host": ["{{base_url}}{{api_prefix}}"], "path": ["jira", "issue-types"] } },
+          "response": []
+        },
+        {
+          "name": "Get Boards/Teams",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/jira/boards", "host": ["{{base_url}}{{api_prefix}}"], "path": ["jira", "boards"] } },
+          "response": []
+        },
+        {
+          "name": "Get Assignable Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/jira/assignable-users?max_results=50",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["jira", "assignable-users"],
+              "query": [{ "key": "max_results", "value": "50" }, { "key": "q", "value": "", "disabled": true }]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Export",
+      "description": "Data export endpoints (super-admin)",
+      "item": [
+        {
+          "name": "Export Users CSV",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/export/users/csv", "host": ["{{base_url}}{{api_prefix}}"], "path": ["export", "users", "csv"] } },
+          "response": []
+        },
+        {
+          "name": "Export Users JSON",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/export/users/json", "host": ["{{base_url}}{{api_prefix}}"], "path": ["export", "users", "json"] } },
+          "response": []
+        },
+        {
+          "name": "Export Roles CSV",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/export/roles/csv", "host": ["{{base_url}}{{api_prefix}}"], "path": ["export", "roles", "csv"] } },
+          "response": []
+        },
+        {
+          "name": "Export Activity Logs CSV",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/export/activity-logs/csv?days=30",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["export", "activity-logs", "csv"],
+              "query": [{ "key": "days", "value": "30" }]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Bulk Upload",
+      "description": "Bulk upload endpoints (super-admin)",
+      "item": [
+        {
+          "name": "Upload Users (CSV/Excel)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" },
+                { "key": "send_password_emails", "value": "false", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/bulk/upload/users", "host": ["{{base_url}}{{api_prefix}}"], "path": ["bulk", "upload", "users"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Download Template",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/bulk/template/users?format=csv",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["bulk", "template", "users"],
+              "query": [{ "key": "format", "value": "csv" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GCS Status",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/bulk/gcs/status", "host": ["{{base_url}}{{api_prefix}}"], "path": ["bulk", "gcs", "status"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Activity Logs",
+      "description": "Activity log management (super-admin)",
+      "item": [
+        {
+          "name": "List Activity Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/activity-logs?page=0&limit=25",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["activity-logs"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "limit", "value": "25" },
+                { "key": "entity_type", "value": "", "disabled": true },
+                { "key": "action", "value": "", "disabled": true },
+                { "key": "days", "value": "30", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Activity Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/activity-logs/stats?days=30",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["activity-logs", "stats"],
+              "query": [{ "key": "days", "value": "30" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Action Types",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/activity-logs/actions", "host": ["{{base_url}}{{api_prefix}}"], "path": ["activity-logs", "actions"] } },
+          "response": []
+        },
+        {
+          "name": "Get Entity Types",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/activity-logs/entity-types", "host": ["{{base_url}}{{api_prefix}}"], "path": ["activity-logs", "entity-types"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Error Logs",
+      "description": "Error log management (super-admin)",
+      "item": [
+        {
+          "name": "List Error Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/error-logs?page=0&limit=25",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["error-logs"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "limit", "value": "25" },
+                { "key": "level", "value": "", "disabled": true },
+                { "key": "days", "value": "7", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Error Stats",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/error-logs/stats", "host": ["{{base_url}}{{api_prefix}}"], "path": ["error-logs", "stats"] } },
+          "response": []
+        },
+        {
+          "name": "Get Current Log File",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/error-logs/current-file?lines=100",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["error-logs", "current-file"],
+              "query": [{ "key": "lines", "value": "100" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Force Archive",
+          "request": { "method": "POST", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/error-logs/force-archive", "host": ["{{base_url}}{{api_prefix}}"], "path": ["error-logs", "force-archive"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Management",
+      "description": "Admin user management endpoints (group-admin+)",
+      "item": [
+        {
+          "name": "List Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/admin/management/users?page=0&limit=25",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["admin", "management", "users"],
+              "query": [{ "key": "page", "value": "0" }, { "key": "limit", "value": "25" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Status",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"is_active\": true\n}" },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/admin/management/users/{{test_user_id}}/status", "host": ["{{base_url}}{{api_prefix}}"], "path": ["admin", "management", "users", "{{test_user_id}}", "status"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Roles",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"roles\": [\"user\", \"editor\"]\n}" },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/admin/management/users/{{test_user_id}}/roles", "host": ["{{base_url}}{{api_prefix}}"], "path": ["admin", "management", "users", "{{test_user_id}}", "roles"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Groups",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"groups\": [\"viewer\", \"editor\"]\n}" },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/admin/management/users/{{test_user_id}}/groups", "host": ["{{base_url}}{{api_prefix}}"], "path": ["admin", "management", "users", "{{test_user_id}}", "groups"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Domains",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"domains\": [\"test-domain\"]\n}" },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/admin/management/users/{{test_user_id}}/domains", "host": ["{{base_url}}{{api_prefix}}"], "path": ["admin", "management", "users", "{{test_user_id}}", "domains"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Configurations",
+      "description": "Configuration management (super-admin)",
+      "item": [
+        {
+          "name": "List Configurations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/configurations?page=0&limit=25",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["configurations"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "limit", "value": "25" },
+                { "key": "type", "value": "", "disabled": true },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Config Types",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/configurations/types", "host": ["{{base_url}}{{api_prefix}}"], "path": ["configurations", "types"] } },
+          "response": []
+        },
+        {
+          "name": "Upload Configuration",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" },
+                { "key": "key", "value": "test-config", "type": "text" },
+                { "key": "config_type", "value": "lookup_data", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/configurations/upload", "host": ["{{base_url}}{{api_prefix}}"], "path": ["configurations", "upload"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "API Configs",
+      "description": "API configuration management (super-admin)",
+      "item": [
+        {
+          "name": "List API Configs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/api-configs?page=0&limit=25",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["api-configs"],
+              "query": [{ "key": "page", "value": "0" }, { "key": "limit", "value": "25" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get API Config Tags",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/api-configs/tags", "host": ["{{base_url}}{{api_prefix}}"], "path": ["api-configs", "tags"] } },
+          "response": []
+        },
+        {
+          "name": "Test API Config",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"url\": \"https://httpbin.org/get\",\n  \"method\": \"GET\"\n}" },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/api-configs/test", "host": ["{{base_url}}{{api_prefix}}"], "path": ["api-configs", "test"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Distribution Lists",
+      "description": "Distribution list management (super-admin)",
+      "item": [
+        {
+          "name": "List Distribution Lists",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/distribution-lists?page=0&limit=25",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["distribution-lists"],
+              "query": [{ "key": "page", "value": "0" }, { "key": "limit", "value": "25" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get List Types",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}{{api_prefix}}/distribution-lists/types", "host": ["{{base_url}}{{api_prefix}}"], "path": ["distribution-lists", "types"] } },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

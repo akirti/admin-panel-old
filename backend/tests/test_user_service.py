@@ -6,6 +6,7 @@ from bson import ObjectId
 
 from easylifeauth.services.user_service import UserService
 from easylifeauth.errors.auth_error import AuthError
+from mock_data import MOCK_PASSWORD, MOCK_PASSWORD_ALT, MOCK_PASSWORD_WRONG
 
 
 class TestUserService:
@@ -25,7 +26,7 @@ class TestUserService:
         result = await user_service.register_user(
             email="new@example.com",
             username="newuser",
-            password="password123",
+            password=MOCK_PASSWORD,
             full_name="New User"
         )
         
@@ -64,7 +65,7 @@ class TestUserService:
             await user_service.register_user(
                 email="exists@example.com",
                 username="newuser",
-                password="password123"
+                password=MOCK_PASSWORD
             )
         assert exc_info.value.status_code == 409
 
@@ -72,7 +73,7 @@ class TestUserService:
     async def test_login_user_success(self, user_service, mock_db, sample_user_data):
         """Test successful login"""
         from werkzeug.security import generate_password_hash
-        sample_user_data["password_hash"] = generate_password_hash("password123")
+        sample_user_data["password_hash"] = generate_password_hash(MOCK_PASSWORD)
         sample_user_data["_id"] = ObjectId(sample_user_data["_id"])
         
         mock_db.users.find_one = AsyncMock(return_value=sample_user_data)
@@ -80,7 +81,7 @@ class TestUserService:
         
         result = await user_service.login_user(
             email="test@example.com",
-            password="password123"
+            password=MOCK_PASSWORD
         )
         
         assert "access_token" in result
@@ -101,7 +102,7 @@ class TestUserService:
         with pytest.raises(AuthError) as exc_info:
             await user_service.login_user(
                 email="notfound@example.com",
-                password="password123"
+                password=MOCK_PASSWORD
             )
         assert exc_info.value.status_code == 401
 
@@ -114,7 +115,7 @@ class TestUserService:
         with pytest.raises(AuthError) as exc_info:
             await user_service.login_user(
                 email="test@example.com",
-                password="password123"
+                password=MOCK_PASSWORD
             )
         assert exc_info.value.status_code == 403
 
@@ -122,13 +123,13 @@ class TestUserService:
     async def test_login_user_wrong_password(self, user_service, mock_db, sample_user_data):
         """Test login with wrong password"""
         from werkzeug.security import generate_password_hash
-        sample_user_data["password_hash"] = generate_password_hash("correctpassword")
+        sample_user_data["password_hash"] = generate_password_hash(MOCK_PASSWORD_ALT)
         mock_db.users.find_one = AsyncMock(return_value=sample_user_data)
         
         with pytest.raises(AuthError) as exc_info:
             await user_service.login_user(
                 email="test@example.com",
-                password="wrongpassword"
+                password=MOCK_PASSWORD_WRONG
             )
         assert exc_info.value.status_code == 401
 
@@ -381,7 +382,7 @@ class TestPasswordVerification:
 
         # Create a valid scrypt hash manually
         import hashlib
-        password = "testpassword123"
+        password = MOCK_PASSWORD
         salt = "testsalt12345678"
         n, r, p = 32768, 8, 1
         dklen = 64
@@ -427,9 +428,9 @@ class TestPasswordVerification:
         import bcrypt as bcrypt_lib
         from easylifeauth.services.user_service import verify_bcrypt_password
 
-        hashed = bcrypt_lib.hashpw("testpassword".encode(), bcrypt_lib.gensalt()).decode()
+        hashed = bcrypt_lib.hashpw(MOCK_PASSWORD_ALT.encode(), bcrypt_lib.gensalt()).decode()
 
-        result = verify_bcrypt_password("testpassword", hashed)
+        result = verify_bcrypt_password(MOCK_PASSWORD_ALT, hashed)
         assert result is True
 
     def test_verify_bcrypt_password_invalid(self):
@@ -437,9 +438,9 @@ class TestPasswordVerification:
         import bcrypt as bcrypt_lib
         from easylifeauth.services.user_service import verify_bcrypt_password
 
-        hashed = bcrypt_lib.hashpw("testpassword".encode(), bcrypt_lib.gensalt()).decode()
+        hashed = bcrypt_lib.hashpw(MOCK_PASSWORD_ALT.encode(), bcrypt_lib.gensalt()).decode()
 
-        result = verify_bcrypt_password("wrongpassword", hashed)
+        result = verify_bcrypt_password(MOCK_PASSWORD_WRONG, hashed)
         assert result is False
 
     def test_verify_bcrypt_password_exception(self):
@@ -465,8 +466,8 @@ class TestPasswordVerification:
         from easylifeauth.services.user_service import verify_password_multi
         from werkzeug.security import generate_password_hash
 
-        hashed = generate_password_hash("testpassword")
-        result = verify_password_multi("testpassword", hashed)
+        hashed = generate_password_hash(MOCK_PASSWORD_ALT)
+        result = verify_password_multi(MOCK_PASSWORD_ALT, hashed)
         assert result is True
 
     def test_verify_password_multi_scrypt(self):
@@ -474,7 +475,7 @@ class TestPasswordVerification:
         from easylifeauth.services.user_service import verify_password_multi
         import hashlib
 
-        password = "testpassword123"
+        password = MOCK_PASSWORD
         salt = "testsalt12345678"
         n, r, p = 32768, 8, 1
         dklen = 64
@@ -497,9 +498,9 @@ class TestPasswordVerification:
         import bcrypt as bcrypt_lib
         from easylifeauth.services.user_service import verify_password_multi
 
-        hashed = bcrypt_lib.hashpw("testpassword".encode(), bcrypt_lib.gensalt()).decode()
+        hashed = bcrypt_lib.hashpw(MOCK_PASSWORD_ALT.encode(), bcrypt_lib.gensalt()).decode()
 
-        result = verify_password_multi("testpassword", hashed)
+        result = verify_password_multi(MOCK_PASSWORD_ALT, hashed)
         assert result is True
 
     def test_verify_password_multi_fallback(self):

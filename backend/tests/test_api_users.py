@@ -9,6 +9,7 @@ from bson import ObjectId
 from easylifeauth.api.users_routes import router, create_pagination_meta
 from easylifeauth.api import dependencies
 from easylifeauth.security.access_control import CurrentUser, require_super_admin, require_admin, require_group_admin, get_current_user
+from mock_data import MOCK_PASSWORD, MOCK_PASSWORD_HASH
 
 
 class TestPaginationMeta:
@@ -121,8 +122,8 @@ class TestUsersRoutes:
         mock_db.users.count_documents = AsyncMock(return_value=0)
 
         async def empty_cursor():
-            return
-            yield  # Makes it an async generator
+            if False:
+                yield
 
         # Create a proper chain mock where each method returns an object that has the next method
         mock_cursor = MagicMock()
@@ -142,8 +143,8 @@ class TestUsersRoutes:
         mock_db.users.count_documents = AsyncMock(return_value=0)
 
         async def empty_cursor():
-            return
-            yield
+            if False:
+                yield
 
         mock_cursor = MagicMock()
         mock_cursor.skip.return_value = mock_cursor
@@ -208,7 +209,7 @@ class TestUsersRoutes:
         response = client.post("/users", json={
             "email": "newuser@example.com",
             "username": "newuser",
-            "password": "password123",
+            "password": MOCK_PASSWORD,
             "full_name": "New User",
             "is_active": True,
             "roles": ["user"],
@@ -229,7 +230,7 @@ class TestUsersRoutes:
         response = client.post("/users", json={
             "email": "existing@example.com",
             "username": "newuser",
-            "password": "password123",
+            "password": MOCK_PASSWORD,
             "full_name": "New User",
             "is_active": True,
             "roles": ["user"],
@@ -249,7 +250,7 @@ class TestUsersRoutes:
         response = client.post("/users", json={
             "email": "new@example.com",
             "username": "existinguser",
-            "password": "password123",
+            "password": MOCK_PASSWORD,
             "full_name": "New User",
             "is_active": True,
             "roles": ["user"],
@@ -270,7 +271,7 @@ class TestUsersRoutes:
         response = client.post("/users", json={
             "email": "newuser@example.com",
             "username": "newuser",
-            "password": "password123",
+            "password": MOCK_PASSWORD,
             "full_name": "New User",
             "is_active": True,
             "roles": ["user"],
@@ -1315,7 +1316,7 @@ class TestListUsersExtended:
                 "roles": ["user"],
                 "groups": [],
                 "customers": [],
-                "password_hash": "hashed_secret",
+                "password_hash": MOCK_PASSWORD_HASH,
                 "created_at": now,
                 "updated_at": now,
             },
@@ -1328,7 +1329,7 @@ class TestListUsersExtended:
                 "roles": ["editor"],
                 "groups": ["team-a"],
                 "customers": [],
-                "password_hash": "hashed_other",
+                "password_hash": MOCK_PASSWORD_HASH,
                 "created_at": now,
                 "updated_at": now,
             },
@@ -1431,7 +1432,7 @@ class TestCreateUserExtended:
         response = client.post("/users", json={
             "email": "newuser@example.com",
             "username": "newuser",
-            "password": "password123",
+            "password": MOCK_PASSWORD,
             "full_name": "New User",
             "is_active": True,
             "roles": [],
@@ -1452,7 +1453,7 @@ class TestCreateUserExtended:
         response = client.post("/users", json={
             "email": "newuser@example.com",
             "username": "newuser",
-            "password": "password123",
+            "password": MOCK_PASSWORD,
             "full_name": "New User",
             "is_active": True,
             "roles": [],
@@ -1473,7 +1474,7 @@ class TestCreateUserExtended:
         response = client.post("/users", json={
             "email": "logged@example.com",
             "username": "loggeduser",
-            "password": "password123",
+            "password": MOCK_PASSWORD,
             "full_name": "Logged User",
             "is_active": True,
             "roles": [],

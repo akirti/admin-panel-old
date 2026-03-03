@@ -6,6 +6,7 @@ from bson import ObjectId
 
 from easylifeauth.services.admin_service import AdminService
 from easylifeauth.errors.auth_error import AuthError
+from mock_data import MOCK_PASSWORD_HASH
 
 
 class TestAdminService:
@@ -699,7 +700,7 @@ class TestAdminService:
             "_id": ObjectId(user_id),
             "email": "test@example.com",
             "username": "testuser",
-            "password_hash": "secret_hash",
+            "password_hash": MOCK_PASSWORD_HASH,
             "roles": ["user"]
         }
 

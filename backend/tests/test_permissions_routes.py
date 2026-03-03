@@ -113,8 +113,8 @@ class TestPermissionsRoutes:
         mock_db.permissions.count_documents = AsyncMock(return_value=0)
 
         async def async_iter():
-            return
-            yield
+            if False:
+                yield
 
         mock_cursor = MagicMock()
         mock_cursor.skip = MagicMock(return_value=mock_cursor)
@@ -131,8 +131,8 @@ class TestPermissionsRoutes:
         mock_db.permissions.count_documents = AsyncMock(return_value=0)
 
         async def async_iter():
-            return
-            yield
+            if False:
+                yield
 
         mock_cursor = MagicMock()
         mock_cursor.skip = MagicMock(return_value=mock_cursor)
@@ -372,8 +372,8 @@ class TestPermissionsRoutes:
         mock_db.permissions.find_one = AsyncMock(return_value=perm.copy())
 
         async def async_iter():
-            return
-            yield
+            if False:
+                yield
 
         mock_cursor = MagicMock()
         mock_cursor.__aiter__ = lambda self: async_iter()
@@ -394,8 +394,8 @@ class TestPermissionsRoutes:
         mock_db.permissions.find_one = AsyncMock(return_value=perm.copy())
 
         async def async_iter():
-            return
-            yield
+            if False:
+                yield
 
         mock_cursor = MagicMock()
         mock_cursor.__aiter__ = lambda self: async_iter()

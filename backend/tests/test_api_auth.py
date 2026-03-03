@@ -10,6 +10,7 @@ from easylifeauth.api.auth_routes import router
 from easylifeauth.api import dependencies
 from easylifeauth.errors.auth_error import AuthError
 from easylifeauth.security.access_control import CurrentUser
+from mock_data import MOCK_PASSWORD, MOCK_PASSWORD_WRONG, MOCK_PASSWORD_OLD, MOCK_PASSWORD_NEW
 
 
 class TestAuthRoutes:
@@ -101,7 +102,7 @@ class TestAuthRoutes:
         response = client.post("/auth/register", json={
             "email": "test@example.com",
             "username": "testuser",
-            "password": "password123",
+            "password": MOCK_PASSWORD,
             "full_name": "Test User"
         })
 
@@ -117,7 +118,7 @@ class TestAuthRoutes:
         response = client.post("/auth/register", json={
             "email": "test@example.com",
             "username": "testuser",
-            "password": "password123",
+            "password": MOCK_PASSWORD,
             "full_name": "Test User"
         })
 
@@ -142,7 +143,7 @@ class TestAuthRoutes:
 
         response = client.post("/auth/login", json={
             "email": "test@example.com",
-            "password": "password123"
+            "password": MOCK_PASSWORD
         })
 
         assert response.status_code == 200
@@ -156,7 +157,7 @@ class TestAuthRoutes:
 
         response = client.post("/auth/login", json={
             "email": "test@example.com",
-            "password": "wrongpassword"
+            "password": MOCK_PASSWORD_WRONG
         })
 
         assert response.status_code == 401
@@ -236,7 +237,7 @@ class TestAuthRoutes:
 
         response = client.post("/auth/reset_password", json={
             "token": "reset_token",
-            "new_password": "newpassword123"
+            "new_password": MOCK_PASSWORD_NEW
         })
 
         assert response.status_code == 200
@@ -247,7 +248,7 @@ class TestAuthRoutes:
 
         response = client.post("/auth/reset_password", json={
             "token": "invalid_token",
-            "new_password": "newpassword123"
+            "new_password": MOCK_PASSWORD_NEW
         })
 
         assert response.status_code == 400
@@ -363,8 +364,8 @@ class TestAuthRoutesProtected:
         }
 
         response = client.post("/auth/update_password", json={
-            "password": "oldpassword",
-            "new_password": "newpassword123"
+            "password": MOCK_PASSWORD_OLD,
+            "new_password": MOCK_PASSWORD_NEW
         })
 
         assert response.status_code == 200

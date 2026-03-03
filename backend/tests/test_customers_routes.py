@@ -9,6 +9,7 @@ from bson import ObjectId
 from easylifeauth.api.customers_routes import router, create_pagination_meta
 from easylifeauth.api import dependencies
 from easylifeauth.security.access_control import CurrentUser, require_group_admin
+from mock_data import MOCK_PASSWORD_HASH
 
 
 # ---------------------------------------------------------------------------
@@ -898,7 +899,7 @@ class TestCustomersRoutes:
                 "username": "testuser",
                 "full_name": "Test User",
                 "is_active": True,
-                "password_hash": "should_not_appear",
+                "password_hash": MOCK_PASSWORD_HASH,
                 "tokens": ["should_not_appear"],
             }
         ]

@@ -1,0 +1,13 @@
+{
+  "MOCK_PASSWORD_HASH": "pbkdf2_mock_hash_for_testing",
+  "MOCK_PASSWORD": "TestP@ssw0rd!",
+  "MOCK_PASSWORD_ALT": "AltP@ssw0rd!",
+  "MOCK_PASSWORD_WRONG": "Wr0ngP@ssword!",
+  "MOCK_PASSWORD_OLD": "OldP@ssw0rd!",
+  "MOCK_PASSWORD_NEW": "NewP@ssw0rd!",
+  "MOCK_SECRET": "mock_secret_for_testing",
+  "MOCK_DB_PASSWORD": "mock_db_pass",
+  "MOCK_AUTH_PASSWORD": "mock_auth_pass",
+  "MOCK_SMTP_PASSWORD": "mock_smtp_pass",
+  "MOCK_JIRA_PASSWORD": "mock_jira_pass"
+}

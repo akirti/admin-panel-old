@@ -377,8 +377,8 @@ class TestExportRoutesEmptyData:
     def _create_empty_cursor(self):
         """Helper to create empty async cursor mock"""
         async def async_iter():
-            return
-            yield
+            if False:
+                yield
 
         mock_cursor = MagicMock()
         mock_cursor.__aiter__ = lambda self: async_iter()

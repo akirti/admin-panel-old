@@ -6,6 +6,7 @@ from bson import ObjectId
 
 from easylifeauth.services.password_service import PasswordResetService
 from easylifeauth.errors.auth_error import AuthError
+from mock_data import MOCK_PASSWORD_ALT, MOCK_PASSWORD_NEW, MOCK_PASSWORD_OLD, MOCK_PASSWORD_WRONG
 
 
 class TestPasswordService:
@@ -59,7 +60,7 @@ class TestPasswordService:
         
         result = await password_service.reset_password(
             "valid_token",
-            "newpassword123"
+            MOCK_PASSWORD_NEW
         )
         
         assert result["message"] == "Password reset successfully"
@@ -77,7 +78,7 @@ class TestPasswordService:
         mock_db.reset_tokens.find_one = AsyncMock(return_value=None)
         
         with pytest.raises(AuthError) as exc_info:
-            await password_service.reset_password("invalid_token", "newpassword123")
+            await password_service.reset_password("invalid_token", MOCK_PASSWORD_NEW)
         assert exc_info.value.status_code == 400
 
     @pytest.mark.asyncio
@@ -94,14 +95,14 @@ class TestPasswordService:
         mock_db.users.update_one = AsyncMock(return_value=MagicMock(matched_count=0))
         
         with pytest.raises(AuthError) as exc_info:
-            await password_service.reset_password("valid_token", "newpassword123")
+            await password_service.reset_password("valid_token", MOCK_PASSWORD_NEW)
         assert exc_info.value.status_code == 400
 
     @pytest.mark.asyncio
     async def test_update_user_password_success(self, password_service, mock_db, sample_user_data):
         """Test updating user password"""
         from werkzeug.security import generate_password_hash
-        sample_user_data["password_hash"] = generate_password_hash("oldpassword123")
+        sample_user_data["password_hash"] = generate_password_hash(MOCK_PASSWORD_OLD)
         sample_user_data["_id"] = ObjectId(sample_user_data["_id"])
         
         mock_db.users.find_one = AsyncMock(return_value=sample_user_data)
@@ -109,8 +110,8 @@ class TestPasswordService:
         
         result = await password_service.update_user_password(
             email="test@example.com",
-            password="oldpassword123",
-            new_password="newpassword123"
+            password=MOCK_PASSWORD_OLD,
+            new_password=MOCK_PASSWORD_NEW
         )
         
         assert "access_token" in result
@@ -134,8 +135,8 @@ class TestPasswordService:
         with pytest.raises(AuthError) as exc_info:
             await password_service.update_user_password(
                 email="notfound@example.com",
-                password="oldpassword123",
-                new_password="newpassword123"
+                password=MOCK_PASSWORD_OLD,
+                new_password=MOCK_PASSWORD_NEW
             )
         assert exc_info.value.status_code == 401
 
@@ -143,14 +144,14 @@ class TestPasswordService:
     async def test_update_user_password_wrong_password(self, password_service, mock_db, sample_user_data):
         """Test updating password with wrong current password"""
         from werkzeug.security import generate_password_hash
-        sample_user_data["password_hash"] = generate_password_hash("correctpassword")
+        sample_user_data["password_hash"] = generate_password_hash(MOCK_PASSWORD_ALT)
         
         mock_db.users.find_one = AsyncMock(return_value=sample_user_data)
         
         with pytest.raises(AuthError) as exc_info:
             await password_service.update_user_password(
                 email="test@example.com",
-                password="wrongpassword",
-                new_password="newpassword123"
+                password=MOCK_PASSWORD_WRONG,
+                new_password=MOCK_PASSWORD_NEW
             )
         assert exc_info.value.status_code == 401
