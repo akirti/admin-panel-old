@@ -4,6 +4,7 @@ Provides fake simulator data, config.json template, and expected value
 constants so that TestRealConfigFiles can create temp config files and
 assert against known values — with zero dependency on real project files.
 """
+from mock_data import MOCK_DB_PASSWORD, MOCK_AUTH_SECRET_KEY, MOCK_API_TOKEN
 
 # ---------------------------------------------------------------------------
 # Fake simulator data (mirrors server.env.production.json structure)
@@ -21,7 +22,7 @@ SIMULATOR_DATA = {
 
     "databases.authentication.db_info.connection_scheme": "mongodb",
     "databases.authentication.db_info.username": "testadmin",
-    "databases.authentication.db_info.password": "testpass",
+    "databases.authentication.db_info.password": MOCK_DB_PASSWORD,
     "databases.authentication.db_info.host": "test-mongo",
     "databases.authentication.db_info.port": 27017,
     "databases.authentication.db_info.database": "test_auth_db",
@@ -42,7 +43,7 @@ SIMULATOR_DATA = {
     "environment.smtp.email_from": "noreply@test.local",
     "environment.smtp.email_from_name": "Test No Reply",
 
-    "environment.app_secrets.auth_secret_key": "test-secret-key-for-ci-cd",
+    "environment.app_secrets.auth_secret_key": MOCK_AUTH_SECRET_KEY,
 
     "environment.authentication.access_token_expiry_minutes": 30,
     "environment.authentication.refresh_token_expiry_minutes": 60,
@@ -55,7 +56,7 @@ SIMULATOR_DATA = {
     "environment.jira.username": "",
     "environment.jira.password": "",
     "environment.jira.email": "test@example.com",
-    "environment.jira.api_token": "fake-token",
+    "environment.jira.api_token": MOCK_API_TOKEN,
     "environment.jira.project_key": "TEST",
     "environment.jira.issue_type": "Task",
     "environment.jira.components": [],

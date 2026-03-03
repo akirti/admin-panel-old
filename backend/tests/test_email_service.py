@@ -5,7 +5,7 @@ from email.mime.multipart import MIMEMultipart
 
 from easylifeauth.services.email_service import EmailService
 from easylifeauth.errors.email_error import EmailError
-from mock_data import MOCK_SMTP_PASSWORD
+from mock_data import MOCK_SMTP_PASSWORD, MOCK_PASSWORD_TEMP
 
 
 class TestEmailService:
@@ -251,7 +251,7 @@ class TestEmailService:
         result = email_service._prepare_welcome_email_template(
             to_email="user@test.com",
             full_name="Test User",
-            password="temp123456"
+            password=MOCK_PASSWORD_TEMP
         )
 
         assert isinstance(result, MIMEMultipart)
@@ -279,7 +279,7 @@ class TestEmailService:
         await email_service.send_welcome_email(
             to_email="user@test.com",
             full_name="Test User",
-            password="temp123456"
+            password=MOCK_PASSWORD_TEMP
         )
 
         mock_send.assert_called_once()
@@ -294,7 +294,7 @@ class TestEmailService:
             await email_service.send_welcome_email(
                 to_email="user@test.com",
                 full_name="Test User",
-                password="temp123456"
+                password=MOCK_PASSWORD_TEMP
             )
 
     @pytest.mark.asyncio
@@ -306,7 +306,7 @@ class TestEmailService:
         await email_service_with_tls.send_welcome_email(
             to_email="user@test.com",
             full_name="Test User",
-            password="temp123456"
+            password=MOCK_PASSWORD_TEMP
         )
 
         mock_send.assert_called_once()

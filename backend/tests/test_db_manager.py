@@ -5,6 +5,7 @@ from bson import ObjectId
 from bson.errors import InvalidId
 
 from easylifeauth.db.db_manager import DatabaseManager, is_valid_objectid, distribute_limit
+from mock_data import MOCK_DB_PASSWORD
 
 
 class TestDistributeLimit:
@@ -124,7 +125,7 @@ class TestDatabaseManager:
         config = {
             "connectionScheme": "mongodb",
             "username": "user",
-            "password": "pass",
+            "password": MOCK_DB_PASSWORD,
             "host": "localhost:27017",
             "database": "testdb",
             "collections": ["users", "tokens"]
@@ -143,7 +144,7 @@ class TestDatabaseManager:
         config = {
             "connectionScheme": "mongodb",
             "username": "user",
-            "password": "pass",
+            "password": MOCK_DB_PASSWORD,
             "host": "localhost:27017",
             "database": "testdb",
             "collections": [
@@ -181,7 +182,7 @@ class TestDatabaseManager:
         config = {
             "connectionScheme": "mongodb",
             "username": "user",
-            "password": "pass",
+            "password": MOCK_DB_PASSWORD,
             "host": "localhost:27017",
             "database": "testdb",
             "collections": []
@@ -206,7 +207,7 @@ class TestDatabaseManager:
         config = {
             "connectionScheme": "mongodb",
             "username": "user",
-            "password": "pass",
+            "password": MOCK_DB_PASSWORD,
             "host": "localhost:27017",
             "database": "testdb",
             "collections": []
@@ -226,7 +227,7 @@ class TestDatabaseManager:
         config = {
             "connectionScheme": "mongodb",
             "username": "user",
-            "password": "pass",
+            "password": MOCK_DB_PASSWORD,
             "host": "localhost:27017",
             "database": "testdb",
             "collections": []

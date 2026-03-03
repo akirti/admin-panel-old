@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
 from bson import ObjectId
 
 from easylifeauth.services.api_config_service import ApiConfigService
+from mock_data import MOCK_DB_PASSWORD, MOCK_SECRET, MOCK_PASSWORD_WRONG, MOCK_PASSWORD, MOCK_CLIENT_SECRET
 
 
 class TestApiConfigServiceInit:
@@ -1139,7 +1140,7 @@ class TestObtainLoginToken:
     @pytest.mark.asyncio
     async def test_obtain_login_token_missing_endpoint(self, service):
         """Test that missing login_endpoint returns error."""
-        auth_config = {"username": "user", "password": "pass"}
+        auth_config = {"username": "user", "password": MOCK_DB_PASSWORD}
 
         token, error = await service._obtain_login_token(auth_config, None, None, 5)
 
@@ -1155,7 +1156,7 @@ class TestObtainLoginToken:
             "username_field": "email",
             "password_field": "password",
             "username": "user@example.com",
-            "password": "secret",
+            "password": MOCK_SECRET,
             "token_response_path": "access_token"
         }
 
@@ -1181,7 +1182,7 @@ class TestObtainLoginToken:
         auth_config = {
             "login_endpoint": "https://auth.example.com/login",
             "username": "user",
-            "password": "bad-pass"
+            "password": MOCK_PASSWORD_WRONG
         }
 
         mock_response = MagicMock()
@@ -1206,7 +1207,7 @@ class TestObtainLoginToken:
         auth_config = {
             "login_endpoint": "https://auth.example.com/login",
             "username": "user",
-            "password": "pass"
+            "password": MOCK_DB_PASSWORD
         }
 
         mock_response = MagicMock()
@@ -1231,7 +1232,7 @@ class TestObtainLoginToken:
         auth_config = {
             "login_endpoint": "https://auth.example.com/login",
             "username": "user",
-            "password": "pass",
+            "password": MOCK_DB_PASSWORD,
             "token_response_path": "data.token"
         }
 
@@ -1258,7 +1259,7 @@ class TestObtainLoginToken:
         auth_config = {
             "login_endpoint": "https://auth.example.com/login",
             "username": "user",
-            "password": "pass"
+            "password": MOCK_DB_PASSWORD
         }
 
         with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
@@ -1280,7 +1281,7 @@ class TestObtainLoginToken:
         auth_config = {
             "login_endpoint": "https://auth.example.com/login",
             "username": "user",
-            "password": "pass"
+            "password": MOCK_DB_PASSWORD
         }
 
         with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
@@ -1301,7 +1302,7 @@ class TestObtainLoginToken:
         auth_config = {
             "login_endpoint": "https://auth.example.com/login",
             "username": "user",
-            "password": "pass"
+            "password": MOCK_DB_PASSWORD
         }
 
         with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
@@ -1322,7 +1323,7 @@ class TestObtainLoginToken:
         auth_config = {
             "login_endpoint": "https://auth.example.com/login",
             "username": "user",
-            "password": "pass",
+            "password": MOCK_DB_PASSWORD,
             "extra_body": {"grant_type": "password", "scope": "read"}
         }
 
@@ -1351,7 +1352,7 @@ class TestObtainLoginToken:
         auth_config = {
             "login_endpoint": "https://auth.example.com/login",
             "username": "admin@test.com",
-            "password": "secret123"
+            "password": MOCK_PASSWORD
         }
 
         mock_response = MagicMock()
@@ -1372,7 +1373,7 @@ class TestObtainLoginToken:
         # Default fields are "email" and "password"
         assert "email" in body
         assert body["email"] == "admin@test.com"
-        assert body["password"] == "secret123"
+        assert body["password"] == MOCK_PASSWORD
 
 
 class TestObtainOAuth2Token:
@@ -1387,7 +1388,7 @@ class TestObtainOAuth2Token:
     @pytest.mark.asyncio
     async def test_obtain_oauth2_token_missing_endpoint(self, service):
         """Test that missing token_endpoint returns error."""
-        auth_config = {"client_id": "id", "client_secret": "secret"}
+        auth_config = {"client_id": "id", "client_secret": MOCK_CLIENT_SECRET}
 
         token, error = await service._obtain_oauth2_token(auth_config, None, None, 5)
 
@@ -1400,7 +1401,7 @@ class TestObtainOAuth2Token:
         auth_config = {
             "token_endpoint": "https://auth.example.com/oauth/token",
             "client_id": "my-client",
-            "client_secret": "my-secret",
+            "client_secret": MOCK_CLIENT_SECRET,
             "token_response_path": "access_token"
         }
 
@@ -1426,7 +1427,7 @@ class TestObtainOAuth2Token:
         auth_config = {
             "token_endpoint": "https://auth.example.com/oauth/token",
             "client_id": "cid",
-            "client_secret": "csecret",
+            "client_secret": MOCK_CLIENT_SECRET,
             "scope": "read write",
             "audience": "https://api.example.com"
         }
@@ -1456,7 +1457,7 @@ class TestObtainOAuth2Token:
         auth_config = {
             "token_endpoint": "https://auth.example.com/oauth/token",
             "client_id": "cid",
-            "client_secret": "bad"
+            "client_secret": MOCK_CLIENT_SECRET
         }
 
         mock_response = MagicMock()
@@ -1481,7 +1482,7 @@ class TestObtainOAuth2Token:
         auth_config = {
             "token_endpoint": "https://auth.example.com/oauth/token",
             "client_id": "cid",
-            "client_secret": "csecret"
+            "client_secret": MOCK_CLIENT_SECRET
         }
 
         mock_response = MagicMock()
@@ -1507,7 +1508,7 @@ class TestObtainOAuth2Token:
         auth_config = {
             "token_endpoint": "https://auth.example.com/oauth/token",
             "client_id": "cid",
-            "client_secret": "csecret"
+            "client_secret": MOCK_CLIENT_SECRET
         }
 
         with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
@@ -1529,7 +1530,7 @@ class TestObtainOAuth2Token:
         auth_config = {
             "token_endpoint": "https://auth.example.com/oauth/token",
             "client_id": "cid",
-            "client_secret": "csecret"
+            "client_secret": MOCK_CLIENT_SECRET
         }
 
         with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
@@ -1550,7 +1551,7 @@ class TestObtainOAuth2Token:
         auth_config = {
             "token_endpoint": "https://auth.example.com/oauth/token",
             "client_id": "cid",
-            "client_secret": "csecret"
+            "client_secret": MOCK_CLIENT_SECRET
         }
 
         with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
@@ -1571,7 +1572,7 @@ class TestObtainOAuth2Token:
         auth_config = {
             "token_endpoint": "https://auth.example.com/oauth/token",
             "client_id": "cid",
-            "client_secret": "csecret",
+            "client_secret": MOCK_CLIENT_SECRET,
             "token_response_path": "data.token"
         }
 
@@ -1597,7 +1598,7 @@ class TestObtainOAuth2Token:
         auth_config = {
             "token_endpoint": "https://auth.example.com/oauth/token",
             "client_id": "cid",
-            "client_secret": "csecret"
+            "client_secret": MOCK_CLIENT_SECRET
         }
 
         mock_response = MagicMock()
@@ -1623,7 +1624,7 @@ class TestObtainOAuth2Token:
         auth_config = {
             "token_endpoint": "https://auth.example.com/oauth/token",
             "client_id": "cid",
-            "client_secret": "csecret",
+            "client_secret": MOCK_CLIENT_SECRET,
             "extra_params": {"resource": "https://resource.example.com"}
         }
 
@@ -1725,7 +1726,7 @@ class TestTestApi:
             "method": "GET",
             "timeout": 5,
             "auth_type": "basic",
-            "auth_config": {"username": "user", "password": "pass"}
+            "auth_config": {"username": "user", "password": MOCK_DB_PASSWORD}
         }
 
         mock_response = MagicMock()
@@ -1850,7 +1851,7 @@ class TestTestApi:
             "auth_config": {
                 "login_endpoint": "https://auth.example.com/login",
                 "username": "user",
-                "password": "pass",
+                "password": MOCK_DB_PASSWORD,
                 "token_type": "Bearer",
                 "token_header_name": "Authorization"
             }
@@ -1888,7 +1889,7 @@ class TestTestApi:
             "auth_config": {
                 "login_endpoint": "https://auth.example.com/login",
                 "username": "user",
-                "password": "bad"
+                "password": MOCK_PASSWORD_WRONG
             }
         }
 
@@ -1913,7 +1914,7 @@ class TestTestApi:
             "auth_config": {
                 "token_endpoint": "https://auth.example.com/token",
                 "client_id": "cid",
-                "client_secret": "csecret",
+                "client_secret": MOCK_CLIENT_SECRET,
                 "token_type": "Bearer",
                 "token_header_name": "Authorization"
             }
@@ -1951,7 +1952,7 @@ class TestTestApi:
             "auth_config": {
                 "token_endpoint": "https://auth.example.com/token",
                 "client_id": "cid",
-                "client_secret": "bad"
+                "client_secret": MOCK_CLIENT_SECRET
             }
         }
 
@@ -2423,7 +2424,7 @@ class TestTestApi:
             "auth_config": {
                 "login_endpoint": "https://auth.example.com/login",
                 "username": "user",
-                "password": "pass",
+                "password": MOCK_DB_PASSWORD,
                 "token_type": "",
                 "token_header_name": "Authorization"
             }
