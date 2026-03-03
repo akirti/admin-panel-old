@@ -17,6 +17,9 @@ from easylifeauth.services.error_log_service import (
     DEFAULT_CONFIG,
 )
 
+MONGO_GTE = "$gte"
+
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -764,7 +767,7 @@ class TestGetCurrentLogs:
 
         await service.get_current_logs(filters={"start_date": start})
         query = mock_db.error_logs.count_documents.call_args[0][0]
-        assert query["timestamp"]["$gte"] == start
+        assert query["timestamp"][MONGO_GTE] == start
 
     @pytest.mark.asyncio
     async def test_filter_by_end_date_only(self, service, mock_db):
@@ -791,7 +794,7 @@ class TestGetCurrentLogs:
             filters={"start_date": start, "end_date": end}
         )
         query = mock_db.error_logs.count_documents.call_args[0][0]
-        assert query["timestamp"]["$gte"] == start
+        assert query["timestamp"][MONGO_GTE] == start
         assert query["timestamp"]["$lte"] == end
 
     @pytest.mark.asyncio
@@ -803,9 +806,9 @@ class TestGetCurrentLogs:
 
         await service.get_current_logs(filters={"days": 7})
         query = mock_db.error_logs.count_documents.call_args[0][0]
-        assert "$gte" in query["timestamp"]
+        assert MONGO_GTE in query["timestamp"]
         # The cutoff should be roughly 7 days ago
-        cutoff = query["timestamp"]["$gte"]
+        cutoff = query["timestamp"][MONGO_GTE]
         assert isinstance(cutoff, datetime)
         assert (datetime.now(timezone.utc) - cutoff).days <= 7
 

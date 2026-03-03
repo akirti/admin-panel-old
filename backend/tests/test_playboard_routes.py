@@ -19,6 +19,10 @@ from easylifeauth.api.dependencies import get_db, get_user_service
 from easylifeauth.security.access_control import get_current_user, require_super_admin
 from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_USER_TEST
 
+EXPECTED_TEST_PLAYBOARD = "Test Playboard"
+PATH_PLAYBOARDS_INVALID_ID = "/playboards/invalid-id"
+
+
 
 class TestHelperFunctions:
     """Tests for helper functions"""
@@ -193,7 +197,7 @@ class TestPlayboardRoutes:
         mock_playboard = {
             "_id": playboard_id,
             "key": "test-playboard",
-            "name": "Test Playboard",
+            "name": EXPECTED_TEST_PLAYBOARD,
             "scenarioKey": "scenario1",
             "status": "active",
             "created_at": datetime.utcnow(),
@@ -282,7 +286,7 @@ class TestPlayboardRoutes:
         mock_playboard = {
             "_id": playboard_id,
             "key": "test-playboard",
-            "name": "Test Playboard",
+            "name": EXPECTED_TEST_PLAYBOARD,
             "scenarioKey": "scenario1",
             "status": "active",
             "created_at": datetime.utcnow(),
@@ -297,14 +301,14 @@ class TestPlayboardRoutes:
         response = client.get(f"/playboards/{playboard_id}")
         assert response.status_code == 200
         data = response.json()
-        assert data["name"] == "Test Playboard"
+        assert data["name"] == EXPECTED_TEST_PLAYBOARD
 
     def test_get_playboard_invalid_id(self, client, mock_db):
         """Test get playboard with invalid ID returns not found"""
         mock_db.playboards.find_one = AsyncMock(return_value=None)
         mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_ADMIN_TEST})
 
-        response = client.get("/playboards/invalid-id")
+        response = client.get(PATH_PLAYBOARDS_INVALID_ID)
         assert response.status_code == 404
 
     def test_get_playboard_not_found(self, client, mock_db, mock_user_service):
@@ -410,7 +414,7 @@ class TestPlayboardRoutes:
         """Test update playboard with invalid ID"""
         mock_db.playboards.find_one = AsyncMock(side_effect=Exception("Invalid ObjectId"))
 
-        response = client.put("/playboards/invalid-id", json={"name": "New Name"})
+        response = client.put(PATH_PLAYBOARDS_INVALID_ID, json={"name": "New Name"})
         assert response.status_code == 400
 
     def test_update_playboard_not_found(self, client, mock_db):
@@ -542,7 +546,7 @@ class TestPlayboardRoutes:
         """Test delete playboard with invalid ID"""
         mock_db.playboards.delete_one = AsyncMock(side_effect=Exception("Invalid ObjectId"))
 
-        response = client.delete("/playboards/invalid-id")
+        response = client.delete(PATH_PLAYBOARDS_INVALID_ID)
         assert response.status_code == 400
 
     def test_delete_playboard_not_found(self, client, mock_db):

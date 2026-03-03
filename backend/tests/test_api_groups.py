@@ -11,6 +11,11 @@ from easylifeauth.api import dependencies
 from easylifeauth.security.access_control import CurrentUser, require_super_admin, require_group_admin
 from mock_data import MOCK_EMAIL_ADMIN, MOCK_EMAIL_USER1, MOCK_EMAIL_USER2
 
+PATH_GROUPS = "/groups"
+PATH_GROUPS_ID = "/groups/507f1f77bcf86cd799439011"
+PATH_GROUPS_NONEXISTENT = "/groups/nonexistent"
+
+
 
 class TestGroupsPaginationMeta:
     """Tests for groups pagination metadata"""
@@ -150,7 +155,7 @@ class TestGroupsRoutes:
         mock_cursor.sort.return_value = empty_cursor()
         mock_db.groups.find.return_value = mock_cursor
 
-        response = client.get("/groups")
+        response = client.get(PATH_GROUPS)
         assert response.status_code == 200
         data = response.json()
         assert "data" in data
@@ -197,7 +202,7 @@ class TestGroupsRoutes:
         }
         mock_db.groups.find_one = AsyncMock(return_value=group_data)
 
-        response = client.get("/groups/507f1f77bcf86cd799439011")
+        response = client.get(PATH_GROUPS_ID)
         assert response.status_code == 200
         data = response.json()
         assert data["groupId"] == "admins"
@@ -224,7 +229,7 @@ class TestGroupsRoutes:
         """Test getting non-existent group"""
         mock_db.groups.find_one = AsyncMock(return_value=None)
 
-        response = client.get("/groups/nonexistent")
+        response = client.get(PATH_GROUPS_NONEXISTENT)
         assert response.status_code == 404
 
     def test_create_group_success(self, client, mock_db):
@@ -234,7 +239,7 @@ class TestGroupsRoutes:
             return_value=MagicMock(inserted_id=ObjectId("507f1f77bcf86cd799439011"))
         )
 
-        response = client.post("/groups", json={
+        response = client.post(PATH_GROUPS, json={
             "groupId": "editors",
             "name": "Editors",
             "description": "Editor group",
@@ -251,7 +256,7 @@ class TestGroupsRoutes:
         """Test creating group with existing groupId"""
         mock_db.groups.find_one = AsyncMock(return_value={"groupId": "admins"})
 
-        response = client.post("/groups", json={
+        response = client.post(PATH_GROUPS, json={
             "groupId": "admins",
             "name": "Administrators",
             "description": "Admin group",
@@ -285,7 +290,7 @@ class TestGroupsRoutes:
 
         mock_db.users.find.return_value = empty_cursor()
 
-        response = client.put("/groups/507f1f77bcf86cd799439011", json={
+        response = client.put(PATH_GROUPS_ID, json={
             "description": "Updated description"
         })
 
@@ -296,7 +301,7 @@ class TestGroupsRoutes:
         """Test updating non-existent group"""
         mock_db.groups.find_one = AsyncMock(return_value=None)
 
-        response = client.put("/groups/nonexistent", json={
+        response = client.put(PATH_GROUPS_NONEXISTENT, json={
             "description": "Updated"
         })
 
@@ -306,7 +311,7 @@ class TestGroupsRoutes:
         """Test deleting a group"""
         mock_db.groups.delete_one = AsyncMock(return_value=MagicMock(deleted_count=1))
 
-        response = client.delete("/groups/507f1f77bcf86cd799439011")
+        response = client.delete(PATH_GROUPS_ID)
         assert response.status_code == 200
         assert "deleted successfully" in response.json()["message"]
         mock_db.users.update_many.assert_called_once()
@@ -326,7 +331,7 @@ class TestGroupsRoutes:
         """Test deleting non-existent group"""
         mock_db.groups.delete_one = AsyncMock(return_value=MagicMock(deleted_count=0))
 
-        response = client.delete("/groups/nonexistent")
+        response = client.delete(PATH_GROUPS_NONEXISTENT)
         assert response.status_code == 404
 
     def test_toggle_group_status(self, client, mock_db, mock_email_service):

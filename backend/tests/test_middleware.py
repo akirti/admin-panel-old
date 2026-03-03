@@ -14,6 +14,12 @@ from easylifeauth.middleware.security import (
 )
 from mock_data import MOCK_IP_FORWARDED, MOCK_IP_PRIVATE_1, MOCK_IP_PRIVATE_2, MOCK_IP_PRIVATE_3, MOCK_URL_TEST_BASE
 
+PATH_ROOT = "/"
+PATH_AUTH_LOGIN = "/api/auth/login"
+PATH_DATA = "/api/data"
+PATH_HEALTH = "/health"
+
+
 
 class TestCSRFProtectMiddleware:
     """Tests for CSRF Protection Middleware"""
@@ -26,22 +32,22 @@ class TestCSRFProtectMiddleware:
             CSRFProtectMiddleware,
             secret_key="test_secret_key_12345",
             cookie_secure=False,  # For testing without HTTPS
-            exempt_paths={"/api/auth/login", "/api/auth/*"}
+            exempt_paths={PATH_AUTH_LOGIN, "/api/auth/*"}
         )
 
-        @app.get("/")
+        @app.get(PATH_ROOT)
         async def root():
             return {"message": "hello"}
 
-        @app.post("/api/data")
+        @app.post(PATH_DATA)
         async def post_data():
             return {"message": "data created"}
 
-        @app.post("/api/auth/login")
+        @app.post(PATH_AUTH_LOGIN)
         async def login():
             return {"message": "logged in"}
 
-        @app.get("/health")
+        @app.get(PATH_HEALTH)
         async def health():
             return {"status": "ok"}
 
@@ -105,7 +111,7 @@ class TestCSRFProtectMiddleware:
         )
         request = MagicMock()
         request.method = "GET"
-        request.url.path = "/api/data"
+        request.url.path = PATH_DATA
         assert middleware._is_exempt(request) is True
 
     def test_is_exempt_options_request(self):
@@ -116,7 +122,7 @@ class TestCSRFProtectMiddleware:
         )
         request = MagicMock()
         request.method = "OPTIONS"
-        request.url.path = "/api/data"
+        request.url.path = PATH_DATA
         assert middleware._is_exempt(request) is True
 
     def test_is_exempt_health_endpoint(self):
@@ -127,7 +133,7 @@ class TestCSRFProtectMiddleware:
         )
         request = MagicMock()
         request.method = "POST"
-        request.url.path = "/health"
+        request.url.path = PATH_HEALTH
         assert middleware._is_exempt(request) is True
 
     def test_is_exempt_docs_endpoint(self):
@@ -162,7 +168,7 @@ class TestCSRFProtectMiddleware:
         )
         request = MagicMock()
         request.method = "POST"
-        request.url.path = "/api/auth/login"
+        request.url.path = PATH_AUTH_LOGIN
         assert middleware._is_exempt(request) is True
 
     def test_is_not_exempt_post_request(self):
@@ -173,13 +179,13 @@ class TestCSRFProtectMiddleware:
         )
         request = MagicMock()
         request.method = "POST"
-        request.url.path = "/api/data"
+        request.url.path = PATH_DATA
         assert middleware._is_exempt(request) is False
 
     def test_get_request_sets_cookie(self, app_with_csrf):
         """Test GET request sets CSRF cookie"""
         client = TestClient(app_with_csrf)
-        response = client.get("/")
+        response = client.get(PATH_ROOT)
         assert response.status_code == 200
         assert "csrf_token" in response.cookies
 
@@ -193,12 +199,12 @@ class TestCSRFProtectMiddleware:
             cookie_secure=False
         )
 
-        @app.get("/api/data")
+        @app.get(PATH_DATA)
         async def get_data():
             return {"message": "data"}
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url=MOCK_URL_TEST_BASE) as client:
-            response = await client.get("/api/data")
+            response = await client.get(PATH_DATA)
             assert response.status_code == 200
             # CSRF cookie should be set on GET request
             assert "csrf_token" in response.cookies
@@ -206,7 +212,7 @@ class TestCSRFProtectMiddleware:
     def test_exempt_path_no_token_needed(self, app_with_csrf):
         """Test exempt paths don't need CSRF token"""
         client = TestClient(app_with_csrf)
-        response = client.post("/api/auth/login")
+        response = client.post(PATH_AUTH_LOGIN)
         assert response.status_code == 200
 
     def test_get_csrf_token_function(self):
@@ -239,15 +245,15 @@ class TestRateLimitMiddleware:
             enabled=True
         )
 
-        @app.get("/api/data")
+        @app.get(PATH_DATA)
         async def get_data():
             return {"message": "data"}
 
-        @app.post("/api/auth/login")
+        @app.post(PATH_AUTH_LOGIN)
         async def login():
             return {"message": "logged in"}
 
-        @app.get("/health")
+        @app.get(PATH_HEALTH)
         async def health():
             return {"status": "ok"}
 
@@ -288,14 +294,14 @@ class TestRateLimitMiddleware:
         app = FastAPI()
         app.add_middleware(RateLimitMiddleware, enabled=False)
 
-        @app.get("/api/data")
+        @app.get(PATH_DATA)
         async def get_data():
             return {"message": "data"}
 
         client = TestClient(app)
         # Should not be rate limited
         for _ in range(20):
-            response = client.get("/api/data")
+            response = client.get(PATH_DATA)
             assert response.status_code == 200
 
     @pytest.mark.asyncio
@@ -308,14 +314,14 @@ class TestRateLimitMiddleware:
         )
 
         # First two requests should pass
-        await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, "/api/data")
-        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), "/api/data"))
-        await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, "/api/data")
-        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), "/api/data"))
+        await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, PATH_DATA)
+        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), PATH_DATA))
+        await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, PATH_DATA)
+        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), PATH_DATA))
 
         # Third should fail
         with pytest.raises(HTTPException) as exc_info:
-            await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, "/api/data")
+            await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, PATH_DATA)
         assert exc_info.value.status_code == 429
 
     @pytest.mark.asyncio
@@ -329,12 +335,12 @@ class TestRateLimitMiddleware:
         )
 
         # First auth request should pass
-        await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, "/api/auth/login")
-        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), "/api/auth/login"))
+        await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, PATH_AUTH_LOGIN)
+        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), PATH_AUTH_LOGIN))
 
         # Second should fail due to stricter auth limit
         with pytest.raises(HTTPException) as exc_info:
-            await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, "/api/auth/login")
+            await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, PATH_AUTH_LOGIN)
         assert exc_info.value.status_code == 429
 
     @pytest.mark.asyncio
@@ -348,12 +354,12 @@ class TestRateLimitMiddleware:
         )
 
         # Fill up hour limit
-        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), "/api/data"))
-        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), "/api/data"))
+        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), PATH_DATA))
+        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), PATH_DATA))
 
         # Should fail hour limit
         with pytest.raises(HTTPException) as exc_info:
-            await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, "/api/data")
+            await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, PATH_DATA)
         assert exc_info.value.status_code == 429
         assert "per hour" in exc_info.value.detail
 
@@ -361,7 +367,7 @@ class TestRateLimitMiddleware:
         """Test exempt paths are not rate limited"""
         client = TestClient(app_with_rate_limit)
         for _ in range(20):
-            response = client.get("/health")
+            response = client.get(PATH_HEALTH)
             assert response.status_code == 200
 
     @pytest.mark.asyncio
@@ -375,11 +381,11 @@ class TestRateLimitMiddleware:
         )
 
         # No requests yet - should return full limit
-        remaining = await middleware._get_remaining_requests(MOCK_IP_PRIVATE_1, "/api/data")
+        remaining = await middleware._get_remaining_requests(MOCK_IP_PRIVATE_1, PATH_DATA)
         assert remaining == 10
 
         # For auth endpoint
-        remaining = await middleware._get_remaining_requests(MOCK_IP_PRIVATE_1, "/api/auth/login")
+        remaining = await middleware._get_remaining_requests(MOCK_IP_PRIVATE_1, PATH_AUTH_LOGIN)
         assert remaining == 5
 
     def test_start_cleanup_task(self):
@@ -411,11 +417,11 @@ class TestRateLimitMiddleware:
         recent_time = datetime.utcnow()
 
         middleware.request_log[MOCK_IP_PRIVATE_1] = [
-            (old_time, "/api/data"),
-            (recent_time, "/api/data")
+            (old_time, PATH_DATA),
+            (recent_time, PATH_DATA)
         ]
         middleware.request_log[MOCK_IP_PRIVATE_2] = [
-            (old_time, "/api/data")  # Only old entries
+            (old_time, PATH_DATA)  # Only old entries
         ]
 
         # Run cleanup (just the cleanup part, not the infinite loop)
@@ -482,7 +488,7 @@ class TestSecurityHeadersMiddleware:
             enable_csp=True
         )
 
-        @app.get("/")
+        @app.get(PATH_ROOT)
         async def root():
             return {"message": "hello"}
 
@@ -491,38 +497,38 @@ class TestSecurityHeadersMiddleware:
     def test_x_frame_options_header(self, app_with_security):
         """Test X-Frame-Options header is set"""
         client = TestClient(app_with_security)
-        response = client.get("/")
+        response = client.get(PATH_ROOT)
         assert response.headers.get("X-Frame-Options") == "DENY"
 
     def test_x_content_type_options_header(self, app_with_security):
         """Test X-Content-Type-Options header is set"""
         client = TestClient(app_with_security)
-        response = client.get("/")
+        response = client.get(PATH_ROOT)
         assert response.headers.get("X-Content-Type-Options") == "nosniff"
 
     def test_x_xss_protection_header(self, app_with_security):
         """Test X-XSS-Protection header is set"""
         client = TestClient(app_with_security)
-        response = client.get("/")
+        response = client.get(PATH_ROOT)
         assert response.headers.get("X-XSS-Protection") == "1; mode=block"
 
     def test_csp_header(self, app_with_security):
         """Test Content-Security-Policy header is set"""
         client = TestClient(app_with_security)
-        response = client.get("/")
+        response = client.get(PATH_ROOT)
         assert "Content-Security-Policy" in response.headers
         assert "default-src 'self'" in response.headers.get("Content-Security-Policy")
 
     def test_referrer_policy_header(self, app_with_security):
         """Test Referrer-Policy header is set"""
         client = TestClient(app_with_security)
-        response = client.get("/")
+        response = client.get(PATH_ROOT)
         assert response.headers.get("Referrer-Policy") == "strict-origin-when-cross-origin"
 
     def test_permissions_policy_header(self, app_with_security):
         """Test Permissions-Policy header is set"""
         client = TestClient(app_with_security)
-        response = client.get("/")
+        response = client.get(PATH_ROOT)
         assert "Permissions-Policy" in response.headers
         assert "geolocation=()" in response.headers.get("Permissions-Policy")
 
@@ -534,12 +540,12 @@ class TestSecurityHeadersMiddleware:
             enable_csp=False
         )
 
-        @app.get("/")
+        @app.get(PATH_ROOT)
         async def root():
             return {"message": "hello"}
 
         client = TestClient(app)
-        response = client.get("/")
+        response = client.get(PATH_ROOT)
         assert "Content-Security-Policy" not in response.headers
 
     def test_custom_csp_directives(self):
@@ -551,12 +557,12 @@ class TestSecurityHeadersMiddleware:
             csp_directives="default-src 'none';"
         )
 
-        @app.get("/")
+        @app.get(PATH_ROOT)
         async def root():
             return {"message": "hello"}
 
         client = TestClient(app)
-        response = client.get("/")
+        response = client.get(PATH_ROOT)
         assert response.headers.get("Content-Security-Policy") == "default-src 'none';"
 
 
@@ -572,7 +578,7 @@ class TestRequestValidationMiddleware:
             max_body_size=1024  # 1KB for testing
         )
 
-        @app.post("/api/data")
+        @app.post(PATH_DATA)
         async def post_data():
             return {"message": "data created"}
 
@@ -582,7 +588,7 @@ class TestRequestValidationMiddleware:
         """Test request within size limit is allowed"""
         client = TestClient(app_with_validation)
         response = client.post(
-            "/api/data",
+            PATH_DATA,
             json={"key": "value"}
         )
         assert response.status_code == 200
@@ -592,7 +598,7 @@ class TestRequestValidationMiddleware:
         client = TestClient(app_with_validation)
         large_data = {"data": "x" * 2000}  # > 1KB
         response = client.post(
-            "/api/data",
+            PATH_DATA,
             json=large_data
         )
         assert response.status_code == 413
@@ -603,10 +609,10 @@ class TestRequestValidationMiddleware:
         app = FastAPI()
         app.add_middleware(RequestValidationMiddleware)
 
-        @app.get("/api/data")
+        @app.get(PATH_DATA)
         async def get_data():
             return {"message": "data"}
 
         client = TestClient(app)
-        response = client.get("/api/data")
+        response = client.get(PATH_DATA)
         assert response.status_code == 200

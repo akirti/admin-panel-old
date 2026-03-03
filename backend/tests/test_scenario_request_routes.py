@@ -12,6 +12,12 @@ from easylifeauth.security.access_control import require_admin_or_editor
 from easylifeauth.errors.auth_error import AuthError
 from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_EDITOR_TEST, MOCK_EMAIL_OTHER_TEST, MOCK_EMAIL_USER_TEST, MOCK_EMAIL_VIEWER_TEST
 
+PATH_ASK_SCENARIOS_ALL = "/ask_scenarios/all"
+PATH_ASK_SCENARIOS_REQ_123 = "/ask_scenarios/req_123"
+PATH_ASK_SCENARIOS_REQ_123_COMMENT = "/ask_scenarios/req_123/comment"
+PATH_ASK_SCENARIOS_REQ_123_FILES = "/ask_scenarios/req_123/files"
+
+
 
 class TestScenarioRequestRoutes:
     """Tests for scenario request API routes"""
@@ -148,7 +154,7 @@ class TestScenarioRequestRoutes:
         }
         mock_scenario_request_service.get_all = AsyncMock(return_value=result)
 
-        response = client.get("/ask_scenarios/all")
+        response = client.get(PATH_ASK_SCENARIOS_ALL)
         assert response.status_code == 200
         data = response.json()
         assert "data" in data
@@ -171,7 +177,7 @@ class TestScenarioRequestRoutes:
         # AuthError defaults to status_code=400
         mock_scenario_request_service.get_all = AsyncMock(side_effect=AuthError("Unauthorized"))
 
-        response = client.get("/ask_scenarios/all")
+        response = client.get(PATH_ASK_SCENARIOS_ALL)
         assert response.status_code == 400  # AuthError default status_code
 
     def test_create_scenario_request(self, client, mock_scenario_request_service, mock_user):
@@ -213,7 +219,7 @@ class TestScenarioRequestRoutes:
         result = {"request_id": "req_123", "title": "Updated Request"}
         mock_scenario_request_service.update = AsyncMock(return_value=result)
 
-        response = client.put("/ask_scenarios/req_123", json={"title": "Updated Request"})
+        response = client.put(PATH_ASK_SCENARIOS_REQ_123, json={"title": "Updated Request"})
         assert response.status_code == 200
 
     def test_update_scenario_request_forbidden_for_non_creator(self, app, mock_scenario_request_service):
@@ -240,14 +246,14 @@ class TestScenarioRequestRoutes:
         app.dependency_overrides[get_current_user] = lambda: other_user
         client = TestClient(app)
 
-        response = client.put("/ask_scenarios/req_123", json={"title": "Hacked"})
+        response = client.put(PATH_ASK_SCENARIOS_REQ_123, json={"title": "Hacked"})
         assert response.status_code == 403
 
     def test_update_scenario_request_error(self, client, mock_scenario_request_service):
         """Test update scenario request with error"""
         mock_scenario_request_service.update = AsyncMock(side_effect=AuthError("Unauthorized"))
 
-        response = client.put("/ask_scenarios/req_123", json={"title": "Updated"})
+        response = client.put(PATH_ASK_SCENARIOS_REQ_123, json={"title": "Updated"})
         assert response.status_code == 400  # AuthError default status_code
 
     def test_get_scenario_request(self, client, mock_scenario_request_service):
@@ -261,7 +267,7 @@ class TestScenarioRequestRoutes:
         }
         mock_scenario_request_service.get = AsyncMock(return_value=result)
 
-        response = client.get("/ask_scenarios/req_123")
+        response = client.get(PATH_ASK_SCENARIOS_REQ_123)
         assert response.status_code == 200
         data = response.json()
         assert data["request_id"] == "req_123"
@@ -299,7 +305,7 @@ class TestScenarioRequestRoutes:
         """Test get scenario request with error"""
         mock_scenario_request_service.get = AsyncMock(side_effect=AuthError("Not found", 404))
 
-        response = client.get("/ask_scenarios/req_123")
+        response = client.get(PATH_ASK_SCENARIOS_REQ_123)
         assert response.status_code == 404
 
     def test_upload_user_file(self, client, mock_scenario_request_service):
@@ -312,7 +318,7 @@ class TestScenarioRequestRoutes:
         mock_scenario_request_service.upload_file = AsyncMock(return_value=result)
 
         response = client.post(
-            "/ask_scenarios/req_123/files",
+            PATH_ASK_SCENARIOS_REQ_123_FILES,
             files={"file": ("test.csv", b"test content", "text/csv")}
         )
         assert response.status_code == 200
@@ -342,7 +348,7 @@ class TestScenarioRequestRoutes:
         client = TestClient(app)
 
         response = client.post(
-            "/ask_scenarios/req_123/files",
+            PATH_ASK_SCENARIOS_REQ_123_FILES,
             files={"file": ("test.csv", b"test content", "text/csv")}
         )
         assert response.status_code == 403
@@ -352,7 +358,7 @@ class TestScenarioRequestRoutes:
         mock_scenario_request_service.upload_file = AsyncMock(side_effect=AuthError("Forbidden"))
 
         response = client.post(
-            "/ask_scenarios/req_123/files",
+            PATH_ASK_SCENARIOS_REQ_123_FILES,
             files={"file": ("test.csv", b"test content", "text/csv")}
         )
         assert response.status_code == 400  # AuthError default status_code
@@ -432,7 +438,7 @@ class TestScenarioRequestRoutes:
         mock_scenario_request_service.update = AsyncMock(return_value=result)
 
         response = client.post(
-            "/ask_scenarios/req_123/comment",
+            PATH_ASK_SCENARIOS_REQ_123_COMMENT,
             data={"comment": "Test comment"}
         )
         assert response.status_code == 200
@@ -457,7 +463,7 @@ class TestScenarioRequestRoutes:
         client = TestClient(app)
 
         response = client.post(
-            "/ask_scenarios/req_123/comment",
+            PATH_ASK_SCENARIOS_REQ_123_COMMENT,
             data={"comment": "Nice work!"}
         )
         assert response.status_code == 200
@@ -467,7 +473,7 @@ class TestScenarioRequestRoutes:
         mock_scenario_request_service.update = AsyncMock(side_effect=AuthError("Forbidden"))
 
         response = client.post(
-            "/ask_scenarios/req_123/comment",
+            PATH_ASK_SCENARIOS_REQ_123_COMMENT,
             data={"comment": "Test comment"}
         )
         assert response.status_code == 400  # AuthError default status_code
@@ -564,7 +570,7 @@ class TestScenarioRequestRoutesEditorUser:
         result = {"data": [], "pagination": {"total": 0}}
         mock_scenario_request_service.get_all = AsyncMock(return_value=result)
 
-        response = client.get("/ask_scenarios/all")
+        response = client.get(PATH_ASK_SCENARIOS_ALL)
         assert response.status_code == 200
         # Verify service was called with user_id=None (all users see all)
         mock_scenario_request_service.get_all.assert_called_once()

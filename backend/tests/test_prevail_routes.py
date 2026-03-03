@@ -9,6 +9,9 @@ from easylifeauth.api.dependencies import get_db, get_gcs_service
 from easylifeauth.security.access_control import get_current_user
 from mock_data import MOCK_URL_PREVAIL, MOCK_URL_PREVAIL_API, MOCK_URL_PREVAIL_SCENARIO, MOCK_URL_PREVAIL_SCENARIO_X, MOCK_URL_PREVAIL_TRAILING, MOCK_URL_PROXY_SHORT
 
+PATH_PREVAIL_SCENARIO_X = "/prevail/scenario-x"
+
+
 
 class TestExecutePrevailQuery:
     """Tests for the POST /prevail/{scenario_key} proxy endpoint"""
@@ -142,7 +145,7 @@ class TestExecutePrevailQuery:
             "error": None,
         }
 
-        client.post("/prevail/scenario-x", json={"q": "test"})
+        client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         call_config = mock_service.test_api.call_args[0][0]
         assert call_config["endpoint"] == MOCK_URL_PREVAIL_SCENARIO_X
@@ -286,7 +289,7 @@ class TestExecutePrevailQuery:
         """Test that 503 is returned when no prevail config exists"""
         mock_service.get_config_by_key.return_value = None
 
-        response = client.post("/prevail/scenario-x", json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         assert response.status_code == 503
         assert "not configured" in response.json()["detail"]
@@ -298,7 +301,7 @@ class TestExecutePrevailQuery:
         active_prevail_config["status"] = "inactive"
         mock_service.get_config_by_key.return_value = active_prevail_config
 
-        response = client.post("/prevail/scenario-x", json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         assert response.status_code == 503
         assert "inactive" in response.json()["detail"]
@@ -310,7 +313,7 @@ class TestExecutePrevailQuery:
         active_prevail_config["endpoint"] = None
         mock_service.get_config_by_key.return_value = active_prevail_config
 
-        response = client.post("/prevail/scenario-x", json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         assert response.status_code == 503
         assert "endpoint is not configured" in response.json()["detail"]
@@ -322,7 +325,7 @@ class TestExecutePrevailQuery:
         active_prevail_config["endpoint"] = ""
         mock_service.get_config_by_key.return_value = active_prevail_config
 
-        response = client.post("/prevail/scenario-x", json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         assert response.status_code == 503
         assert "endpoint is not configured" in response.json()["detail"]
@@ -338,7 +341,7 @@ class TestExecutePrevailQuery:
         mock_service.get_config_by_key.return_value = active_prevail_config
 
         response = client.post(
-            "/prevail/scenario-x",
+            PATH_PREVAIL_SCENARIO_X,
             content=b"this is not json",
             headers={"Content-Type": "application/json"},
         )
@@ -362,7 +365,7 @@ class TestExecutePrevailQuery:
             "error": "Connection error: [Errno -2] Name or service not known",
         }
 
-        response = client.post("/prevail/scenario-x", json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         assert response.status_code == 502
         assert "Prevail service error" in response.json()["detail"]
@@ -380,7 +383,7 @@ class TestExecutePrevailQuery:
             "error": "Connection error: host unreachable",
         }
 
-        response = client.post("/prevail/scenario-x", json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         # The route uses `result.get("status_code") or 502` so None -> 502
         assert response.status_code == 502
@@ -401,7 +404,7 @@ class TestExecutePrevailQuery:
             "error": "Connection timeout",
         }
 
-        response = client.post("/prevail/scenario-x", json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         assert response.status_code == 502
         assert "Prevail service error" in response.json()["detail"]
@@ -419,7 +422,7 @@ class TestExecutePrevailQuery:
             "error": "Read timeout - server took too long to respond",
         }
 
-        response = client.post("/prevail/scenario-x", json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         assert response.status_code == 502
         assert "timeout" in response.json()["detail"].lower()
@@ -440,7 +443,7 @@ class TestExecutePrevailQuery:
             "error": "HTTP error: 403 Forbidden",
         }
 
-        response = client.post("/prevail/scenario-x", json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         assert response.status_code == 403
         assert "Prevail service error" in response.json()["detail"]
@@ -457,7 +460,7 @@ class TestExecutePrevailQuery:
             "error": "HTTP error: 404 Not Found",
         }
 
-        response = client.post("/prevail/scenario-x", json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         assert response.status_code == 404
         assert "Prevail service error" in response.json()["detail"]
@@ -474,7 +477,7 @@ class TestExecutePrevailQuery:
             "error": "HTTP error: 500 Internal Server Error",
         }
 
-        response = client.post("/prevail/scenario-x", json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         assert response.status_code == 500
         assert "Prevail service error" in response.json()["detail"]
@@ -491,7 +494,7 @@ class TestExecutePrevailQuery:
             "error": "Unexpected error: something went wrong",
         }
 
-        response = client.post("/prevail/scenario-x", json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         # `result.get("status_code") or 502` -> 0 is falsy, so 502
         assert response.status_code == 502
@@ -512,7 +515,7 @@ class TestExecutePrevailQuery:
             "error": None,
         }
 
-        response = client.post("/prevail/scenario-x", json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         assert response.status_code == 502
         assert "No response from Prevail service" in response.json()["detail"]
@@ -534,7 +537,7 @@ class TestExecutePrevailQuery:
             "error": None,
         }
 
-        client.post("/prevail/scenario-x", json={"q": "test"})
+        client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         call_config = mock_service.test_api.call_args[0][0]
         assert call_config["timeout"] == 120
@@ -552,7 +555,7 @@ class TestExecutePrevailQuery:
             "error": None,
         }
 
-        client.post("/prevail/scenario-x", json={"q": "test"})
+        client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         call_config = mock_service.test_api.call_args[0][0]
         assert call_config["timeout"] == 60
@@ -594,7 +597,7 @@ class TestExecutePrevailQuery:
             "error": "SSL error: certificate verify failed",
         }
 
-        response = client.post("/prevail/scenario-x", json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         assert response.status_code == 502
         assert "SSL error" in response.json()["detail"]
@@ -639,7 +642,7 @@ class TestExecutePrevailQuery:
         }
 
         client.post(
-            "/prevail/scenario-x",
+            PATH_PREVAIL_SCENARIO_X,
             json={"q": "test"},
             headers={"Authorization": "Bearer my-token"},
         )
@@ -683,7 +686,7 @@ class TestExecutePrevailQueryAuthentication:
 
         try:
             client = TestClient(app)
-            response = client.post("/prevail/scenario-x", json={"q": "test"})
+            response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
             # Without a valid token the access control dependency returns 401 or 500
             # (500 if token_manager is not initialized, 401 if it rejects the token)
             assert response.status_code in (401, 403, 500)

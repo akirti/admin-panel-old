@@ -11,6 +11,16 @@ from easylifeauth.api import dependencies
 from easylifeauth.security.access_control import CurrentUser, require_group_admin
 from mock_data import MOCK_EMAIL_GROUPADMIN, MOCK_EMAIL_USER, MOCK_EMAIL_USER1, MOCK_PASSWORD_HASH
 
+EXPECTED_FALLBACK_UPDATED = "Fallback Updated"
+EXPECTED_UPDATED_NAME = "Updated Name"
+MONGO_OR = "$or"
+MONGO_REGEX = "$regex"
+MONGO_SET = "$set"
+PATH_CUSTOMERS = "/customers"
+PATH_CUSTOMERS_CUST_001 = "/customers/CUST-001"
+PATH_CUSTOMERS_FILTERS = "/customers/filters"
+
+
 
 # ---------------------------------------------------------------------------
 # Unit tests for helper functions
@@ -178,7 +188,7 @@ class TestCustomersRoutes:
         mock_db.customers.count_documents = AsyncMock(return_value=0)
         mock_db.customers.find.return_value = self._make_cursor_mock([])
 
-        response = client.get("/customers")
+        response = client.get(PATH_CUSTOMERS)
 
         assert response.status_code == 200
         data = response.json()
@@ -192,7 +202,7 @@ class TestCustomersRoutes:
         mock_db.customers.count_documents = AsyncMock(return_value=1)
         mock_db.customers.find.return_value = self._make_cursor_mock([doc])
 
-        response = client.get("/customers")
+        response = client.get(PATH_CUSTOMERS)
 
         assert response.status_code == 200
         data = response.json()
@@ -224,7 +234,7 @@ class TestCustomersRoutes:
         # Verify the query passed to count_documents contains $or
         call_args = mock_db.customers.count_documents.call_args
         query = call_args[0][0]
-        assert "$or" in query
+        assert MONGO_OR in query
 
     def test_list_customers_with_status_filter(self, client, mock_db):
         """Test listing customers filtered by status."""
@@ -261,7 +271,7 @@ class TestCustomersRoutes:
         call_args = mock_db.customers.count_documents.call_args
         query = call_args[0][0]
         assert "location" in query
-        assert query["location"]["$regex"] == "^Berlin$"
+        assert query["location"][MONGO_REGEX] == "^Berlin$"
 
     def test_list_customers_with_unit_filter(self, client, mock_db):
         """Test listing customers filtered by unit."""
@@ -274,7 +284,7 @@ class TestCustomersRoutes:
         call_args = mock_db.customers.count_documents.call_args
         query = call_args[0][0]
         assert "unit" in query
-        assert query["unit"]["$regex"] == "^Engineering$"
+        assert query["unit"][MONGO_REGEX] == "^Engineering$"
 
     def test_list_customers_combined_filters(self, client, mock_db):
         """Test listing customers with multiple filters at once."""
@@ -288,7 +298,7 @@ class TestCustomersRoutes:
         assert response.status_code == 200
         call_args = mock_db.customers.count_documents.call_args
         query = call_args[0][0]
-        assert "$or" in query
+        assert MONGO_OR in query
         assert query["status"] == "active"
         assert query["tags"] == "vip"
         assert "location" in query
@@ -301,7 +311,7 @@ class TestCustomersRoutes:
         mock_db.customers.count_documents = AsyncMock(return_value=1)
         mock_db.customers.find.return_value = self._make_cursor_mock([doc])
 
-        response = client.get("/customers")
+        response = client.get(PATH_CUSTOMERS)
 
         assert response.status_code == 200
         assert response.json()["data"][0]["_id"] == str(oid)
@@ -329,7 +339,7 @@ class TestCustomersRoutes:
         assert response.json()["count"] == 5
         call_args = mock_db.customers.count_documents.call_args
         query = call_args[0][0]
-        assert "$or" in query
+        assert MONGO_OR in query
 
     def test_count_customers_with_status(self, client, mock_db):
         """Test counting customers filtered by status."""
@@ -353,7 +363,7 @@ class TestCustomersRoutes:
         assert response.json()["count"] == 3
         call_args = mock_db.customers.count_documents.call_args
         query = call_args[0][0]
-        assert "$or" in query
+        assert MONGO_OR in query
         assert query["status"] == "active"
 
     # ======================================================================
@@ -367,7 +377,7 @@ class TestCustomersRoutes:
         mock_db.customers.aggregate.return_value = agg_cursor
         mock_db.customers.distinct = AsyncMock(return_value=[])
 
-        response = client.get("/customers/filters")
+        response = client.get(PATH_CUSTOMERS_FILTERS)
 
         assert response.status_code == 200
         data = response.json()
@@ -389,7 +399,7 @@ class TestCustomersRoutes:
             ]
         )
 
-        response = client.get("/customers/filters")
+        response = client.get(PATH_CUSTOMERS_FILTERS)
 
         assert response.status_code == 200
         data = response.json()
@@ -411,7 +421,7 @@ class TestCustomersRoutes:
             ]
         )
 
-        response = client.get("/customers/filters")
+        response = client.get(PATH_CUSTOMERS_FILTERS)
 
         assert response.status_code == 200
         data = response.json()
@@ -449,7 +459,7 @@ class TestCustomersRoutes:
         doc = self._sample_customer_doc()
         mock_db.customers.find_one = AsyncMock(return_value=doc)
 
-        response = client.get("/customers/CUST-001")
+        response = client.get(PATH_CUSTOMERS_CUST_001)
 
         assert response.status_code == 200
         assert response.json()["customerId"] == "CUST-001"
@@ -490,7 +500,7 @@ class TestCustomersRoutes:
             "status": "active",
             "metadata": {"tier": "gold"},
         }
-        response = client.post("/customers", json=payload)
+        response = client.post(PATH_CUSTOMERS, json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -509,7 +519,7 @@ class TestCustomersRoutes:
         )
 
         payload = {"customerId": "CUST-DEF", "name": "Defaults Test"}
-        response = client.post("/customers", json=payload)
+        response = client.post(PATH_CUSTOMERS, json=payload)
 
         assert response.status_code == 201
         data = response.json()
@@ -522,7 +532,7 @@ class TestCustomersRoutes:
         )
 
         payload = {"customerId": "CUST-DUP", "name": "Duplicate"}
-        response = client.post("/customers", json=payload)
+        response = client.post(PATH_CUSTOMERS, json=payload)
 
         assert response.status_code == 400
         assert "Customer ID already exists" in response.json()["detail"]
@@ -530,28 +540,28 @@ class TestCustomersRoutes:
     def test_create_customer_missing_customer_id(self, client, mock_db):
         """Test creating a customer without customerId returns 422."""
         payload = {"name": "No ID"}
-        response = client.post("/customers", json=payload)
+        response = client.post(PATH_CUSTOMERS, json=payload)
 
         assert response.status_code == 422
 
     def test_create_customer_missing_name(self, client, mock_db):
         """Test creating a customer without name returns 422."""
         payload = {"customerId": "CUST-X"}
-        response = client.post("/customers", json=payload)
+        response = client.post(PATH_CUSTOMERS, json=payload)
 
         assert response.status_code == 422
 
     def test_create_customer_empty_customer_id(self, client, mock_db):
         """Test creating a customer with empty customerId fails validation."""
         payload = {"customerId": "", "name": "Empty ID"}
-        response = client.post("/customers", json=payload)
+        response = client.post(PATH_CUSTOMERS, json=payload)
 
         assert response.status_code == 422
 
     def test_create_customer_empty_name(self, client, mock_db):
         """Test creating a customer with empty name fails validation."""
         payload = {"customerId": "CUST-X", "name": ""}
-        response = client.post("/customers", json=payload)
+        response = client.post(PATH_CUSTOMERS, json=payload)
 
         assert response.status_code == 422
 
@@ -564,7 +574,7 @@ class TestCustomersRoutes:
         )
 
         payload = {"customerId": "CUST-TS", "name": "Timestamp Test"}
-        response = client.post("/customers", json=payload)
+        response = client.post(PATH_CUSTOMERS, json=payload)
 
         assert response.status_code == 201
         insert_call = mock_db.customers.insert_one.call_args[0][0]
@@ -581,16 +591,16 @@ class TestCustomersRoutes:
         """Test updating an existing customer."""
         oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
         existing = self._sample_customer_doc(_id=oid)
-        updated = {**existing, "name": "Updated Name", "updated_at": datetime.utcnow()}
+        updated = {**existing, "name": EXPECTED_UPDATED_NAME, "updated_at": datetime.utcnow()}
 
         mock_db.customers.find_one = AsyncMock(side_effect=[existing, updated])
 
-        payload = {"name": "Updated Name"}
+        payload = {"name": EXPECTED_UPDATED_NAME}
         response = client.put(f"/customers/{str(oid)}", json=payload)
 
         assert response.status_code == 200
         data = response.json()
-        assert data["name"] == "Updated Name"
+        assert data["name"] == EXPECTED_UPDATED_NAME
         mock_db.customers.update_one.assert_called_once()
 
     def test_update_customer_partial(self, client, mock_db):
@@ -607,7 +617,7 @@ class TestCustomersRoutes:
         assert response.status_code == 200
         # Verify that only description and updated_at are in the $set
         update_call = mock_db.customers.update_one.call_args
-        set_data = update_call[0][1]["$set"]
+        set_data = update_call[0][1][MONGO_SET]
         assert "description" in set_data
         assert "updated_at" in set_data
         # name/status should NOT be in the update because they were not sent
@@ -617,7 +627,7 @@ class TestCustomersRoutes:
     def test_update_customer_by_custom_id(self, client, mock_db):
         """Test updating a customer found by customerId fallback."""
         existing = self._sample_customer_doc()
-        updated = {**existing, "name": "Fallback Updated"}
+        updated = {**existing, "name": EXPECTED_FALLBACK_UPDATED}
 
         # ObjectId("CUST-001") raises before find_one is called in the try block,
         # so find_one is only called in the except block (customerId lookup) and
@@ -626,11 +636,11 @@ class TestCustomersRoutes:
             side_effect=[existing, updated]
         )
 
-        payload = {"name": "Fallback Updated"}
-        response = client.put("/customers/CUST-001", json=payload)
+        payload = {"name": EXPECTED_FALLBACK_UPDATED}
+        response = client.put(PATH_CUSTOMERS_CUST_001, json=payload)
 
         assert response.status_code == 200
-        assert response.json()["name"] == "Fallback Updated"
+        assert response.json()["name"] == EXPECTED_FALLBACK_UPDATED
 
     def test_update_customer_not_found(self, client, mock_db):
         """Test updating a non-existent customer returns 404."""
@@ -653,7 +663,7 @@ class TestCustomersRoutes:
 
         assert response.status_code == 200
         update_call = mock_db.customers.update_one.call_args
-        set_data = update_call[0][1]["$set"]
+        set_data = update_call[0][1][MONGO_SET]
         assert "updated_at" in set_data
         assert isinstance(set_data["updated_at"], datetime)
 
@@ -707,7 +717,7 @@ class TestCustomersRoutes:
         )
         mock_db.customers.find_one = AsyncMock(return_value=doc)
 
-        response = client.delete("/customers/CUST-001")
+        response = client.delete(PATH_CUSTOMERS_CUST_001)
 
         assert response.status_code == 200
         assert "deleted successfully" in response.json()["message"]
@@ -775,7 +785,7 @@ class TestCustomersRoutes:
         assert response.status_code == 200
         mock_db.customers.update_one.assert_called_once()
         update_call = mock_db.customers.update_one.call_args
-        set_data = update_call[0][1]["$set"]
+        set_data = update_call[0][1][MONGO_SET]
         assert set_data["status"] == "inactive"
         assert "updated_at" in set_data
 
@@ -1178,7 +1188,7 @@ class TestCustomersRoutes:
         call_args = mock_db.customers.count_documents.call_args
         query = call_args[0][0]
         # The $or search values should contain escaped regex
-        search_regex = query["$or"][0]["customerId"]["$regex"]
+        search_regex = query[MONGO_OR][0]["customerId"][MONGO_REGEX]
         assert "\\." in search_regex or "test" in search_regex
 
     def test_list_customers_sort_by_created_at_desc(self, client, mock_db):
@@ -1187,7 +1197,7 @@ class TestCustomersRoutes:
         cursor = self._make_cursor_mock([])
         mock_db.customers.find.return_value = cursor
 
-        response = client.get("/customers")
+        response = client.get(PATH_CUSTOMERS)
 
         assert response.status_code == 200
         cursor.sort.assert_called_once_with("created_at", -1)

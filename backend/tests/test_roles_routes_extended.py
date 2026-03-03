@@ -28,6 +28,9 @@ from easylifeauth.api import dependencies
 from easylifeauth.security.access_control import CurrentUser, require_group_admin
 from mock_data import MOCK_EMAIL_ADMIN, MOCK_EMAIL_NOFULLNAME
 
+PATH_ROLES = "/roles"
+
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -453,7 +456,7 @@ class TestRolesRoutesExtended:
         mock_cursor.sort.return_value = role_gen()
         mock_db.roles.find.return_value = mock_cursor
 
-        response = client.get("/roles")
+        response = client.get(PATH_ROLES)
         assert response.status_code == 200
         data = response.json()
         assert len(data["data"]) == 2
@@ -500,7 +503,7 @@ class TestRolesRoutesExtended:
         )
 
         response = client.post(
-            "/roles",
+            PATH_ROLES,
             json={
                 "roleId": "new-role",
                 "name": "New Role",
@@ -527,7 +530,7 @@ class TestRolesRoutesExtended:
         )
 
         response = client.post(
-            "/roles",
+            PATH_ROLES,
             json={
                 "roleId": "sales-role",
                 "name": "Sales Role",
@@ -556,7 +559,7 @@ class TestRolesRoutesExtended:
         )
 
         response = client.post(
-            "/roles",
+            PATH_ROLES,
             json={
                 "roleId": "oid-role",
                 "name": "OID Role",
@@ -584,7 +587,7 @@ class TestRolesRoutesExtended:
         )
 
         response = client.post(
-            "/roles",
+            PATH_ROLES,
             json={
                 "roleId": "oid-domain-role",
                 "name": "OID Domain Role",

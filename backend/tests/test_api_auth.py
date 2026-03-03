@@ -12,6 +12,10 @@ from easylifeauth.errors.auth_error import AuthError
 from easylifeauth.security.access_control import CurrentUser
 from mock_data import MOCK_EMAIL, MOCK_PASSWORD, MOCK_PASSWORD_NEW, MOCK_PASSWORD_OLD, MOCK_PASSWORD_WRONG, MOCK_URL_RESET_CUSTOM
 
+EXPECTED_UPDATED_NAME = "Updated Name"
+PATH_AUTH_PROFILE = "/auth/profile"
+
+
 
 class TestAuthRoutes:
     """Tests for authentication endpoints"""
@@ -316,7 +320,7 @@ class TestAuthRoutesProtected:
             "domains": []
         }
 
-        response = client.get("/auth/profile")
+        response = client.get(PATH_AUTH_PROFILE)
         assert response.status_code == 200
         data = response.json()
         assert data["email"] == MOCK_EMAIL
@@ -325,7 +329,7 @@ class TestAuthRoutesProtected:
         """Test getting non-existent profile"""
         mock_user_service.get_user_by_id.return_value = None
 
-        response = client.get("/auth/profile")
+        response = client.get(PATH_AUTH_PROFILE)
         assert response.status_code == 404
 
     def test_update_profile_success(self, client, mock_user_service):
@@ -334,20 +338,20 @@ class TestAuthRoutesProtected:
             "user_id": "507f1f77bcf86cd799439011",
             "email": MOCK_EMAIL,
             "username": "testuser",
-            "full_name": "Updated Name",
+            "full_name": EXPECTED_UPDATED_NAME,
             "is_active": True,
             "roles": ["user"],
             "groups": [],
             "domains": []
         }
 
-        response = client.put("/auth/profile", json={
-            "full_name": "Updated Name"
+        response = client.put(PATH_AUTH_PROFILE, json={
+            "full_name": EXPECTED_UPDATED_NAME
         })
 
         assert response.status_code == 200
         data = response.json()
-        assert data["full_name"] == "Updated Name"
+        assert data["full_name"] == EXPECTED_UPDATED_NAME
 
     def test_update_password_success(self, client, mock_password_service):
         """Test updating password"""

@@ -5,6 +5,10 @@ from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 import io
 
+EXPECTED_OPEN = "Open"
+EXPECTED_TASK = "Task"
+
+
 
 class TestJiraServiceInit:
     """Tests for JiraService initialization"""
@@ -44,7 +48,7 @@ class TestJiraServiceInit:
         }
         service = JiraService(config)
         assert service.project_key == "SCEN"
-        assert service.issue_type == "Task"
+        assert service.issue_type == EXPECTED_TASK
 
     @pytest.mark.skip(reason="JIRA mock requires module reload - error handling tested in other tests")
     def test_init_jira_error(self):
@@ -648,8 +652,8 @@ class TestJiraServiceGetUserTasks:
         mock_issue.id = "10001"
         mock_issue.key = "TEST-1"
         mock_issue.fields.summary = "Test Issue"
-        mock_issue.fields.status.name = "Open"
-        mock_issue.fields.issuetype.name = "Task"
+        mock_issue.fields.status.name = EXPECTED_OPEN
+        mock_issue.fields.issuetype.name = EXPECTED_TASK
         mock_issue.fields.priority = MagicMock()
         mock_issue.fields.priority.name = "Medium"
         mock_issue.fields.created = "2024-01-01"
@@ -686,7 +690,7 @@ class TestJiraServiceGetUserTasks:
             "api_token": "test_token"
         })
 
-        result = await service.get_user_tasks(MOCK_EMAIL_USER_TEST, project_key="TEST", status="Open")
+        result = await service.get_user_tasks(MOCK_EMAIL_USER_TEST, project_key="TEST", status=EXPECTED_OPEN)
 
         assert result == []
 
@@ -732,7 +736,7 @@ class TestJiraServiceGetTasksByRequestId:
         mock_issue.id = "10001"
         mock_issue.key = "TEST-1"
         mock_issue.fields.summary = "[REQ-001] Test"
-        mock_issue.fields.status.name = "Open"
+        mock_issue.fields.status.name = EXPECTED_OPEN
 
         mock_jira.return_value.search_issues.return_value = [mock_issue]
 
@@ -814,7 +818,7 @@ class TestJiraServiceGetIssueTypes:
 
         mock_type = MagicMock()
         mock_type.id = "1"
-        mock_type.name = "Task"
+        mock_type.name = EXPECTED_TASK
         mock_type.description = "A task"
         mock_jira.return_value.issue_types.return_value = [mock_type]
 
@@ -827,7 +831,7 @@ class TestJiraServiceGetIssueTypes:
         result = await service.get_issue_types()
 
         assert len(result) == 1
-        assert result[0]["name"] == "Task"
+        assert result[0]["name"] == EXPECTED_TASK
 
 
 class TestJiraServiceGetStatuses:
@@ -850,7 +854,7 @@ class TestJiraServiceGetStatuses:
 
         mock_status = MagicMock()
         mock_status.id = "1"
-        mock_status.name = "Open"
+        mock_status.name = EXPECTED_OPEN
         mock_status.statusCategory = MagicMock()
         mock_status.statusCategory.name = "To Do"
         mock_jira.return_value.statuses.return_value = [mock_status]
@@ -864,7 +868,7 @@ class TestJiraServiceGetStatuses:
         result = await service.get_statuses()
 
         assert len(result) == 1
-        assert result[0]["name"] == "Open"
+        assert result[0]["name"] == EXPECTED_OPEN
 
 
 class TestJiraServiceClose:
@@ -1475,7 +1479,7 @@ class TestJiraServiceGetTasksByRequestIdAdvanced:
         mock_issue.id = "10001"
         mock_issue.key = "TEST-1"
         mock_issue.fields.summary = "[REQ-001] Test"
-        mock_issue.fields.status.name = "Open"
+        mock_issue.fields.status.name = EXPECTED_OPEN
         mock_jira.return_value.search_issues.return_value = [mock_issue]
 
         service = JiraService({
@@ -1521,8 +1525,8 @@ class TestJiraServiceGetUserTasksAdvanced:
         mock_issue.id = "10001"
         mock_issue.key = "TEST-1"
         mock_issue.fields.summary = "Test Issue"
-        mock_issue.fields.status.name = "Open"
-        mock_issue.fields.issuetype.name = "Task"
+        mock_issue.fields.status.name = EXPECTED_OPEN
+        mock_issue.fields.issuetype.name = EXPECTED_TASK
         mock_issue.fields.priority = None  # No priority
         mock_issue.fields.created = "2024-01-01"
         mock_issue.fields.updated = "2024-01-02"

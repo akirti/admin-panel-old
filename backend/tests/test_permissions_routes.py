@@ -11,6 +11,10 @@ from easylifeauth.api.dependencies import get_db
 from easylifeauth.security.access_control import require_super_admin
 from mock_data import MOCK_EMAIL_ADMIN_TEST
 
+PATH_PERMISSIONS = "/permissions"
+PATH_PERMISSIONS_NONEXISTENT = "/permissions/nonexistent"
+
+
 
 class TestHelperFunctions:
     """Tests for helper functions"""
@@ -103,7 +107,7 @@ class TestPermissionsRoutes:
         mock_cursor.__aiter__ = lambda self: async_iter()
         mock_db.permissions.find = MagicMock(return_value=mock_cursor)
 
-        response = client.get("/permissions")
+        response = client.get(PATH_PERMISSIONS)
         assert response.status_code == 200
         data = response.json()
         assert "data" in data
@@ -200,7 +204,7 @@ class TestPermissionsRoutes:
         """Test get permission not found"""
         mock_db.permissions.find_one = AsyncMock(return_value=None)
 
-        response = client.get("/permissions/nonexistent")
+        response = client.get(PATH_PERMISSIONS_NONEXISTENT)
         assert response.status_code == 404
 
     def test_create_permission(self, client, mock_db):
@@ -215,7 +219,7 @@ class TestPermissionsRoutes:
             "description": "New permission description"
         }
 
-        response = client.post("/permissions", json=perm_data)
+        response = client.post(PATH_PERMISSIONS, json=perm_data)
         assert response.status_code == 201
         data = response.json()
         assert data["key"] == "new-perm"
@@ -230,7 +234,7 @@ class TestPermissionsRoutes:
             "module": "users"
         }
 
-        response = client.post("/permissions", json=perm_data)
+        response = client.post(PATH_PERMISSIONS, json=perm_data)
         assert response.status_code == 400
         assert "already exists" in response.json()["detail"]
 
@@ -264,7 +268,7 @@ class TestPermissionsRoutes:
         """Test update permission not found"""
         mock_db.permissions.find_one = AsyncMock(return_value=None)
 
-        response = client.put("/permissions/nonexistent", json={"name": "Updated"})
+        response = client.put(PATH_PERMISSIONS_NONEXISTENT, json={"name": "Updated"})
         assert response.status_code == 404
 
     def test_delete_permission(self, client, mock_db):
@@ -287,7 +291,7 @@ class TestPermissionsRoutes:
         """Test delete permission not found"""
         mock_db.permissions.find_one = AsyncMock(return_value=None)
 
-        response = client.delete("/permissions/nonexistent")
+        response = client.delete(PATH_PERMISSIONS_NONEXISTENT)
         assert response.status_code == 404
 
     def test_get_permission_roles(self, client, mock_db):

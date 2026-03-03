@@ -14,6 +14,13 @@ from easylifeauth.api.bulk_upload_routes import (
 )
 from easylifeauth.security.access_control import CurrentUser, require_super_admin
 
+EXPECTED_USERS_CSV = "users.csv"
+PATH_BULK_GCS_LIST = "/bulk/gcs/list"
+PATH_BULK_GCS_STATUS = "/bulk/gcs/status"
+PATH_BULK_GCS_UPLOAD_USERS = "/bulk/gcs/upload/users"
+PATH_BULK_UPLOAD_USERS = "/bulk/upload/users"
+
+
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -56,7 +63,7 @@ def mock_gcs_service_configured():
     svc.get_init_error = MagicMock(return_value=None)
     svc.download_file = AsyncMock(return_value=b"csv,data\n1,2")
     svc.list_files = AsyncMock(return_value=[
-        {"name": "users.csv", "size": 1234, "updated": "2026-01-01T00:00:00Z"},
+        {"name": EXPECTED_USERS_CSV, "size": 1234, "updated": "2026-01-01T00:00:00Z"},
         {"name": "roles.xlsx", "size": 5678, "updated": "2026-01-02T00:00:00Z"},
     ])
     return svc
@@ -143,7 +150,7 @@ class TestBulkUpload:
         """Uploading an XLSX file is accepted."""
         xlsx_content = b"PK\x03\x04fake-xlsx"
         response = client.post(
-            "/bulk/upload/users",
+            PATH_BULK_UPLOAD_USERS,
             files={"file": ("users.xlsx", BytesIO(xlsx_content),
                             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
         )
@@ -158,11 +165,11 @@ class TestBulkUpload:
         csv_content = b"email\nuser@test.com"
         response = client.post(
             "/bulk/upload/users?send_password_emails=false",
-            files={"file": ("users.csv", BytesIO(csv_content), "text/csv")},
+            files={"file": (EXPECTED_USERS_CSV, BytesIO(csv_content), "text/csv")},
         )
         assert response.status_code == 200
         mock_bulk_service.process_entity.assert_awaited_once_with(
-            "users", csv_content, "users.csv", False
+            "users", csv_content, EXPECTED_USERS_CSV, False
         )
 
     # -- process_entity returns plain dict (no to_dict) --------------------
@@ -173,7 +180,7 @@ class TestBulkUpload:
         plain = {"total": 2, "successful": 2, "failed": 0, "errors": []}
         mock_bulk_service.process_entity = AsyncMock(return_value=plain)
         response = client.post(
-            "/bulk/upload/users",
+            PATH_BULK_UPLOAD_USERS,
             files={"file": ("u.csv", BytesIO(b"c\n1"), "text/csv")},
         )
         assert response.status_code == 200
@@ -199,7 +206,7 @@ class TestBulkUpload:
             side_effect=ValueError("Missing required column: email")
         )
         response = client.post(
-            "/bulk/upload/users",
+            PATH_BULK_UPLOAD_USERS,
             files={"file": ("u.csv", BytesIO(b"c\n1"), "text/csv")},
         )
         assert response.status_code == 400
@@ -214,7 +221,7 @@ class TestBulkUpload:
             side_effect=RuntimeError("DB connection lost")
         )
         response = client.post(
-            "/bulk/upload/users",
+            PATH_BULK_UPLOAD_USERS,
             files={"file": ("u.csv", BytesIO(b"c\n1"), "text/csv")},
         )
         assert response.status_code == 500
@@ -231,7 +238,7 @@ class TestBulkUpload:
             detail="Invalid file type",
         )
         response = client.post(
-            "/bulk/upload/users",
+            PATH_BULK_UPLOAD_USERS,
             files={"file": ("u.exe", BytesIO(b"\x00\x00"), "application/octet-stream")},
         )
         assert response.status_code == 400
@@ -349,7 +356,7 @@ class TestBulkUploadFromGCS:
     ):
         """Optional bucket_name is forwarded to gcs_service.download_file."""
         response = client_with_gcs.post(
-            "/bulk/gcs/upload/users",
+            PATH_BULK_GCS_UPLOAD_USERS,
             json={"file_path": "data.csv", "bucket_name": "my-bucket"},
         )
         assert response.status_code == 200
@@ -378,7 +385,7 @@ class TestBulkUploadFromGCS:
         plain = {"total": 1, "successful": 1, "failed": 0, "errors": []}
         mock_bulk_service.process_entity = AsyncMock(return_value=plain)
         response = client_with_gcs.post(
-            "/bulk/gcs/upload/users",
+            PATH_BULK_GCS_UPLOAD_USERS,
             json={"file_path": "data.csv"},
         )
         assert response.status_code == 200
@@ -402,7 +409,7 @@ class TestBulkUploadFromGCS:
         # The default client has no GCS override, so get_gcs_service returns
         # the module-level _gcs_service which is None in a test context.
         response = client.post(
-            "/bulk/gcs/upload/users",
+            PATH_BULK_GCS_UPLOAD_USERS,
             json={"file_path": "data.csv"},
         )
         assert response.status_code == 503
@@ -411,7 +418,7 @@ class TestBulkUploadFromGCS:
     def test_gcs_upload_service_unconfigured(self, client_with_unconfigured_gcs):
         """When gcs_service.is_configured() is False, yields 503."""
         response = client_with_unconfigured_gcs.post(
-            "/bulk/gcs/upload/users",
+            PATH_BULK_GCS_UPLOAD_USERS,
             json={"file_path": "data.csv"},
         )
         assert response.status_code == 503
@@ -425,7 +432,7 @@ class TestBulkUploadFromGCS:
         """When download_file returns None, yields 404."""
         mock_gcs_service_configured.download_file = AsyncMock(return_value=None)
         response = client_with_gcs.post(
-            "/bulk/gcs/upload/users",
+            PATH_BULK_GCS_UPLOAD_USERS,
             json={"file_path": "missing.csv"},
         )
         assert response.status_code == 404
@@ -441,7 +448,7 @@ class TestBulkUploadFromGCS:
             side_effect=ValueError("bad column layout")
         )
         response = client_with_gcs.post(
-            "/bulk/gcs/upload/users",
+            PATH_BULK_GCS_UPLOAD_USERS,
             json={"file_path": "data.csv"},
         )
         assert response.status_code == 400
@@ -457,7 +464,7 @@ class TestBulkUploadFromGCS:
             side_effect=RuntimeError("timeout")
         )
         response = client_with_gcs.post(
-            "/bulk/gcs/upload/users",
+            PATH_BULK_GCS_UPLOAD_USERS,
             json={"file_path": "data.csv"},
         )
         assert response.status_code == 500
@@ -475,12 +482,12 @@ class TestListGCSFiles:
         self, client_with_gcs, mock_gcs_service_configured
     ):
         """Listing files returns the expected payload."""
-        response = client_with_gcs.get("/bulk/gcs/list")
+        response = client_with_gcs.get(PATH_BULK_GCS_LIST)
         assert response.status_code == 200
         data = response.json()
         assert "files" in data
         assert len(data["files"]) == 2
-        assert data["files"][0]["name"] == "users.csv"
+        assert data["files"][0]["name"] == EXPECTED_USERS_CSV
         mock_gcs_service_configured.list_files.assert_awaited_once_with("", None)
 
     def test_list_files_with_prefix_and_bucket(
@@ -497,13 +504,13 @@ class TestListGCSFiles:
 
     def test_list_files_gcs_none(self, client):
         """When gcs_service is None, yields 503."""
-        response = client.get("/bulk/gcs/list")
+        response = client.get(PATH_BULK_GCS_LIST)
         assert response.status_code == 503
         assert "GCS service not configured" in response.json()["detail"]
 
     def test_list_files_gcs_unconfigured(self, client_with_unconfigured_gcs):
         """When gcs_service.is_configured() is False, yields 503."""
-        response = client_with_unconfigured_gcs.get("/bulk/gcs/list")
+        response = client_with_unconfigured_gcs.get(PATH_BULK_GCS_LIST)
         assert response.status_code == 503
         assert "GCS service not configured" in response.json()["detail"]
 
@@ -517,7 +524,7 @@ class TestGCSStatus:
 
     def test_status_configured(self, client_with_gcs):
         """When GCS is configured, returns configured=True and bucket name."""
-        response = client_with_gcs.get("/bulk/gcs/status")
+        response = client_with_gcs.get(PATH_BULK_GCS_STATUS)
         assert response.status_code == 200
         data = response.json()
         assert data["configured"] is True
@@ -526,7 +533,7 @@ class TestGCSStatus:
 
     def test_status_unconfigured(self, client_with_unconfigured_gcs):
         """When GCS is not configured, returns configured=False."""
-        response = client_with_unconfigured_gcs.get("/bulk/gcs/status")
+        response = client_with_unconfigured_gcs.get(PATH_BULK_GCS_STATUS)
         assert response.status_code == 200
         data = response.json()
         assert data["configured"] is False
@@ -535,7 +542,7 @@ class TestGCSStatus:
 
     def test_status_gcs_none(self, client):
         """When gcs_service is None, returns not-initialized payload."""
-        response = client.get("/bulk/gcs/status")
+        response = client.get(PATH_BULK_GCS_STATUS)
         assert response.status_code == 200
         data = response.json()
         assert data["configured"] is False

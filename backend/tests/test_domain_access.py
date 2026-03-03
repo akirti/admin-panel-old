@@ -29,6 +29,9 @@ from easylifeauth.api.playboard_routes import (
 )
 from mock_data import MOCK_EMAIL_USER
 
+PATH_DOMAINS_ALL = "/domains/all"
+
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -197,7 +200,7 @@ class TestDomainAllRoute:
         db.domains.find.return_value = mock_cursor
 
         client, _ = _app(user, db=db)
-        resp = client.get("/domains/all")
+        resp = client.get(PATH_DOMAINS_ALL)
         assert resp.status_code == 200
         data = resp.json()
         assert len(data) == 2
@@ -221,7 +224,7 @@ class TestDomainAllRoute:
         db.domains.find.return_value = mock_cursor
 
         client, _ = _app(user, db=db, user_svc=user_svc)
-        resp = client.get("/domains/all")
+        resp = client.get(PATH_DOMAINS_ALL)
         assert resp.status_code == 200
         data = resp.json()
         assert len(data) == 1
@@ -236,7 +239,7 @@ class TestDomainAllRoute:
         user_svc = _mock_user_service(resolved_domains=[])
 
         client, _ = _app(user, db=db, user_svc=user_svc)
-        resp = client.get("/domains/all")
+        resp = client.get(PATH_DOMAINS_ALL)
         assert resp.status_code == 200
         data = resp.json()
         assert data == []
@@ -248,7 +251,7 @@ class TestDomainAllRoute:
         user_svc = _mock_user_service()
 
         client, _ = _app(user, db=db, user_svc=user_svc)
-        resp = client.get("/domains/all")
+        resp = client.get(PATH_DOMAINS_ALL)
         assert resp.status_code == 200
         data = resp.json()
         assert data == []

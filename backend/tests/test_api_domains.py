@@ -13,6 +13,11 @@ from easylifeauth.api import dependencies
 from easylifeauth.security.access_control import CurrentUser, require_super_admin, get_current_user
 from mock_data import MOCK_EMAIL_ADMIN, MOCK_EMAIL_USER
 
+PATH_DOMAINS = "/domains"
+PATH_DOMAINS_ID = "/domains/507f1f77bcf86cd799439011"
+PATH_DOMAINS_NONEXISTENT = "/domains/nonexistent"
+
+
 
 class TestDomainsPaginationMeta:
     """Tests for domains pagination metadata"""
@@ -208,7 +213,7 @@ class TestDomainsRoutes:
         mock_cursor.sort.return_value = empty_cursor()
         mock_db.domains.find.return_value = mock_cursor
 
-        response = client.get("/domains")
+        response = client.get(PATH_DOMAINS)
         assert response.status_code == 200
         data = response.json()
         assert "data" in data
@@ -239,7 +244,7 @@ class TestDomainsRoutes:
         }
         mock_db.domains.find_one = AsyncMock(return_value=domain_data)
 
-        response = client.get("/domains/507f1f77bcf86cd799439011")
+        response = client.get(PATH_DOMAINS_ID)
         assert response.status_code == 200
         data = response.json()
         assert data["key"] == "domain1"
@@ -248,7 +253,7 @@ class TestDomainsRoutes:
         """Test getting non-existent domain"""
         mock_db.domains.find_one = AsyncMock(return_value=None)
 
-        response = client.get("/domains/nonexistent")
+        response = client.get(PATH_DOMAINS_NONEXISTENT)
         assert response.status_code == 404
 
     def test_create_domain_success(self, client, mock_db):
@@ -258,7 +263,7 @@ class TestDomainsRoutes:
             return_value=MagicMock(inserted_id=ObjectId("507f1f77bcf86cd799439011"))
         )
 
-        response = client.post("/domains", json={
+        response = client.post(PATH_DOMAINS, json={
             "key": "newdomain",
             "name": "New Domain",
             "description": "A new domain",
@@ -274,7 +279,7 @@ class TestDomainsRoutes:
         """Test creating domain with existing key"""
         mock_db.domains.find_one = AsyncMock(return_value={"key": "existing"})
 
-        response = client.post("/domains", json={
+        response = client.post(PATH_DOMAINS, json={
             "key": "existing",
             "name": "Existing Domain",
             "description": "Already exists",
@@ -301,7 +306,7 @@ class TestDomainsRoutes:
         }
         mock_db.domains.find_one = AsyncMock(return_value=existing_domain)
 
-        response = client.put("/domains/507f1f77bcf86cd799439011", json={
+        response = client.put(PATH_DOMAINS_ID, json={
             "description": "Updated description"
         })
 
@@ -312,7 +317,7 @@ class TestDomainsRoutes:
         """Test updating non-existent domain"""
         mock_db.domains.find_one = AsyncMock(return_value=None)
 
-        response = client.put("/domains/nonexistent", json={
+        response = client.put(PATH_DOMAINS_NONEXISTENT, json={
             "description": "Updated"
         })
 
@@ -333,7 +338,7 @@ class TestDomainsRoutes:
         mock_db.domain_scenarios = MagicMock()
         mock_db.domain_scenarios.delete_many = AsyncMock()
 
-        response = client.delete("/domains/507f1f77bcf86cd799439011")
+        response = client.delete(PATH_DOMAINS_ID)
         assert response.status_code == 200
         assert "deleted successfully" in response.json()["message"]
 
@@ -342,7 +347,7 @@ class TestDomainsRoutes:
         mock_db.domains.find_one = AsyncMock(return_value=None)
         mock_db.domains.delete_one = AsyncMock(return_value=MagicMock(deleted_count=0))
 
-        response = client.delete("/domains/nonexistent")
+        response = client.delete(PATH_DOMAINS_NONEXISTENT)
         assert response.status_code == 404
 
     def test_toggle_domain_status(self, client, mock_db):

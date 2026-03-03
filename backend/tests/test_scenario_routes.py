@@ -20,6 +20,13 @@ from easylifeauth.security.access_control import require_admin_or_editor
 from easylifeauth.errors.scenario_error import ScenarioNotFoundError, ScenarioError, ScenarioBadError
 from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_EDITOR_TEST, MOCK_EMAIL_USER_TEST
 
+PATH_SCENARIOS = "/scenarios"
+PATH_SCENARIOS_ALL = "/scenarios/all"
+PATH_SCENARIOS_ALL_DOMAIN_A = "/scenarios/all/domain-a"
+PATH_SCENARIOS_NONEXISTENT = "/scenarios/nonexistent"
+PATH_SCENARIOS_TEST_SCENARIO = "/scenarios/test-scenario"
+
+
 
 class TestHelperFunctions:
     """Tests for helper functions"""
@@ -163,7 +170,7 @@ class TestScenarioRoutes:
         mock_cursor.to_list = AsyncMock(return_value=scenarios)
         mock_db.domain_scenarios.find = MagicMock(return_value=mock_cursor)
 
-        response = client.get("/scenarios/all")
+        response = client.get(PATH_SCENARIOS_ALL)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
@@ -186,7 +193,7 @@ class TestScenarioRoutes:
         mock_db.domain_scenarios.find = MagicMock(return_value=mock_cursor)
 
         client = TestClient(app)
-        response = client.get("/scenarios/all")
+        response = client.get(PATH_SCENARIOS_ALL)
         assert response.status_code == 200
 
     def test_get_all_scenarios_no_domains(self, app, mock_db, mock_scenario_service, mock_user_service, mock_regular_user):
@@ -200,7 +207,7 @@ class TestScenarioRoutes:
         mock_db.users.find_one = AsyncMock(return_value=None)
 
         client = TestClient(app)
-        response = client.get("/scenarios/all")
+        response = client.get(PATH_SCENARIOS_ALL)
         assert response.status_code == 200
         assert response.json() == []
 
@@ -213,7 +220,7 @@ class TestScenarioRoutes:
         mock_cursor.to_list = AsyncMock(return_value=scenarios)
         mock_db.domain_scenarios.find = MagicMock(return_value=mock_cursor)
 
-        response = client.get("/scenarios/all/domain-a")
+        response = client.get(PATH_SCENARIOS_ALL_DOMAIN_A)
         assert response.status_code == 200
 
     def test_get_scenarios_by_domain_no_access(self, app, mock_db, mock_scenario_service, mock_user_service, mock_regular_user):
@@ -227,7 +234,7 @@ class TestScenarioRoutes:
         mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain-b"])  # Has access to domain-b
 
         client = TestClient(app)
-        response = client.get("/scenarios/all/domain-a")  # Requesting domain-a
+        response = client.get(PATH_SCENARIOS_ALL_DOMAIN_A)  # Requesting domain-a
         assert response.status_code == 403
 
     def test_get_scenarios_by_domain_empty_domains(self, app, mock_db, mock_scenario_service, mock_user_service, mock_regular_user):
@@ -240,7 +247,7 @@ class TestScenarioRoutes:
         mock_db.users.find_one = AsyncMock(return_value=None)
 
         client = TestClient(app)
-        response = client.get("/scenarios/all/domain-a")
+        response = client.get(PATH_SCENARIOS_ALL_DOMAIN_A)
         assert response.status_code == 200
         assert response.json() == []
 
@@ -261,7 +268,7 @@ class TestScenarioRoutes:
             "dataDomain": "domain-a"
         }
 
-        response = client.post("/scenarios", json=scenario_data)
+        response = client.post(PATH_SCENARIOS, json=scenario_data)
         assert response.status_code == 201
 
     def test_create_scenario_error(self, client, mock_scenario_service):
@@ -274,7 +281,7 @@ class TestScenarioRoutes:
             "dataDomain": "domain-a"
         }
 
-        response = client.post("/scenarios", json=scenario_data)
+        response = client.post(PATH_SCENARIOS, json=scenario_data)
         assert response.status_code == 400
 
     def test_create_scenario_bad_error(self, client, mock_scenario_service):
@@ -287,7 +294,7 @@ class TestScenarioRoutes:
             "dataDomain": "domain-a"
         }
 
-        response = client.post("/scenarios", json=scenario_data)
+        response = client.post(PATH_SCENARIOS, json=scenario_data)
         assert response.status_code == 400
 
     def test_update_scenario(self, client, mock_scenario_service):
@@ -300,12 +307,12 @@ class TestScenarioRoutes:
         }
         mock_scenario_service.update = AsyncMock(return_value=result)
 
-        response = client.put("/scenarios/test-scenario", json={"status": "active"})
+        response = client.put(PATH_SCENARIOS_TEST_SCENARIO, json={"status": "active"})
         assert response.status_code == 200
 
     def test_update_scenario_id_mismatch(self, client, mock_scenario_service):
         """Test update scenario with id mismatch"""
-        response = client.put("/scenarios/test-scenario", json={"id": "different-id"})
+        response = client.put(PATH_SCENARIOS_TEST_SCENARIO, json={"id": "different-id"})
         assert response.status_code == 400
         assert "ID mismatch" in response.json()["detail"]
 
@@ -313,14 +320,14 @@ class TestScenarioRoutes:
         """Test update scenario not found"""
         mock_scenario_service.update = AsyncMock(side_effect=ScenarioNotFoundError("Not found"))
 
-        response = client.put("/scenarios/nonexistent", json={"status": "active"})
+        response = client.put(PATH_SCENARIOS_NONEXISTENT, json={"status": "active"})
         assert response.status_code == 404
 
     def test_update_scenario_error(self, client, mock_scenario_service):
         """Test update scenario with error"""
         mock_scenario_service.update = AsyncMock(side_effect=ScenarioError("Update error"))
 
-        response = client.put("/scenarios/test-scenario", json={"status": "active"})
+        response = client.put(PATH_SCENARIOS_TEST_SCENARIO, json={"status": "active"})
         assert response.status_code == 400
 
     def test_get_scenario_by_key(self, client, mock_scenario_service, mock_db, mock_user_service):
@@ -333,14 +340,14 @@ class TestScenarioRoutes:
         }
         mock_scenario_service.get = AsyncMock(return_value=result)
 
-        response = client.get("/scenarios/test-scenario")
+        response = client.get(PATH_SCENARIOS_TEST_SCENARIO)
         assert response.status_code == 200
 
     def test_get_scenario_not_found(self, client, mock_scenario_service):
         """Test get scenario not found"""
         mock_scenario_service.get = AsyncMock(return_value=None)
 
-        response = client.get("/scenarios/nonexistent")
+        response = client.get(PATH_SCENARIOS_NONEXISTENT)
         assert response.status_code == 404
 
     def test_get_scenario_domain_denied(self, app, mock_db, mock_scenario_service, mock_user_service, mock_regular_user):
@@ -362,33 +369,33 @@ class TestScenarioRoutes:
         mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain-b"])
 
         client = TestClient(app)
-        response = client.get("/scenarios/test-scenario")
+        response = client.get(PATH_SCENARIOS_TEST_SCENARIO)
         assert response.status_code == 403
 
     def test_get_scenario_service_not_found_error(self, client, mock_scenario_service):
         """Test get scenario raises ScenarioNotFoundError"""
         mock_scenario_service.get = AsyncMock(side_effect=ScenarioNotFoundError("Not found"))
 
-        response = client.get("/scenarios/test-scenario")
+        response = client.get(PATH_SCENARIOS_TEST_SCENARIO)
         assert response.status_code == 404
 
     def test_delete_scenario(self, client, mock_scenario_service):
         """Test delete scenario endpoint"""
         mock_scenario_service.delete = AsyncMock(return_value={"message": "Scenario deleted"})
 
-        response = client.delete("/scenarios/test-scenario")
+        response = client.delete(PATH_SCENARIOS_TEST_SCENARIO)
         assert response.status_code == 200
 
     def test_delete_scenario_not_found(self, client, mock_scenario_service):
         """Test delete scenario not found"""
         mock_scenario_service.delete = AsyncMock(side_effect=ScenarioNotFoundError("Not found"))
 
-        response = client.delete("/scenarios/nonexistent")
+        response = client.delete(PATH_SCENARIOS_NONEXISTENT)
         assert response.status_code == 404
 
     def test_delete_scenario_error(self, client, mock_scenario_service):
         """Test delete scenario with error"""
         mock_scenario_service.delete = AsyncMock(side_effect=ScenarioError("Delete error"))
 
-        response = client.delete("/scenarios/test-scenario")
+        response = client.delete(PATH_SCENARIOS_TEST_SCENARIO)
         assert response.status_code == 400

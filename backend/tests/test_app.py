@@ -8,6 +8,9 @@ from easylifeauth.app import create_app
 from easylifeauth.errors.auth_error import AuthError
 from mock_data import MOCK_EMAIL, MOCK_URL_FRONTEND, MOCK_URL_MONGODB
 
+PATH_ROOT = "/"
+
+
 
 class TestCreateApp:
     """Tests for create_app function"""
@@ -36,7 +39,7 @@ class TestCreateApp:
         """Test that default CORS allows all origins"""
         app = create_app()
         client = TestClient(app)
-        response = client.get("/")
+        response = client.get(PATH_ROOT)
         assert response.status_code == 200
 
 
@@ -55,7 +58,7 @@ class TestAppRoutes:
 
     def test_root_endpoint(self, client):
         """Test root endpoint returns API info"""
-        response = client.get("/")
+        response = client.get(PATH_ROOT)
         assert response.status_code == 200
         data = response.json()
         assert "message" in data
@@ -269,7 +272,7 @@ class TestRouterInclusion:
         client = TestClient(app)
 
         # Root should work
-        response = client.get("/")
+        response = client.get(PATH_ROOT)
         assert response.status_code == 200
 
         # Health check with version prefix

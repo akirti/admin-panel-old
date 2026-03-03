@@ -12,6 +12,10 @@ from easylifeauth.security.access_control import require_admin
 from easylifeauth.errors.auth_error import AuthError
 from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_ANONYMOUS, MOCK_EMAIL_SUPERADMIN, MOCK_EMAIL_USER_TEST
 
+PATH_FEEDBACK_ADMIN_LIST = "/feedback/admin/list"
+PATH_FEEDBACK_STATS = "/feedback/stats"
+
+
 
 class TestFeedbackRoutes:
     """Tests for feedback API routes"""
@@ -109,14 +113,14 @@ class TestFeedbackRoutes:
         }
         mock_feedback_service.get_stats = AsyncMock(return_value=result)
 
-        response = admin_client.get("/feedback/stats")
+        response = admin_client.get(PATH_FEEDBACK_STATS)
         assert response.status_code == 200
         data = response.json()
         assert "total_feedback" in data
 
     def test_get_feedback_stats_forbidden(self, client, mock_feedback_service):
         """Test get feedback stats without admin role"""
-        response = client.get("/feedback/stats")
+        response = client.get(PATH_FEEDBACK_STATS)
         assert response.status_code == 403
         assert "Administrator access required" in response.json()["detail"]
 
@@ -124,7 +128,7 @@ class TestFeedbackRoutes:
         """Test get feedback stats with error"""
         mock_feedback_service.get_stats = AsyncMock(side_effect=AuthError("Error"))
 
-        response = admin_client.get("/feedback/stats")
+        response = admin_client.get(PATH_FEEDBACK_STATS)
         assert response.status_code == 400
 
     def test_get_all_feedback(self, client, mock_feedback_service, mock_user):
@@ -158,7 +162,7 @@ class TestFeedbackRoutes:
         }
         mock_feedback_service.get_paginated = AsyncMock(return_value=result)
 
-        response = admin_client.get("/feedback/admin/list")
+        response = admin_client.get(PATH_FEEDBACK_ADMIN_LIST)
         assert response.status_code == 200
         data = response.json()
         assert "data" in data
@@ -176,14 +180,14 @@ class TestFeedbackRoutes:
 
     def test_get_admin_feedback_list_forbidden(self, client, mock_feedback_service):
         """Test get admin feedback list without admin role"""
-        response = client.get("/feedback/admin/list")
+        response = client.get(PATH_FEEDBACK_ADMIN_LIST)
         assert response.status_code == 403
 
     def test_get_admin_feedback_list_error(self, admin_client, mock_feedback_service):
         """Test get admin feedback list with error"""
         mock_feedback_service.get_paginated = AsyncMock(side_effect=AuthError("Error"))
 
-        response = admin_client.get("/feedback/admin/list")
+        response = admin_client.get(PATH_FEEDBACK_ADMIN_LIST)
         assert response.status_code == 400
 
     def test_create_feedback(self, client, mock_feedback_service, mock_user):
@@ -308,7 +312,7 @@ class TestFeedbackRoutesSuperAdmin:
         result = {"total": 50, "average_rating": 4.0}
         mock_feedback_service.get_stats = AsyncMock(return_value=result)
 
-        response = client.get("/feedback/stats")
+        response = client.get(PATH_FEEDBACK_STATS)
         assert response.status_code == 200
 
     def test_get_admin_feedback_list_super_admin(self, client, mock_feedback_service):
@@ -316,5 +320,5 @@ class TestFeedbackRoutesSuperAdmin:
         result = {"data": [], "pagination": {"total": 0}}
         mock_feedback_service.get_paginated = AsyncMock(return_value=result)
 
-        response = client.get("/feedback/admin/list")
+        response = client.get(PATH_FEEDBACK_ADMIN_LIST)
         assert response.status_code == 200

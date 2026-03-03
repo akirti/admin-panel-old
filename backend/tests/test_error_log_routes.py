@@ -9,6 +9,15 @@ from easylifeauth.api.dependencies import get_error_log_service
 from easylifeauth.security.access_control import require_super_admin
 from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_PATH_ERROR_LOG, MOCK_URL_EXAMPLE_SIGNED, MOCK_URL_GCS_ARCHIVE
 
+PATH_ERROR_LOGS = "/error-logs"
+PATH_ERROR_LOGS_ARCHIVES = "/error-logs/archives"
+PATH_ERROR_LOGS_CURRENT_FILE = "/error-logs/current-file"
+PATH_ERROR_LOGS_FORCE_ARCHIVE = "/error-logs/force-archive"
+PATH_ERROR_LOGS_LEVELS = "/error-logs/levels"
+PATH_ERROR_LOGS_STATS = "/error-logs/stats"
+PATH_ERROR_LOGS_TYPES = "/error-logs/types"
+
+
 
 class TestCreatePaginationMeta:
     """Tests for the create_pagination_meta helper function."""
@@ -139,7 +148,7 @@ class TestErrorLogRoutes:
             "total": 1
         }
 
-        response = client.get("/error-logs")
+        response = client.get(PATH_ERROR_LOGS)
         assert response.status_code == 200
 
         data = response.json()
@@ -238,7 +247,7 @@ class TestErrorLogRoutes:
         """Test listing error logs when no logs exist."""
         mock_service.get_current_logs.return_value = {"logs": [], "total": 0}
 
-        response = client.get("/error-logs")
+        response = client.get(PATH_ERROR_LOGS)
         assert response.status_code == 200
 
         data = response.json()
@@ -247,7 +256,7 @@ class TestErrorLogRoutes:
 
     def test_list_error_logs_service_not_initialized(self, client_no_service):
         """Test listing error logs when service is None returns 503."""
-        response = client_no_service.get("/error-logs")
+        response = client_no_service.get(PATH_ERROR_LOGS)
         assert response.status_code == 503
         assert "not initialized" in response.json()["detail"]
 
@@ -286,7 +295,7 @@ class TestErrorLogRoutes:
             ]
         }
 
-        response = client.get("/error-logs/stats")
+        response = client.get(PATH_ERROR_LOGS_STATS)
         assert response.status_code == 200
 
         data = response.json()
@@ -309,7 +318,7 @@ class TestErrorLogRoutes:
 
     def test_get_error_stats_service_not_initialized(self, client_no_service):
         """Test getting error stats when service is None returns 503."""
-        response = client_no_service.get("/error-logs/stats")
+        response = client_no_service.get(PATH_ERROR_LOGS_STATS)
         assert response.status_code == 503
         assert "not initialized" in response.json()["detail"]
 
@@ -331,7 +340,7 @@ class TestErrorLogRoutes:
         """Test getting available log levels from the service."""
         mock_service.get_levels.return_value = ["CRITICAL", "ERROR", "WARNING"]
 
-        response = client.get("/error-logs/levels")
+        response = client.get(PATH_ERROR_LOGS_LEVELS)
         assert response.status_code == 200
 
         data = response.json()
@@ -342,7 +351,7 @@ class TestErrorLogRoutes:
 
     def test_get_available_levels_service_not_initialized(self, client_no_service):
         """Test that when service is None, default levels are returned."""
-        response = client_no_service.get("/error-logs/levels")
+        response = client_no_service.get(PATH_ERROR_LOGS_LEVELS)
         assert response.status_code == 200
 
         data = response.json()
@@ -361,7 +370,7 @@ class TestErrorLogRoutes:
             "KeyError", "RuntimeError", "ValueError"
         ]
 
-        response = client.get("/error-logs/types")
+        response = client.get(PATH_ERROR_LOGS_TYPES)
         assert response.status_code == 200
 
         data = response.json()
@@ -375,13 +384,13 @@ class TestErrorLogRoutes:
         """Test getting available error types when none exist."""
         mock_service.get_error_types.return_value = []
 
-        response = client.get("/error-logs/types")
+        response = client.get(PATH_ERROR_LOGS_TYPES)
         assert response.status_code == 200
         assert response.json()["types"] == []
 
     def test_get_available_types_service_not_initialized(self, client_no_service):
         """Test that when service is None, an empty types list is returned."""
-        response = client_no_service.get("/error-logs/types")
+        response = client_no_service.get(PATH_ERROR_LOGS_TYPES)
         assert response.status_code == 200
 
         data = response.json()
@@ -402,7 +411,7 @@ class TestErrorLogRoutes:
             "max_size_mb": 5
         }
 
-        response = client.get("/error-logs/current-file")
+        response = client.get(PATH_ERROR_LOGS_CURRENT_FILE)
         assert response.status_code == 200
 
         data = response.json()
@@ -429,7 +438,7 @@ class TestErrorLogRoutes:
 
     def test_get_current_file_content_service_not_initialized(self, client_no_service):
         """Test getting current file content when service is None returns 503."""
-        response = client_no_service.get("/error-logs/current-file")
+        response = client_no_service.get(PATH_ERROR_LOGS_CURRENT_FILE)
         assert response.status_code == 503
         assert "not initialized" in response.json()["detail"]
 
@@ -470,7 +479,7 @@ class TestErrorLogRoutes:
             }
         ]
 
-        response = client.get("/error-logs/archives")
+        response = client.get(PATH_ERROR_LOGS_ARCHIVES)
         assert response.status_code == 200
 
         data = response.json()
@@ -486,7 +495,7 @@ class TestErrorLogRoutes:
         """Test listing archives when none exist."""
         mock_service.get_archived_files.return_value = []
 
-        response = client.get("/error-logs/archives")
+        response = client.get(PATH_ERROR_LOGS_ARCHIVES)
         assert response.status_code == 200
 
         data = response.json()
@@ -495,7 +504,7 @@ class TestErrorLogRoutes:
 
     def test_list_archives_service_not_initialized(self, client_no_service):
         """Test listing archives when service is None returns 503."""
-        response = client_no_service.get("/error-logs/archives")
+        response = client_no_service.get(PATH_ERROR_LOGS_ARCHIVES)
         assert response.status_code == 503
         assert "not initialized" in response.json()["detail"]
 
@@ -605,7 +614,7 @@ class TestErrorLogRoutes:
             "error_count": 150,
         }
 
-        response = client.post("/error-logs/force-archive")
+        response = client.post(PATH_ERROR_LOGS_FORCE_ARCHIVE)
         assert response.status_code == 200
 
         data = response.json()
@@ -620,7 +629,7 @@ class TestErrorLogRoutes:
         """Test force archive when there are no logs or GCS is not configured."""
         mock_service.force_archive.return_value = None
 
-        response = client.post("/error-logs/force-archive")
+        response = client.post(PATH_ERROR_LOGS_FORCE_ARCHIVE)
         assert response.status_code == 200
 
         data = response.json()
@@ -629,7 +638,7 @@ class TestErrorLogRoutes:
 
     def test_force_archive_service_not_initialized(self, client_no_service):
         """Test force archive when service is None returns 503."""
-        response = client_no_service.post("/error-logs/force-archive")
+        response = client_no_service.post(PATH_ERROR_LOGS_FORCE_ARCHIVE)
         assert response.status_code == 503
         assert "not initialized" in response.json()["detail"]
 
@@ -639,7 +648,7 @@ class TestErrorLogRoutes:
             "archive_id": "partial01",
         }
 
-        response = client.post("/error-logs/force-archive")
+        response = client.post(PATH_ERROR_LOGS_FORCE_ARCHIVE)
         assert response.status_code == 200
 
         data = response.json()
@@ -744,21 +753,21 @@ class TestErrorLogRoutes:
     def test_all_endpoints_503_when_service_none(self, client_no_service):
         """Verify every endpoint that guards on service is None returns 503 or defaults."""
         # Endpoints that raise 503
-        assert client_no_service.get("/error-logs").status_code == 503
-        assert client_no_service.get("/error-logs/stats").status_code == 503
-        assert client_no_service.get("/error-logs/current-file").status_code == 503
-        assert client_no_service.get("/error-logs/archives").status_code == 503
+        assert client_no_service.get(PATH_ERROR_LOGS).status_code == 503
+        assert client_no_service.get(PATH_ERROR_LOGS_STATS).status_code == 503
+        assert client_no_service.get(PATH_ERROR_LOGS_CURRENT_FILE).status_code == 503
+        assert client_no_service.get(PATH_ERROR_LOGS_ARCHIVES).status_code == 503
         assert client_no_service.get("/error-logs/archives/x/download").status_code == 503
         assert client_no_service.delete("/error-logs/archives/x").status_code == 503
-        assert client_no_service.post("/error-logs/force-archive").status_code == 503
+        assert client_no_service.post(PATH_ERROR_LOGS_FORCE_ARCHIVE).status_code == 503
         assert client_no_service.delete("/error-logs/cleanup?days=1").status_code == 503
 
         # Endpoints that return default values instead of 503
-        levels_resp = client_no_service.get("/error-logs/levels")
+        levels_resp = client_no_service.get(PATH_ERROR_LOGS_LEVELS)
         assert levels_resp.status_code == 200
         assert "ERROR" in levels_resp.json()["levels"]
 
-        types_resp = client_no_service.get("/error-logs/types")
+        types_resp = client_no_service.get(PATH_ERROR_LOGS_TYPES)
         assert types_resp.status_code == 200
         assert types_resp.json()["types"] == []
 
@@ -817,7 +826,7 @@ class TestErrorLogRoutes:
             }
         ]
 
-        response = client.get("/error-logs/archives")
+        response = client.get(PATH_ERROR_LOGS_ARCHIVES)
         assert response.status_code == 200
 
         data = response.json()

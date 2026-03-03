@@ -16,6 +16,9 @@ from easylifeauth.api.dependencies import get_db, get_user_service
 from easylifeauth.security.access_control import get_current_user, require_super_admin
 from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_USER_TEST
 
+PATH_DOMAIN_SCENARIOS = "/domain-scenarios"
+
+
 
 class TestHelperFunctions:
     """Tests for helper functions"""
@@ -164,7 +167,7 @@ class TestDomainScenariosRoutes:
         mock_cursor.__anext__ = AsyncMock(side_effect=[mock_scenario.copy(), StopAsyncIteration])
         mock_db.domain_scenarios.find = MagicMock(return_value=mock_cursor)
 
-        response = client.get("/domain-scenarios")
+        response = client.get(PATH_DOMAIN_SCENARIOS)
         assert response.status_code == 200
         data = response.json()
         assert "data" in data
@@ -265,7 +268,7 @@ class TestDomainScenariosRoutes:
             "subDomains": []
         }
 
-        response = client.post("/domain-scenarios", json=scenario_data)
+        response = client.post(PATH_DOMAIN_SCENARIOS, json=scenario_data)
         assert response.status_code == 201
 
     def test_create_scenario_key_exists(self, client, mock_db):
@@ -281,7 +284,7 @@ class TestDomainScenariosRoutes:
             "subDomains": []
         }
 
-        response = client.post("/domain-scenarios", json=scenario_data)
+        response = client.post(PATH_DOMAIN_SCENARIOS, json=scenario_data)
         assert response.status_code == 400
         assert "key already exists" in response.json()["detail"]
 
@@ -299,7 +302,7 @@ class TestDomainScenariosRoutes:
             "subDomains": []
         }
 
-        response = client.post("/domain-scenarios", json=scenario_data)
+        response = client.post(PATH_DOMAIN_SCENARIOS, json=scenario_data)
         assert response.status_code == 400
         assert "Parent domain not found" in response.json()["detail"]
 
@@ -646,7 +649,7 @@ class TestDomainScenariosRoutesRegularUser:
         """Test list scenarios when user has no domain access"""
         mock_db.users.find_one = AsyncMock(return_value=None)
 
-        response = client.get("/domain-scenarios")
+        response = client.get(PATH_DOMAIN_SCENARIOS)
         assert response.status_code == 200
         assert response.json()["data"] == []
 

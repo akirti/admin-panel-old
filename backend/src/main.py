@@ -3,7 +3,7 @@ import os
 import json
 from pathlib import Path
 
-from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX
+from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX , LOCAL_FILE_STORAGE
 from easylifeauth.app import create_app
 from easylifeauth.utils.config import ConfigurationLoader
 
@@ -44,7 +44,7 @@ cors_origins = config_loader.get_config_by_path("environment.cors.origins") or [
 # GCS / file storage
 storage_config = config_loader.get_config_by_path("environment.storage")
 gcs_config = None
-file_storage_config = {"type": "local", "base_path": "/tmp/easylife_uploads"}
+file_storage_config = {"type": "local", "base_path": LOCAL_FILE_STORAGE}
 if storage_config:
     storage_type = storage_config.get("type", "local")
     gcp = storage_config.get("gcs", {})
@@ -63,7 +63,7 @@ if storage_config:
             "type": "gcs",
             "bucket_name": gcp.get("bucket_name"),
             "credentials_json": gcs_config["credentials_json"],
-            "base_path": "/tmp/easylife_uploads",
+            "base_path": LOCAL_FILE_STORAGE,
         }
 
 # Jira

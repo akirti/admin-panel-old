@@ -23,6 +23,11 @@ from easylifeauth.security.access_control import (
 )
 from easylifeauth.api import dependencies
 
+PATH_DOMAINS = "/domains"
+PATH_GROUPS = "/groups"
+PATH_PLAYBOARDS = "/playboards"
+
+
 
 # ---------------------------------------------------------------------------
 # User fixtures for each role level
@@ -129,7 +134,7 @@ class TestDomainRouteAccess:
 
     def test_list_domains_super_admin_ok(self, _app_for):
         client, _ = _app_for(SUPER_ADMIN)
-        resp = client.get("/domains")
+        resp = client.get(PATH_DOMAINS)
         assert resp.status_code == 200
 
     def test_get_all_domains_any_user_ok(self, _app_for):
@@ -151,7 +156,7 @@ class TestDomainRouteAccess:
         db.domains.insert_one = AsyncMock(
             return_value=MagicMock(inserted_id=ObjectId())
         )
-        resp = client.post("/domains", json={
+        resp = client.post(PATH_DOMAINS, json={
             "key": "test-domain", "name": "Test", "order": 1,
         })
         assert resp.status_code == 201
@@ -171,7 +176,7 @@ class TestDomainRouteAccess:
         )
 
         client = TestClient(app, raise_server_exceptions=False)
-        resp = client.post("/domains", json={
+        resp = client.post(PATH_DOMAINS, json={
             "key": "x", "name": "X", "order": 1,
         })
         assert resp.status_code == 403
@@ -216,19 +221,19 @@ class TestGroupRouteAccess:
 
     def test_list_groups_group_admin_ok(self, _app_for):
         client, _ = _app_for(GROUP_ADMIN)
-        assert client.get("/groups").status_code == 200
+        assert client.get(PATH_GROUPS).status_code == 200
 
     def test_list_groups_admin_ok(self, _app_for):
         client, _ = _app_for(ADMIN)
-        assert client.get("/groups").status_code == 200
+        assert client.get(PATH_GROUPS).status_code == 200
 
     def test_list_groups_regular_user_rejected(self, _app_for):
         client, _ = _app_for(REGULAR_USER, should_allow=False)
-        assert client.get("/groups").status_code == 403
+        assert client.get(PATH_GROUPS).status_code == 403
 
     def test_list_groups_viewer_rejected(self, _app_for):
         client, _ = _app_for(VIEWER, should_allow=False)
-        assert client.get("/groups").status_code == 403
+        assert client.get(PATH_GROUPS).status_code == 403
 
     def test_count_groups_group_editor_ok(self, _app_for):
         client, _ = _app_for(GROUP_EDITOR)
@@ -240,7 +245,7 @@ class TestGroupRouteAccess:
         db.groups.insert_one = AsyncMock(
             return_value=MagicMock(inserted_id=ObjectId())
         )
-        resp = client.post("/groups", json={
+        resp = client.post(PATH_GROUPS, json={
             "groupId": "test-grp", "name": "Test Group",
             "description": "desc", "permissions": [],
             "status": "active", "priority": 1,
@@ -249,7 +254,7 @@ class TestGroupRouteAccess:
 
     def test_create_group_regular_user_rejected(self, _app_for):
         client, _ = _app_for(REGULAR_USER, should_allow=False)
-        resp = client.post("/groups", json={
+        resp = client.post(PATH_GROUPS, json={
             "groupId": "test", "name": "N", "description": "d",
             "permissions": [], "status": "active", "priority": 1,
         })
@@ -362,7 +367,7 @@ class TestPlayboardRouteAccess:
     def test_list_playboards_any_user_ok(self, _app_for):
         client, db = _app_for(REGULAR_USER, allow_super=False)
         # Returns empty since no domains resolved
-        resp = client.get("/playboards")
+        resp = client.get(PATH_PLAYBOARDS)
         assert resp.status_code == 200
         data = resp.json()
         assert data["data"] == []
@@ -376,7 +381,7 @@ class TestPlayboardRouteAccess:
         db.playboards.insert_one = AsyncMock(
             return_value=MagicMock(inserted_id=ObjectId())
         )
-        resp = client.post("/playboards", json={
+        resp = client.post(PATH_PLAYBOARDS, json={
             "key": "pb1", "name": "Playboard 1",
             "scenarioKey": "sc1",
         })
@@ -384,7 +389,7 @@ class TestPlayboardRouteAccess:
 
     def test_create_playboard_regular_user_rejected(self, _app_for):
         client, _ = _app_for(REGULAR_USER, allow_super=False)
-        resp = client.post("/playboards", json={
+        resp = client.post(PATH_PLAYBOARDS, json={
             "key": "pb1", "name": "Playboard 1",
             "scenarioKey": "sc1",
         })

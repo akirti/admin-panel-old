@@ -18,6 +18,10 @@ from easylifeauth.security.access_control import (
     require_group_admin,
 )
 
+EXPECTED_UPDATED_NAME = "Updated Name"
+PATH_DISTRIBUTION_LISTS = "/distribution-lists"
+
+
 
 # --- Sample data factories ---
 
@@ -133,7 +137,7 @@ class TestDistributionListRoutesSuperAdmin:
             return_value=_AsyncCursorMock(items)
         )
 
-        response = client.get("/distribution-lists")
+        response = client.get(PATH_DISTRIBUTION_LISTS)
         assert response.status_code == 200
         data = response.json()
         assert "data" in data
@@ -185,7 +189,7 @@ class TestDistributionListRoutesSuperAdmin:
             return_value=_AsyncCursorMock([])
         )
 
-        response = client.get("/distribution-lists")
+        response = client.get(PATH_DISTRIBUTION_LISTS)
         assert response.status_code == 200
         call_args = mock_db.distribution_lists.count_documents.call_args[0][0]
         assert call_args.get("is_active") is True
@@ -239,7 +243,7 @@ class TestDistributionListRoutesSuperAdmin:
         created = make_dist_list_dict(**payload)
         mock_service.create = AsyncMock(return_value=created)
 
-        response = client.post("/distribution-lists", json=payload)
+        response = client.post(PATH_DISTRIBUTION_LISTS, json=payload)
         assert response.status_code == 201
         data = response.json()
         assert data["key"] == payload["key"]
@@ -252,7 +256,7 @@ class TestDistributionListRoutesSuperAdmin:
         )
 
         response = client.post(
-            "/distribution-lists", json=make_create_payload(key="dup-key")
+            PATH_DISTRIBUTION_LISTS, json=make_create_payload(key="dup-key")
         )
         assert response.status_code == 400
         assert "already exists" in response.json()["detail"]
@@ -262,15 +266,15 @@ class TestDistributionListRoutesSuperAdmin:
     def test_update_distribution_list_success(self, client, mock_service):
         """Test updating a distribution list."""
         list_id = str(ObjectId())
-        updated = make_dist_list_dict(_id=list_id, name="Updated Name")
+        updated = make_dist_list_dict(_id=list_id, name=EXPECTED_UPDATED_NAME)
         mock_service.update = AsyncMock(return_value=updated)
 
         response = client.put(
             f"/distribution-lists/{list_id}",
-            json={"name": "Updated Name"},
+            json={"name": EXPECTED_UPDATED_NAME},
         )
         assert response.status_code == 200
-        assert response.json()["name"] == "Updated Name"
+        assert response.json()["name"] == EXPECTED_UPDATED_NAME
 
     def test_update_distribution_list_not_found(self, client, mock_service):
         """Test 404 when updating nonexistent list."""
@@ -576,7 +580,7 @@ class TestDistributionListRoutesGroupAdmin:
     def test_create_requires_super_admin(self, client):
         """Test that creating a list requires super admin."""
         response = client.post(
-            "/distribution-lists",
+            PATH_DISTRIBUTION_LISTS,
             json=make_create_payload(),
         )
         assert response.status_code == 403
@@ -662,7 +666,7 @@ class TestDistributionListRoutesAuthEnforcement:
 
     def test_list_requires_super_admin(self, client):
         """Test that listing requires super admin."""
-        response = client.get("/distribution-lists")
+        response = client.get(PATH_DISTRIBUTION_LISTS)
         assert response.status_code == 403
 
     def test_types_requires_group_admin(self, client):
@@ -694,7 +698,7 @@ class TestDistributionListRoutesAuthEnforcement:
     def test_create_requires_super_admin(self, client):
         """Test that create requires super admin."""
         response = client.post(
-            "/distribution-lists",
+            PATH_DISTRIBUTION_LISTS,
             json=make_create_payload(),
         )
         assert response.status_code == 403

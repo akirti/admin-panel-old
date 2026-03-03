@@ -26,6 +26,9 @@ from easylifeauth.security.access_control import (
     CurrentUser, require_super_admin, require_group_admin,
 )
 
+PATH_GROUPS = "/groups"
+
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -289,7 +292,7 @@ class TestGroupCRUDIntegration:
         # Domain resolution not needed for empty domains
         db.domains.find_one = AsyncMock(return_value=None)
 
-        resp = client.post("/groups", json={
+        resp = client.post(PATH_GROUPS, json={
             "groupId": "editors", "name": "Editors",
             "description": "Editor group",
             "permissions": ["can-read"],
@@ -311,7 +314,7 @@ class TestGroupCRUDIntegration:
             "_id": oid, "domainId": "finance",
         })
 
-        resp = client.post("/groups", json={
+        resp = client.post(PATH_GROUPS, json={
             "groupId": "fin-team", "name": "Finance Team",
             "description": "desc",
             "permissions": [],
@@ -331,7 +334,7 @@ class TestGroupCRUDIntegration:
             {"customerId": "acme", "_id": ObjectId()},  # key check
         ])
 
-        resp = client.post("/groups", json={
+        resp = client.post(PATH_GROUPS, json={
             "groupId": "acme-grp", "name": "Acme Group",
             "description": "desc",
             "permissions": [], "domains": [],
@@ -344,7 +347,7 @@ class TestGroupCRUDIntegration:
         client, db, _ = _app()
         db.groups.find_one = AsyncMock(return_value={"groupId": "editors"})
 
-        resp = client.post("/groups", json={
+        resp = client.post(PATH_GROUPS, json={
             "groupId": "editors", "name": "Editors",
             "description": "desc", "permissions": [],
             "status": "active", "priority": 1,

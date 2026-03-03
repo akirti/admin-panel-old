@@ -17,15 +17,19 @@ from easylifeauth.api.dependencies import get_db
 from easylifeauth.security.access_control import require_super_admin
 from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_USER1_TEST, MOCK_EMAIL_USER2_TEST
 
+EXPECTED_TEST = "Test"
+PATH_EXPORT_USERS_CSV = "/export/users/csv"
+
+
 
 class TestHelperFunctions:
     """Tests for helper functions"""
 
     def test_serialize_document_dict(self):
         """Test serialize_document with dict"""
-        doc = {"name": "Test", "value": 123}
+        doc = {"name": EXPECTED_TEST, "value": 123}
         result = serialize_document(doc)
-        assert result["name"] == "Test"
+        assert result["name"] == EXPECTED_TEST
         assert result["value"] == 123
 
     def test_serialize_document_datetime(self):
@@ -62,9 +66,9 @@ class TestHelperFunctions:
 
     def test_flatten_dict_simple(self):
         """Test flatten_dict with simple dict"""
-        doc = {"name": "Test", "value": 123}
+        doc = {"name": EXPECTED_TEST, "value": 123}
         result = flatten_dict(doc)
-        assert result["name"] == "Test"
+        assert result["name"] == EXPECTED_TEST
         assert result["value"] == 123
 
     def test_flatten_dict_nested(self):
@@ -169,7 +173,7 @@ class TestExportRoutes:
         mock_collection.find = MagicMock(return_value=self._create_mock_cursor(users))
         mock_db.db.__getitem__ = MagicMock(return_value=mock_collection)
 
-        response = client.get("/export/users/csv")
+        response = client.get(PATH_EXPORT_USERS_CSV)
         assert response.status_code == 200
         assert "text/csv" in response.headers["content-type"]
 
@@ -339,7 +343,7 @@ class TestExportRoutes:
         app.dependency_overrides[require_super_admin] = lambda: mock_super_admin
         client = TestClient(app)
 
-        response = client.get("/export/users/csv")
+        response = client.get(PATH_EXPORT_USERS_CSV)
         assert response.status_code == 404  # No data to export
 
 
@@ -391,7 +395,7 @@ class TestExportRoutesEmptyData:
         mock_collection.find = MagicMock(return_value=self._create_empty_cursor())
         mock_db.db.__getitem__ = MagicMock(return_value=mock_collection)
 
-        response = client.get("/export/users/csv")
+        response = client.get(PATH_EXPORT_USERS_CSV)
         assert response.status_code == 404
         assert "No data to export" in response.json()["detail"]
 

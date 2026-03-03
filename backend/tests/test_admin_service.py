@@ -8,6 +8,10 @@ from easylifeauth.services.admin_service import AdminService
 from easylifeauth.errors.auth_error import AuthError
 from mock_data import MOCK_EMAIL, MOCK_EMAIL_DELETE, MOCK_PASSWORD_HASH
 
+EXPECTED_USER_DOMAINS_UPDATED_SUCCESSFULLY = "User domains updated successfully"
+EXPECTED_USER_ROLE_UPDATED_SUCCESSFULLY = "User role updated successfully"
+
+
 
 class TestAdminService:
     """Tests for AdminService"""
@@ -104,7 +108,7 @@ class TestAdminService:
             ["user", "editor"]
         )
         
-        assert result["message"] == "User role updated successfully"
+        assert result["message"] == EXPECTED_USER_ROLE_UPDATED_SUCCESSFULLY
 
     @pytest.mark.asyncio
     async def test_update_user_role_invalid_roles(self, admin_service, mock_db):
@@ -162,7 +166,7 @@ class TestAdminService:
             ["domain1", "domain2"]
         )
         
-        assert result["message"] == "User domains updated successfully"
+        assert result["message"] == EXPECTED_USER_DOMAINS_UPDATED_SUCCESSFULLY
 
     @pytest.mark.asyncio
     async def test_update_user_domains_not_found(self, admin_service, mock_db):
@@ -459,7 +463,7 @@ class TestAdminService:
             current_user={"roles": ["super-administrator"]}
         )
 
-        assert result["message"] == "User role updated successfully"
+        assert result["message"] == EXPECTED_USER_ROLE_UPDATED_SUCCESSFULLY
 
     @pytest.mark.asyncio
     async def test_update_user_role_admin_cannot_assign_super_admin(self, admin_service, mock_db):
@@ -528,7 +532,7 @@ class TestAdminService:
             }
         )
 
-        assert result["message"] == "User role updated successfully"
+        assert result["message"] == EXPECTED_USER_ROLE_UPDATED_SUCCESSFULLY
 
     @pytest.mark.asyncio
     async def test_update_user_role_regular_user_unauthorized(self, admin_service, mock_db):
@@ -625,7 +629,7 @@ class TestAdminService:
             }
         )
 
-        assert result["message"] == "User domains updated successfully"
+        assert result["message"] == EXPECTED_USER_DOMAINS_UPDATED_SUCCESSFULLY
 
     @pytest.mark.asyncio
     async def test_update_user_domains_group_admin_invalid_domains(self, admin_service, mock_db):
@@ -677,7 +681,7 @@ class TestAdminService:
             }
         )
 
-        assert result["message"] == "User domains updated successfully"
+        assert result["message"] == EXPECTED_USER_DOMAINS_UPDATED_SUCCESSFULLY
 
     @pytest.mark.asyncio
     async def test_update_user_domains_target_not_found(self, admin_service, mock_db):

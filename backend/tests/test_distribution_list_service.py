@@ -7,6 +7,10 @@ from bson import ObjectId
 from easylifeauth.services.distribution_list_service import DistributionListService
 from mock_data import MOCK_EMAIL, MOCK_EMAIL_ALICE, MOCK_EMAIL_BOB, MOCK_EMAIL_CHARLIE, MOCK_EMAIL_NEW, MOCK_EMAIL_SHARED
 
+EXPECTED_DEV_TEAM = "Dev Team"
+MONGO_SET = "$set"
+
+
 
 VALID_OID = "507f1f77bcf86cd799439011"
 VALID_OID_2 = "507f1f77bcf86cd799439012"
@@ -36,7 +40,7 @@ class TestDistributionListService:
         return {
             "_id": ObjectId(VALID_OID),
             "key": "dev-team",
-            "name": "Dev Team",
+            "name": EXPECTED_DEV_TEAM,
             "description": "Development team distribution list",
             "type": "team",
             "emails": [MOCK_EMAIL_ALICE, MOCK_EMAIL_BOB],
@@ -430,7 +434,7 @@ class TestDistributionListService:
 
         data = {
             "key": "dev-team",
-            "name": "Dev Team",
+            "name": EXPECTED_DEV_TEAM,
             "description": "Development team",
             "type": "team",
             "emails": [MOCK_EMAIL_ALICE, MOCK_EMAIL_BOB],
@@ -441,7 +445,7 @@ class TestDistributionListService:
         mock_db.distribution_lists.insert_one.assert_called_once()
         insert_arg = mock_db.distribution_lists.insert_one.call_args[0][0]
         assert insert_arg["key"] == "dev-team"
-        assert insert_arg["name"] == "Dev Team"
+        assert insert_arg["name"] == EXPECTED_DEV_TEAM
         assert insert_arg["type"] == "team"
         assert insert_arg["emails"] == [MOCK_EMAIL_ALICE, MOCK_EMAIL_BOB]
         assert insert_arg["is_active"] is True
@@ -545,7 +549,7 @@ class TestDistributionListService:
         mock_db.distribution_lists.update_one.assert_called_once()
         update_call = mock_db.distribution_lists.update_one.call_args
         assert update_call[0][0] == {"_id": ObjectId(VALID_OID)}
-        set_fields = update_call[0][1]["$set"]
+        set_fields = update_call[0][1][MONGO_SET]
         assert set_fields["name"] == "Updated Name"
         assert set_fields["description"] == "Updated desc"
         assert "updated_at" in set_fields
@@ -618,7 +622,7 @@ class TestDistributionListService:
             user_id=USER_ID,
         )
 
-        set_fields = mock_db.distribution_lists.update_one.call_args[0][1]["$set"]
+        set_fields = mock_db.distribution_lists.update_one.call_args[0][1][MONGO_SET]
         assert "name" in set_fields
         assert "emails" in set_fields
         assert "unknown_field" not in set_fields
@@ -635,7 +639,7 @@ class TestDistributionListService:
         await service.update(VALID_OID, {"name": "Test"}, user_id=USER_ID)
         after = datetime.now(timezone.utc)
 
-        set_fields = mock_db.distribution_lists.update_one.call_args[0][1]["$set"]
+        set_fields = mock_db.distribution_lists.update_one.call_args[0][1][MONGO_SET]
         assert before <= set_fields["updated_at"] <= after
 
     @pytest.mark.asyncio
@@ -671,7 +675,7 @@ class TestDistributionListService:
         update_call = mock_db.distribution_lists.update_one.call_args
         assert update_call[0][0] == {"_id": ObjectId(VALID_OID)}
         assert update_call[0][1]["$addToSet"] == {"emails": MOCK_EMAIL_NEW}
-        assert update_call[0][1]["$set"]["updated_by"] == USER_ID
+        assert update_call[0][1][MONGO_SET]["updated_by"] == USER_ID
 
     @pytest.mark.asyncio
     async def test_add_email_invalid_objectid(self, service, mock_db):
@@ -702,7 +706,7 @@ class TestDistributionListService:
         await service.add_email(VALID_OID, MOCK_EMAIL_NEW)
 
         update_call = mock_db.distribution_lists.update_one.call_args
-        assert update_call[0][1]["$set"]["updated_by"] is None
+        assert update_call[0][1][MONGO_SET]["updated_by"] is None
 
     @pytest.mark.asyncio
     async def test_add_email_uses_addtoset(self, service, mock_db, sample_dist_list):
@@ -737,7 +741,7 @@ class TestDistributionListService:
         update_call = mock_db.distribution_lists.update_one.call_args
         assert update_call[0][0] == {"_id": ObjectId(VALID_OID)}
         assert update_call[0][1]["$pull"] == {"emails": MOCK_EMAIL_BOB}
-        assert update_call[0][1]["$set"]["updated_by"] == USER_ID
+        assert update_call[0][1][MONGO_SET]["updated_by"] == USER_ID
 
     @pytest.mark.asyncio
     async def test_remove_email_invalid_objectid(self, service, mock_db):
@@ -770,7 +774,7 @@ class TestDistributionListService:
         await service.remove_email(VALID_OID, MOCK_EMAIL_BOB)
 
         update_call = mock_db.distribution_lists.update_one.call_args
-        assert update_call[0][1]["$set"]["updated_by"] is None
+        assert update_call[0][1][MONGO_SET]["updated_by"] is None
 
     @pytest.mark.asyncio
     async def test_remove_email_uses_pull(self, service, mock_db, sample_dist_list):
@@ -801,7 +805,7 @@ class TestDistributionListService:
         assert result is True
         update_call = mock_db.distribution_lists.update_one.call_args
         assert update_call[0][0] == {"_id": ObjectId(VALID_OID)}
-        set_fields = update_call[0][1]["$set"]
+        set_fields = update_call[0][1][MONGO_SET]
         assert set_fields["is_active"] is False
         assert "updated_at" in set_fields
 
@@ -834,7 +838,7 @@ class TestDistributionListService:
         await service.delete(VALID_OID)
         after = datetime.now(timezone.utc)
 
-        set_fields = mock_db.distribution_lists.update_one.call_args[0][1]["$set"]
+        set_fields = mock_db.distribution_lists.update_one.call_args[0][1][MONGO_SET]
         assert before <= set_fields["updated_at"] <= after
 
     # ------------------------------------------------------------------ #
@@ -918,7 +922,7 @@ class TestDistributionListService:
         }
         await service.update(VALID_OID, data, user_id=USER_ID)
 
-        set_fields = mock_db.distribution_lists.update_one.call_args[0][1]["$set"]
+        set_fields = mock_db.distribution_lists.update_one.call_args[0][1][MONGO_SET]
         for field in ["key", "name", "description", "type", "emails", "is_active"]:
             assert field in set_fields
 
@@ -934,7 +938,7 @@ class TestDistributionListService:
 
         await service.update(VALID_OID, {}, user_id=USER_ID)
 
-        set_fields = mock_db.distribution_lists.update_one.call_args[0][1]["$set"]
+        set_fields = mock_db.distribution_lists.update_one.call_args[0][1][MONGO_SET]
         assert "updated_at" in set_fields
         assert set_fields["updated_by"] == USER_ID
 

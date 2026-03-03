@@ -15,6 +15,12 @@ from easylifeauth.security.access_control import (
     require_super_admin,
 )
 
+EXPECTED_UPDATED_NAME = "Updated Name"
+PATH_API_CONFIGS = "/api-configs"
+PATH_API_CONFIGS_GCS_STATUS = "/api-configs/gcs/status"
+PATH_API_CONFIGS_TEST = "/api-configs/test"
+
+
 
 # --- Sample data factories ---
 
@@ -122,7 +128,7 @@ class TestApiConfigRoutesSuperAdmin:
         configs = [make_config_dict(), make_config_dict(key="second-api")]
         mock_service.list_configs = AsyncMock(return_value=(configs, 2))
 
-        response = client.get("/api-configs")
+        response = client.get(PATH_API_CONFIGS)
         assert response.status_code == 200
         data = response.json()
         assert "data" in data
@@ -253,7 +259,7 @@ class TestApiConfigRoutesSuperAdmin:
         created = make_config_dict(**payload)
         mock_service.create_config = AsyncMock(return_value=created)
 
-        response = client.post("/api-configs", json=payload)
+        response = client.post(PATH_API_CONFIGS, json=payload)
         assert response.status_code == 201
         assert response.json()["key"] == payload["key"]
         mock_service.create_config.assert_called_once()
@@ -264,7 +270,7 @@ class TestApiConfigRoutesSuperAdmin:
             side_effect=ValueError("API config with key 'dup-key' already exists")
         )
 
-        response = client.post("/api-configs", json=make_create_payload(key="dup-key"))
+        response = client.post(PATH_API_CONFIGS, json=make_create_payload(key="dup-key"))
         assert response.status_code == 400
         assert "already exists" in response.json()["detail"]
 
@@ -273,15 +279,15 @@ class TestApiConfigRoutesSuperAdmin:
     def test_update_api_config_success(self, client, mock_service):
         """Test updating an API config."""
         config_id = str(ObjectId())
-        updated = make_config_dict(_id=config_id, name="Updated Name")
+        updated = make_config_dict(_id=config_id, name=EXPECTED_UPDATED_NAME)
         mock_service.update_config = AsyncMock(return_value=updated)
 
         response = client.put(
             f"/api-configs/{config_id}",
-            json={"name": "Updated Name"},
+            json={"name": EXPECTED_UPDATED_NAME},
         )
         assert response.status_code == 200
-        assert response.json()["name"] == "Updated Name"
+        assert response.json()["name"] == EXPECTED_UPDATED_NAME
 
     def test_update_api_config_not_found(self, client, mock_service):
         """Test 404 when updating nonexistent config."""
@@ -474,7 +480,7 @@ class TestApiConfigRoutesTestEndpoints:
             "ssl_info": None,
         })
 
-        response = client.post("/api-configs/test", json={
+        response = client.post(PATH_API_CONFIGS_TEST, json={
             "config_id": config["_id"],
         })
         assert response.status_code == 200
@@ -494,7 +500,7 @@ class TestApiConfigRoutesTestEndpoints:
             "ssl_info": None,
         })
 
-        response = client.post("/api-configs/test", json={
+        response = client.post(PATH_API_CONFIGS_TEST, json={
             "config": {
                 "key": "inline-test",
                 "name": "Inline Test",
@@ -519,7 +525,7 @@ class TestApiConfigRoutesTestEndpoints:
             "ssl_info": None,
         })
 
-        response = client.post("/api-configs/test", json={
+        response = client.post(PATH_API_CONFIGS_TEST, json={
             "config_id": config["_id"],
             "test_params": {"q": "search"},
             "test_body": {"data": "value"},
@@ -533,14 +539,14 @@ class TestApiConfigRoutesTestEndpoints:
         """Test 404 when test references nonexistent config_id."""
         mock_service.get_config_by_id = AsyncMock(return_value=None)
 
-        response = client.post("/api-configs/test", json={
+        response = client.post(PATH_API_CONFIGS_TEST, json={
             "config_id": str(ObjectId()),
         })
         assert response.status_code == 404
 
     def test_test_api_config_missing_both(self, client, mock_service):
         """Test 400 when neither config_id nor config is provided."""
-        response = client.post("/api-configs/test", json={})
+        response = client.post(PATH_API_CONFIGS_TEST, json={})
         assert response.status_code == 400
         assert "Either config_id or config must be provided" in response.json()["detail"]
 
@@ -617,7 +623,7 @@ class TestApiConfigRoutesGCSStatus:
         app.dependency_overrides[require_super_admin] = lambda: mock_user
         client = TestClient(app)
 
-        response = client.get("/api-configs/gcs/status")
+        response = client.get(PATH_API_CONFIGS_GCS_STATUS)
         assert response.status_code == 200
         data = response.json()
         assert data["configured"] is True
@@ -631,7 +637,7 @@ class TestApiConfigRoutesGCSStatus:
         app.dependency_overrides[require_super_admin] = lambda: mock_user
         client = TestClient(app)
 
-        response = client.get("/api-configs/gcs/status")
+        response = client.get(PATH_API_CONFIGS_GCS_STATUS)
         assert response.status_code == 200
         data = response.json()
         assert data["configured"] is False
@@ -644,7 +650,7 @@ class TestApiConfigRoutesGCSStatus:
         app.dependency_overrides[require_super_admin] = lambda: mock_user
         client = TestClient(app)
 
-        response = client.get("/api-configs/gcs/status")
+        response = client.get(PATH_API_CONFIGS_GCS_STATUS)
         assert response.status_code == 200
         data = response.json()
         assert data["configured"] is False
@@ -685,7 +691,7 @@ class TestApiConfigRoutesAuthEnforcement:
 
     def test_list_configs_requires_super_admin(self, unauthenticated_client):
         """Test that listing configs requires super admin."""
-        response = unauthenticated_client.get("/api-configs")
+        response = unauthenticated_client.get(PATH_API_CONFIGS)
         assert response.status_code == 403
         assert "Super Administrator access required" in response.json()["detail"]
 
@@ -702,7 +708,7 @@ class TestApiConfigRoutesAuthEnforcement:
     def test_create_config_requires_super_admin(self, unauthenticated_client):
         """Test that creating a config requires super admin."""
         response = unauthenticated_client.post(
-            "/api-configs", json=make_create_payload()
+            PATH_API_CONFIGS, json=make_create_payload()
         )
         assert response.status_code == 403
 
@@ -748,7 +754,7 @@ class TestApiConfigRoutesAuthEnforcement:
             "ssl_info": None,
         })
 
-        response = unauthenticated_client.post("/api-configs/test", json={
+        response = unauthenticated_client.post(PATH_API_CONFIGS_TEST, json={
             "config": {
                 "key": "test-key",
                 "name": "Test",

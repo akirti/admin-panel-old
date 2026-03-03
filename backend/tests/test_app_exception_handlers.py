@@ -18,6 +18,11 @@ from pydantic import BaseModel, ValidationError
 from easylifeauth.app import create_app
 from mock_data import MOCK_URL_MONGODB
 
+PATH_ROOT = "/"
+PATH_TEST_GENERAL_EXCEPTION = "/test-general-exception"
+PATH_TEST_PYDANTIC_VALIDATION = "/test-pydantic-validation"
+
+
 
 class TestShutdownDbCloseError:
     """Tests for lines 129-130: error closing database connection during shutdown."""
@@ -46,7 +51,7 @@ class TestShutdownDbCloseError:
                     # TestClient context manager triggers lifespan startup and shutdown.
                     # Shutdown should catch the close() exception gracefully.
                     with TestClient(app) as client:
-                        response = client.get("/")
+                        response = client.get(PATH_ROOT)
                         assert response.status_code == 200
 
                     # Verify close was actually called (and raised)
@@ -65,7 +70,7 @@ class TestCorsDefaultOrigins:
 
         client = TestClient(app)
         # Verify the app works and CORS middleware is in place
-        response = client.get("/")
+        response = client.get(PATH_ROOT)
         assert response.status_code == 200
 
     @patch.dict(os.environ, {}, clear=False)
@@ -78,7 +83,7 @@ class TestCorsDefaultOrigins:
         assert app is not None
 
         client = TestClient(app)
-        response = client.get("/")
+        response = client.get(PATH_ROOT)
         assert response.status_code == 200
 
 
@@ -162,7 +167,7 @@ class TestPydanticValidationErrorHandler:
             name: str
             age: int
 
-        @app.get("/test-pydantic-validation")
+        @app.get(PATH_TEST_PYDANTIC_VALIDATION)
         async def raise_pydantic_error():
             # Force a pydantic ValidationError by passing invalid data
             StrictModel(name=123, age="not_a_number")  # type: ignore
@@ -175,7 +180,7 @@ class TestPydanticValidationErrorHandler:
 
     def test_pydantic_validation_error_returns_500(self, client):
         """A pydantic ValidationError raised in a handler returns 500."""
-        response = client.get("/test-pydantic-validation")
+        response = client.get(PATH_TEST_PYDANTIC_VALIDATION)
         assert response.status_code == 500
         data = response.json()
         assert data["error"] == "Data validation error"
@@ -196,7 +201,7 @@ class TestPydanticValidationErrorHandler:
             return_value=mock_service,
         ):
             client = TestClient(app, raise_server_exceptions=False)
-            response = client.get("/test-pydantic-validation")
+            response = client.get(PATH_TEST_PYDANTIC_VALIDATION)
             assert response.status_code == 500
 
     def test_pydantic_validation_error_when_logging_fails(self, app):
@@ -211,7 +216,7 @@ class TestPydanticValidationErrorHandler:
             return_value=mock_service,
         ):
             client = TestClient(app, raise_server_exceptions=False)
-            response = client.get("/test-pydantic-validation")
+            response = client.get(PATH_TEST_PYDANTIC_VALIDATION)
             assert response.status_code == 500
             assert response.json()["error"] == "Data validation error"
 
@@ -223,7 +228,7 @@ class TestGeneralExceptionHandler:
     def app(self):
         app = create_app()
 
-        @app.get("/test-general-exception")
+        @app.get(PATH_TEST_GENERAL_EXCEPTION)
         async def raise_exception():
             raise RuntimeError("unexpected failure")
 
@@ -235,7 +240,7 @@ class TestGeneralExceptionHandler:
 
     def test_general_exception_returns_500(self, client):
         """A generic exception raised in a handler returns 500."""
-        response = client.get("/test-general-exception")
+        response = client.get(PATH_TEST_GENERAL_EXCEPTION)
         assert response.status_code == 500
         data = response.json()
         assert data["error"] == "Internal server error"
@@ -250,7 +255,7 @@ class TestGeneralExceptionHandler:
             return_value=mock_service,
         ):
             client = TestClient(app, raise_server_exceptions=False)
-            response = client.get("/test-general-exception")
+            response = client.get(PATH_TEST_GENERAL_EXCEPTION)
             assert response.status_code == 500
             assert response.json()["error"] == "Internal server error"
 
@@ -266,7 +271,7 @@ class TestGeneralExceptionHandler:
             return_value=mock_service,
         ):
             client = TestClient(app, raise_server_exceptions=False)
-            response = client.get("/test-general-exception")
+            response = client.get(PATH_TEST_GENERAL_EXCEPTION)
             assert response.status_code == 500
             assert response.json()["error"] == "Internal server error"
 
@@ -277,7 +282,7 @@ class TestGeneralExceptionHandler:
             return_value=None,
         ):
             client = TestClient(app, raise_server_exceptions=False)
-            response = client.get("/test-general-exception")
+            response = client.get(PATH_TEST_GENERAL_EXCEPTION)
             assert response.status_code == 500
             assert response.json()["error"] == "Internal server error"
 

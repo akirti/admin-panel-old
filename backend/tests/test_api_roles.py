@@ -11,6 +11,11 @@ from easylifeauth.api import dependencies
 from easylifeauth.security.access_control import CurrentUser, require_super_admin, require_group_admin
 from mock_data import MOCK_EMAIL_ADMIN, MOCK_EMAIL_USER, MOCK_EMAIL_USER1, MOCK_EMAIL_USER2
 
+PATH_ROLES = "/roles"
+PATH_ROLES_ID = "/roles/507f1f77bcf86cd799439011"
+PATH_ROLES_NONEXISTENT = "/roles/nonexistent"
+
+
 
 class TestRolesPaginationMeta:
     """Tests for roles pagination metadata"""
@@ -138,7 +143,7 @@ class TestRolesRoutes:
         mock_cursor.sort.return_value = empty_cursor()
         mock_db.roles.find.return_value = mock_cursor
 
-        response = client.get("/roles")
+        response = client.get(PATH_ROLES)
         assert response.status_code == 200
         data = response.json()
         assert "data" in data
@@ -185,7 +190,7 @@ class TestRolesRoutes:
         }
         mock_db.roles.find_one.return_value = role_data
 
-        response = client.get("/roles/507f1f77bcf86cd799439011")
+        response = client.get(PATH_ROLES_ID)
         assert response.status_code == 200
         data = response.json()
         assert data["roleId"] == "admin"
@@ -214,7 +219,7 @@ class TestRolesRoutes:
         """Test getting non-existent role"""
         mock_db.roles.find_one = AsyncMock(return_value=None)
 
-        response = client.get("/roles/nonexistent")
+        response = client.get(PATH_ROLES_NONEXISTENT)
         assert response.status_code == 404
 
     def test_create_role_success(self, client, mock_db):
@@ -224,7 +229,7 @@ class TestRolesRoutes:
             inserted_id=ObjectId("507f1f77bcf86cd799439011")
         )
 
-        response = client.post("/roles", json={
+        response = client.post(PATH_ROLES, json={
             "roleId": "editor",
             "name": "Editor",
             "description": "Editor role",
@@ -241,7 +246,7 @@ class TestRolesRoutes:
         """Test creating role with existing roleId"""
         mock_db.roles.find_one.return_value = {"roleId": "admin"}
 
-        response = client.post("/roles", json={
+        response = client.post(PATH_ROLES, json={
             "roleId": "admin",
             "name": "Administrator",
             "description": "Admin role",
@@ -275,7 +280,7 @@ class TestRolesRoutes:
 
         mock_db.users.find.return_value = empty_cursor()
 
-        response = client.put("/roles/507f1f77bcf86cd799439011", json={
+        response = client.put(PATH_ROLES_ID, json={
             "description": "Updated description"
         })
 
@@ -307,7 +312,7 @@ class TestRolesRoutes:
 
         mock_db.users.find.return_value = user_cursor()
 
-        response = client.put("/roles/507f1f77bcf86cd799439011", json={
+        response = client.put(PATH_ROLES_ID, json={
             "permissions": ["read", "write", "delete"]
         })
 
@@ -317,7 +322,7 @@ class TestRolesRoutes:
         """Test updating non-existent role"""
         mock_db.roles.find_one.return_value = None
 
-        response = client.put("/roles/nonexistent", json={
+        response = client.put(PATH_ROLES_NONEXISTENT, json={
             "description": "Updated"
         })
 
@@ -327,7 +332,7 @@ class TestRolesRoutes:
         """Test deleting a role"""
         mock_db.roles.delete_one.return_value = MagicMock(deleted_count=1)
 
-        response = client.delete("/roles/507f1f77bcf86cd799439011")
+        response = client.delete(PATH_ROLES_ID)
         assert response.status_code == 200
         assert "deleted successfully" in response.json()["message"]
         mock_db.users.update_many.assert_called_once()
@@ -349,7 +354,7 @@ class TestRolesRoutes:
         """Test deleting non-existent role"""
         mock_db.roles.delete_one = AsyncMock(return_value=MagicMock(deleted_count=0))
 
-        response = client.delete("/roles/nonexistent")
+        response = client.delete(PATH_ROLES_NONEXISTENT)
         assert response.status_code == 404
 
     def test_toggle_role_status(self, client, mock_db, mock_email_service):

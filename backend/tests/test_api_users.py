@@ -11,6 +11,16 @@ from easylifeauth.api import dependencies
 from easylifeauth.security.access_control import CurrentUser, require_super_admin, require_admin, require_group_admin, get_current_user
 from mock_data import MOCK_EMAIL, MOCK_EMAIL_ADMIN, MOCK_EMAIL_ALICE, MOCK_EMAIL_BOB, MOCK_EMAIL_EXISTING, MOCK_EMAIL_GROUPADMIN, MOCK_EMAIL_NEW, MOCK_EMAIL_NEWUSER, MOCK_EMAIL_TARGET, MOCK_EMAIL_USER, MOCK_PASSWORD, MOCK_PASSWORD_HASH
 
+PATH_USERS = "/users"
+PATH_USERS_ID = "/users/507f1f77bcf86cd799439011"
+PATH_USERS_ID_1 = "/users/507f1f77bcf86cd799439013"
+PATH_USERS_ID_RESET_PASSWORD_Q_SEND_EMAIL_TRUE = "/users/507f1f77bcf86cd799439011/reset-password?send_email=true"
+PATH_USERS_ID_SEND_PASSWORD_RESET_Q_SEND_EMAIL_TRUE = "/users/507f1f77bcf86cd799439011/send-password-reset?send_email=true"
+PATH_USERS_ME_ASSIGNED_CUSTOMERS = "/users/me/assigned-customers"
+PATH_USERS_ME_CUSTOMER_TAGS = "/users/me/customer-tags"
+PATH_USERS_NONEXISTENT = "/users/nonexistent"
+
+
 
 class TestPaginationMeta:
     """Tests for pagination metadata helper"""
@@ -132,7 +142,7 @@ class TestUsersRoutes:
         mock_cursor.sort.return_value = empty_cursor()
         mock_db.users.find.return_value = mock_cursor
 
-        response = client.get("/users")
+        response = client.get(PATH_USERS)
         assert response.status_code == 200
         data = response.json()
         assert "data" in data
@@ -187,7 +197,7 @@ class TestUsersRoutes:
         }
         mock_db.users.find_one.return_value = user_data
 
-        response = client.get("/users/507f1f77bcf86cd799439011")
+        response = client.get(PATH_USERS_ID)
         assert response.status_code == 200
         data = response.json()
         assert data["email"] == MOCK_EMAIL
@@ -196,7 +206,7 @@ class TestUsersRoutes:
         """Test getting non-existent user"""
         mock_db.users.find_one.return_value = None
 
-        response = client.get("/users/nonexistent")
+        response = client.get(PATH_USERS_NONEXISTENT)
         assert response.status_code == 404
 
     def test_create_user_success(self, client, mock_db, mock_email_service, mock_activity_log):
@@ -206,7 +216,7 @@ class TestUsersRoutes:
             inserted_id=ObjectId("507f1f77bcf86cd799439011")
         )
 
-        response = client.post("/users", json={
+        response = client.post(PATH_USERS, json={
             "email": MOCK_EMAIL_NEWUSER,
             "username": "newuser",
             "password": MOCK_PASSWORD,
@@ -227,7 +237,7 @@ class TestUsersRoutes:
         """Test creating user with existing email"""
         mock_db.users.find_one.return_value = {"email": MOCK_EMAIL_EXISTING}
 
-        response = client.post("/users", json={
+        response = client.post(PATH_USERS, json={
             "email": MOCK_EMAIL_EXISTING,
             "username": "newuser",
             "password": MOCK_PASSWORD,
@@ -247,7 +257,7 @@ class TestUsersRoutes:
         # Second call returns user (username exists)
         mock_db.users.find_one.side_effect = [None, {"username": "existinguser"}]
 
-        response = client.post("/users", json={
+        response = client.post(PATH_USERS, json={
             "email": MOCK_EMAIL_NEW,
             "username": "existinguser",
             "password": MOCK_PASSWORD,
@@ -268,7 +278,7 @@ class TestUsersRoutes:
             inserted_id=ObjectId("507f1f77bcf86cd799439011")
         )
 
-        response = client.post("/users", json={
+        response = client.post(PATH_USERS, json={
             "email": MOCK_EMAIL_NEWUSER,
             "username": "newuser",
             "password": MOCK_PASSWORD,
@@ -299,7 +309,7 @@ class TestUsersRoutes:
         }
         mock_db.users.find_one.return_value = existing_user
 
-        response = client.put("/users/507f1f77bcf86cd799439011", json={
+        response = client.put(PATH_USERS_ID, json={
             "full_name": "Updated Name"
         })
 
@@ -311,7 +321,7 @@ class TestUsersRoutes:
         """Test updating non-existent user"""
         mock_db.users.find_one.return_value = None
 
-        response = client.put("/users/nonexistent", json={
+        response = client.put(PATH_USERS_NONEXISTENT, json={
             "full_name": "Updated Name"
         })
 
@@ -325,7 +335,7 @@ class TestUsersRoutes:
         }
         mock_db.users.delete_one.return_value = MagicMock(deleted_count=1)
 
-        response = client.delete("/users/507f1f77bcf86cd799439011")
+        response = client.delete(PATH_USERS_ID)
         assert response.status_code == 200
         assert "deleted successfully" in response.json()["message"]
         mock_activity_log.log.assert_called_once()
@@ -335,7 +345,7 @@ class TestUsersRoutes:
         mock_db.users.find_one.return_value = None
         mock_db.users.delete_one.return_value = MagicMock(deleted_count=0)
 
-        response = client.delete("/users/nonexistent")
+        response = client.delete(PATH_USERS_NONEXISTENT)
         assert response.status_code == 404
 
     def test_toggle_user_status(self, client, mock_db, mock_activity_log):
@@ -366,7 +376,7 @@ class TestUsersRoutes:
             "full_name": "Test User"
         }
 
-        response = client.post("/users/507f1f77bcf86cd799439011/send-password-reset?send_email=true")
+        response = client.post(PATH_USERS_ID_SEND_PASSWORD_RESET_Q_SEND_EMAIL_TRUE)
         assert response.status_code == 200
         mock_email_service.send_password_reset_email.assert_called_once()
 
@@ -392,7 +402,7 @@ class TestUsersRoutes:
             "full_name": "Test User"
         }
 
-        response = client.post("/users/507f1f77bcf86cd799439011/reset-password?send_email=true")
+        response = client.post(PATH_USERS_ID_RESET_PASSWORD_Q_SEND_EMAIL_TRUE)
         assert response.status_code == 200
         mock_db.users.update_one.assert_called_once()
         mock_email_service.send_welcome_email.assert_called_once()
@@ -585,7 +595,7 @@ class TestAssignedCustomers:
         mock_find.sort.return_value = customer_cursor()
         mock_db.customers.find.return_value = mock_find
 
-        response = client.get("/users/me/assigned-customers")
+        response = client.get(PATH_USERS_ME_ASSIGNED_CUSTOMERS)
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 2
@@ -613,7 +623,7 @@ class TestAssignedCustomers:
         mock_find.sort.return_value = customer_cursor()
         mock_db.customers.find.return_value = mock_find
 
-        response = client.get("/users/me/assigned-customers")
+        response = client.get(PATH_USERS_ME_ASSIGNED_CUSTOMERS)
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 1
@@ -627,7 +637,7 @@ class TestAssignedCustomers:
             "groups": []
         })
 
-        response = client.get("/users/me/assigned-customers")
+        response = client.get(PATH_USERS_ME_ASSIGNED_CUSTOMERS)
         assert response.status_code == 200
         data = response.json()
         assert data["customers"] == []
@@ -721,7 +731,7 @@ class TestAssignedCustomers:
         mock_find.sort.return_value = customer_cursor()
         mock_db.customers.find.return_value = mock_find
 
-        response = client.get("/users/me/assigned-customers")
+        response = client.get(PATH_USERS_ME_ASSIGNED_CUSTOMERS)
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 2
@@ -788,7 +798,7 @@ class TestCustomerTags:
 
         mock_db.customers.aggregate.return_value = agg_cursor()
 
-        response = client.get("/users/me/customer-tags")
+        response = client.get(PATH_USERS_ME_CUSTOMER_TAGS)
         assert response.status_code == 200
         data = response.json()
         assert data["tags"] == ["finance", "vip"]
@@ -815,7 +825,7 @@ class TestCustomerTags:
 
         mock_db.customers.aggregate.return_value = agg_cursor()
 
-        response = client.get("/users/me/customer-tags")
+        response = client.get(PATH_USERS_ME_CUSTOMER_TAGS)
         assert response.status_code == 200
         data = response.json()
         assert "enterprise" in data["tags"]
@@ -829,7 +839,7 @@ class TestCustomerTags:
             "groups": []
         })
 
-        response = client.get("/users/me/customer-tags")
+        response = client.get(PATH_USERS_ME_CUSTOMER_TAGS)
         assert response.status_code == 200
         data = response.json()
         assert data["tags"] == []
@@ -855,7 +865,7 @@ class TestCustomerTags:
 
         mock_db.customers.aggregate.return_value = agg_cursor()
 
-        response = client.get("/users/me/customer-tags")
+        response = client.get(PATH_USERS_ME_CUSTOMER_TAGS)
         assert response.status_code == 200
         # Verify the pipeline was called with deduplicated customer list
         mock_db.customers.aggregate.assert_called_once()
@@ -946,7 +956,7 @@ class TestSendPasswordResetEmailExtended:
             side_effect=Exception("SMTP connection refused")
         )
 
-        response = client.post("/users/507f1f77bcf86cd799439011/send-password-reset?send_email=true")
+        response = client.post(PATH_USERS_ID_SEND_PASSWORD_RESET_Q_SEND_EMAIL_TRUE)
         assert response.status_code == 200
         # Even on email failure the endpoint returns 200
         assert response.json()["message"] == "Password reset email sent"
@@ -961,7 +971,7 @@ class TestSendPasswordResetEmailExtended:
         # Override email service to None
         app.dependency_overrides[dependencies.get_email_service] = lambda: None
 
-        response = client.post("/users/507f1f77bcf86cd799439011/send-password-reset?send_email=true")
+        response = client.post(PATH_USERS_ID_SEND_PASSWORD_RESET_Q_SEND_EMAIL_TRUE)
         assert response.status_code == 200
         data = response.json()
         assert "token" in data
@@ -1027,7 +1037,7 @@ class TestAdminResetPasswordExtended:
             side_effect=Exception("SMTP error")
         )
 
-        response = client.post("/users/507f1f77bcf86cd799439011/reset-password?send_email=true")
+        response = client.post(PATH_USERS_ID_RESET_PASSWORD_Q_SEND_EMAIL_TRUE)
         assert response.status_code == 200
         data = response.json()
         assert "email delivery failed" in data["message"]
@@ -1042,7 +1052,7 @@ class TestAdminResetPasswordExtended:
         # Override email service to None
         app.dependency_overrides[dependencies.get_email_service] = lambda: None
 
-        response = client.post("/users/507f1f77bcf86cd799439011/reset-password?send_email=true")
+        response = client.post(PATH_USERS_ID_RESET_PASSWORD_Q_SEND_EMAIL_TRUE)
         assert response.status_code == 200
         data = response.json()
         assert "not configured" in data["message"]
@@ -1134,7 +1144,7 @@ class TestUpdateUserPrivilegeEscalation:
         app = self._make_app(mock_group_admin, mock_db, mock_activity_log)
         client = TestClient(app)
 
-        response = client.put("/users/507f1f77bcf86cd799439013", json={
+        response = client.put(PATH_USERS_ID_1, json={
             "roles": ["administrator"]
         })
 
@@ -1160,7 +1170,7 @@ class TestUpdateUserPrivilegeEscalation:
         app = self._make_app(mock_group_admin, mock_db, mock_activity_log)
         client = TestClient(app)
 
-        response = client.put("/users/507f1f77bcf86cd799439013", json={
+        response = client.put(PATH_USERS_ID_1, json={
             "roles": ["super-administrator"]
         })
 
@@ -1187,7 +1197,7 @@ class TestUpdateUserPrivilegeEscalation:
         app = self._make_app(mock_super_admin, mock_db, mock_activity_log)
         client = TestClient(app)
 
-        response = client.put("/users/507f1f77bcf86cd799439013", json={
+        response = client.put(PATH_USERS_ID_1, json={
             "roles": ["administrator"]
         })
 
@@ -1216,7 +1226,7 @@ class TestUpdateUserPrivilegeEscalation:
         app = self._make_app(mock_super_admin, mock_db, mock_activity_log)
         client = TestClient(app)
 
-        response = client.put("/users/507f1f77bcf86cd799439013", json={
+        response = client.put(PATH_USERS_ID_1, json={
             "groups": ["team-a"]
         })
 
@@ -1337,7 +1347,7 @@ class TestListUsersExtended:
         mock_db.users.count_documents = AsyncMock(return_value=2)
         self._setup_cursor(mock_db, users)
 
-        response = client.get("/users")
+        response = client.get(PATH_USERS)
         assert response.status_code == 200
         data = response.json()
         assert len(data["data"]) == 2
@@ -1429,7 +1439,7 @@ class TestCreateUserExtended:
         """Test creating user with groups triggers resolve_groups (line 339)."""
         mock_db.groups.find_one = AsyncMock(return_value={"groupId": "team-a"})
 
-        response = client.post("/users", json={
+        response = client.post(PATH_USERS, json={
             "email": MOCK_EMAIL_NEWUSER,
             "username": "newuser",
             "password": MOCK_PASSWORD,
@@ -1450,7 +1460,7 @@ class TestCreateUserExtended:
             side_effect=Exception("SMTP connection error")
         )
 
-        response = client.post("/users", json={
+        response = client.post(PATH_USERS, json={
             "email": MOCK_EMAIL_NEWUSER,
             "username": "newuser",
             "password": MOCK_PASSWORD,
@@ -1471,7 +1481,7 @@ class TestCreateUserExtended:
 
     def test_create_user_activity_log_called(self, client, mock_db, mock_activity_log):
         """Test that activity log is called on user creation (lines 362-369)."""
-        response = client.post("/users", json={
+        response = client.post(PATH_USERS, json={
             "email": "logged@example.com",
             "username": "loggeduser",
             "password": MOCK_PASSWORD,

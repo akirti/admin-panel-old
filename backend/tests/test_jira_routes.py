@@ -9,6 +9,15 @@ from bson import ObjectId
 from easylifeauth.api.jira_routes import router
 from easylifeauth.security.access_control import CurrentUser, require_admin_or_editor
 
+EXPECTED_OPEN = "Open"
+EXPECTED_TASK = "Task"
+PATH_JIRA_ATTACHMENTS_ADD = "/api/v1/jira/attachments/add"
+PATH_JIRA_PROJECTS_LATEST = "/api/v1/jira/projects/latest"
+PATH_JIRA_SYNC_REQUEST_ID = "/api/v1/jira/sync/request/507f1f77bcf86cd799439011"
+PATH_JIRA_TASKS_CREATE = "/api/v1/jira/tasks/create"
+PATH_JIRA_TASKS_TRANSITION = "/api/v1/jira/tasks/transition"
+
+
 
 @pytest.fixture
 def mock_current_user():
@@ -43,8 +52,8 @@ def mock_jira_service():
             "id": "10001",
             "key": "TEST-1",
             "summary": "Test Task",
-            "status": "Open",
-            "issue_type": "Task",
+            "status": EXPECTED_OPEN,
+            "issue_type": EXPECTED_TASK,
             "priority": "Medium",
             "created": "2024-01-01",
             "updated": "2024-01-02",
@@ -58,8 +67,8 @@ def mock_jira_service():
             "id": "10001",
             "key": "TEST-1",
             "summary": "[REQ-001] Test",
-            "status": "Open",
-            "issue_type": "Task",
+            "status": EXPECTED_OPEN,
+            "issue_type": EXPECTED_TASK,
             "priority": "Medium",
             "created": "2024-01-01",
             "updated": "2024-01-02",
@@ -87,10 +96,10 @@ def mock_jira_service():
         "uploaded_at": "2024-01-01T00:00:00Z"
     })
     mock.get_issue_types = AsyncMock(return_value=[
-        {"id": "1", "name": "Task", "description": "A task"}
+        {"id": "1", "name": EXPECTED_TASK, "description": "A task"}
     ])
     mock.get_statuses = AsyncMock(return_value=[
-        {"id": "1", "name": "Open", "category": "To Do"}
+        {"id": "1", "name": EXPECTED_OPEN, "category": "To Do"}
     ])
     mock.update_ticket = AsyncMock(return_value={
         "sync_status": "synced",
@@ -191,7 +200,7 @@ class TestJiraLatestProjectRoute:
     def test_get_latest_project_success(self, app_with_routes):
         """Test successful get latest project"""
         client = TestClient(app_with_routes)
-        response = client.get("/api/v1/jira/projects/latest")
+        response = client.get(PATH_JIRA_PROJECTS_LATEST)
         assert response.status_code == 200
         data = response.json()
         assert data["key"] == "TEST"
@@ -200,7 +209,7 @@ class TestJiraLatestProjectRoute:
         """Test get latest project when no projects"""
         mock_jira_service.get_latest_project = AsyncMock(return_value=None)
         client = TestClient(app_with_routes)
-        response = client.get("/api/v1/jira/projects/latest")
+        response = client.get(PATH_JIRA_PROJECTS_LATEST)
         assert response.status_code == 200
         assert response.json() is None
 
@@ -208,7 +217,7 @@ class TestJiraLatestProjectRoute:
         """Test get latest project when Jira disabled"""
         mock_jira_service.enabled = False
         client = TestClient(app_with_routes)
-        response = client.get("/api/v1/jira/projects/latest")
+        response = client.get(PATH_JIRA_PROJECTS_LATEST)
         assert response.status_code == 503
 
 
@@ -270,7 +279,7 @@ class TestJiraCreateTaskRoute:
         """Test successful create task"""
         client = TestClient(app_with_routes)
         response = client.post(
-            "/api/v1/jira/tasks/create",
+            PATH_JIRA_TASKS_CREATE,
             json={"scenario_request_id": "507f1f77bcf86cd799439011"}
         )
         assert response.status_code == 200
@@ -292,7 +301,7 @@ class TestJiraCreateTaskRoute:
         })
         client = TestClient(app_with_routes)
         response = client.post(
-            "/api/v1/jira/tasks/create",
+            PATH_JIRA_TASKS_CREATE,
             json={"scenario_request_id": "507f1f77bcf86cd799439011"}
         )
         assert response.status_code == 200
@@ -304,7 +313,7 @@ class TestJiraCreateTaskRoute:
         mock_db.db.scenario_requests.find_one = AsyncMock(return_value=None)
         client = TestClient(app_with_routes)
         response = client.post(
-            "/api/v1/jira/tasks/create",
+            PATH_JIRA_TASKS_CREATE,
             json={"scenario_request_id": "507f1f77bcf86cd799439011"}
         )
         assert response.status_code == 404
@@ -314,7 +323,7 @@ class TestJiraCreateTaskRoute:
         mock_jira_service.create_ticket = AsyncMock(return_value=None)
         client = TestClient(app_with_routes)
         response = client.post(
-            "/api/v1/jira/tasks/create",
+            PATH_JIRA_TASKS_CREATE,
             json={"scenario_request_id": "507f1f77bcf86cd799439011"}
         )
         assert response.status_code == 500
@@ -327,7 +336,7 @@ class TestJiraCreateTaskRoute:
         })
         client = TestClient(app_with_routes)
         response = client.post(
-            "/api/v1/jira/tasks/create",
+            PATH_JIRA_TASKS_CREATE,
             json={"scenario_request_id": "507f1f77bcf86cd799439011"}
         )
         assert response.status_code == 200
@@ -339,7 +348,7 @@ class TestJiraCreateTaskRoute:
         mock_jira_service.enabled = False
         client = TestClient(app_with_routes)
         response = client.post(
-            "/api/v1/jira/tasks/create",
+            PATH_JIRA_TASKS_CREATE,
             json={"scenario_request_id": "507f1f77bcf86cd799439011"}
         )
         assert response.status_code == 503
@@ -352,7 +361,7 @@ class TestJiraCreateTaskRoute:
         })
         client = TestClient(app_with_routes)
         response = client.post(
-            "/api/v1/jira/tasks/create",
+            PATH_JIRA_TASKS_CREATE,
             json={"scenario_request_id": "507f1f77bcf86cd799439011"}
         )
         assert response.status_code == 200
@@ -365,7 +374,7 @@ class TestJiraTransitionRoute:
         """Test successful transition"""
         client = TestClient(app_with_routes)
         response = client.post(
-            "/api/v1/jira/tasks/transition",
+            PATH_JIRA_TASKS_TRANSITION,
             json={"ticket_key": "TEST-1", "status": "In Progress"}
         )
         assert response.status_code == 200
@@ -376,7 +385,7 @@ class TestJiraTransitionRoute:
         mock_jira_service.transition_ticket = AsyncMock(return_value=None)
         client = TestClient(app_with_routes)
         response = client.post(
-            "/api/v1/jira/tasks/transition",
+            PATH_JIRA_TASKS_TRANSITION,
             json={"ticket_key": "TEST-1", "status": "In Progress"}
         )
         assert response.status_code == 404
@@ -389,7 +398,7 @@ class TestJiraTransitionRoute:
         })
         client = TestClient(app_with_routes)
         response = client.post(
-            "/api/v1/jira/tasks/transition",
+            PATH_JIRA_TASKS_TRANSITION,
             json={"ticket_key": "TEST-1", "status": "Invalid"}
         )
         assert response.status_code == 400
@@ -399,7 +408,7 @@ class TestJiraTransitionRoute:
         mock_jira_service.enabled = False
         client = TestClient(app_with_routes)
         response = client.post(
-            "/api/v1/jira/tasks/transition",
+            PATH_JIRA_TASKS_TRANSITION,
             json={"ticket_key": "TEST-1", "status": "In Progress"}
         )
         assert response.status_code == 503
@@ -412,7 +421,7 @@ class TestJiraAttachmentRoute:
         """Test successful add attachment"""
         client = TestClient(app_with_routes)
         response = client.post(
-            "/api/v1/jira/attachments/add",
+            PATH_JIRA_ATTACHMENTS_ADD,
             json={
                 "ticket_key": "TEST-1",
                 "file_url": MOCK_URL_FILE_HTTPS,
@@ -428,7 +437,7 @@ class TestJiraAttachmentRoute:
         mock_jira_service.add_attachment_from_url = AsyncMock(return_value=None)
         client = TestClient(app_with_routes)
         response = client.post(
-            "/api/v1/jira/attachments/add",
+            PATH_JIRA_ATTACHMENTS_ADD,
             json={
                 "ticket_key": "TEST-1",
                 "file_url": MOCK_URL_FILE_HTTPS,
@@ -442,7 +451,7 @@ class TestJiraAttachmentRoute:
         mock_jira_service.enabled = False
         client = TestClient(app_with_routes)
         response = client.post(
-            "/api/v1/jira/attachments/add",
+            PATH_JIRA_ATTACHMENTS_ADD,
             json={
                 "ticket_key": "TEST-1",
                 "file_url": MOCK_URL_FILE_HTTPS,
@@ -462,7 +471,7 @@ class TestJiraIssueTypesRoute:
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
-        assert data[0]["name"] == "Task"
+        assert data[0]["name"] == EXPECTED_TASK
 
     def test_get_issue_types_disabled(self, app_with_routes, mock_jira_service):
         """Test get issue types when Jira disabled"""
@@ -482,7 +491,7 @@ class TestJiraStatusesRoute:
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
-        assert data[0]["name"] == "Open"
+        assert data[0]["name"] == EXPECTED_OPEN
 
     def test_get_statuses_disabled(self, app_with_routes, mock_jira_service):
         """Test get statuses when Jira disabled"""
@@ -498,7 +507,7 @@ class TestJiraSyncRequestRoute:
     def test_sync_create_new(self, app_with_routes):
         """Test sync creates new ticket"""
         client = TestClient(app_with_routes)
-        response = client.post("/api/v1/jira/sync/request/507f1f77bcf86cd799439011")
+        response = client.post(PATH_JIRA_SYNC_REQUEST_ID)
         assert response.status_code == 200
         data = response.json()
         assert data["ticket_key"] == "TEST-2"
@@ -516,7 +525,7 @@ class TestJiraSyncRequestRoute:
             }
         })
         client = TestClient(app_with_routes)
-        response = client.post("/api/v1/jira/sync/request/507f1f77bcf86cd799439011")
+        response = client.post(PATH_JIRA_SYNC_REQUEST_ID)
         assert response.status_code == 200
         data = response.json()
         assert data["ticket_key"] == "TEST-EXISTING"
@@ -525,14 +534,14 @@ class TestJiraSyncRequestRoute:
         """Test sync when request not found"""
         mock_db.db.scenario_requests.find_one = AsyncMock(return_value=None)
         client = TestClient(app_with_routes)
-        response = client.post("/api/v1/jira/sync/request/507f1f77bcf86cd799439011")
+        response = client.post(PATH_JIRA_SYNC_REQUEST_ID)
         assert response.status_code == 404
 
     def test_sync_disabled(self, app_with_routes, mock_jira_service):
         """Test sync when Jira disabled"""
         mock_jira_service.enabled = False
         client = TestClient(app_with_routes)
-        response = client.post("/api/v1/jira/sync/request/507f1f77bcf86cd799439011")
+        response = client.post(PATH_JIRA_SYNC_REQUEST_ID)
         assert response.status_code == 503
 
     def test_sync_with_request_id_string(self, app_with_routes, mock_db):
@@ -555,7 +564,7 @@ class TestJiraSyncRequestRoute:
         """Test sync when create fails"""
         mock_jira_service.create_ticket = AsyncMock(return_value=None)
         client = TestClient(app_with_routes)
-        response = client.post("/api/v1/jira/sync/request/507f1f77bcf86cd799439011")
+        response = client.post(PATH_JIRA_SYNC_REQUEST_ID)
         assert response.status_code == 200
         data = response.json()
         assert data["sync_status"] == "failed"

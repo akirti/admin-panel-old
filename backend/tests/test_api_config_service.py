@@ -8,6 +8,16 @@ from bson import ObjectId
 from easylifeauth.services.api_config_service import ApiConfigService
 from mock_data import MOCK_CLIENT_SECRET, MOCK_DB_PASSWORD, MOCK_EMAIL_ADMIN, MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_CREATOR, MOCK_EMAIL_EDITOR, MOCK_EMAIL_USER, MOCK_PASSWORD, MOCK_PASSWORD_WRONG, MOCK_PATH_CERT_CACHE, MOCK_SECRET, MOCK_URL_API, MOCK_URL_API_DATA, MOCK_URL_API_HEALTH, MOCK_URL_AUTH_LOGIN, MOCK_URL_AUTH_OAUTH, MOCK_URL_AUTH_TOKEN, MOCK_URL_PROXY, MOCK_URL_RESOURCE
 
+EXPECTED_TEST_API = "Test API"
+EXPECTED_UPDATED_API = "Updated API"
+MONGO_OPTIONS = "$options"
+MONGO_REGEX = "$regex"
+MONGO_SET = "$set"
+REGEX_CASE_INSENSITIVE = "i"
+SEARCH_MY_API = "my-api"
+SEARCH_PAYMENT = "payment"
+
+
 
 class TestApiConfigServiceInit:
     """Tests for ApiConfigService initialization."""
@@ -117,13 +127,13 @@ class TestListConfigs:
     @pytest.mark.asyncio
     async def test_list_configs_with_search_filter(self, service, mock_collection):
         """Test listing configs with search query."""
-        await service.list_configs(search="my-api")
+        await service.list_configs(search=SEARCH_MY_API)
 
         expected_query = {
             "$or": [
-                {"name": {"$regex": "my-api", "$options": "i"}},
-                {"key": {"$regex": "my-api", "$options": "i"}},
-                {"description": {"$regex": "my-api", "$options": "i"}}
+                {"name": {MONGO_REGEX: SEARCH_MY_API, MONGO_OPTIONS: REGEX_CASE_INSENSITIVE}},
+                {"key": {MONGO_REGEX: SEARCH_MY_API, MONGO_OPTIONS: REGEX_CASE_INSENSITIVE}},
+                {"description": {MONGO_REGEX: SEARCH_MY_API, MONGO_OPTIONS: REGEX_CASE_INSENSITIVE}}
             ]
         }
         mock_collection.count_documents.assert_called_once_with(expected_query)
@@ -132,15 +142,15 @@ class TestListConfigs:
     @pytest.mark.asyncio
     async def test_list_configs_with_all_filters(self, service, mock_collection):
         """Test listing configs with all filters combined."""
-        await service.list_configs(status="active", tags=["prod"], search="payment")
+        await service.list_configs(status="active", tags=["prod"], search=SEARCH_PAYMENT)
 
         expected_query = {
             "status": "active",
             "tags": {"$all": ["prod"]},
             "$or": [
-                {"name": {"$regex": "payment", "$options": "i"}},
-                {"key": {"$regex": "payment", "$options": "i"}},
-                {"description": {"$regex": "payment", "$options": "i"}}
+                {"name": {MONGO_REGEX: SEARCH_PAYMENT, MONGO_OPTIONS: REGEX_CASE_INSENSITIVE}},
+                {"key": {MONGO_REGEX: SEARCH_PAYMENT, MONGO_OPTIONS: REGEX_CASE_INSENSITIVE}},
+                {"description": {MONGO_REGEX: SEARCH_PAYMENT, MONGO_OPTIONS: REGEX_CASE_INSENSITIVE}}
             ]
         }
         mock_collection.count_documents.assert_called_once_with(expected_query)
@@ -173,7 +183,7 @@ class TestListConfigs:
         oid = ObjectId()
         cursor = mock_collection.find.return_value
         cursor.to_list = AsyncMock(return_value=[
-            {"_id": oid, "name": "Test API", "key": "test-api"},
+            {"_id": oid, "name": EXPECTED_TEST_API, "key": "test-api"},
             {"_id": ObjectId(), "name": "Other API", "key": "other-api"}
         ])
         mock_collection.count_documents = AsyncMock(return_value=2)
@@ -227,7 +237,7 @@ class TestGetConfigById:
         oid = ObjectId()
         mock_collection.find_one = AsyncMock(return_value={
             "_id": oid,
-            "name": "Test API",
+            "name": EXPECTED_TEST_API,
             "key": "test-api"
         })
 
@@ -235,7 +245,7 @@ class TestGetConfigById:
 
         assert result is not None
         assert result["_id"] == str(oid)
-        assert result["name"] == "Test API"
+        assert result["name"] == EXPECTED_TEST_API
 
     @pytest.mark.asyncio
     async def test_get_config_by_id_not_found(self, service, mock_collection):
@@ -476,15 +486,15 @@ class TestUpdateConfig:
         mock_collection.find_one_and_update = AsyncMock(return_value={
             "_id": oid,
             "key": "test-api",
-            "name": "Updated API",
+            "name": EXPECTED_UPDATED_API,
             "updated_by": MOCK_EMAIL_ADMIN
         })
 
-        update_data = {"name": "Updated API"}
+        update_data = {"name": EXPECTED_UPDATED_API}
         result = await service.update_config(str(oid), update_data, MOCK_EMAIL_ADMIN)
 
         assert result is not None
-        assert result["name"] == "Updated API"
+        assert result["name"] == EXPECTED_UPDATED_API
         assert result["_id"] == str(oid)
         mock_collection.find_one_and_update.assert_called_once()
 
@@ -502,7 +512,7 @@ class TestUpdateConfig:
         await service.update_config(str(oid), update_data, MOCK_EMAIL_ADMIN)
 
         call_args = mock_collection.find_one_and_update.call_args
-        set_data = call_args[0][1]["$set"]
+        set_data = call_args[0][1][MONGO_SET]
         assert "description" not in set_data
         assert "tags" not in set_data
         assert "name" in set_data
@@ -536,7 +546,7 @@ class TestUpdateConfig:
         await service.update_config(str(oid), {"name": "New Name"}, MOCK_EMAIL_EDITOR)
 
         call_args = mock_collection.find_one_and_update.call_args
-        set_data = call_args[0][1]["$set"]
+        set_data = call_args[0][1][MONGO_SET]
         assert "updated_at" in set_data
         assert set_data["updated_by"] == MOCK_EMAIL_EDITOR
         assert isinstance(set_data["updated_at"], datetime)
@@ -556,7 +566,7 @@ class TestUpdateConfig:
         await service.update_config(str(oid), {"auth_type": mock_enum}, MOCK_EMAIL_ADMIN)
 
         call_args = mock_collection.find_one_and_update.call_args
-        set_data = call_args[0][1]["$set"]
+        set_data = call_args[0][1][MONGO_SET]
         assert set_data["auth_type"] == "oauth2"
 
     @pytest.mark.asyncio
@@ -929,7 +939,7 @@ class TestUploadCertificate:
         file_content = b"content"
 
         result = await service.upload_certificate(
-            config_key="my-api",
+            config_key=SEARCH_MY_API,
             cert_type="key",
             file_content=file_content,
             file_name="key.pem",
@@ -2552,7 +2562,7 @@ class TestToggleStatus:
 
         assert result is not None
         call_args = mock_collection.find_one_and_update.call_args
-        set_data = call_args[0][1]["$set"]
+        set_data = call_args[0][1][MONGO_SET]
         assert set_data["status"] == "inactive"
 
     @pytest.mark.asyncio
@@ -2574,7 +2584,7 @@ class TestToggleStatus:
 
         assert result is not None
         call_args = mock_collection.find_one_and_update.call_args
-        set_data = call_args[0][1]["$set"]
+        set_data = call_args[0][1][MONGO_SET]
         assert set_data["status"] == "active"
 
     @pytest.mark.asyncio
@@ -2596,7 +2606,7 @@ class TestToggleStatus:
 
         assert result is not None
         call_args = mock_collection.find_one_and_update.call_args
-        set_data = call_args[0][1]["$set"]
+        set_data = call_args[0][1][MONGO_SET]
         assert set_data["status"] == "active"
 
     @pytest.mark.asyncio

@@ -11,6 +11,10 @@ from easylifeauth.api.dependencies import get_db
 from easylifeauth.security.access_control import require_super_admin, require_group_admin
 from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_USER_TEST
 
+PATH_DASHBOARD_ANALYTICS = "/dashboard/analytics"
+PATH_DASHBOARD_STATS = "/dashboard/stats"
+
+
 
 class TestDashboardRoutes:
     """Tests for dashboard API routes"""
@@ -75,7 +79,7 @@ class TestDashboardRoutes:
         mock_cursor.__anext__ = AsyncMock(side_effect=StopAsyncIteration)
         mock_db.activity_logs.find = MagicMock(return_value=mock_cursor)
 
-        response = client.get("/dashboard/stats")
+        response = client.get(PATH_DASHBOARD_STATS)
         assert response.status_code == 200
         data = response.json()
         assert "total_users" in data
@@ -102,7 +106,7 @@ class TestDashboardRoutes:
         mock_cursor.__anext__ = AsyncMock(side_effect=[activity_log.copy(), StopAsyncIteration])
         mock_db.activity_logs.find = MagicMock(return_value=mock_cursor)
 
-        response = client.get("/dashboard/stats")
+        response = client.get(PATH_DASHBOARD_STATS)
         assert response.status_code == 200
         data = response.json()
         assert "recent_activities" in data
@@ -200,7 +204,7 @@ class TestDashboardRoutes:
 
         mock_db.users.find = MagicMock(side_effect=users_find_side_effect)
 
-        response = client.get("/dashboard/analytics")
+        response = client.get(PATH_DASHBOARD_ANALYTICS)
         assert response.status_code == 200
         data = response.json()
         assert "user_growth" in data
@@ -258,7 +262,7 @@ class TestDashboardRoutes:
 
         mock_db.users.find = MagicMock(side_effect=users_find_side_effect)
 
-        response = client.get("/dashboard/analytics")
+        response = client.get(PATH_DASHBOARD_ANALYTICS)
         assert response.status_code == 200
 
 
@@ -314,7 +318,7 @@ class TestDashboardRoutesWithoutOptionalCollections:
         mock_db_minimal.domain_scenarios.count_documents = AsyncMock(return_value=4)
         mock_db_minimal.playboards.count_documents = AsyncMock(return_value=6)
 
-        response = client.get("/dashboard/stats")
+        response = client.get(PATH_DASHBOARD_STATS)
         assert response.status_code == 200
         data = response.json()
         assert data["total_customers"] == 0
@@ -356,7 +360,7 @@ class TestDashboardRoutesWithoutOptionalCollections:
 
         mock_db_minimal.users.find = MagicMock(side_effect=users_find_side_effect)
 
-        response = client.get("/dashboard/analytics")
+        response = client.get(PATH_DASHBOARD_ANALYTICS)
         assert response.status_code == 200
         data = response.json()
         assert data["activity_trend"] == []
