@@ -14,6 +14,9 @@ from mock_data import MOCK_EMAIL_ADMIN_TEST
 PATH_PERMISSIONS = "/permissions"
 PATH_PERMISSIONS_NONEXISTENT = "/permissions/nonexistent"
 
+EXPECTED_TEST_PERMISSION = "Test Permission"
+
+
 
 
 class TestHelperFunctions:
@@ -87,7 +90,7 @@ class TestPermissionsRoutes:
         perm = {
             "_id": ObjectId(),
             "key": "test-perm",
-            "name": "Test Permission",
+            "name": EXPECTED_TEST_PERMISSION,
             "module": "users",
             "description": "Test description",
             "created_at": datetime.utcnow(),
@@ -181,7 +184,7 @@ class TestPermissionsRoutes:
         perm = {
             "_id": obj_id,
             "key": "test-perm",
-            "name": "Test Permission",
+            "name": EXPECTED_TEST_PERMISSION,
             "module": "users",
             "description": "Test description",
             "created_at": datetime.utcnow(),
@@ -244,7 +247,7 @@ class TestPermissionsRoutes:
         existing = {
             "_id": obj_id,
             "key": "test-perm",
-            "name": "Test Permission",
+            "name": EXPECTED_TEST_PERMISSION,
             "module": "users",
             "description": "Test",
             "created_at": datetime.utcnow(),

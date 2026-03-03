@@ -17,6 +17,9 @@ PATH_JIRA_SYNC_REQUEST_ID = "/api/v1/jira/sync/request/507f1f77bcf86cd799439011"
 PATH_JIRA_TASKS_CREATE = "/api/v1/jira/tasks/create"
 PATH_JIRA_TASKS_TRANSITION = "/api/v1/jira/tasks/transition"
 
+EXPECTED_IN_PROGRESS = "In Progress"
+
+
 
 
 @pytest.fixture
@@ -375,7 +378,7 @@ class TestJiraTransitionRoute:
         client = TestClient(app_with_routes)
         response = client.post(
             PATH_JIRA_TASKS_TRANSITION,
-            json={"ticket_key": "TEST-1", "status": "In Progress"}
+            json={"ticket_key": "TEST-1", "status": EXPECTED_IN_PROGRESS}
         )
         assert response.status_code == 200
         assert "transitioned" in response.json()["message"]
@@ -386,7 +389,7 @@ class TestJiraTransitionRoute:
         client = TestClient(app_with_routes)
         response = client.post(
             PATH_JIRA_TASKS_TRANSITION,
-            json={"ticket_key": "TEST-1", "status": "In Progress"}
+            json={"ticket_key": "TEST-1", "status": EXPECTED_IN_PROGRESS}
         )
         assert response.status_code == 404
 
@@ -409,7 +412,7 @@ class TestJiraTransitionRoute:
         client = TestClient(app_with_routes)
         response = client.post(
             PATH_JIRA_TASKS_TRANSITION,
-            json={"ticket_key": "TEST-1", "status": "In Progress"}
+            json={"ticket_key": "TEST-1", "status": EXPECTED_IN_PROGRESS}
         )
         assert response.status_code == 503
 

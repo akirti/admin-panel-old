@@ -17,6 +17,10 @@ REGEX_CASE_INSENSITIVE = "i"
 SEARCH_MY_API = "my-api"
 SEARCH_PAYMENT = "payment"
 
+EXPECTED_DB_ERROR = "DB error"
+EXPECTED_NOT_JSON = "Not JSON"
+
+
 
 
 class TestApiConfigServiceInit:
@@ -279,7 +283,7 @@ class TestGetConfigById:
     @pytest.mark.asyncio
     async def test_get_config_by_id_exception(self, service, mock_collection):
         """Test that exceptions are caught and None is returned."""
-        mock_collection.find_one = AsyncMock(side_effect=Exception("DB error"))
+        mock_collection.find_one = AsyncMock(side_effect=Exception(EXPECTED_DB_ERROR))
 
         result = await service.get_config_by_id(str(ObjectId()))
 
@@ -590,7 +594,7 @@ class TestUpdateConfig:
     @pytest.mark.asyncio
     async def test_update_config_db_exception(self, service, mock_collection):
         """Test that DB exceptions are caught and None is returned."""
-        mock_collection.find_one_and_update = AsyncMock(side_effect=Exception("DB error"))
+        mock_collection.find_one_and_update = AsyncMock(side_effect=Exception(EXPECTED_DB_ERROR))
 
         result = await service.update_config(str(ObjectId()), {"name": "X"}, MOCK_EMAIL_ADMIN)
 
@@ -731,7 +735,7 @@ class TestDeleteConfig:
     @pytest.mark.asyncio
     async def test_delete_config_exception(self, service, mock_collection):
         """Test that DB exception results in False."""
-        mock_collection.delete_one = AsyncMock(side_effect=Exception("DB error"))
+        mock_collection.delete_one = AsyncMock(side_effect=Exception(EXPECTED_DB_ERROR))
         mock_collection.find_one = AsyncMock(return_value=None)
 
         result = await service.delete_config(str(ObjectId()))
@@ -1222,7 +1226,7 @@ class TestObtainLoginToken:
 
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.side_effect = Exception("Not JSON")
+        mock_response.json.side_effect = Exception(EXPECTED_NOT_JSON)
 
         with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
@@ -2016,7 +2020,7 @@ class TestTestApi:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.headers = {"content-type": "text/html"}
-        mock_response.json.side_effect = Exception("Not JSON")
+        mock_response.json.side_effect = Exception(EXPECTED_NOT_JSON)
         mock_response.text = "<html>Hello</html>"
 
         with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
@@ -2044,7 +2048,7 @@ class TestTestApi:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.headers = {}
-        mock_response.json.side_effect = Exception("Not JSON")
+        mock_response.json.side_effect = Exception(EXPECTED_NOT_JSON)
         mock_response.text = long_text
 
         with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:

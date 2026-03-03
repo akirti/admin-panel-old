@@ -19,6 +19,10 @@ from easylifeauth.services.error_log_service import (
 
 MONGO_GTE = "$gte"
 
+EXPECTED_DB_ERROR = "DB error"
+EXPECTED_TRACEBACK = "Traceback ..."
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -33,7 +37,7 @@ def _make_error_doc(**overrides):
         "level": "ERROR",
         "error_type": "ValueError",
         "message": "something went wrong",
-        "stack_trace": "Traceback ...",
+        "stack_trace": EXPECTED_TRACEBACK,
         "request_context": {},
         "additional_data": {},
         "created_at": datetime.now(timezone.utc),
@@ -121,12 +125,12 @@ class TestErrorLogEntry:
             level="CRITICAL",
             error_type="RuntimeError",
             message="crash",
-            stack_trace="Traceback ...",
+            stack_trace=EXPECTED_TRACEBACK,
             request_context={"path": "/api"},
             additional_data={"key": "val"},
         )
         d = entry.to_dict()
-        assert d["stack_trace"] == "Traceback ..."
+        assert d["stack_trace"] == EXPECTED_TRACEBACK
         assert d["request_context"] == {"path": "/api"}
         assert d["additional_data"] == {"key": "val"}
 
@@ -610,14 +614,14 @@ class TestLogMessage:
             level="ERROR",
             error_type="CustomError",
             message="Something failed",
-            stack_trace="Traceback ...",
+            stack_trace=EXPECTED_TRACEBACK,
             request_context={"path": "/api/v1"},
             additional_data={"key": "value"},
         )
         assert result is not None
         call_args = mock_db.error_logs.insert_one.call_args[0][0]
         assert call_args["error_type"] == "CustomError"
-        assert call_args["stack_trace"] == "Traceback ..."
+        assert call_args["stack_trace"] == EXPECTED_TRACEBACK
         assert call_args["request_context"] == {"path": "/api/v1"}
 
     @pytest.mark.asyncio
@@ -1181,7 +1185,7 @@ class TestGetArchivedFiles:
     @pytest.mark.asyncio
     async def test_returns_empty_on_exception(self, service, mock_db):
         mock_db.error_log_archives.find = MagicMock(
-            side_effect=Exception("DB error")
+            side_effect=Exception(EXPECTED_DB_ERROR)
         )
         result = await service.get_archived_files()
         assert result == []
@@ -1272,7 +1276,7 @@ class TestGetArchiveDownloadUrl:
     @pytest.mark.asyncio
     async def test_returns_none_on_exception(self, mock_db, mock_gcs):
         mock_db.error_log_archives.find_one = AsyncMock(
-            side_effect=Exception("DB error")
+            side_effect=Exception(EXPECTED_DB_ERROR)
         )
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, gcs_service=mock_gcs)
@@ -1359,7 +1363,7 @@ class TestDeleteArchive:
     @pytest.mark.asyncio
     async def test_returns_false_on_exception(self, mock_db, mock_gcs):
         mock_db.error_log_archives.find_one = AsyncMock(
-            side_effect=Exception("DB error")
+            side_effect=Exception(EXPECTED_DB_ERROR)
         )
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, gcs_service=mock_gcs)
@@ -1555,7 +1559,7 @@ class TestCheckAndArchive:
     async def test_archive_metadata_save_failure(self, mock_db, mock_gcs, tmp_path):
         """Even if metadata save fails, the archive itself should succeed."""
         mock_db.error_log_archives.insert_one = AsyncMock(
-            side_effect=Exception("DB error")
+            side_effect=Exception(EXPECTED_DB_ERROR)
         )
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, gcs_service=mock_gcs)

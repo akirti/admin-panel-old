@@ -17,6 +17,10 @@ PATH_ASK_SCENARIOS_REQ_123 = "/ask_scenarios/req_123"
 PATH_ASK_SCENARIOS_REQ_123_COMMENT = "/ask_scenarios/req_123/comment"
 PATH_ASK_SCENARIOS_REQ_123_FILES = "/ask_scenarios/req_123/files"
 
+EXPECTED_NEW_REQUEST = "New Request"
+EXPECTED_TEST_COMMENT = "Test comment"
+
+
 
 
 class TestScenarioRequestRoutes:
@@ -184,14 +188,14 @@ class TestScenarioRequestRoutes:
         """Test create scenario request endpoint"""
         result = {
             "request_id": "req_123",
-            "name": "New Request",
+            "name": EXPECTED_NEW_REQUEST,
             "status": "new"
         }
         mock_scenario_request_service.save = AsyncMock(return_value=result)
 
         # ScenarioRequestCreate requires: dataDomain, name, description
         request_data = {
-            "name": "New Request",
+            "name": EXPECTED_NEW_REQUEST,
             "requestType": "scenario",
             "dataDomain": "domain-a",
             "description": "Test description for the new request"
@@ -205,7 +209,7 @@ class TestScenarioRequestRoutes:
         mock_scenario_request_service.save = AsyncMock(side_effect=AuthError("Unauthorized"))
 
         request_data = {
-            "name": "New Request",
+            "name": EXPECTED_NEW_REQUEST,
             "requestType": "scenario",
             "dataDomain": "domain-a",
             "description": "Test description"
@@ -434,12 +438,12 @@ class TestScenarioRequestRoutes:
 
     def test_add_comment(self, client, mock_scenario_request_service):
         """Test add comment endpoint"""
-        result = {"request_id": "req_123", "comments": [{"comment": "Test comment"}]}
+        result = {"request_id": "req_123", "comments": [{"comment": EXPECTED_TEST_COMMENT}]}
         mock_scenario_request_service.update = AsyncMock(return_value=result)
 
         response = client.post(
             PATH_ASK_SCENARIOS_REQ_123_COMMENT,
-            data={"comment": "Test comment"}
+            data={"comment": EXPECTED_TEST_COMMENT}
         )
         assert response.status_code == 200
 
@@ -474,7 +478,7 @@ class TestScenarioRequestRoutes:
 
         response = client.post(
             PATH_ASK_SCENARIOS_REQ_123_COMMENT,
-            data={"comment": "Test comment"}
+            data={"comment": EXPECTED_TEST_COMMENT}
         )
         assert response.status_code == 400  # AuthError default status_code
 

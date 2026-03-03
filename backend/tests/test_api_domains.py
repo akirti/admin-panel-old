@@ -17,6 +17,10 @@ PATH_DOMAINS = "/domains"
 PATH_DOMAINS_ID = "/domains/507f1f77bcf86cd799439011"
 PATH_DOMAINS_NONEXISTENT = "/domains/nonexistent"
 
+EXPECTED_DOMAIN = "Domain 1"
+EXPECTED_SUBDOMAIN = "Subdomain 1"
+
+
 
 
 class TestDomainsPaginationMeta:
@@ -180,7 +184,7 @@ class TestDomainsRoutes:
             yield {
                 "_id": ObjectId("507f1f77bcf86cd799439011"),
                 "key": "domain1",
-                "name": "Domain 1",
+                "name": EXPECTED_DOMAIN,
                 "description": "Test domain",
                 "path": "/domain1",
                 "status": "active",
@@ -233,7 +237,7 @@ class TestDomainsRoutes:
         domain_data = {
             "_id": ObjectId("507f1f77bcf86cd799439011"),
             "key": "domain1",
-            "name": "Domain 1",
+            "name": EXPECTED_DOMAIN,
             "description": "Test domain",
             "path": "/domain1",
             "status": "active",
@@ -295,7 +299,7 @@ class TestDomainsRoutes:
         existing_domain = {
             "_id": ObjectId("507f1f77bcf86cd799439011"),
             "key": "domain1",
-            "name": "Domain 1",
+            "name": EXPECTED_DOMAIN,
             "description": "Old description",
             "path": "/domain1",
             "status": "active",
@@ -375,7 +379,7 @@ class TestDomainsRoutes:
         domain_data = {
             "_id": ObjectId("507f1f77bcf86cd799439011"),
             "key": "domain1",
-            "name": "Domain 1",
+            "name": EXPECTED_DOMAIN,
             "path": "/domain1",
             "status": "active",
             "subDomains": []
@@ -385,7 +389,7 @@ class TestDomainsRoutes:
 
         response = client.post("/domains/507f1f77bcf86cd799439011/subdomains", json={
             "key": "subdomain1",
-            "name": "Subdomain 1",
+            "name": EXPECTED_SUBDOMAIN,
             "path": "/subdomain1",
             "status": "active"
         })
@@ -399,7 +403,7 @@ class TestDomainsRoutes:
 
         response = client.post("/domains/nonexistent/subdomains", json={
             "key": "subdomain1",
-            "name": "Subdomain 1",
+            "name": EXPECTED_SUBDOMAIN,
             "path": "/subdomain1",
             "status": "active"
         })
@@ -411,7 +415,7 @@ class TestDomainsRoutes:
         mock_db.domains.find_one = AsyncMock(return_value={
             "_id": ObjectId("507f1f77bcf86cd799439011"),
             "key": "domain1",
-            "subDomains": [{"key": "subdomain1", "name": "Subdomain 1"}]
+            "subDomains": [{"key": "subdomain1", "name": EXPECTED_SUBDOMAIN}]
         })
 
         response = client.delete("/domains/507f1f77bcf86cd799439011/subdomains/subdomain1")

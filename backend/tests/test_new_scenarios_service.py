@@ -8,6 +8,9 @@ from bson import ObjectId
 from easylifeauth.services.new_scenarios_service import NewScenarioService
 from easylifeauth.errors.auth_error import AuthError
 
+EXPECTED_TEST_COMMENT = "Test comment"
+
+
 
 class TestNewScenarioService:
     """Tests for NewScenarioService"""
@@ -561,7 +564,7 @@ class TestNewScenarioService:
     async def test_update_jira_ticket_comment(self, mock_db, mock_token_manager, mock_email_service):
         """Test update jira ticket on new comment"""
         mock_jira = MagicMock()
-        mock_jira._strip_html = MagicMock(return_value="Test comment")
+        mock_jira._strip_html = MagicMock(return_value=EXPECTED_TEST_COMMENT)
         mock_jira.add_comment = AsyncMock(return_value={
             "last_synced": "2024-01-01T00:00:00Z",
             "sync_status": "synced"
@@ -576,7 +579,7 @@ class TestNewScenarioService:
             {
                 "requestId": "REQ-SCR-0001",
                 "jira_integration": {"ticket_key": "JIRA-123"},
-                "comments": [{"comment": "Test comment", "username": "testuser"}]
+                "comments": [{"comment": EXPECTED_TEST_COMMENT, "username": "testuser"}]
             },
             "comment"
         )
@@ -1091,7 +1094,7 @@ class TestNewScenarioServiceUpdateAdvanced:
         result = await scenario_service.update(
             {
                 "request_id": "REQ-SCR-0001",
-                "new_comment": {"comment": "Test comment"}
+                "new_comment": {"comment": EXPECTED_TEST_COMMENT}
             },
             sample_admin
         )

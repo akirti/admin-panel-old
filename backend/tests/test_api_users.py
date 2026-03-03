@@ -20,6 +20,12 @@ PATH_USERS_ME_ASSIGNED_CUSTOMERS = "/users/me/assigned-customers"
 PATH_USERS_ME_CUSTOMER_TAGS = "/users/me/customer-tags"
 PATH_USERS_NONEXISTENT = "/users/nonexistent"
 
+EXPECTED_GROUP_A = "Group A"
+EXPECTED_NEW_USER = "New User"
+EXPECTED_TARGET_USER = "Target User"
+EXPECTED_TEST_USER = "Test User"
+
+
 
 
 class TestPaginationMeta:
@@ -187,7 +193,7 @@ class TestUsersRoutes:
             "_id": ObjectId("507f1f77bcf86cd799439011"),
             "email": MOCK_EMAIL,
             "username": "testuser",
-            "full_name": "Test User",
+            "full_name": EXPECTED_TEST_USER,
             "is_active": True,
             "roles": ["user"],
             "groups": [],
@@ -220,7 +226,7 @@ class TestUsersRoutes:
             "email": MOCK_EMAIL_NEWUSER,
             "username": "newuser",
             "password": MOCK_PASSWORD,
-            "full_name": "New User",
+            "full_name": EXPECTED_NEW_USER,
             "is_active": True,
             "roles": ["user"],
             "groups": [],
@@ -241,7 +247,7 @@ class TestUsersRoutes:
             "email": MOCK_EMAIL_EXISTING,
             "username": "newuser",
             "password": MOCK_PASSWORD,
-            "full_name": "New User",
+            "full_name": EXPECTED_NEW_USER,
             "is_active": True,
             "roles": ["user"],
             "groups": [],
@@ -261,7 +267,7 @@ class TestUsersRoutes:
             "email": MOCK_EMAIL_NEW,
             "username": "existinguser",
             "password": MOCK_PASSWORD,
-            "full_name": "New User",
+            "full_name": EXPECTED_NEW_USER,
             "is_active": True,
             "roles": ["user"],
             "groups": [],
@@ -282,7 +288,7 @@ class TestUsersRoutes:
             "email": MOCK_EMAIL_NEWUSER,
             "username": "newuser",
             "password": MOCK_PASSWORD,
-            "full_name": "New User",
+            "full_name": EXPECTED_NEW_USER,
             "is_active": True,
             "roles": ["user"],
             "groups": [],
@@ -299,7 +305,7 @@ class TestUsersRoutes:
             "_id": ObjectId("507f1f77bcf86cd799439011"),
             "email": MOCK_EMAIL,
             "username": "testuser",
-            "full_name": "Test User",
+            "full_name": EXPECTED_TEST_USER,
             "is_active": True,
             "roles": ["user"],
             "groups": [],
@@ -373,7 +379,7 @@ class TestUsersRoutes:
         mock_db.users.find_one.return_value = {
             "_id": ObjectId("507f1f77bcf86cd799439011"),
             "email": MOCK_EMAIL,
-            "full_name": "Test User"
+            "full_name": EXPECTED_TEST_USER
         }
 
         response = client.post(PATH_USERS_ID_SEND_PASSWORD_RESET_Q_SEND_EMAIL_TRUE)
@@ -385,7 +391,7 @@ class TestUsersRoutes:
         mock_db.users.find_one.return_value = {
             "_id": ObjectId("507f1f77bcf86cd799439011"),
             "email": MOCK_EMAIL,
-            "full_name": "Test User"
+            "full_name": EXPECTED_TEST_USER
         }
 
         response = client.post("/users/507f1f77bcf86cd799439011/send-password-reset?send_email=false")
@@ -399,7 +405,7 @@ class TestUsersRoutes:
         mock_db.users.find_one.return_value = {
             "_id": ObjectId("507f1f77bcf86cd799439011"),
             "email": MOCK_EMAIL,
-            "full_name": "Test User"
+            "full_name": EXPECTED_TEST_USER
         }
 
         response = client.post(PATH_USERS_ID_RESET_PASSWORD_Q_SEND_EMAIL_TRUE)
@@ -412,7 +418,7 @@ class TestUsersRoutes:
         mock_db.users.find_one.return_value = {
             "_id": ObjectId("507f1f77bcf86cd799439011"),
             "email": MOCK_EMAIL,
-            "full_name": "Test User"
+            "full_name": EXPECTED_TEST_USER
         }
 
         response = client.post("/users/507f1f77bcf86cd799439011/reset-password?send_email=false")
@@ -612,7 +618,7 @@ class TestAssignedCustomers:
         })
 
         async def group_cursor():
-            yield {"groupId": "group-a", "name": "Group A", "type": "customers", "status": "active", "customers": ["CUST-010"]}
+            yield {"groupId": "group-a", "name": EXPECTED_GROUP_A, "type": "customers", "status": "active", "customers": ["CUST-010"]}
 
         mock_db.groups.find.return_value = group_cursor()
 
@@ -627,7 +633,7 @@ class TestAssignedCustomers:
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 1
-        assert data["customers"][0]["source"] == "Group A"
+        assert data["customers"][0]["source"] == EXPECTED_GROUP_A
 
     def test_assigned_customers_no_assignments(self, client, mock_db):
         """Test when user has no customer assignments (line 206)."""
@@ -713,7 +719,7 @@ class TestAssignedCustomers:
 
         async def group_cursor():
             yield {
-                "groupId": "group-a", "name": "Group A",
+                "groupId": "group-a", "name": EXPECTED_GROUP_A,
                 "type": "customers", "status": "active",
                 "customers": ["CUST-001", "CUST-002"]
             }
@@ -740,7 +746,7 @@ class TestAssignedCustomers:
         assert cust_001["source"] == "direct"
         # CUST-002 was only from group
         cust_002 = [c for c in data["customers"] if c["customerId"] == "CUST-002"][0]
-        assert cust_002["source"] == "Group A"
+        assert cust_002["source"] == EXPECTED_GROUP_A
 
 
 class TestCustomerTags:
@@ -931,7 +937,7 @@ class TestSendPasswordResetEmailExtended:
         # ObjectId(MOCK_EMAIL) raises before find_one is called in the try block,
         # so find_one is only called once in the except block (email lookup).
         mock_db.users.find_one = AsyncMock(return_value=
-            {"_id": ObjectId(), "email": MOCK_EMAIL, "full_name": "Test User"}
+            {"_id": ObjectId(), "email": MOCK_EMAIL, "full_name": EXPECTED_TEST_USER}
         )
 
         response = client.post("/users/test@example.com/send-password-reset?send_email=true")
@@ -950,7 +956,7 @@ class TestSendPasswordResetEmailExtended:
         mock_db.users.find_one = AsyncMock(return_value={
             "_id": ObjectId("507f1f77bcf86cd799439011"),
             "email": MOCK_EMAIL,
-            "full_name": "Test User"
+            "full_name": EXPECTED_TEST_USER
         })
         mock_email_service.send_password_reset_email = AsyncMock(
             side_effect=Exception("SMTP connection refused")
@@ -966,7 +972,7 @@ class TestSendPasswordResetEmailExtended:
         mock_db.users.find_one = AsyncMock(return_value={
             "_id": ObjectId("507f1f77bcf86cd799439011"),
             "email": MOCK_EMAIL,
-            "full_name": "Test User"
+            "full_name": EXPECTED_TEST_USER
         })
         # Override email service to None
         app.dependency_overrides[dependencies.get_email_service] = lambda: None
@@ -1031,7 +1037,7 @@ class TestAdminResetPasswordExtended:
         mock_db.users.find_one = AsyncMock(return_value={
             "_id": ObjectId("507f1f77bcf86cd799439011"),
             "email": MOCK_EMAIL,
-            "full_name": "Test User"
+            "full_name": EXPECTED_TEST_USER
         })
         mock_email_service.send_welcome_email = AsyncMock(
             side_effect=Exception("SMTP error")
@@ -1047,7 +1053,7 @@ class TestAdminResetPasswordExtended:
         mock_db.users.find_one = AsyncMock(return_value={
             "_id": ObjectId("507f1f77bcf86cd799439011"),
             "email": MOCK_EMAIL,
-            "full_name": "Test User"
+            "full_name": EXPECTED_TEST_USER
         })
         # Override email service to None
         app.dependency_overrides[dependencies.get_email_service] = lambda: None
@@ -1061,7 +1067,7 @@ class TestAdminResetPasswordExtended:
     def test_admin_reset_password_lookup_by_email_fallback(self, client, mock_db, mock_email_service):
         """Test admin reset password falls back to email lookup."""
         user_doc = {
-            "_id": ObjectId(), "email": MOCK_EMAIL, "full_name": "Test User"
+            "_id": ObjectId(), "email": MOCK_EMAIL, "full_name": EXPECTED_TEST_USER
         }
         # ObjectId(MOCK_EMAIL) raises before find_one, so only one find_one call
         mock_db.users.find_one = AsyncMock(return_value=user_doc)
@@ -1131,7 +1137,7 @@ class TestUpdateUserPrivilegeEscalation:
             "_id": ObjectId("507f1f77bcf86cd799439013"),
             "email": MOCK_EMAIL_TARGET,
             "username": "target",
-            "full_name": "Target User",
+            "full_name": EXPECTED_TARGET_USER,
             "is_active": True,
             "roles": ["user"],
             "groups": [],
@@ -1157,7 +1163,7 @@ class TestUpdateUserPrivilegeEscalation:
             "_id": ObjectId("507f1f77bcf86cd799439013"),
             "email": MOCK_EMAIL_TARGET,
             "username": "target",
-            "full_name": "Target User",
+            "full_name": EXPECTED_TARGET_USER,
             "is_active": True,
             "roles": ["user"],
             "groups": [],
@@ -1182,7 +1188,7 @@ class TestUpdateUserPrivilegeEscalation:
             "_id": ObjectId("507f1f77bcf86cd799439013"),
             "email": MOCK_EMAIL_TARGET,
             "username": "target",
-            "full_name": "Target User",
+            "full_name": EXPECTED_TARGET_USER,
             "is_active": True,
             "roles": ["user"],
             "groups": [],
@@ -1210,7 +1216,7 @@ class TestUpdateUserPrivilegeEscalation:
             "_id": ObjectId("507f1f77bcf86cd799439013"),
             "email": MOCK_EMAIL_TARGET,
             "username": "target",
-            "full_name": "Target User",
+            "full_name": EXPECTED_TARGET_USER,
             "is_active": True,
             "roles": ["user"],
             "groups": [],
@@ -1443,7 +1449,7 @@ class TestCreateUserExtended:
             "email": MOCK_EMAIL_NEWUSER,
             "username": "newuser",
             "password": MOCK_PASSWORD,
-            "full_name": "New User",
+            "full_name": EXPECTED_NEW_USER,
             "is_active": True,
             "roles": [],
             "groups": ["team-a"],
@@ -1464,7 +1470,7 @@ class TestCreateUserExtended:
             "email": MOCK_EMAIL_NEWUSER,
             "username": "newuser",
             "password": MOCK_PASSWORD,
-            "full_name": "New User",
+            "full_name": EXPECTED_NEW_USER,
             "is_active": True,
             "roles": [],
             "groups": [],

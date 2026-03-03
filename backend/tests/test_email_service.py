@@ -7,6 +7,11 @@ from easylifeauth.services.email_service import EmailService
 from easylifeauth.errors.email_error import EmailError
 from mock_data import MOCK_EMAIL_NOREPLY, MOCK_EMAIL_NOREPLY_EASYLIFE, MOCK_EMAIL_USER_TEST, MOCK_PASSWORD_TEMP, MOCK_SMTP_PASSWORD, MOCK_URL_RESET
 
+EXPECTED_SMTP_ERROR = "SMTP Error"
+EXPECTED_STEP = "Step 1"
+EXPECTED_TEST_USER = "Test User"
+
+
 
 class TestEmailService:
     """Tests for EmailService"""
@@ -61,14 +66,14 @@ class TestEmailService:
     def test_generate_scenario_steps_template(self, email_service):
         """Test generating scenario steps HTML"""
         data = {
-            "steps": ["Step 1", "Step 2"],
+            "steps": [EXPECTED_STEP, "Step 2"],
             "stepQueries": ["SELECT 1", "SELECT 2"]
         }
 
         result = email_service._generate_scenario_steps_template(data)
 
         assert "<ol>" in result
-        assert "Step 1" in result
+        assert EXPECTED_STEP in result
         assert "SELECT 1" in result
 
     def test_generate_scenario_steps_template_empty(self, email_service):
@@ -81,13 +86,13 @@ class TestEmailService:
     def test_generate_scenario_steps_template_mismatched(self, email_service):
         """Test generating steps with mismatched lengths"""
         data = {
-            "steps": ["Step 1", "Step 2", "Step 3"],
+            "steps": [EXPECTED_STEP, "Step 2", "Step 3"],
             "stepQueries": ["Query 1"]
         }
 
         result = email_service._generate_scenario_steps_template(data)
 
-        assert "Step 1" in result
+        assert EXPECTED_STEP in result
         assert "Step 3" in result
 
     def test_prepare_scenario_email_template(self, email_service):
@@ -98,7 +103,7 @@ class TestEmailService:
             "description": "Test Description",
             "dataDomain": "test-domain",
             "databases": ["db1"],
-            "steps": ["Step 1"],
+            "steps": [EXPECTED_STEP],
             "stepQueries": ["Query 1"],
             "filters": ["filter1"],
             "status": "S",
@@ -151,7 +156,7 @@ class TestEmailService:
     @patch('easylifeauth.services.email_service.aiosmtplib.send')
     async def test_send_reset_email_failure(self, mock_send, email_service):
         """Test sending reset email with failure"""
-        mock_send.side_effect = Exception("SMTP Error")
+        mock_send.side_effect = Exception(EXPECTED_SMTP_ERROR)
 
         with pytest.raises(EmailError):
             await email_service.send_reset_email(
@@ -177,7 +182,7 @@ class TestEmailService:
     @patch('easylifeauth.services.email_service.aiosmtplib.send')
     async def test_send_feedback_email_failure(self, mock_send, email_service):
         """Test sending feedback email with failure"""
-        mock_send.side_effect = Exception("SMTP Error")
+        mock_send.side_effect = Exception(EXPECTED_SMTP_ERROR)
 
         with pytest.raises(EmailError):
             await email_service.send_feedback_email(
@@ -209,7 +214,7 @@ class TestEmailService:
     @patch('easylifeauth.services.email_service.aiosmtplib.send')
     async def test_send_scenario_email_failure(self, mock_send, email_service):
         """Test sending scenario email with failure"""
-        mock_send.side_effect = Exception("SMTP Error")
+        mock_send.side_effect = Exception(EXPECTED_SMTP_ERROR)
 
         with pytest.raises(EmailError):
             await email_service.send_scenario_email(
@@ -250,7 +255,7 @@ class TestEmailService:
         """Test preparing welcome email template"""
         result = email_service._prepare_welcome_email_template(
             to_email=MOCK_EMAIL_USER_TEST,
-            full_name="Test User",
+            full_name=EXPECTED_TEST_USER,
             password=MOCK_PASSWORD_TEMP
         )
 
@@ -262,7 +267,7 @@ class TestEmailService:
         """Test preparing password reset email template"""
         result = email_service._prepare_password_reset_email_template(
             to_email=MOCK_EMAIL_USER_TEST,
-            full_name="Test User",
+            full_name=EXPECTED_TEST_USER,
             reset_token="abc123"
         )
 
@@ -278,7 +283,7 @@ class TestEmailService:
 
         await email_service.send_welcome_email(
             to_email=MOCK_EMAIL_USER_TEST,
-            full_name="Test User",
+            full_name=EXPECTED_TEST_USER,
             password=MOCK_PASSWORD_TEMP
         )
 
@@ -288,12 +293,12 @@ class TestEmailService:
     @patch('easylifeauth.services.email_service.aiosmtplib.send')
     async def test_send_welcome_email_failure(self, mock_send, email_service):
         """Test sending welcome email with failure"""
-        mock_send.side_effect = Exception("SMTP Error")
+        mock_send.side_effect = Exception(EXPECTED_SMTP_ERROR)
 
         with pytest.raises(EmailError):
             await email_service.send_welcome_email(
                 to_email=MOCK_EMAIL_USER_TEST,
-                full_name="Test User",
+                full_name=EXPECTED_TEST_USER,
                 password=MOCK_PASSWORD_TEMP
             )
 
@@ -305,7 +310,7 @@ class TestEmailService:
 
         await email_service_with_tls.send_welcome_email(
             to_email=MOCK_EMAIL_USER_TEST,
-            full_name="Test User",
+            full_name=EXPECTED_TEST_USER,
             password=MOCK_PASSWORD_TEMP
         )
 
@@ -322,7 +327,7 @@ class TestEmailService:
 
         await email_service.send_password_reset_email(
             to_email=MOCK_EMAIL_USER_TEST,
-            full_name="Test User",
+            full_name=EXPECTED_TEST_USER,
             reset_token="abc123"
         )
 
@@ -332,12 +337,12 @@ class TestEmailService:
     @patch('easylifeauth.services.email_service.aiosmtplib.send')
     async def test_send_password_reset_email_failure(self, mock_send, email_service):
         """Test sending password reset email with failure"""
-        mock_send.side_effect = Exception("SMTP Error")
+        mock_send.side_effect = Exception(EXPECTED_SMTP_ERROR)
 
         with pytest.raises(EmailError):
             await email_service.send_password_reset_email(
                 to_email=MOCK_EMAIL_USER_TEST,
-                full_name="Test User",
+                full_name=EXPECTED_TEST_USER,
                 reset_token="abc123"
             )
 
@@ -349,7 +354,7 @@ class TestEmailService:
 
         await email_service_with_tls.send_password_reset_email(
             to_email=MOCK_EMAIL_USER_TEST,
-            full_name="Test User",
+            full_name=EXPECTED_TEST_USER,
             reset_token="abc123"
         )
 

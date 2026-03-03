@@ -22,6 +22,10 @@ PATH_ROOT = "/"
 PATH_TEST_GENERAL_EXCEPTION = "/test-general-exception"
 PATH_TEST_PYDANTIC_VALIDATION = "/test-pydantic-validation"
 
+EXPECTED_INTERNAL_SERVER_ERROR = "Internal server error"
+EXPECTED_VALIDATION_ERROR = "Validation error"
+
+
 
 
 class TestShutdownDbCloseError:
@@ -109,7 +113,7 @@ class TestRequestValidationErrorHandler:
         response = client.get("/test-request-validation?x=notanumber")
         assert response.status_code == 422
         data = response.json()
-        assert data["error"] == "Validation error"
+        assert data["error"] == EXPECTED_VALIDATION_ERROR
         assert "details" in data
         assert isinstance(data["details"], list)
         assert len(data["details"]) > 0
@@ -119,7 +123,7 @@ class TestRequestValidationErrorHandler:
         response = client.get("/test-request-validation")
         assert response.status_code == 422
         data = response.json()
-        assert data["error"] == "Validation error"
+        assert data["error"] == EXPECTED_VALIDATION_ERROR
         assert "details" in data
 
     @patch("easylifeauth.api.dependencies._error_log_service")
@@ -153,7 +157,7 @@ class TestRequestValidationErrorHandler:
             client = TestClient(app, raise_server_exceptions=False)
             response = client.get("/test-request-validation?x=bad")
             assert response.status_code == 422
-            assert response.json()["error"] == "Validation error"
+            assert response.json()["error"] == EXPECTED_VALIDATION_ERROR
 
 
 class TestPydanticValidationErrorHandler:
@@ -243,7 +247,7 @@ class TestGeneralExceptionHandler:
         response = client.get(PATH_TEST_GENERAL_EXCEPTION)
         assert response.status_code == 500
         data = response.json()
-        assert data["error"] == "Internal server error"
+        assert data["error"] == EXPECTED_INTERNAL_SERVER_ERROR
 
     def test_general_exception_with_error_log_service(self, app):
         """When error_log_service is available, the exception is logged."""
@@ -257,7 +261,7 @@ class TestGeneralExceptionHandler:
             client = TestClient(app, raise_server_exceptions=False)
             response = client.get(PATH_TEST_GENERAL_EXCEPTION)
             assert response.status_code == 500
-            assert response.json()["error"] == "Internal server error"
+            assert response.json()["error"] == EXPECTED_INTERNAL_SERVER_ERROR
 
     def test_general_exception_when_logging_fails(self, app):
         """When error_log_service.log_error raises, handler still returns 500."""
@@ -273,7 +277,7 @@ class TestGeneralExceptionHandler:
             client = TestClient(app, raise_server_exceptions=False)
             response = client.get(PATH_TEST_GENERAL_EXCEPTION)
             assert response.status_code == 500
-            assert response.json()["error"] == "Internal server error"
+            assert response.json()["error"] == EXPECTED_INTERNAL_SERVER_ERROR
 
     def test_general_exception_when_error_log_service_is_none(self, app):
         """When get_error_log_service returns None, handler still returns 500."""
@@ -284,7 +288,7 @@ class TestGeneralExceptionHandler:
             client = TestClient(app, raise_server_exceptions=False)
             response = client.get(PATH_TEST_GENERAL_EXCEPTION)
             assert response.status_code == 500
-            assert response.json()["error"] == "Internal server error"
+            assert response.json()["error"] == EXPECTED_INTERNAL_SERVER_ERROR
 
 
 class TestMainBlock:

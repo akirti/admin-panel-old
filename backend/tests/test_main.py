@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX
+from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX, LOCAL_FILE_STORAGE
 from mock_data import MOCK_EMAIL_BOT, MOCK_IP_BIND_ALL, MOCK_PATH_UPLOADS, MOCK_URL_EXAMPLE, MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV, MOCK_URL_JIRA_EXAMPLE, MOCK_URL_JIRA_TEST
 
 ENV_PREFIX = f"{ENVIRONEMNT_VARIABLE_PREFIX}_"
@@ -125,8 +125,8 @@ def _run_main(env_overrides=None, config_values=None, name_override=None):
     ).replace(
         "from pathlib import Path\n", "pass  # Path injected\n",
     ).replace(
-        "from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX",
-        "pass  # ENVIRONEMNT_VARIABLE_PREFIX injected",
+        "from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX , LOCAL_FILE_STORAGE",
+        "pass  # ENVIRONEMNT_VARIABLE_PREFIX, LOCAL_FILE_STORAGE injected",
     ).replace(
         "from easylifeauth.app import create_app",
         "pass  # create_app injected",
@@ -143,6 +143,7 @@ def _run_main(env_overrides=None, config_values=None, name_override=None):
         "json": json,
         "Path": Path,
         "ENVIRONEMNT_VARIABLE_PREFIX": ENVIRONEMNT_VARIABLE_PREFIX,
+        "LOCAL_FILE_STORAGE": LOCAL_FILE_STORAGE,
         "create_app": mock_create_app,
         "ConfigurationLoader": mock_config_loader_cls,
     }
@@ -574,8 +575,8 @@ class TestMainBlock:
         ).replace(
             "from pathlib import Path\n", "pass  # Path injected\n",
         ).replace(
-            "from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX",
-            "pass  # ENVIRONEMNT_VARIABLE_PREFIX injected",
+            "from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX , LOCAL_FILE_STORAGE",
+            "pass  # ENVIRONEMNT_VARIABLE_PREFIX, LOCAL_FILE_STORAGE injected",
         ).replace(
             "from easylifeauth.app import create_app",
             "pass  # create_app injected",
@@ -595,6 +596,7 @@ class TestMainBlock:
             "json": json,
             "Path": Path,
             "ENVIRONEMNT_VARIABLE_PREFIX": ENVIRONEMNT_VARIABLE_PREFIX,
+            "LOCAL_FILE_STORAGE": LOCAL_FILE_STORAGE,
             "create_app": MagicMock(),
             "ConfigurationLoader": MagicMock(),
             "uvicorn": mock_uvicorn,

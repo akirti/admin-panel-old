@@ -20,6 +20,9 @@ PATH_CUSTOMERS = "/customers"
 PATH_CUSTOMERS_CUST_001 = "/customers/CUST-001"
 PATH_CUSTOMERS_FILTERS = "/customers/filters"
 
+EXPECTED_CUSTOMER_NOT_FOUND = "Customer not found"
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -471,7 +474,7 @@ class TestCustomersRoutes:
         response = client.get("/customers/nonexistent")
 
         assert response.status_code == 404
-        assert "Customer not found" in response.json()["detail"]
+        assert EXPECTED_CUSTOMER_NOT_FOUND in response.json()["detail"]
 
     def test_get_customer_not_found_objectid_fallback(self, client, mock_db):
         """Test 404 when customerId fallback also returns None."""
@@ -650,7 +653,7 @@ class TestCustomersRoutes:
         response = client.put("/customers/nonexistent", json=payload)
 
         assert response.status_code == 404
-        assert "Customer not found" in response.json()["detail"]
+        assert EXPECTED_CUSTOMER_NOT_FOUND in response.json()["detail"]
 
     def test_update_customer_sets_updated_at(self, client, mock_db):
         """Test that updated_at is always refreshed on update."""
@@ -731,7 +734,7 @@ class TestCustomersRoutes:
         response = client.delete("/customers/507f1f77bcf86cd799439011")
 
         assert response.status_code == 404
-        assert "Customer not found" in response.json()["detail"]
+        assert EXPECTED_CUSTOMER_NOT_FOUND in response.json()["detail"]
 
     def test_delete_customer_not_found_by_custom_id(self, client, mock_db):
         """Test 404 when customerId fallback also finds nothing."""
@@ -807,7 +810,7 @@ class TestCustomersRoutes:
         response = client.post("/customers/nonexistent/toggle-status")
 
         assert response.status_code == 404
-        assert "Customer not found" in response.json()["detail"]
+        assert EXPECTED_CUSTOMER_NOT_FOUND in response.json()["detail"]
 
     def test_toggle_status_missing_status_field(self, client, mock_db):
         """Test toggling when customer doc has no status field defaults to active."""
@@ -879,7 +882,7 @@ class TestCustomersRoutes:
         response = client.get("/customers/nonexistent/users")
 
         assert response.status_code == 404
-        assert "Customer not found" in response.json()["detail"]
+        assert EXPECTED_CUSTOMER_NOT_FOUND in response.json()["detail"]
 
     def test_get_customer_users_by_custom_id(self, client, mock_db):
         """Test getting users via customerId fallback lookup."""
@@ -1022,7 +1025,7 @@ class TestCustomersRoutes:
         )
 
         assert response.status_code == 404
-        assert "Customer not found" in response.json()["detail"]
+        assert EXPECTED_CUSTOMER_NOT_FOUND in response.json()["detail"]
 
     def test_assign_users_empty_list(self, client, mock_db):
         """Test assigning an empty list of users."""
@@ -1135,7 +1138,7 @@ class TestCustomersRoutes:
         )
 
         assert response.status_code == 404
-        assert "Customer not found" in response.json()["detail"]
+        assert EXPECTED_CUSTOMER_NOT_FOUND in response.json()["detail"]
 
     def test_remove_users_empty_list(self, client, mock_db):
         """Test removing an empty list of users."""

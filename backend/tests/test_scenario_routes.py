@@ -26,6 +26,11 @@ PATH_SCENARIOS_ALL_DOMAIN_A = "/scenarios/all/domain-a"
 PATH_SCENARIOS_NONEXISTENT = "/scenarios/nonexistent"
 PATH_SCENARIOS_TEST_SCENARIO = "/scenarios/test-scenario"
 
+EXPECTED_NEW_SCENARIO = "New Scenario"
+EXPECTED_NOT_FOUND = "Not found"
+EXPECTED_TEST_SCENARIO = "Test Scenario"
+
+
 
 
 class TestHelperFunctions:
@@ -255,7 +260,7 @@ class TestScenarioRoutes:
         """Test create scenario endpoint"""
         result = {
             "key": "new-scenario",
-            "name": "New Scenario",
+            "name": EXPECTED_NEW_SCENARIO,
             "dataDomain": "domain-a",
             "status": "A"
         }
@@ -264,7 +269,7 @@ class TestScenarioRoutes:
         # ScenarioCreate requires: key, name, dataDomain
         scenario_data = {
             "key": "new-scenario",
-            "name": "New Scenario",
+            "name": EXPECTED_NEW_SCENARIO,
             "dataDomain": "domain-a"
         }
 
@@ -277,7 +282,7 @@ class TestScenarioRoutes:
 
         scenario_data = {
             "key": "new-scenario",
-            "name": "New Scenario",
+            "name": EXPECTED_NEW_SCENARIO,
             "dataDomain": "domain-a"
         }
 
@@ -290,7 +295,7 @@ class TestScenarioRoutes:
 
         scenario_data = {
             "key": "new-scenario",
-            "name": "New Scenario",
+            "name": EXPECTED_NEW_SCENARIO,
             "dataDomain": "domain-a"
         }
 
@@ -301,7 +306,7 @@ class TestScenarioRoutes:
         """Test update scenario endpoint"""
         result = {
             "key": "test-scenario",
-            "name": "Test Scenario",
+            "name": EXPECTED_TEST_SCENARIO,
             "dataDomain": "domain-a",
             "status": "A"
         }
@@ -318,7 +323,7 @@ class TestScenarioRoutes:
 
     def test_update_scenario_not_found(self, client, mock_scenario_service):
         """Test update scenario not found"""
-        mock_scenario_service.update = AsyncMock(side_effect=ScenarioNotFoundError("Not found"))
+        mock_scenario_service.update = AsyncMock(side_effect=ScenarioNotFoundError(EXPECTED_NOT_FOUND))
 
         response = client.put(PATH_SCENARIOS_NONEXISTENT, json={"status": "active"})
         assert response.status_code == 404
@@ -334,7 +339,7 @@ class TestScenarioRoutes:
         """Test get scenario by key"""
         result = {
             "key": "test-scenario",
-            "name": "Test Scenario",
+            "name": EXPECTED_TEST_SCENARIO,
             "dataDomain": "domain-a",
             "status": "A"
         }
@@ -359,7 +364,7 @@ class TestScenarioRoutes:
 
         result = {
             "key": "test-scenario",
-            "name": "Test Scenario",
+            "name": EXPECTED_TEST_SCENARIO,
             "dataDomain": "domain-a",
             "status": "A"
         }
@@ -374,7 +379,7 @@ class TestScenarioRoutes:
 
     def test_get_scenario_service_not_found_error(self, client, mock_scenario_service):
         """Test get scenario raises ScenarioNotFoundError"""
-        mock_scenario_service.get = AsyncMock(side_effect=ScenarioNotFoundError("Not found"))
+        mock_scenario_service.get = AsyncMock(side_effect=ScenarioNotFoundError(EXPECTED_NOT_FOUND))
 
         response = client.get(PATH_SCENARIOS_TEST_SCENARIO)
         assert response.status_code == 404
@@ -388,7 +393,7 @@ class TestScenarioRoutes:
 
     def test_delete_scenario_not_found(self, client, mock_scenario_service):
         """Test delete scenario not found"""
-        mock_scenario_service.delete = AsyncMock(side_effect=ScenarioNotFoundError("Not found"))
+        mock_scenario_service.delete = AsyncMock(side_effect=ScenarioNotFoundError(EXPECTED_NOT_FOUND))
 
         response = client.delete(PATH_SCENARIOS_NONEXISTENT)
         assert response.status_code == 404

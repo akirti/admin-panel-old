@@ -8,6 +8,12 @@ import io
 EXPECTED_OPEN = "Open"
 EXPECTED_TASK = "Task"
 
+EXPECTED_NETWORK_ERROR = "Network error"
+EXPECTED_TEST_COMMENT = "Test comment"
+EXPECTED_TEST_REQUEST = "Test Request"
+EXPECTED_TO_DO = "To Do"
+
+
 
 
 class TestJiraServiceInit:
@@ -196,7 +202,7 @@ class TestJiraServiceCreateTicket:
 
         result = await service.create_ticket({
             "requestId": "REQ-001",
-            "name": "Test Request",
+            "name": EXPECTED_TEST_REQUEST,
             "dataDomain": "finance"
         })
 
@@ -232,7 +238,7 @@ class TestJiraServiceCreateTicket:
         """Test ticket creation with general exception"""
         from easylifeauth.services.jira_service import JiraService
 
-        mock_jira.return_value.create_issue.side_effect = Exception("Network error")
+        mock_jira.return_value.create_issue.side_effect = Exception(EXPECTED_NETWORK_ERROR)
 
         service = JiraService({
             "base_url": MOCK_URL_JIRA_BASE,
@@ -244,7 +250,7 @@ class TestJiraServiceCreateTicket:
         result = await service.create_ticket({"requestId": "REQ-001"})
 
         assert result["sync_status"] == "failed"
-        assert "Network error" in result["error"]
+        assert EXPECTED_NETWORK_ERROR in result["error"]
 
 
 class TestJiraServiceUpdateTicket:
@@ -445,7 +451,7 @@ class TestJiraServiceTransitionTicket:
         from easylifeauth.services.jira_service import JiraService
 
         mock_jira.return_value.transitions.return_value = [
-            {"id": "1", "name": "To Do"},
+            {"id": "1", "name": EXPECTED_TO_DO},
             {"id": "2", "name": "Done"}
         ]
         mock_jira.return_value.transition_issue.return_value = None
@@ -468,7 +474,7 @@ class TestJiraServiceTransitionTicket:
         from easylifeauth.services.jira_service import JiraService
 
         mock_jira.return_value.transitions.return_value = [
-            {"id": "1", "name": "To Do"}
+            {"id": "1", "name": EXPECTED_TO_DO}
         ]
 
         service = JiraService({
@@ -507,7 +513,7 @@ class TestJiraServiceTransitionTicket:
         """Test transition with exception"""
         from easylifeauth.services.jira_service import JiraService
 
-        mock_jira.return_value.transitions.side_effect = Exception("Network error")
+        mock_jira.return_value.transitions.side_effect = Exception(EXPECTED_NETWORK_ERROR)
 
         service = JiraService({
             "base_url": MOCK_URL_JIRA_BASE,
@@ -856,7 +862,7 @@ class TestJiraServiceGetStatuses:
         mock_status.id = "1"
         mock_status.name = EXPECTED_OPEN
         mock_status.statusCategory = MagicMock()
-        mock_status.statusCategory.name = "To Do"
+        mock_status.statusCategory.name = EXPECTED_TO_DO
         mock_jira.return_value.statuses.return_value = [mock_status]
 
         service = JiraService({
@@ -915,7 +921,7 @@ class TestJiraServiceSyncStatusChange:
         from easylifeauth.services.jira_service import JiraService
 
         mock_jira.return_value.transitions.return_value = [
-            {"id": "1", "name": "To Do"},
+            {"id": "1", "name": EXPECTED_TO_DO},
             {"id": "2", "name": "Accepted"}
         ]
         mock_jira.return_value.transition_issue.return_value = None
@@ -939,7 +945,7 @@ class TestJiraServiceSyncStatusChange:
         from easylifeauth.services.jira_service import JiraService
 
         mock_jira.return_value.transitions.return_value = [
-            {"id": "1", "name": "To Do"}
+            {"id": "1", "name": EXPECTED_TO_DO}
         ]
         mock_jira.return_value.add_comment.return_value = None
 
@@ -1039,7 +1045,7 @@ class TestJiraServiceAddComment:
         """Test add comment when disabled"""
         from easylifeauth.services.jira_service import JiraService
         service = JiraService()
-        result = await service.add_comment("TEST-1", "Test comment")
+        result = await service.add_comment("TEST-1", EXPECTED_TEST_COMMENT)
         assert result is None
 
     @pytest.mark.asyncio
@@ -1056,7 +1062,7 @@ class TestJiraServiceAddComment:
             "api_token": "test_token"
         })
 
-        result = await service.add_comment("TEST-1", "Test comment", author_name="John Doe")
+        result = await service.add_comment("TEST-1", EXPECTED_TEST_COMMENT, author_name="John Doe")
 
         assert result is not None
         assert result["sync_status"] == "synced"
@@ -1076,7 +1082,7 @@ class TestJiraServiceAddComment:
             "api_token": "test_token"
         })
 
-        result = await service.add_comment("TEST-1", "Test comment")
+        result = await service.add_comment("TEST-1", EXPECTED_TEST_COMMENT)
 
         assert result["sync_status"] == "failed"
 
@@ -1199,7 +1205,7 @@ class TestJiraServiceInitClient:
         """Test init client with general exception"""
         from easylifeauth.services.jira_service import JiraService
 
-        mock_jira.side_effect = Exception("Network error")
+        mock_jira.side_effect = Exception(EXPECTED_NETWORK_ERROR)
 
         service = JiraService({
             "base_url": MOCK_URL_JIRA_BASE,
@@ -1396,7 +1402,7 @@ class TestJiraServiceCreateTicketAdvanced:
 
         result = await service.create_ticket({
             "requestId": "REQ-001",
-            "name": "Test Request",
+            "name": EXPECTED_TEST_REQUEST,
             "comments": [
                 {"comment": "First comment", "username": "user1", "commentDate": "2024-01-01"},
                 {"comment": "Second comment", "username": "user2", "commentDate": "2024-01-02"}
@@ -1431,7 +1437,7 @@ class TestJiraServiceCreateTicketAdvanced:
 
         result = await service.create_ticket({
             "requestId": "REQ-001",
-            "name": "Test Request",
+            "name": EXPECTED_TEST_REQUEST,
             "files": [
                 {"gcs_path": "path/to/file.txt", "file_name": "test.txt"}
             ]
@@ -1459,7 +1465,7 @@ class TestJiraServiceCreateTicketAdvanced:
 
         result = await service.create_ticket({
             "requestId": "REQ-001",
-            "name": "Test Request",
+            "name": EXPECTED_TEST_REQUEST,
             "row_add_stp": "2024-01-01T00:00:00Z"
         }, target_days=14)
 

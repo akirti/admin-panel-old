@@ -27,6 +27,9 @@ PATH_CONFIGURATIONS_GCS_STATUS = "/configurations/gcs/status"
 PATH_CONFIGURATIONS_NONEXISTENT = "/configurations/nonexistent"
 PATH_CONFIGURATIONS_UPLOAD = "/configurations/upload"
 
+EXPECTED_SELECT = "SELECT *"
+
+
 
 
 class TestHelperFunctions:
@@ -687,7 +690,7 @@ class TestConfigurationDownload:
             "config_id": "config_proc",
             "key": "process-config",
             "type": "process-config",
-            "queries": {"q1": "SELECT *"},
+            "queries": {"q1": EXPECTED_SELECT},
             "logics": {"l1": "if x"},
             "operations": {"o1": "insert"},
         }
@@ -697,7 +700,7 @@ class TestConfigurationDownload:
         response = client.get("/configurations/config_proc/download")
         assert response.status_code == 200
         data = response.json()
-        assert data["queries"] == {"q1": "SELECT *"}
+        assert data["queries"] == {"q1": EXPECTED_SELECT}
         assert data["logics"] == {"l1": "if x"}
         assert data["operations"] == {"o1": "insert"}
 
@@ -1286,7 +1289,7 @@ class TestConfigurationUpload:
         mock_db.configurations.update_one = AsyncMock()
 
         json_data = json.dumps({
-            "queries": {"q1": "SELECT *"},
+            "queries": {"q1": EXPECTED_SELECT},
             "logics": {"l1": "if true"},
         }).encode("utf-8")
 

@@ -8,6 +8,9 @@ from bson import ObjectId
 from easylifeauth.services.feedback_service import FeedbackService
 from easylifeauth.errors.auth_error import AuthError
 
+EXPECTED_EMAIL_FAILED = "Email failed"
+
+
 
 class TestFeedbackService:
     """Tests for FeedbackService"""
@@ -67,7 +70,7 @@ class TestFeedbackService:
         mock_db.feedbacks.find_one = AsyncMock(return_value=sample_feedback_data)
         # Use AsyncMock since send_feedback_email is async (uses await)
         mock_email_service.send_feedback_email = AsyncMock(
-            side_effect=EmailError("Email failed")
+            side_effect=EmailError(EXPECTED_EMAIL_FAILED)
         )
 
         # Should not raise, just log the error
@@ -158,7 +161,7 @@ class TestFeedbackService:
 
         mock_db.feedbacks.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
         mock_db.feedbacks.find_one = AsyncMock(return_value=sample_feedback_data)
-        mock_email_service.send_feedback_email = AsyncMock(side_effect=EmailError("Email failed"))
+        mock_email_service.send_feedback_email = AsyncMock(side_effect=EmailError(EXPECTED_EMAIL_FAILED))
 
         # Should not raise, just log the error
         result = await feedback_service.update({
@@ -295,7 +298,7 @@ class TestFeedbackService:
             return_value=MagicMock(inserted_id=ObjectId())
         )
         mock_db.feedbacks.find_one = AsyncMock(return_value=sample_feedback_data)
-        mock_email_service.send_feedback_email = AsyncMock(side_effect=EmailError("Email failed"))
+        mock_email_service.send_feedback_email = AsyncMock(side_effect=EmailError(EXPECTED_EMAIL_FAILED))
 
         # Should not raise, just log the error
         result = await feedback_service.save_public({

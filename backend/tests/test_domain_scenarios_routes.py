@@ -18,6 +18,13 @@ from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_USER_TEST
 
 PATH_DOMAIN_SCENARIOS = "/domain-scenarios"
 
+EXPECTED_COMPLEX_ASYNC_MOCKING_KEY_LOOKUP = "Complex async mocking - key lookup tested via other tests"
+EXPECTED_NEW_NAME = "New Name"
+EXPECTED_NEW_SCENARIO = "New Scenario"
+EXPECTED_SUB = "Sub 1"
+EXPECTED_TEST_SCENARIO = "Test Scenario"
+
+
 
 
 class TestHelperFunctions:
@@ -150,7 +157,7 @@ class TestDomainScenariosRoutes:
         mock_scenario = {
             "_id": scenario_id,
             "key": "scenario1",
-            "name": "Test Scenario",
+            "name": EXPECTED_TEST_SCENARIO,
             "domainKey": "domain1",
             "status": "active",
             "subDomains": [],
@@ -209,7 +216,7 @@ class TestDomainScenariosRoutes:
         mock_scenario = {
             "_id": scenario_id,
             "key": "scenario1",
-            "name": "Test Scenario",
+            "name": EXPECTED_TEST_SCENARIO,
             "domainKey": "domain1",
             "status": "active",
             "subDomains": [],
@@ -229,7 +236,7 @@ class TestDomainScenariosRoutes:
         mock_scenario = {
             "_id": ObjectId(),
             "key": "scenario1",
-            "name": "Test Scenario",
+            "name": EXPECTED_TEST_SCENARIO,
             "domainKey": "domain1",
             "path": "/scenarios/test",
             "status": "active",
@@ -261,7 +268,7 @@ class TestDomainScenariosRoutes:
 
         scenario_data = {
             "key": "new-scenario",
-            "name": "New Scenario",
+            "name": EXPECTED_NEW_SCENARIO,
             "domainKey": "domain1",
             "path": "/scenarios/new",
             "status": "active",
@@ -277,7 +284,7 @@ class TestDomainScenariosRoutes:
 
         scenario_data = {
             "key": "existing",
-            "name": "New Scenario",
+            "name": EXPECTED_NEW_SCENARIO,
             "domainKey": "domain1",
             "path": "/scenarios/existing",
             "status": "active",
@@ -295,7 +302,7 @@ class TestDomainScenariosRoutes:
 
         scenario_data = {
             "key": "new-scenario",
-            "name": "New Scenario",
+            "name": EXPECTED_NEW_SCENARIO,
             "domainKey": "nonexistent",
             "path": "/scenarios/new",
             "status": "active",
@@ -322,14 +329,14 @@ class TestDomainScenariosRoutes:
 
         mock_db.domain_scenarios.find_one = AsyncMock(side_effect=[
             existing.copy(),
-            {**existing.copy(), "name": "New Name"}
+            {**existing.copy(), "name": EXPECTED_NEW_NAME}
         ])
         mock_db.domain_scenarios.update_one = AsyncMock()
 
-        response = client.put(f"/domain-scenarios/{scenario_id}", json={"name": "New Name"})
+        response = client.put(f"/domain-scenarios/{scenario_id}", json={"name": EXPECTED_NEW_NAME})
         assert response.status_code == 200
 
-    @pytest.mark.skip(reason="Complex async mocking - key lookup tested via other tests")
+    @pytest.mark.skip(reason=EXPECTED_COMPLEX_ASYNC_MOCKING_KEY_LOOKUP)
     def test_update_scenario_by_key(self, client, mock_db):
         """Test update scenario by key when ObjectId fails"""
         pass
@@ -338,7 +345,7 @@ class TestDomainScenariosRoutes:
         """Test update scenario not found"""
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=None)
 
-        response = client.put(f"/domain-scenarios/{ObjectId()}", json={"name": "New Name"})
+        response = client.put(f"/domain-scenarios/{ObjectId()}", json={"name": EXPECTED_NEW_NAME})
         assert response.status_code == 404
 
     def test_update_scenario_change_domain(self, client, mock_db):
@@ -401,7 +408,7 @@ class TestDomainScenariosRoutes:
         mock_db.domain_scenarios.update_one = AsyncMock()
 
         response = client.put(f"/domain-scenarios/{scenario_id}", json={
-            "subDomains": [{"key": "sub1", "name": "Sub 1", "path": "/sub1", "status": "active"}]
+            "subDomains": [{"key": "sub1", "name": EXPECTED_SUB, "path": "/sub1", "status": "active"}]
         })
         assert response.status_code == 200
 
@@ -423,7 +430,7 @@ class TestDomainScenariosRoutes:
         assert response.status_code == 200
         assert "deleted successfully" in response.json()["message"]
 
-    @pytest.mark.skip(reason="Complex async mocking - key lookup tested via other tests")
+    @pytest.mark.skip(reason=EXPECTED_COMPLEX_ASYNC_MOCKING_KEY_LOOKUP)
     def test_delete_scenario_by_key(self, client, mock_db):
         """Test delete scenario by key"""
         pass
@@ -467,7 +474,7 @@ class TestDomainScenariosRoutes:
         assert response.status_code == 200
         assert response.json()["status"] == "active"
 
-    @pytest.mark.skip(reason="Complex async mocking - key lookup tested via other tests")
+    @pytest.mark.skip(reason=EXPECTED_COMPLEX_ASYNC_MOCKING_KEY_LOOKUP)
     def test_toggle_scenario_status_by_key(self, client, mock_db):
         """Test toggle scenario status by key"""
         pass
@@ -496,15 +503,15 @@ class TestDomainScenariosRoutes:
 
         mock_db.domain_scenarios.find_one = AsyncMock(side_effect=[
             mock_scenario.copy(),
-            {**mock_scenario.copy(), "subDomains": [{"key": "sub1", "name": "Sub 1", "path": "/sub1", "status": "active"}]}
+            {**mock_scenario.copy(), "subDomains": [{"key": "sub1", "name": EXPECTED_SUB, "path": "/sub1", "status": "active"}]}
         ])
         mock_db.domain_scenarios.update_one = AsyncMock()
 
-        subdomain_data = {"key": "sub1", "name": "Sub 1", "path": "/sub1", "status": "active"}
+        subdomain_data = {"key": "sub1", "name": EXPECTED_SUB, "path": "/sub1", "status": "active"}
         response = client.post(f"/domain-scenarios/{scenario_id}/subdomains", json=subdomain_data)
         assert response.status_code == 200
 
-    @pytest.mark.skip(reason="Complex async mocking - key lookup tested via other tests")
+    @pytest.mark.skip(reason=EXPECTED_COMPLEX_ASYNC_MOCKING_KEY_LOOKUP)
     def test_add_subdomain_by_key(self, client, mock_db):
         """Test add subdomain by scenario key"""
         pass
@@ -513,7 +520,7 @@ class TestDomainScenariosRoutes:
         """Test add subdomain to nonexistent scenario"""
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=None)
 
-        subdomain_data = {"key": "sub1", "name": "Sub 1", "path": "/sub1", "status": "active"}
+        subdomain_data = {"key": "sub1", "name": EXPECTED_SUB, "path": "/sub1", "status": "active"}
         response = client.post(f"/domain-scenarios/{ObjectId()}/subdomains", json=subdomain_data)
         assert response.status_code == 404
 
@@ -528,7 +535,7 @@ class TestDomainScenariosRoutes:
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
 
-        subdomain_data = {"key": "existing", "name": "Sub 1", "path": "/sub1", "status": "active"}
+        subdomain_data = {"key": "existing", "name": EXPECTED_SUB, "path": "/sub1", "status": "active"}
         response = client.post(f"/domain-scenarios/{scenario_id}/subdomains", json=subdomain_data)
         assert response.status_code == 400
         assert "already exists" in response.json()["detail"]
@@ -539,7 +546,7 @@ class TestDomainScenariosRoutes:
         mock_scenario = {
             "_id": scenario_id,
             "key": "scenario1",
-            "subDomains": [{"key": "sub1", "name": "Sub 1"}]
+            "subDomains": [{"key": "sub1", "name": EXPECTED_SUB}]
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
@@ -548,7 +555,7 @@ class TestDomainScenariosRoutes:
         response = client.delete(f"/domain-scenarios/{scenario_id}/subdomains/sub1")
         assert response.status_code == 200
 
-    @pytest.mark.skip(reason="Complex async mocking - key lookup tested via other tests")
+    @pytest.mark.skip(reason=EXPECTED_COMPLEX_ASYNC_MOCKING_KEY_LOOKUP)
     def test_remove_subdomain_by_key(self, client, mock_db):
         """Test remove subdomain by scenario key"""
         pass
@@ -589,7 +596,7 @@ class TestDomainScenariosRoutes:
         data = response.json()
         assert isinstance(data, list)
 
-    @pytest.mark.skip(reason="Complex async mocking - key lookup tested via other tests")
+    @pytest.mark.skip(reason=EXPECTED_COMPLEX_ASYNC_MOCKING_KEY_LOOKUP)
     def test_get_scenario_playboards_by_key(self, client, mock_db, mock_user_service):
         """Test get playboards by scenario key"""
         pass

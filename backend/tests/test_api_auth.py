@@ -15,6 +15,9 @@ from mock_data import MOCK_EMAIL, MOCK_PASSWORD, MOCK_PASSWORD_NEW, MOCK_PASSWOR
 EXPECTED_UPDATED_NAME = "Updated Name"
 PATH_AUTH_PROFILE = "/auth/profile"
 
+EXPECTED_TEST_USER = "Test User"
+
+
 
 
 class TestAuthRoutes:
@@ -94,7 +97,7 @@ class TestAuthRoutes:
             "user_id": "507f1f77bcf86cd799439011",
             "email": MOCK_EMAIL,
             "username": "testuser",
-            "full_name": "Test User",
+            "full_name": EXPECTED_TEST_USER,
             "roles": ["user"],
             "groups": ["viewer"],
             "domains": [],
@@ -107,7 +110,7 @@ class TestAuthRoutes:
             "email": MOCK_EMAIL,
             "username": "testuser",
             "password": MOCK_PASSWORD,
-            "full_name": "Test User"
+            "full_name": EXPECTED_TEST_USER
         })
 
         assert response.status_code == 201
@@ -123,7 +126,7 @@ class TestAuthRoutes:
             "email": MOCK_EMAIL,
             "username": "testuser",
             "password": MOCK_PASSWORD,
-            "full_name": "Test User"
+            "full_name": EXPECTED_TEST_USER
         })
 
         assert response.status_code == 400
@@ -135,7 +138,7 @@ class TestAuthRoutes:
             "user_id": "507f1f77bcf86cd799439011",
             "email": MOCK_EMAIL,
             "username": "testuser",
-            "full_name": "Test User",
+            "full_name": EXPECTED_TEST_USER,
             "roles": ["user"],
             "groups": [],
             "domains": [],
@@ -313,7 +316,7 @@ class TestAuthRoutesProtected:
             "user_id": "507f1f77bcf86cd799439011",
             "email": MOCK_EMAIL,
             "username": "testuser",
-            "full_name": "Test User",
+            "full_name": EXPECTED_TEST_USER,
             "is_active": True,
             "roles": ["user"],
             "groups": [],

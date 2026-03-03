@@ -22,6 +22,10 @@ from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_USER_TEST
 EXPECTED_TEST_PLAYBOARD = "Test Playboard"
 PATH_PLAYBOARDS_INVALID_ID = "/playboards/invalid-id"
 
+EXPECTED_INVALID_OBJECTID = "Invalid ObjectId"
+EXPECTED_NEW_NAME = "New Name"
+
+
 
 
 class TestHelperFunctions:
@@ -404,17 +408,17 @@ class TestPlayboardRoutes:
         mock_db.playboards.update_one = AsyncMock()
 
         updated = existing.copy()
-        updated["name"] = "New Name"
+        updated["name"] = EXPECTED_NEW_NAME
         mock_db.playboards.find_one = AsyncMock(side_effect=[existing.copy(), updated])
 
-        response = client.put(f"/playboards/{playboard_id}", json={"name": "New Name"})
+        response = client.put(f"/playboards/{playboard_id}", json={"name": EXPECTED_NEW_NAME})
         assert response.status_code == 200
 
     def test_update_playboard_invalid_id(self, client, mock_db):
         """Test update playboard with invalid ID"""
-        mock_db.playboards.find_one = AsyncMock(side_effect=Exception("Invalid ObjectId"))
+        mock_db.playboards.find_one = AsyncMock(side_effect=Exception(EXPECTED_INVALID_OBJECTID))
 
-        response = client.put(PATH_PLAYBOARDS_INVALID_ID, json={"name": "New Name"})
+        response = client.put(PATH_PLAYBOARDS_INVALID_ID, json={"name": EXPECTED_NEW_NAME})
         assert response.status_code == 400
 
     def test_update_playboard_not_found(self, client, mock_db):
@@ -422,7 +426,7 @@ class TestPlayboardRoutes:
         mock_db.playboards.find_one = AsyncMock(return_value=None)
 
         playboard_id = ObjectId()
-        response = client.put(f"/playboards/{playboard_id}", json={"name": "New Name"})
+        response = client.put(f"/playboards/{playboard_id}", json={"name": EXPECTED_NEW_NAME})
         assert response.status_code == 404
 
     def test_update_playboard_change_scenario(self, client, mock_db):
@@ -476,7 +480,7 @@ class TestPlayboardRoutes:
 
     def test_update_playboard_json_invalid_id(self, client, mock_db):
         """Test update playboard JSON with invalid ID"""
-        mock_db.playboards.find_one = AsyncMock(side_effect=Exception("Invalid ObjectId"))
+        mock_db.playboards.find_one = AsyncMock(side_effect=Exception(EXPECTED_INVALID_OBJECTID))
 
         files = {"file": ("test.json", io.BytesIO(b'{"test": true}'), "application/json")}
         response = client.put("/playboards/invalid-id/upload", files=files)
@@ -544,7 +548,7 @@ class TestPlayboardRoutes:
 
     def test_delete_playboard_invalid_id(self, client, mock_db):
         """Test delete playboard with invalid ID"""
-        mock_db.playboards.delete_one = AsyncMock(side_effect=Exception("Invalid ObjectId"))
+        mock_db.playboards.delete_one = AsyncMock(side_effect=Exception(EXPECTED_INVALID_OBJECTID))
 
         response = client.delete(PATH_PLAYBOARDS_INVALID_ID)
         assert response.status_code == 400
@@ -593,7 +597,7 @@ class TestPlayboardRoutes:
 
     def test_toggle_playboard_status_invalid_id(self, client, mock_db):
         """Test toggle playboard status with invalid ID"""
-        mock_db.playboards.find_one = AsyncMock(side_effect=Exception("Invalid ObjectId"))
+        mock_db.playboards.find_one = AsyncMock(side_effect=Exception(EXPECTED_INVALID_OBJECTID))
 
         response = client.post("/playboards/invalid-id/toggle-status")
         assert response.status_code == 400
@@ -627,7 +631,7 @@ class TestPlayboardRoutes:
 
     def test_download_playboard_json_invalid_id(self, client, mock_db):
         """Test download playboard JSON with invalid ID"""
-        mock_db.playboards.find_one = AsyncMock(side_effect=Exception("Invalid ObjectId"))
+        mock_db.playboards.find_one = AsyncMock(side_effect=Exception(EXPECTED_INVALID_OBJECTID))
 
         response = client.get("/playboards/invalid-id/download")
         assert response.status_code == 400

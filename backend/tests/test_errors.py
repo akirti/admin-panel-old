@@ -16,16 +16,22 @@ from easylifeauth.errors.playboard_error import (
 )
 from easylifeauth.errors.email_error import EmailError
 
+EXPECTED_BAD_REQUEST = "Bad request"
+EXPECTED_KEY_ERROR = "Key error"
+EXPECTED_NOT_FOUND = "Not found"
+EXPECTED_TEST_ERROR = "Test error"
+
+
 
 class TestAuthError:
     """Tests for AuthError"""
 
     def test_auth_error_default(self):
         """Test AuthError with default status code"""
-        error = AuthError("Test error")
-        assert error.message == "Test error"
+        error = AuthError(EXPECTED_TEST_ERROR)
+        assert error.message == EXPECTED_TEST_ERROR
         assert error.status_code == 400
-        assert str(error) == "Test error"
+        assert str(error) == EXPECTED_TEST_ERROR
 
     def test_auth_error_custom_status(self):
         """Test AuthError with custom status code"""
@@ -44,12 +50,12 @@ class TestDomainErrors:
 
     def test_domain_not_found_error(self):
         """Test DomainNotFoundError"""
-        error = DomainNotFoundError("Not found")
+        error = DomainNotFoundError(EXPECTED_NOT_FOUND)
         assert error.status_code == 404
 
     def test_domain_key_error(self):
         """Test DomainKeyError"""
-        error = DomainKeyError("Key error")
+        error = DomainKeyError(EXPECTED_KEY_ERROR)
         assert error.status_code == 400
 
     def test_domain_not_authorize_error(self):
@@ -64,7 +70,7 @@ class TestDomainErrors:
 
     def test_domain_bad_error(self):
         """Test DomainBadError"""
-        error = DomainBadError("Bad request")
+        error = DomainBadError(EXPECTED_BAD_REQUEST)
         assert error.status_code == 400
 
 
@@ -79,12 +85,12 @@ class TestScenarioErrors:
 
     def test_scenario_not_found_error(self):
         """Test ScenarioNotFoundError"""
-        error = ScenarioNotFoundError("Not found")
+        error = ScenarioNotFoundError(EXPECTED_NOT_FOUND)
         assert error.status_code == 404
 
     def test_scenario_key_error(self):
         """Test ScenarioKeyError"""
-        error = ScenarioKeyError("Key error")
+        error = ScenarioKeyError(EXPECTED_KEY_ERROR)
         assert error.status_code == 400
 
     def test_scenario_not_authorize_error(self):
@@ -99,7 +105,7 @@ class TestScenarioErrors:
 
     def test_scenario_bad_error(self):
         """Test ScenarioBadError"""
-        error = ScenarioBadError("Bad request")
+        error = ScenarioBadError(EXPECTED_BAD_REQUEST)
         assert error.status_code == 400
 
 
@@ -114,12 +120,12 @@ class TestPlayboardErrors:
 
     def test_playboard_not_found_error(self):
         """Test PlayboardNotFoundError"""
-        error = PlayboardNotFoundError("Not found")
+        error = PlayboardNotFoundError(EXPECTED_NOT_FOUND)
         assert error.status_code == 404
 
     def test_playboard_key_error(self):
         """Test PlayboardKeyError"""
-        error = PlayboardKeyError("Key error")
+        error = PlayboardKeyError(EXPECTED_KEY_ERROR)
         assert error.status_code == 400
 
     def test_playboard_not_authorize_error(self):
@@ -134,7 +140,7 @@ class TestPlayboardErrors:
 
     def test_playboard_bad_error(self):
         """Test PlayboardBadError"""
-        error = PlayboardBadError("Bad request")
+        error = PlayboardBadError(EXPECTED_BAD_REQUEST)
         assert error.status_code == 400
 
 

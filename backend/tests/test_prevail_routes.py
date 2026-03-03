@@ -11,6 +11,9 @@ from mock_data import MOCK_URL_PREVAIL, MOCK_URL_PREVAIL_API, MOCK_URL_PREVAIL_S
 
 PATH_PREVAIL_SCENARIO_X = "/prevail/scenario-x"
 
+EXPECTED_PREVAIL_SERVICE_ERROR = "Prevail service error"
+
+
 
 
 class TestExecutePrevailQuery:
@@ -368,7 +371,7 @@ class TestExecutePrevailQuery:
         response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         assert response.status_code == 502
-        assert "Prevail service error" in response.json()["detail"]
+        assert EXPECTED_PREVAIL_SERVICE_ERROR in response.json()["detail"]
         assert "Connection error" in response.json()["detail"]
 
     def test_returns_502_on_connection_error_default_status(
@@ -407,7 +410,7 @@ class TestExecutePrevailQuery:
         response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         assert response.status_code == 502
-        assert "Prevail service error" in response.json()["detail"]
+        assert EXPECTED_PREVAIL_SERVICE_ERROR in response.json()["detail"]
         assert "timeout" in response.json()["detail"].lower()
 
     def test_returns_502_on_read_timeout_error(
@@ -446,7 +449,7 @@ class TestExecutePrevailQuery:
         response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         assert response.status_code == 403
-        assert "Prevail service error" in response.json()["detail"]
+        assert EXPECTED_PREVAIL_SERVICE_ERROR in response.json()["detail"]
 
     def test_forwards_upstream_404_status_code(
         self, client, mock_service, active_prevail_config
@@ -463,7 +466,7 @@ class TestExecutePrevailQuery:
         response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         assert response.status_code == 404
-        assert "Prevail service error" in response.json()["detail"]
+        assert EXPECTED_PREVAIL_SERVICE_ERROR in response.json()["detail"]
 
     def test_forwards_upstream_500_status_code(
         self, client, mock_service, active_prevail_config
@@ -480,7 +483,7 @@ class TestExecutePrevailQuery:
         response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
 
         assert response.status_code == 500
-        assert "Prevail service error" in response.json()["detail"]
+        assert EXPECTED_PREVAIL_SERVICE_ERROR in response.json()["detail"]
 
     def test_falls_back_to_502_when_upstream_status_is_zero(
         self, client, mock_service, active_prevail_config
@@ -856,7 +859,7 @@ class TestExecutePrevailQueryEdgeCases:
         response = client.post("/prevail/scenario-auth", json={"q": "test"})
 
         assert response.status_code == 401
-        assert "Prevail service error" in response.json()["detail"]
+        assert EXPECTED_PREVAIL_SERVICE_ERROR in response.json()["detail"]
 
     def test_upstream_429_rate_limit_is_forwarded(
         self, client, mock_service, active_prevail_config
@@ -873,4 +876,4 @@ class TestExecutePrevailQueryEdgeCases:
         response = client.post("/prevail/scenario-ratelimit", json={"q": "test"})
 
         assert response.status_code == 429
-        assert "Prevail service error" in response.json()["detail"]
+        assert EXPECTED_PREVAIL_SERVICE_ERROR in response.json()["detail"]

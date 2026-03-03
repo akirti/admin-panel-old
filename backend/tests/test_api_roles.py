@@ -15,6 +15,9 @@ PATH_ROLES = "/roles"
 PATH_ROLES_ID = "/roles/507f1f77bcf86cd799439011"
 PATH_ROLES_NONEXISTENT = "/roles/nonexistent"
 
+EXPECTED_ADMIN_ROLE = "Admin role"
+
+
 
 
 class TestRolesPaginationMeta:
@@ -181,7 +184,7 @@ class TestRolesRoutes:
             "_id": ObjectId("507f1f77bcf86cd799439011"),
             "roleId": "admin",
             "name": "Administrator",
-            "description": "Admin role",
+            "description": EXPECTED_ADMIN_ROLE,
             "permissions": ["read", "write"],
             "status": "active",
             "priority": 1,
@@ -201,7 +204,7 @@ class TestRolesRoutes:
             "_id": ObjectId("507f1f77bcf86cd799439011"),
             "roleId": "admin",
             "name": "Administrator",
-            "description": "Admin role",
+            "description": EXPECTED_ADMIN_ROLE,
             "permissions": ["read", "write"],
             "status": "active",
             "priority": 1,
@@ -249,7 +252,7 @@ class TestRolesRoutes:
         response = client.post(PATH_ROLES, json={
             "roleId": "admin",
             "name": "Administrator",
-            "description": "Admin role",
+            "description": EXPECTED_ADMIN_ROLE,
             "permissions": ["read", "write"],
             "status": "active",
             "priority": 1

@@ -20,6 +20,10 @@ PATH_BULK_GCS_STATUS = "/bulk/gcs/status"
 PATH_BULK_GCS_UPLOAD_USERS = "/bulk/gcs/upload/users"
 PATH_BULK_UPLOAD_USERS = "/bulk/upload/users"
 
+EXPECTED_GCS_SERVICE_NOT_CONFIGURED = "GCS service not configured"
+EXPECTED_INVALID_ENTITY_TYPE = "Invalid entity type"
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -195,7 +199,7 @@ class TestBulkUpload:
             files={"file": ("w.csv", BytesIO(b"c\n1"), "text/csv")},
         )
         assert response.status_code == 400
-        assert "Invalid entity type" in response.json()["detail"]
+        assert EXPECTED_INVALID_ENTITY_TYPE in response.json()["detail"]
 
     # -- ValueError from process_entity ------------------------------------
 
@@ -300,7 +304,7 @@ class TestGetTemplate:
         """An invalid entity_type yields 400."""
         response = client.get("/bulk/template/widgets?format=csv")
         assert response.status_code == 400
-        assert "Invalid entity type" in response.json()["detail"]
+        assert EXPECTED_INVALID_ENTITY_TYPE in response.json()["detail"]
 
     # -- Invalid format ----------------------------------------------------
 
@@ -400,7 +404,7 @@ class TestBulkUploadFromGCS:
             json={"file_path": "data.csv"},
         )
         assert response.status_code == 400
-        assert "Invalid entity type" in response.json()["detail"]
+        assert EXPECTED_INVALID_ENTITY_TYPE in response.json()["detail"]
 
     # -- GCS not configured ------------------------------------------------
 
@@ -413,7 +417,7 @@ class TestBulkUploadFromGCS:
             json={"file_path": "data.csv"},
         )
         assert response.status_code == 503
-        assert "GCS service not configured" in response.json()["detail"]
+        assert EXPECTED_GCS_SERVICE_NOT_CONFIGURED in response.json()["detail"]
 
     def test_gcs_upload_service_unconfigured(self, client_with_unconfigured_gcs):
         """When gcs_service.is_configured() is False, yields 503."""
@@ -422,7 +426,7 @@ class TestBulkUploadFromGCS:
             json={"file_path": "data.csv"},
         )
         assert response.status_code == 503
-        assert "GCS service not configured" in response.json()["detail"]
+        assert EXPECTED_GCS_SERVICE_NOT_CONFIGURED in response.json()["detail"]
 
     # -- File not found in GCS ---------------------------------------------
 
@@ -506,13 +510,13 @@ class TestListGCSFiles:
         """When gcs_service is None, yields 503."""
         response = client.get(PATH_BULK_GCS_LIST)
         assert response.status_code == 503
-        assert "GCS service not configured" in response.json()["detail"]
+        assert EXPECTED_GCS_SERVICE_NOT_CONFIGURED in response.json()["detail"]
 
     def test_list_files_gcs_unconfigured(self, client_with_unconfigured_gcs):
         """When gcs_service.is_configured() is False, yields 503."""
         response = client_with_unconfigured_gcs.get(PATH_BULK_GCS_LIST)
         assert response.status_code == 503
-        assert "GCS service not configured" in response.json()["detail"]
+        assert EXPECTED_GCS_SERVICE_NOT_CONFIGURED in response.json()["detail"]
 
 
 # ===========================================================================

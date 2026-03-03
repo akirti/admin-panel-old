@@ -15,6 +15,9 @@ from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_ANONYMOUS, MOCK_EMAIL_SU
 PATH_FEEDBACK_ADMIN_LIST = "/feedback/admin/list"
 PATH_FEEDBACK_STATS = "/feedback/stats"
 
+EXPECTED_GREAT_APP = "Great app!"
+
+
 
 
 class TestFeedbackRoutes:
@@ -70,14 +73,14 @@ class TestFeedbackRoutes:
         result = {
             "id": str(ObjectId()),
             "rating": 5,
-            "feedback": "Great app!",
+            "feedback": EXPECTED_GREAT_APP,
             "email": MOCK_EMAIL_ANONYMOUS
         }
         mock_feedback_service.save_public = AsyncMock(return_value=result)
 
         feedback_data = {
             "rating": 5,
-            "feedback": "Great app!",
+            "feedback": EXPECTED_GREAT_APP,
             "email": MOCK_EMAIL_ANONYMOUS
         }
 
@@ -90,7 +93,7 @@ class TestFeedbackRoutes:
 
         feedback_data = {
             "rating": 5,
-            "feedback": "Great app!",
+            "feedback": EXPECTED_GREAT_APP,
             "email": MOCK_EMAIL_ANONYMOUS
         }
 
@@ -195,7 +198,7 @@ class TestFeedbackRoutes:
         result = {
             "id": str(ObjectId()),
             "rating": 5,
-            "feedback": "Great app!",
+            "feedback": EXPECTED_GREAT_APP,
             "user_id": "user_123",
             "email": MOCK_EMAIL_USER_TEST
         }
@@ -203,7 +206,7 @@ class TestFeedbackRoutes:
 
         feedback_data = {
             "rating": 5,
-            "feedback": "Great app!"
+            "feedback": EXPECTED_GREAT_APP
         }
 
         response = client.post("/feedback", json=feedback_data)
@@ -215,7 +218,7 @@ class TestFeedbackRoutes:
 
         feedback_data = {
             "rating": 5,
-            "feedback": "Great app!"
+            "feedback": EXPECTED_GREAT_APP
         }
 
         response = client.post("/feedback", json=feedback_data)

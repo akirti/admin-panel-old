@@ -15,6 +15,9 @@ PATH_GROUPS = "/groups"
 PATH_GROUPS_ID = "/groups/507f1f77bcf86cd799439011"
 PATH_GROUPS_NONEXISTENT = "/groups/nonexistent"
 
+EXPECTED_ADMIN_GROUP = "Admin group"
+
+
 
 
 class TestGroupsPaginationMeta:
@@ -193,7 +196,7 @@ class TestGroupsRoutes:
             "_id": ObjectId("507f1f77bcf86cd799439011"),
             "groupId": "admins",
             "name": "Administrators",
-            "description": "Admin group",
+            "description": EXPECTED_ADMIN_GROUP,
             "permissions": ["read", "write"],
             "status": "active",
             "priority": 1,
@@ -213,7 +216,7 @@ class TestGroupsRoutes:
             "_id": ObjectId("507f1f77bcf86cd799439011"),
             "groupId": "admins",
             "name": "Administrators",
-            "description": "Admin group",
+            "description": EXPECTED_ADMIN_GROUP,
             "permissions": ["read", "write"],
             "status": "active",
             "priority": 1,
@@ -259,7 +262,7 @@ class TestGroupsRoutes:
         response = client.post(PATH_GROUPS, json={
             "groupId": "admins",
             "name": "Administrators",
-            "description": "Admin group",
+            "description": EXPECTED_ADMIN_GROUP,
             "permissions": ["read", "write"],
             "status": "active",
             "priority": 1
