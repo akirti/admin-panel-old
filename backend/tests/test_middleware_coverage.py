@@ -21,13 +21,18 @@ from starlette.datastructures import Headers
 from easylifeauth.middleware.rate_limit import RateLimitMiddleware
 from easylifeauth.middleware.db_health import DatabaseHealthMiddleware
 from mock_data import MOCK_IP_FORWARDED_TEST, MOCK_IP_LOCALHOST, MOCK_IP_PUBLIC_1, MOCK_IP_PUBLIC_2, MOCK_IP_PUBLIC_3, MOCK_IP_RANDOM, MOCK_IP_TEST_1, MOCK_IP_TEST_3, MOCK_IP_TEST_4
+PATCH_ASYNCIO_WAIT_FOR = "asyncio.wait_for"
+SUBPATH_API_AUTH_LOGIN = "/api/auth/login"
+SUBPATH_API_DATA = "/api/data"
+SUBPATH_NO_EXEMPT = "/_no_exempt_"
+
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_request(path="/api/data", client_host=MOCK_IP_LOCALHOST, headers=None):
+def _make_request(path=SUBPATH_API_DATA, client_host=MOCK_IP_LOCALHOST, headers=None):
     """Create a mock Starlette Request."""
     scope = {
         "type": "http",
@@ -65,17 +70,17 @@ class TestRateLimitDispatchFlow:
             app=MagicMock(),
             requests_per_minute=2,
             enabled=True,
-            exempt_paths={"/_no_exempt_"},
+            exempt_paths={SUBPATH_NO_EXEMPT},
         )
 
         # First two requests should succeed
         for _ in range(2):
-            req = _make_request("/api/data")
+            req = _make_request(SUBPATH_API_DATA)
             resp = await middleware.dispatch(req, _ok_call_next)
             assert resp.status_code == 200
 
         # Third request should be rate-limited (lines 63-70)
-        req = _make_request("/api/data")
+        req = _make_request(SUBPATH_API_DATA)
         resp = await middleware.dispatch(req, _ok_call_next)
         assert resp.status_code == 429
         assert resp.headers.get("Retry-After") == "60"
@@ -89,10 +94,10 @@ class TestRateLimitDispatchFlow:
             app=MagicMock(),
             requests_per_minute=100,
             enabled=True,
-            exempt_paths={"/_no_exempt_"},
+            exempt_paths={SUBPATH_NO_EXEMPT},
         )
 
-        req = _make_request("/api/data")
+        req = _make_request(SUBPATH_API_DATA)
         resp = await middleware.dispatch(req, _ok_call_next)
         assert resp.status_code == 200
         assert "X-RateLimit-Limit" in resp.headers
@@ -108,16 +113,16 @@ class TestRateLimitDispatchFlow:
             requests_per_minute=100,
             auth_requests_per_minute=1,
             enabled=True,
-            exempt_paths={"/_no_exempt_"},
+            exempt_paths={SUBPATH_NO_EXEMPT},
         )
 
         # First auth request succeeds
-        req = _make_request("/api/auth/login")
+        req = _make_request(SUBPATH_API_AUTH_LOGIN)
         resp = await middleware.dispatch(req, _ok_call_next)
         assert resp.status_code == 200
 
         # Second auth request should be rate-limited
-        req = _make_request("/api/auth/login")
+        req = _make_request(SUBPATH_API_AUTH_LOGIN)
         resp = await middleware.dispatch(req, _ok_call_next)
         assert resp.status_code == 429
 
@@ -129,11 +134,11 @@ class TestRateLimitDispatchFlow:
             requests_per_minute=100,
             auth_requests_per_minute=1,
             enabled=True,
-            exempt_paths={"/_no_exempt_"},
+            exempt_paths={SUBPATH_NO_EXEMPT},
         )
 
         for _ in range(10):
-            req = _make_request("/api/data")
+            req = _make_request(SUBPATH_API_DATA)
             resp = await middleware.dispatch(req, _ok_call_next)
             assert resp.status_code == 200
 
@@ -166,7 +171,7 @@ class TestRateLimitDispatchFlow:
         )
 
         for _ in range(10):
-            req = _make_request("/api/data")
+            req = _make_request(SUBPATH_API_DATA)
             resp = await middleware.dispatch(req, _ok_call_next)
             assert resp.status_code == 200
 
@@ -178,17 +183,17 @@ class TestRateLimitDispatchFlow:
             requests_per_minute=1000,
             requests_per_hour=2,
             enabled=True,
-            exempt_paths={"/_no_exempt_"},
+            exempt_paths={SUBPATH_NO_EXEMPT},
         )
 
         # Two requests succeed
         for _ in range(2):
-            req = _make_request("/api/data")
+            req = _make_request(SUBPATH_API_DATA)
             resp = await middleware.dispatch(req, _ok_call_next)
             assert resp.status_code == 200
 
         # Third request hits hourly limit
-        req = _make_request("/api/data")
+        req = _make_request(SUBPATH_API_DATA)
         resp = await middleware.dispatch(req, _ok_call_next)
         assert resp.status_code == 429
         body = resp.body.decode()
@@ -210,20 +215,20 @@ class TestRateLimitOverflowGuard:
             app=MagicMock(),
             requests_per_minute=100_000,
             enabled=True,
-            exempt_paths={"/_no_exempt_"},
+            exempt_paths={SUBPATH_NO_EXEMPT},
         )
 
         # Pre-populate request_log with 10001 unique IPs
         now = datetime.utcnow()
         for i in range(10_001):
             ip = f"10.0.{i // 256}.{i % 256}"
-            middleware.request_log[ip].append((now, "/api/data"))
+            middleware.request_log[ip].append((now, SUBPATH_API_DATA))
 
         first_ip = next(iter(middleware.request_log))
         assert len(middleware.request_log) == 10_001
 
         # Make a request from a new IP
-        req = _make_request("/api/data", client_host=MOCK_IP_RANDOM)
+        req = _make_request(SUBPATH_API_DATA, client_host=MOCK_IP_RANDOM)
         resp = await middleware.dispatch(req, _ok_call_next)
 
         assert resp.status_code == 200
@@ -329,7 +334,7 @@ class TestRateLimitClientIP:
         scope = {
             "type": "http",
             "method": "GET",
-            "path": "/api/data",
+            "path": SUBPATH_API_DATA,
             "query_string": b"",
             "headers": [],
         }
@@ -351,7 +356,7 @@ class TestRateLimitRemaining:
             requests_per_minute=100,
             auth_requests_per_minute=5,
         )
-        remaining = await middleware._get_remaining_requests(MOCK_IP_PUBLIC_1, "/api/auth/login")
+        remaining = await middleware._get_remaining_requests(MOCK_IP_PUBLIC_1, SUBPATH_API_AUTH_LOGIN)
         assert remaining == 5
 
     @pytest.mark.asyncio
@@ -360,7 +365,7 @@ class TestRateLimitRemaining:
             app=MagicMock(),
             requests_per_minute=100,
         )
-        remaining = await middleware._get_remaining_requests(MOCK_IP_PUBLIC_1, "/api/data")
+        remaining = await middleware._get_remaining_requests(MOCK_IP_PUBLIC_1, SUBPATH_API_DATA)
         assert remaining == 100
 
 
@@ -420,7 +425,7 @@ class TestDbHealthDispatchEnabled:
         # Force check by making last check time far in the past
         middleware._last_check_time = 0
 
-        req = _make_request("/api/data")
+        req = _make_request(SUBPATH_API_DATA)
         resp = await middleware.dispatch(req, _ok_call_next)
         assert resp.status_code == 200
         mock_db.ensure_connected.assert_called_once()
@@ -440,7 +445,7 @@ class TestDbHealthDispatchEnabled:
         # Force check by making last check time far in the past
         middleware._last_check_time = 0
 
-        req = _make_request("/api/data")
+        req = _make_request(SUBPATH_API_DATA)
         resp = await middleware.dispatch(req, _ok_call_next)
         assert resp.status_code == 200
         assert middleware._last_check_success is False
@@ -476,7 +481,7 @@ class TestDbHealthDispatchEnabled:
             enabled=False,
         )
 
-        req = _make_request("/api/data")
+        req = _make_request(SUBPATH_API_DATA)
         resp = await middleware.dispatch(req, _ok_call_next)
         assert resp.status_code == 200
         mock_db.ensure_connected.assert_not_called()
@@ -491,7 +496,7 @@ class TestDbHealthDispatchEnabled:
             enabled=True,
         )
 
-        req = _make_request("/api/data")
+        req = _make_request(SUBPATH_API_DATA)
         resp = await middleware.dispatch(req, _ok_call_next)
         assert resp.status_code == 200
 
@@ -519,7 +524,7 @@ class TestDbHealthTiming:
         middleware._last_check_time = time.time()
         middleware._last_check_success = True
 
-        req = _make_request("/api/data")
+        req = _make_request(SUBPATH_API_DATA)
         resp = await middleware.dispatch(req, _ok_call_next)
         assert resp.status_code == 200
         mock_db.ensure_connected.assert_not_called()
@@ -540,7 +545,7 @@ class TestDbHealthTiming:
         middleware._last_check_time = time.time()
         middleware._last_check_success = False
 
-        req = _make_request("/api/data")
+        req = _make_request(SUBPATH_API_DATA)
         resp = await middleware.dispatch(req, _ok_call_next)
         assert resp.status_code == 200
         mock_db.ensure_connected.assert_called_once()
@@ -566,7 +571,7 @@ class TestDbHealthDbGetterReturnsNone:
         # Force check by making last check time far in the past
         middleware._last_check_time = 0
 
-        req = _make_request("/api/data")
+        req = _make_request(SUBPATH_API_DATA)
         resp = await middleware.dispatch(req, _ok_call_next)
         assert resp.status_code == 200
 
@@ -593,8 +598,8 @@ class TestDbHealthExceptionHandling:
         # Force check by making last check time far in the past
         middleware._last_check_time = 0
 
-        with patch("asyncio.wait_for", side_effect=asyncio.TimeoutError()):
-            req = _make_request("/api/data")
+        with patch(PATCH_ASYNCIO_WAIT_FOR, side_effect=asyncio.TimeoutError()):
+            req = _make_request(SUBPATH_API_DATA)
             resp = await middleware.dispatch(req, _ok_call_next)
 
         assert resp.status_code == 200
@@ -617,8 +622,8 @@ class TestDbHealthExceptionHandling:
         # Force check by making last check time far in the past
         middleware._last_check_time = 0
 
-        with patch("asyncio.wait_for", side_effect=RuntimeError("not ready")):
-            req = _make_request("/api/data")
+        with patch(PATCH_ASYNCIO_WAIT_FOR, side_effect=RuntimeError("not ready")):
+            req = _make_request(SUBPATH_API_DATA)
             resp = await middleware.dispatch(req, _ok_call_next)
 
         assert resp.status_code == 200
@@ -639,8 +644,8 @@ class TestDbHealthExceptionHandling:
         # Force check by making last check time far in the past
         middleware._last_check_time = 0
 
-        with patch("asyncio.wait_for", side_effect=ConnectionError("refused")):
-            req = _make_request("/api/data")
+        with patch(PATCH_ASYNCIO_WAIT_FOR, side_effect=ConnectionError("refused")):
+            req = _make_request(SUBPATH_API_DATA)
             resp = await middleware.dispatch(req, _ok_call_next)
 
         assert resp.status_code == 200

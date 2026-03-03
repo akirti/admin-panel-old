@@ -21,6 +21,20 @@ MONGO_GTE = "$gte"
 
 EXPECTED_DB_ERROR = "DB error"
 EXPECTED_TRACEBACK = "Traceback ..."
+DATE_TIMESTAMP = "2026-01-01T00:00:00"
+ERR_KEY_ERROR = "KeyError"
+ERR_VALUE_ERROR = "ValueError"
+FILE_NONEXISTENT_LOG = "/nonexistent/log.jsonl"
+FILE_TEST_JSONL = "test.jsonl"
+JSON_MESSAGE_TEST = '{"message":"test"}\n'
+JSON_MSG_HELLO = '{"msg":"hello"}'
+LEVEL_CRITICAL = "CRITICAL"
+LEVEL_ERROR = "ERROR"
+LEVEL_WARNING = "WARNING"
+METHOD_GET = "GET"
+STR_ABC123 = "abc123"
+STR_TEST_BUCKET = "test-bucket"
+SUBPATH_API_TEST = "/api/test"
 
 
 
@@ -34,8 +48,8 @@ def _make_error_doc(**overrides):
     doc = {
         "_id": ObjectId(),
         "timestamp": datetime.now(timezone.utc),
-        "level": "ERROR",
-        "error_type": "ValueError",
+        "level": LEVEL_ERROR,
+        "error_type": ERR_VALUE_ERROR,
         "message": "something went wrong",
         "stack_trace": EXPECTED_TRACEBACK,
         "request_context": {},
@@ -52,12 +66,12 @@ def _make_archive_doc(**overrides):
         "_id": ObjectId(),
         "archive_id": "abc12345",
         "gcs_path": "error_logs/errors_2026-01-01_00-00-00_abc12345.jsonl.gz",
-        "bucket_name": "test-bucket",
+        "bucket_name": STR_TEST_BUCKET,
         "file_name": "errors_2026-01-01_00-00-00_abc12345.jsonl.gz",
         "original_size": 10240,
         "compressed_size": 2048,
         "error_count": 50,
-        "date_range": {"start": "2026-01-01T00:00:00", "end": "2026-01-01T23:59:59"},
+        "date_range": {"start": DATE_TIMESTAMP, "end": "2026-01-01T23:59:59"},
         "created_at": datetime.now(timezone.utc),
     }
     doc.update(overrides)
@@ -107,13 +121,13 @@ class TestErrorLogEntry:
         ts = datetime(2026, 1, 15, 12, 0, 0, tzinfo=timezone.utc)
         entry = ErrorLogEntry(
             level="error",
-            error_type="ValueError",
+            error_type=ERR_VALUE_ERROR,
             message="bad value",
             timestamp=ts,
         )
         d = entry.to_dict()
-        assert d["level"] == "ERROR"
-        assert d["error_type"] == "ValueError"
+        assert d["level"] == LEVEL_ERROR
+        assert d["error_type"] == ERR_VALUE_ERROR
         assert d["message"] == "bad value"
         assert d["timestamp"] == ts.isoformat()
         assert d["stack_trace"] is None
@@ -122,7 +136,7 @@ class TestErrorLogEntry:
 
     def test_to_dict_with_optional_fields(self):
         entry = ErrorLogEntry(
-            level="CRITICAL",
+            level=LEVEL_CRITICAL,
             error_type="RuntimeError",
             message="crash",
             stack_trace=EXPECTED_TRACEBACK,
@@ -136,22 +150,22 @@ class TestErrorLogEntry:
 
     def test_to_mongodb_doc(self):
         entry = ErrorLogEntry(
-            level="WARNING",
+            level=LEVEL_WARNING,
             error_type="DeprecationWarning",
             message="deprecated",
         )
         doc = entry.to_mongodb_doc()
         assert isinstance(doc["timestamp"], datetime)
         assert isinstance(doc["created_at"], datetime)
-        assert doc["level"] == "WARNING"
+        assert doc["level"] == LEVEL_WARNING
 
     def test_level_uppercased(self):
         entry = ErrorLogEntry(level="warning", error_type="X", message="m")
-        assert entry.level == "WARNING"
+        assert entry.level == LEVEL_WARNING
 
     def test_default_timestamp(self):
         before = datetime.now(timezone.utc)
-        entry = ErrorLogEntry(level="ERROR", error_type="X", message="m")
+        entry = ErrorLogEntry(level=LEVEL_ERROR, error_type="X", message="m")
         after = datetime.now(timezone.utc)
         assert before <= entry.timestamp <= after
 
@@ -161,14 +175,14 @@ class TestErrorLogEntry:
         except ValueError as exc:
             entry = ErrorLogEntry.from_exception(
                 exc,
-                level="CRITICAL",
+                level=LEVEL_CRITICAL,
                 request_context={"path": "/test"},
                 additional_data={"extra": True},
             )
 
-        assert entry.error_type == "ValueError"
+        assert entry.error_type == ERR_VALUE_ERROR
         assert entry.message == "test error"
-        assert entry.level == "CRITICAL"
+        assert entry.level == LEVEL_CRITICAL
         assert "Traceback" in entry.stack_trace
         assert entry.request_context == {"path": "/test"}
         assert entry.additional_data == {"extra": True}
@@ -179,7 +193,7 @@ class TestErrorLogEntry:
         except RuntimeError as exc:
             entry = ErrorLogEntry.from_exception(exc)
 
-        assert entry.level == "ERROR"
+        assert entry.level == LEVEL_ERROR
         assert entry.request_context == {}
         assert entry.additional_data == {}
 
@@ -249,7 +263,7 @@ class TestWriteToMongoDB:
 
     @pytest.mark.asyncio
     async def test_write_success(self, service, mock_db):
-        entry = ErrorLogEntry(level="ERROR", error_type="X", message="m")
+        entry = ErrorLogEntry(level=LEVEL_ERROR, error_type="X", message="m")
         result = await service._write_to_mongodb(entry)
         assert result is not None
         mock_db.error_logs.insert_one.assert_awaited_once()
@@ -259,7 +273,7 @@ class TestWriteToMongoDB:
         db = MagicMock(spec=[])  # no attributes at all
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(db)
-        entry = ErrorLogEntry(level="ERROR", error_type="X", message="m")
+        entry = ErrorLogEntry(level=LEVEL_ERROR, error_type="X", message="m")
         result = await service._write_to_mongodb(entry)
         assert result is None
 
@@ -270,7 +284,7 @@ class TestWriteToMongoDB:
         db.error_log_archives = MagicMock()
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(db)
-        entry = ErrorLogEntry(level="ERROR", error_type="X", message="m")
+        entry = ErrorLogEntry(level=LEVEL_ERROR, error_type="X", message="m")
         result = await service._write_to_mongodb(entry)
         assert result is None
 
@@ -279,7 +293,7 @@ class TestWriteToMongoDB:
         mock_db.error_logs.insert_one = AsyncMock(side_effect=Exception("DB down"))
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db)
-        entry = ErrorLogEntry(level="ERROR", error_type="X", message="m")
+        entry = ErrorLogEntry(level=LEVEL_ERROR, error_type="X", message="m")
         result = await service._write_to_mongodb(entry)
         assert result is None
 
@@ -301,31 +315,31 @@ class TestWriteToFile:
     def test_sync_write_to_file_success(self, mock_db, tmp_path):
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db)
-        service.current_log_path = tmp_path / "test.jsonl"
-        result = service._sync_write_to_file('{"msg":"hello"}')
+        service.current_log_path = tmp_path / FILE_TEST_JSONL
+        result = service._sync_write_to_file(JSON_MSG_HELLO)
         assert result is True
         assert service.current_log_path.exists()
         content = service.current_log_path.read_text()
-        assert '{"msg":"hello"}' in content
+        assert JSON_MSG_HELLO in content
 
     def test_sync_write_to_file_failure(self, mock_db):
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db)
         # Point to an invalid path to trigger write failure
         service.current_log_path = Path("/nonexistent_dir_xyz/test.jsonl")
-        result = service._sync_write_to_file('{"msg":"hello"}')
+        result = service._sync_write_to_file(JSON_MSG_HELLO)
         assert result is False
 
     @pytest.mark.asyncio
     async def test_write_to_file_async(self, mock_db, tmp_path):
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db)
-        service.current_log_path = tmp_path / "test.jsonl"
-        entry = ErrorLogEntry(level="ERROR", error_type="ValueError", message="bad")
+        service.current_log_path = tmp_path / FILE_TEST_JSONL
+        entry = ErrorLogEntry(level=LEVEL_ERROR, error_type=ERR_VALUE_ERROR, message="bad")
         result = await service._write_to_file(entry)
         assert result is True
         content = service.current_log_path.read_text()
-        assert "ValueError" in content
+        assert ERR_VALUE_ERROR in content
 
 
 # ========================================================================
@@ -345,18 +359,18 @@ class TestSyncReadCurrentLog:
     def test_read_returns_empty_when_file_missing(self, mock_db):
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db)
-        service.current_log_path = Path("/nonexistent/log.jsonl")
+        service.current_log_path = Path(FILE_NONEXISTENT_LOG)
         result = service._sync_read_current_log(100)
         assert result == []
 
     def test_read_returns_entries_in_reverse(self, mock_db, tmp_path):
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db)
-        log_file = tmp_path / "test.jsonl"
+        log_file = tmp_path / FILE_TEST_JSONL
         lines = [
-            json.dumps({"message": "first", "level": "ERROR"}),
-            json.dumps({"message": "second", "level": "WARNING"}),
-            json.dumps({"message": "third", "level": "CRITICAL"}),
+            json.dumps({"message": "first", "level": LEVEL_ERROR}),
+            json.dumps({"message": "second", "level": LEVEL_WARNING}),
+            json.dumps({"message": "third", "level": LEVEL_CRITICAL}),
         ]
         log_file.write_text("\n".join(lines) + "\n")
         service.current_log_path = log_file
@@ -370,7 +384,7 @@ class TestSyncReadCurrentLog:
     def test_read_respects_limit(self, mock_db, tmp_path):
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db)
-        log_file = tmp_path / "test.jsonl"
+        log_file = tmp_path / FILE_TEST_JSONL
         lines = [json.dumps({"message": f"msg{i}"}) for i in range(10)]
         log_file.write_text("\n".join(lines) + "\n")
         service.current_log_path = log_file
@@ -381,7 +395,7 @@ class TestSyncReadCurrentLog:
     def test_read_skips_invalid_json(self, mock_db, tmp_path):
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db)
-        log_file = tmp_path / "test.jsonl"
+        log_file = tmp_path / FILE_TEST_JSONL
         log_file.write_text('{"message":"ok"}\nNOT JSON\n{"message":"also ok"}\n')
         service.current_log_path = log_file
 
@@ -415,13 +429,13 @@ class TestGetFileSizeMb:
     def test_returns_zero_when_file_missing(self, mock_db):
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db)
-        service.current_log_path = Path("/nonexistent/log.jsonl")
+        service.current_log_path = Path(FILE_NONEXISTENT_LOG)
         assert service._get_file_size_mb() == 0.0
 
     def test_returns_size_in_mb(self, mock_db, tmp_path):
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db)
-        log_file = tmp_path / "test.jsonl"
+        log_file = tmp_path / FILE_TEST_JSONL
         log_file.write_bytes(b"x" * (1024 * 1024 * 2))  # 2 MB
         service.current_log_path = log_file
         assert abs(service._get_file_size_mb() - 2.0) < 0.01
@@ -472,7 +486,7 @@ class TestLogError:
         exc = RuntimeError("oops")
         mock_request = MagicMock()
         mock_request.method = "POST"
-        mock_request.url.path = "/api/test"
+        mock_request.url.path = SUBPATH_API_TEST
         mock_request.url.query = "foo=bar"
         mock_request.client.host = MOCK_IP_LOCALHOST
         mock_request.headers.get.return_value = "TestAgent/1.0"
@@ -484,7 +498,7 @@ class TestLogError:
 
         call_args = mock_db.error_logs.insert_one.call_args[0][0]
         assert call_args["request_context"]["method"] == "POST"
-        assert call_args["request_context"]["path"] == "/api/test"
+        assert call_args["request_context"]["path"] == SUBPATH_API_TEST
         assert call_args["request_context"]["ip_address"] == MOCK_IP_LOCALHOST
         assert call_args["request_context"]["user_email"] == MOCK_EMAIL_USER
         assert call_args["request_context"]["user_id"] == "uid123"
@@ -493,7 +507,7 @@ class TestLogError:
     async def test_log_error_with_request_no_query(self, service, mock_db):
         exc = RuntimeError("oops")
         mock_request = MagicMock()
-        mock_request.method = "GET"
+        mock_request.method = METHOD_GET
         mock_request.url.path = "/api/health"
         mock_request.url.query = ""
         mock_request.client.host = MOCK_IP_INTERNAL
@@ -512,8 +526,8 @@ class TestLogError:
     async def test_log_error_with_request_no_client(self, service, mock_db):
         exc = RuntimeError("oops")
         mock_request = MagicMock()
-        mock_request.method = "GET"
-        mock_request.url.path = "/api/test"
+        mock_request.method = METHOD_GET
+        mock_request.url.path = SUBPATH_API_TEST
         mock_request.url.query = ""
         mock_request.client = None
         mock_request.headers.get.return_value = None
@@ -529,8 +543,8 @@ class TestLogError:
     async def test_log_error_with_request_no_state(self, service, mock_db):
         exc = RuntimeError("oops")
         mock_request = MagicMock()
-        mock_request.method = "GET"
-        mock_request.url.path = "/api/test"
+        mock_request.method = METHOD_GET
+        mock_request.url.path = SUBPATH_API_TEST
         mock_request.url.query = ""
         mock_request.client.host = MOCK_IP_LOCALHOST
         mock_request.headers.get.return_value = None
@@ -566,10 +580,10 @@ class TestLogError:
     @pytest.mark.asyncio
     async def test_log_error_custom_level(self, service, mock_db):
         exc = ValueError("test")
-        result = await service.log_error(error=exc, level="CRITICAL")
+        result = await service.log_error(error=exc, level=LEVEL_CRITICAL)
         assert result is not None
         call_args = mock_db.error_logs.insert_one.call_args[0][0]
-        assert call_args["level"] == "CRITICAL"
+        assert call_args["level"] == LEVEL_CRITICAL
 
 
 # ========================================================================
@@ -600,7 +614,7 @@ class TestLogMessage:
     @pytest.mark.asyncio
     async def test_log_message_basic(self, service, mock_db):
         result = await service.log_message(
-            level="WARNING",
+            level=LEVEL_WARNING,
             error_type="DeprecationWarning",
             message="Feature X is deprecated",
         )
@@ -611,7 +625,7 @@ class TestLogMessage:
     @pytest.mark.asyncio
     async def test_log_message_with_all_fields(self, service, mock_db):
         result = await service.log_message(
-            level="ERROR",
+            level=LEVEL_ERROR,
             error_type="CustomError",
             message="Something failed",
             stack_trace=EXPECTED_TRACEBACK,
@@ -633,7 +647,7 @@ class TestLogMessage:
         service._check_and_archive = AsyncMock(return_value=None)
 
         result = await service.log_message(
-            level="ERROR", error_type="X", message="m"
+            level=LEVEL_ERROR, error_type="X", message="m"
         )
         assert result is None
 
@@ -735,7 +749,7 @@ class TestGetCurrentLogs:
 
         await service.get_current_logs(filters={"level": "critical"})
         query = mock_db.error_logs.count_documents.call_args[0][0]
-        assert query["level"] == "CRITICAL"
+        assert query["level"] == LEVEL_CRITICAL
 
     @pytest.mark.asyncio
     async def test_filter_by_error_type(self, service, mock_db):
@@ -744,7 +758,7 @@ class TestGetCurrentLogs:
             return_value=_chainable_cursor_from_list([])
         )
 
-        await service.get_current_logs(filters={"error_type": "ValueError"})
+        await service.get_current_logs(filters={"error_type": ERR_VALUE_ERROR})
         query = mock_db.error_logs.count_documents.call_args[0][0]
         assert "$regex" in query["error_type"]
         assert "$options" in query["error_type"]
@@ -906,14 +920,14 @@ class TestGetStats:
 
         # Level aggregation
         level_docs = [
-            {"_id": "ERROR", "count": 30},
-            {"_id": "WARNING", "count": 10},
-            {"_id": "CRITICAL", "count": 2},
+            {"_id": LEVEL_ERROR, "count": 30},
+            {"_id": LEVEL_WARNING, "count": 10},
+            {"_id": LEVEL_CRITICAL, "count": 2},
         ]
         # Type aggregation
         type_docs = [
-            {"_id": "ValueError", "count": 20},
-            {"_id": "KeyError", "count": 15},
+            {"_id": ERR_VALUE_ERROR, "count": 20},
+            {"_id": ERR_KEY_ERROR, "count": 15},
         ]
         # Timeline aggregation
         timeline_docs = [
@@ -939,9 +953,9 @@ class TestGetStats:
 
         assert result["total"] == 42
         assert result["days"] == 7
-        assert result["by_level"] == {"ERROR": 30, "WARNING": 10, "CRITICAL": 2}
+        assert result["by_level"] == {LEVEL_ERROR: 30, LEVEL_WARNING: 10, LEVEL_CRITICAL: 2}
         assert len(result["by_type"]) == 2
-        assert result["by_type"][0] == {"type": "ValueError", "count": 20}
+        assert result["by_type"][0] == {"type": ERR_VALUE_ERROR, "count": 20}
         assert len(result["timeline"]) == 2
         assert result["timeline"][0] == {"date": "2026-01-01", "count": 5}
 
@@ -991,7 +1005,7 @@ class TestGetLevels:
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(db)
         result = await service.get_levels()
-        assert result == ["ERROR", "WARNING", "CRITICAL"]
+        assert result == [LEVEL_ERROR, LEVEL_WARNING, LEVEL_CRITICAL]
 
     @pytest.mark.asyncio
     async def test_returns_defaults_when_collection_is_none(self):
@@ -1001,27 +1015,27 @@ class TestGetLevels:
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(db)
         result = await service.get_levels()
-        assert result == ["ERROR", "WARNING", "CRITICAL"]
+        assert result == [LEVEL_ERROR, LEVEL_WARNING, LEVEL_CRITICAL]
 
     @pytest.mark.asyncio
     async def test_returns_sorted_levels(self, service, mock_db):
         mock_db.error_logs.distinct = AsyncMock(
-            return_value=["WARNING", "ERROR", "CRITICAL"]
+            return_value=[LEVEL_WARNING, LEVEL_ERROR, LEVEL_CRITICAL]
         )
         result = await service.get_levels()
-        assert result == ["CRITICAL", "ERROR", "WARNING"]
+        assert result == [LEVEL_CRITICAL, LEVEL_ERROR, LEVEL_WARNING]
 
     @pytest.mark.asyncio
     async def test_returns_defaults_when_empty(self, service, mock_db):
         mock_db.error_logs.distinct = AsyncMock(return_value=[])
         result = await service.get_levels()
-        assert result == ["ERROR", "WARNING", "CRITICAL"]
+        assert result == [LEVEL_ERROR, LEVEL_WARNING, LEVEL_CRITICAL]
 
     @pytest.mark.asyncio
     async def test_returns_defaults_on_exception(self, service, mock_db):
         mock_db.error_logs.distinct = AsyncMock(side_effect=Exception("fail"))
         result = await service.get_levels()
-        assert result == ["ERROR", "WARNING", "CRITICAL"]
+        assert result == [LEVEL_ERROR, LEVEL_WARNING, LEVEL_CRITICAL]
 
 
 # ========================================================================
@@ -1064,10 +1078,10 @@ class TestGetErrorTypes:
     @pytest.mark.asyncio
     async def test_returns_sorted_types(self, service, mock_db):
         mock_db.error_logs.distinct = AsyncMock(
-            return_value=["ValueError", "KeyError", "AttributeError"]
+            return_value=[ERR_VALUE_ERROR, ERR_KEY_ERROR, "AttributeError"]
         )
         result = await service.get_error_types()
-        assert result == ["AttributeError", "KeyError", "ValueError"]
+        assert result == ["AttributeError", ERR_KEY_ERROR, ERR_VALUE_ERROR]
 
     @pytest.mark.asyncio
     async def test_returns_empty_list_when_no_types(self, service, mock_db):
@@ -1100,7 +1114,7 @@ class TestGetCurrentFileContent:
     async def test_returns_file_content(self, mock_db, tmp_path):
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db)
-        log_file = tmp_path / "test.jsonl"
+        log_file = tmp_path / FILE_TEST_JSONL
         log_file.write_text(json.dumps({"message": "test"}) + "\n")
         service.current_log_path = log_file
 
@@ -1115,7 +1129,7 @@ class TestGetCurrentFileContent:
     async def test_returns_empty_when_no_file(self, mock_db):
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db)
-        service.current_log_path = Path("/nonexistent/log.jsonl")
+        service.current_log_path = Path(FILE_NONEXISTENT_LOG)
 
         result = await service.get_current_file_content()
         assert result["entries"] == []
@@ -1174,13 +1188,13 @@ class TestGetArchivedFiles:
     @pytest.mark.asyncio
     async def test_returns_archives_with_string_created_at(self, service, mock_db):
         """When created_at is already a string, it should pass through."""
-        archive = _make_archive_doc(created_at="2026-01-01T00:00:00")
+        archive = _make_archive_doc(created_at=DATE_TIMESTAMP)
         cursor = _chainable_cursor_from_list([archive])
         mock_db.error_log_archives.find = MagicMock(return_value=cursor)
 
         result = await service.get_archived_files()
         assert len(result) == 1
-        assert result[0]["created_at"] == "2026-01-01T00:00:00"
+        assert result[0]["created_at"] == DATE_TIMESTAMP
 
     @pytest.mark.asyncio
     async def test_returns_empty_on_exception(self, service, mock_db):
@@ -1209,7 +1223,7 @@ class TestGetArchiveDownloadUrl:
     def mock_gcs(self):
         gcs = MagicMock()
         gcs.is_configured.return_value = True
-        gcs.bucket_name = "test-bucket"
+        gcs.bucket_name = STR_TEST_BUCKET
         gcs.get_signed_url = AsyncMock(return_value=MOCK_URL_SIGNED)
         return gcs
 
@@ -1217,7 +1231,7 @@ class TestGetArchiveDownloadUrl:
     async def test_returns_none_when_gcs_not_configured(self, mock_db):
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, gcs_service=None)
-        result = await service.get_archive_download_url("abc123")
+        result = await service.get_archive_download_url(STR_ABC123)
         assert result is None
 
     @pytest.mark.asyncio
@@ -1226,7 +1240,7 @@ class TestGetArchiveDownloadUrl:
         gcs.is_configured.return_value = False
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, gcs_service=gcs)
-        result = await service.get_archive_download_url("abc123")
+        result = await service.get_archive_download_url(STR_ABC123)
         assert result is None
 
     @pytest.mark.asyncio
@@ -1234,7 +1248,7 @@ class TestGetArchiveDownloadUrl:
         db = MagicMock(spec=[])
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(db, gcs_service=mock_gcs)
-        result = await service.get_archive_download_url("abc123")
+        result = await service.get_archive_download_url(STR_ABC123)
         assert result is None
 
     @pytest.mark.asyncio
@@ -1248,12 +1262,12 @@ class TestGetArchiveDownloadUrl:
 
     @pytest.mark.asyncio
     async def test_returns_signed_url(self, mock_db, mock_gcs):
-        archive = _make_archive_doc(archive_id="abc123")
+        archive = _make_archive_doc(archive_id=STR_ABC123)
         mock_db.error_log_archives.find_one = AsyncMock(return_value=archive)
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, gcs_service=mock_gcs)
 
-        result = await service.get_archive_download_url("abc123")
+        result = await service.get_archive_download_url(STR_ABC123)
         assert result == MOCK_URL_SIGNED
         mock_gcs.get_signed_url.assert_awaited_once_with(
             file_path=archive["gcs_path"],
@@ -1262,12 +1276,12 @@ class TestGetArchiveDownloadUrl:
 
     @pytest.mark.asyncio
     async def test_custom_expiration(self, mock_db, mock_gcs):
-        archive = _make_archive_doc(archive_id="abc123")
+        archive = _make_archive_doc(archive_id=STR_ABC123)
         mock_db.error_log_archives.find_one = AsyncMock(return_value=archive)
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, gcs_service=mock_gcs)
 
-        await service.get_archive_download_url("abc123", expiration_minutes=120)
+        await service.get_archive_download_url(STR_ABC123, expiration_minutes=120)
         mock_gcs.get_signed_url.assert_awaited_once_with(
             file_path=archive["gcs_path"],
             expiration_minutes=120,
@@ -1281,7 +1295,7 @@ class TestGetArchiveDownloadUrl:
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, gcs_service=mock_gcs)
 
-        result = await service.get_archive_download_url("abc123")
+        result = await service.get_archive_download_url(STR_ABC123)
         assert result is None
 
 
@@ -1305,7 +1319,7 @@ class TestDeleteArchive:
     def mock_gcs(self):
         gcs = MagicMock()
         gcs.is_configured.return_value = True
-        gcs.bucket_name = "test-bucket"
+        gcs.bucket_name = STR_TEST_BUCKET
         gcs.delete_file = AsyncMock(return_value=True)
         return gcs
 
@@ -1313,7 +1327,7 @@ class TestDeleteArchive:
     async def test_returns_false_when_gcs_not_configured(self, mock_db):
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, gcs_service=None)
-        result = await service.delete_archive("abc123")
+        result = await service.delete_archive(STR_ABC123)
         assert result is False
 
     @pytest.mark.asyncio
@@ -1321,7 +1335,7 @@ class TestDeleteArchive:
         db = MagicMock(spec=[])
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(db, gcs_service=mock_gcs)
-        result = await service.delete_archive("abc123")
+        result = await service.delete_archive(STR_ABC123)
         assert result is False
 
     @pytest.mark.asyncio
@@ -1335,28 +1349,28 @@ class TestDeleteArchive:
 
     @pytest.mark.asyncio
     async def test_deletes_from_gcs_and_mongodb(self, mock_db, mock_gcs):
-        archive = _make_archive_doc(archive_id="abc123")
+        archive = _make_archive_doc(archive_id=STR_ABC123)
         mock_db.error_log_archives.find_one = AsyncMock(return_value=archive)
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, gcs_service=mock_gcs)
 
-        result = await service.delete_archive("abc123")
+        result = await service.delete_archive(STR_ABC123)
         assert result is True
         mock_gcs.delete_file.assert_awaited_once_with(archive["gcs_path"])
         mock_db.error_log_archives.delete_one.assert_awaited_once_with(
-            {"archive_id": "abc123"}
+            {"archive_id": STR_ABC123}
         )
 
     @pytest.mark.asyncio
     async def test_deletes_metadata_even_when_gcs_fails(self, mock_db, mock_gcs):
         """MongoDB metadata is deleted even if GCS deletion fails."""
-        archive = _make_archive_doc(archive_id="abc123")
+        archive = _make_archive_doc(archive_id=STR_ABC123)
         mock_db.error_log_archives.find_one = AsyncMock(return_value=archive)
         mock_gcs.delete_file = AsyncMock(return_value=False)
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, gcs_service=mock_gcs)
 
-        result = await service.delete_archive("abc123")
+        result = await service.delete_archive(STR_ABC123)
         assert result is True
         mock_db.error_log_archives.delete_one.assert_awaited_once()
 
@@ -1368,7 +1382,7 @@ class TestDeleteArchive:
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, gcs_service=mock_gcs)
 
-        result = await service.delete_archive("abc123")
+        result = await service.delete_archive(STR_ABC123)
         assert result is False
 
 
@@ -1409,7 +1423,7 @@ class TestForceArchive:
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, gcs_service=gcs)
         # Point to a nonexistent file
-        service.current_log_path = Path("/nonexistent/log.jsonl")
+        service.current_log_path = Path(FILE_NONEXISTENT_LOG)
 
         result = await service.force_archive()
         assert result is None
@@ -1434,7 +1448,7 @@ class TestForceArchive:
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, gcs_service=gcs)
 
-        log_file = tmp_path / "test.jsonl"
+        log_file = tmp_path / FILE_TEST_JSONL
         log_file.write_text('{"message":"test"}\n')
         service.current_log_path = log_file
 
@@ -1454,7 +1468,7 @@ class TestForceArchive:
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, gcs_service=gcs)
 
-        log_file = tmp_path / "test.jsonl"
+        log_file = tmp_path / FILE_TEST_JSONL
         log_file.write_text('{"message":"test"}\n')
         service.current_log_path = log_file
 
@@ -1483,7 +1497,7 @@ class TestCheckAndArchive:
     def mock_gcs(self):
         gcs = MagicMock()
         gcs.is_configured.return_value = True
-        gcs.bucket_name = "test-bucket"
+        gcs.bucket_name = STR_TEST_BUCKET
         gcs.upload_file = AsyncMock(return_value=MOCK_GCS_ERROR_LOG)
         return gcs
 
@@ -1521,9 +1535,9 @@ class TestCheckAndArchive:
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, gcs_service=mock_gcs)
 
-        log_file = tmp_path / "test.jsonl"
+        log_file = tmp_path / FILE_TEST_JSONL
         log_file.write_text(
-            json.dumps({"timestamp": "2026-01-01T00:00:00", "message": "err1"}) + "\n"
+            json.dumps({"timestamp": DATE_TIMESTAMP, "message": "err1"}) + "\n"
             + json.dumps({"timestamp": "2026-01-01T01:00:00", "message": "err2"}) + "\n"
         )
         service.current_log_path = log_file
@@ -1545,7 +1559,7 @@ class TestCheckAndArchive:
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, gcs_service=mock_gcs)
 
-        log_file = tmp_path / "test.jsonl"
+        log_file = tmp_path / FILE_TEST_JSONL
         log_file.write_text(json.dumps({"message": "err"}) + "\n")
         service.current_log_path = log_file
         service._get_file_size_mb = MagicMock(return_value=10.0)
@@ -1564,8 +1578,8 @@ class TestCheckAndArchive:
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, gcs_service=mock_gcs)
 
-        log_file = tmp_path / "test.jsonl"
-        log_file.write_text(json.dumps({"timestamp": "2026-01-01T00:00:00"}) + "\n")
+        log_file = tmp_path / FILE_TEST_JSONL
+        log_file.write_text(json.dumps({"timestamp": DATE_TIMESTAMP}) + "\n")
         service.current_log_path = log_file
         service._get_file_size_mb = MagicMock(return_value=10.0)
 
@@ -1581,8 +1595,8 @@ class TestCheckAndArchive:
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(db, gcs_service=mock_gcs)
 
-        log_file = tmp_path / "test.jsonl"
-        log_file.write_text(json.dumps({"timestamp": "2026-01-01T00:00:00"}) + "\n")
+        log_file = tmp_path / FILE_TEST_JSONL
+        log_file.write_text(json.dumps({"timestamp": DATE_TIMESTAMP}) + "\n")
         service.current_log_path = log_file
         service._get_file_size_mb = MagicMock(return_value=10.0)
 
@@ -1599,8 +1613,8 @@ class TestCheckAndArchive:
                 config={"compress_archives": False},
             )
 
-        log_file = tmp_path / "test.jsonl"
-        log_file.write_text(json.dumps({"timestamp": "2026-01-01T00:00:00"}) + "\n")
+        log_file = tmp_path / FILE_TEST_JSONL
+        log_file.write_text(json.dumps({"timestamp": DATE_TIMESTAMP}) + "\n")
         service.current_log_path = log_file
         service._get_file_size_mb = MagicMock(return_value=10.0)
 
@@ -1616,7 +1630,7 @@ class TestCheckAndArchive:
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, gcs_service=mock_gcs)
 
-        log_file = tmp_path / "test.jsonl"
+        log_file = tmp_path / FILE_TEST_JSONL
         log_file.write_text('{"message":"test"}\n')
         service.current_log_path = log_file
 
@@ -1644,14 +1658,14 @@ class TestSyncArchiveToGcs:
     def test_returns_none_when_file_missing(self, mock_db):
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db)
-        result = service._sync_archive_to_gcs(Path("/nonexistent/log.jsonl"))
+        result = service._sync_archive_to_gcs(Path(FILE_NONEXISTENT_LOG))
         assert result is None
 
     def test_compresses_content(self, mock_db, tmp_path):
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, config={"compress_archives": True})
-        log_file = tmp_path / "test.jsonl"
-        content = json.dumps({"timestamp": "2026-01-01T00:00:00", "message": "err"})
+        log_file = tmp_path / FILE_TEST_JSONL
+        content = json.dumps({"timestamp": DATE_TIMESTAMP, "message": "err"})
         log_file.write_text(content + "\n")
 
         result = service._sync_archive_to_gcs(log_file)
@@ -1666,8 +1680,8 @@ class TestSyncArchiveToGcs:
     def test_uncompressed_content(self, mock_db, tmp_path):
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db, config={"compress_archives": False})
-        log_file = tmp_path / "test.jsonl"
-        content = json.dumps({"timestamp": "2026-01-01T00:00:00", "message": "err"})
+        log_file = tmp_path / FILE_TEST_JSONL
+        content = json.dumps({"timestamp": DATE_TIMESTAMP, "message": "err"})
         log_file.write_text(content + "\n")
 
         result = service._sync_archive_to_gcs(log_file)
@@ -1678,25 +1692,25 @@ class TestSyncArchiveToGcs:
     def test_date_range_extraction(self, mock_db, tmp_path):
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db)
-        log_file = tmp_path / "test.jsonl"
+        log_file = tmp_path / FILE_TEST_JSONL
         lines = [
-            json.dumps({"timestamp": "2026-01-01T00:00:00"}),
+            json.dumps({"timestamp": DATE_TIMESTAMP}),
             json.dumps({"timestamp": "2026-01-02T12:00:00"}),
             json.dumps({"timestamp": "2026-01-03T23:59:59"}),
         ]
         log_file.write_text("\n".join(lines) + "\n")
 
         result = service._sync_archive_to_gcs(log_file)
-        assert result["date_range"]["start"] == "2026-01-01T00:00:00"
+        assert result["date_range"]["start"] == DATE_TIMESTAMP
         assert result["date_range"]["end"] == "2026-01-03T23:59:59"
         assert result["error_count"] == 3
 
     def test_handles_invalid_json_lines(self, mock_db, tmp_path):
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db)
-        log_file = tmp_path / "test.jsonl"
+        log_file = tmp_path / FILE_TEST_JSONL
         log_file.write_text(
-            json.dumps({"timestamp": "2026-01-01T00:00:00"}) + "\n"
+            json.dumps({"timestamp": DATE_TIMESTAMP}) + "\n"
             + "NOT VALID JSON\n"
             + json.dumps({"timestamp": "2026-01-02T00:00:00"}) + "\n"
         )
@@ -1707,7 +1721,7 @@ class TestSyncArchiveToGcs:
     def test_entries_without_timestamp(self, mock_db, tmp_path):
         with patch.object(Path, "mkdir"):
             service = ErrorLogService(mock_db)
-        log_file = tmp_path / "test.jsonl"
+        log_file = tmp_path / FILE_TEST_JSONL
         log_file.write_text(json.dumps({"message": "no timestamp"}) + "\n")
 
         result = service._sync_archive_to_gcs(log_file)
@@ -1747,7 +1761,7 @@ class TestCleanupOldArchives:
     def mock_gcs(self):
         gcs = MagicMock()
         gcs.is_configured.return_value = True
-        gcs.bucket_name = "test-bucket"
+        gcs.bucket_name = STR_TEST_BUCKET
         gcs.delete_file = AsyncMock(return_value=True)
         return gcs
 
@@ -1897,7 +1911,7 @@ class TestModuleFunctions:
         svc._check_and_archive = AsyncMock(return_value=None)
 
         exc = ValueError("convenience test")
-        result = await log_error(error=exc, level="WARNING")
+        result = await log_error(error=exc, level=LEVEL_WARNING)
         assert result is not None
 
     @pytest.mark.asyncio
@@ -1916,8 +1930,8 @@ class TestModuleFunctions:
         svc._check_and_archive = AsyncMock(return_value=None)
 
         mock_request = MagicMock()
-        mock_request.method = "GET"
-        mock_request.url.path = "/api/test"
+        mock_request.method = METHOD_GET
+        mock_request.url.path = SUBPATH_API_TEST
         mock_request.url.query = ""
         mock_request.client.host = MOCK_IP_LOCALHOST
         mock_request.headers.get.return_value = None

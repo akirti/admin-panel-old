@@ -23,6 +23,21 @@ EXPECTED_NEW_NAME = "New Name"
 EXPECTED_NEW_SCENARIO = "New Scenario"
 EXPECTED_SUB = "Sub 1"
 EXPECTED_TEST_SCENARIO = "Test Scenario"
+STR_DOMAIN1 = "domain1"
+STR_DOMAIN2 = "domain2"
+STR_DOMAINKEY = "domainKey"
+STR_SCENARIO1 = "scenario1"
+STR_SUB1 = "sub1"
+STR_SUBDOMAINS = "subDomains"
+STR_TEST = "Test"
+SUBPATH_DOMAIN_SCENARIOS = "/domain-scenarios/"
+SUBPATH_PLAYBOARDS = "/playboards"
+SUBPATH_SCENARIOS_TEST = "/scenarios/test"
+SUBPATH_SUB1 = "/sub1"
+SUBPATH_SUBDOMAINS = "/subdomains"
+SUBPATH_TOGGLE_STATUS = "/toggle-status"
+
+
 
 
 
@@ -37,12 +52,12 @@ class TestHelperFunctions:
 
     def test_check_domain_access_matching_domain(self):
         """Test check_domain_access with matching domain"""
-        result = check_domain_access(["domain1", "domain2"], "domain1")
+        result = check_domain_access([STR_DOMAIN1, STR_DOMAIN2], STR_DOMAIN1)
         assert result is True
 
     def test_check_domain_access_no_match(self):
         """Test check_domain_access with no matching domain"""
-        result = check_domain_access(["domain1", "domain2"], "domain3")
+        result = check_domain_access([STR_DOMAIN1, STR_DOMAIN2], "domain3")
         assert result is False
 
     def test_create_pagination_meta(self):
@@ -85,10 +100,10 @@ class TestHelperFunctions:
         db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
 
         user_service = MagicMock()
-        user_service.resolve_user_domains = AsyncMock(return_value=["domain1"])
+        user_service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN1])
 
         result = await get_user_accessible_domains(current_user, db, user_service)
-        assert result == ["domain1"]
+        assert result == [STR_DOMAIN1]
 
     @pytest.mark.asyncio
     async def test_get_user_accessible_domains_user_not_found(self):
@@ -131,7 +146,7 @@ class TestDomainScenariosRoutes:
     def mock_user_service(self):
         """Create mock user service"""
         service = MagicMock()
-        service.resolve_user_domains = AsyncMock(return_value=["domain1"])
+        service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN1])
         return service
 
     @pytest.fixture
@@ -156,11 +171,11 @@ class TestDomainScenariosRoutes:
         scenario_id = ObjectId()
         mock_scenario = {
             "_id": scenario_id,
-            "key": "scenario1",
+            "key": STR_SCENARIO1,
             "name": EXPECTED_TEST_SCENARIO,
-            "domainKey": "domain1",
+            STR_DOMAINKEY: STR_DOMAIN1,
             "status": "active",
-            "subDomains": [],
+            STR_SUBDOMAINS: [],
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
@@ -215,11 +230,11 @@ class TestDomainScenariosRoutes:
         scenario_id = ObjectId()
         mock_scenario = {
             "_id": scenario_id,
-            "key": "scenario1",
+            "key": STR_SCENARIO1,
             "name": EXPECTED_TEST_SCENARIO,
-            "domainKey": "domain1",
+            STR_DOMAINKEY: STR_DOMAIN1,
             "status": "active",
-            "subDomains": [],
+            STR_SUBDOMAINS: [],
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
@@ -229,18 +244,18 @@ class TestDomainScenariosRoutes:
 
         response = client.get(f"/domain-scenarios/{scenario_id}")
         assert response.status_code == 200
-        assert response.json()["key"] == "scenario1"
+        assert response.json()["key"] == STR_SCENARIO1
 
     def test_get_scenario_by_key(self, client, mock_db, mock_user_service):
         """Test get scenario by key when ObjectId lookup returns None"""
         mock_scenario = {
             "_id": ObjectId(),
-            "key": "scenario1",
+            "key": STR_SCENARIO1,
             "name": EXPECTED_TEST_SCENARIO,
-            "domainKey": "domain1",
-            "path": "/scenarios/test",
+            STR_DOMAINKEY: STR_DOMAIN1,
+            "path": SUBPATH_SCENARIOS_TEST,
             "status": "active",
-            "subDomains": [],
+            STR_SUBDOMAINS: [],
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
@@ -263,16 +278,16 @@ class TestDomainScenariosRoutes:
     def test_create_scenario(self, client, mock_db):
         """Test create scenario"""
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=None)  # Key doesn't exist
-        mock_db.domains.find_one = AsyncMock(return_value={"key": "domain1"})  # Domain exists
+        mock_db.domains.find_one = AsyncMock(return_value={"key": STR_DOMAIN1})  # Domain exists
         mock_db.domain_scenarios.insert_one = AsyncMock(return_value=MagicMock(inserted_id=ObjectId()))
 
         scenario_data = {
             "key": "new-scenario",
             "name": EXPECTED_NEW_SCENARIO,
-            "domainKey": "domain1",
+            STR_DOMAINKEY: STR_DOMAIN1,
             "path": "/scenarios/new",
             "status": "active",
-            "subDomains": []
+            STR_SUBDOMAINS: []
         }
 
         response = client.post(PATH_DOMAIN_SCENARIOS, json=scenario_data)
@@ -285,10 +300,10 @@ class TestDomainScenariosRoutes:
         scenario_data = {
             "key": "existing",
             "name": EXPECTED_NEW_SCENARIO,
-            "domainKey": "domain1",
+            STR_DOMAINKEY: STR_DOMAIN1,
             "path": "/scenarios/existing",
             "status": "active",
-            "subDomains": []
+            STR_SUBDOMAINS: []
         }
 
         response = client.post(PATH_DOMAIN_SCENARIOS, json=scenario_data)
@@ -303,10 +318,10 @@ class TestDomainScenariosRoutes:
         scenario_data = {
             "key": "new-scenario",
             "name": EXPECTED_NEW_SCENARIO,
-            "domainKey": "nonexistent",
+            STR_DOMAINKEY: "nonexistent",
             "path": "/scenarios/new",
             "status": "active",
-            "subDomains": []
+            STR_SUBDOMAINS: []
         }
 
         response = client.post(PATH_DOMAIN_SCENARIOS, json=scenario_data)
@@ -318,11 +333,11 @@ class TestDomainScenariosRoutes:
         scenario_id = ObjectId()
         existing = {
             "_id": scenario_id,
-            "key": "scenario1",
+            "key": STR_SCENARIO1,
             "name": "Old Name",
-            "domainKey": "domain1",
+            STR_DOMAINKEY: STR_DOMAIN1,
             "status": "active",
-            "subDomains": [],
+            STR_SUBDOMAINS: [],
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
@@ -353,20 +368,20 @@ class TestDomainScenariosRoutes:
         scenario_id = ObjectId()
         existing = {
             "_id": scenario_id,
-            "key": "scenario1",
-            "name": "Test",
-            "domainKey": "domain1",
+            "key": STR_SCENARIO1,
+            "name": STR_TEST,
+            STR_DOMAINKEY: STR_DOMAIN1,
             "status": "active",
-            "subDomains": [],
+            STR_SUBDOMAINS: [],
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(side_effect=[existing.copy(), existing.copy()])
         mock_db.domain_scenarios.update_one = AsyncMock()
-        mock_db.domains.find_one = AsyncMock(return_value={"key": "domain2"})
+        mock_db.domains.find_one = AsyncMock(return_value={"key": STR_DOMAIN2})
 
-        response = client.put(f"/domain-scenarios/{scenario_id}", json={"domainKey": "domain2"})
+        response = client.put(f"/domain-scenarios/{scenario_id}", json={STR_DOMAINKEY: STR_DOMAIN2})
         assert response.status_code == 200
 
     def test_update_scenario_invalid_domain(self, client, mock_db):
@@ -374,11 +389,11 @@ class TestDomainScenariosRoutes:
         scenario_id = ObjectId()
         existing = {
             "_id": scenario_id,
-            "key": "scenario1",
-            "name": "Test",
-            "domainKey": "domain1",
+            "key": STR_SCENARIO1,
+            "name": STR_TEST,
+            STR_DOMAINKEY: STR_DOMAIN1,
             "status": "active",
-            "subDomains": [],
+            STR_SUBDOMAINS: [],
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
@@ -386,7 +401,7 @@ class TestDomainScenariosRoutes:
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=existing)
         mock_db.domains.find_one = AsyncMock(return_value=None)
 
-        response = client.put(f"/domain-scenarios/{scenario_id}", json={"domainKey": "nonexistent"})
+        response = client.put(f"/domain-scenarios/{scenario_id}", json={STR_DOMAINKEY: "nonexistent"})
         assert response.status_code == 400
 
     def test_update_scenario_subdomains(self, client, mock_db):
@@ -394,12 +409,12 @@ class TestDomainScenariosRoutes:
         scenario_id = ObjectId()
         existing = {
             "_id": scenario_id,
-            "key": "scenario1",
-            "name": "Test",
-            "domainKey": "domain1",
-            "path": "/scenarios/test",
+            "key": STR_SCENARIO1,
+            "name": STR_TEST,
+            STR_DOMAINKEY: STR_DOMAIN1,
+            "path": SUBPATH_SCENARIOS_TEST,
             "status": "active",
-            "subDomains": [],
+            STR_SUBDOMAINS: [],
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
@@ -408,7 +423,7 @@ class TestDomainScenariosRoutes:
         mock_db.domain_scenarios.update_one = AsyncMock()
 
         response = client.put(f"/domain-scenarios/{scenario_id}", json={
-            "subDomains": [{"key": "sub1", "name": EXPECTED_SUB, "path": "/sub1", "status": "active"}]
+            STR_SUBDOMAINS: [{"key": STR_SUB1, "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "active"}]
         })
         assert response.status_code == 200
 
@@ -417,9 +432,9 @@ class TestDomainScenariosRoutes:
         scenario_id = ObjectId()
         mock_scenario = {
             "_id": scenario_id,
-            "key": "scenario1",
-            "name": "Test",
-            "domainKey": "domain1"
+            "key": STR_SCENARIO1,
+            "name": STR_TEST,
+            STR_DOMAINKEY: STR_DOMAIN1
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
@@ -447,7 +462,7 @@ class TestDomainScenariosRoutes:
         scenario_id = ObjectId()
         mock_scenario = {
             "_id": scenario_id,
-            "key": "scenario1",
+            "key": STR_SCENARIO1,
             "status": "active"
         }
 
@@ -463,7 +478,7 @@ class TestDomainScenariosRoutes:
         scenario_id = ObjectId()
         mock_scenario = {
             "_id": scenario_id,
-            "key": "scenario1",
+            "key": STR_SCENARIO1,
             "status": "inactive"
         }
 
@@ -491,23 +506,23 @@ class TestDomainScenariosRoutes:
         scenario_id = ObjectId()
         mock_scenario = {
             "_id": scenario_id,
-            "key": "scenario1",
-            "name": "Test",
-            "domainKey": "domain1",
-            "path": "/scenarios/test",
+            "key": STR_SCENARIO1,
+            "name": STR_TEST,
+            STR_DOMAINKEY: STR_DOMAIN1,
+            "path": SUBPATH_SCENARIOS_TEST,
             "status": "active",
-            "subDomains": [],
+            STR_SUBDOMAINS: [],
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(side_effect=[
             mock_scenario.copy(),
-            {**mock_scenario.copy(), "subDomains": [{"key": "sub1", "name": EXPECTED_SUB, "path": "/sub1", "status": "active"}]}
+            {**mock_scenario.copy(), STR_SUBDOMAINS: [{"key": STR_SUB1, "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "active"}]}
         ])
         mock_db.domain_scenarios.update_one = AsyncMock()
 
-        subdomain_data = {"key": "sub1", "name": EXPECTED_SUB, "path": "/sub1", "status": "active"}
+        subdomain_data = {"key": STR_SUB1, "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "active"}
         response = client.post(f"/domain-scenarios/{scenario_id}/subdomains", json=subdomain_data)
         assert response.status_code == 200
 
@@ -520,7 +535,7 @@ class TestDomainScenariosRoutes:
         """Test add subdomain to nonexistent scenario"""
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=None)
 
-        subdomain_data = {"key": "sub1", "name": EXPECTED_SUB, "path": "/sub1", "status": "active"}
+        subdomain_data = {"key": STR_SUB1, "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "active"}
         response = client.post(f"/domain-scenarios/{ObjectId()}/subdomains", json=subdomain_data)
         assert response.status_code == 404
 
@@ -529,13 +544,13 @@ class TestDomainScenariosRoutes:
         scenario_id = ObjectId()
         mock_scenario = {
             "_id": scenario_id,
-            "key": "scenario1",
-            "subDomains": [{"key": "existing", "name": "Existing", "path": "/existing"}]
+            "key": STR_SCENARIO1,
+            STR_SUBDOMAINS: [{"key": "existing", "name": "Existing", "path": "/existing"}]
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
 
-        subdomain_data = {"key": "existing", "name": EXPECTED_SUB, "path": "/sub1", "status": "active"}
+        subdomain_data = {"key": "existing", "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "active"}
         response = client.post(f"/domain-scenarios/{scenario_id}/subdomains", json=subdomain_data)
         assert response.status_code == 400
         assert "already exists" in response.json()["detail"]
@@ -545,8 +560,8 @@ class TestDomainScenariosRoutes:
         scenario_id = ObjectId()
         mock_scenario = {
             "_id": scenario_id,
-            "key": "scenario1",
-            "subDomains": [{"key": "sub1", "name": EXPECTED_SUB}]
+            "key": STR_SCENARIO1,
+            STR_SUBDOMAINS: [{"key": STR_SUB1, "name": EXPECTED_SUB}]
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
@@ -572,14 +587,14 @@ class TestDomainScenariosRoutes:
         scenario_id = ObjectId()
         mock_scenario = {
             "_id": scenario_id,
-            "key": "scenario1",
-            "domainKey": "domain1"
+            "key": STR_SCENARIO1,
+            STR_DOMAINKEY: STR_DOMAIN1
         }
 
         mock_playboard = {
             "_id": ObjectId(),
             "name": "Playboard 1",
-            "scenarioKey": "scenario1",
+            "scenarioKey": STR_SCENARIO1,
             "status": "active"
         }
 
@@ -633,7 +648,7 @@ class TestDomainScenariosRoutesRegularUser:
     def mock_user_service(self):
         """Create mock user service"""
         service = MagicMock()
-        service.resolve_user_domains = AsyncMock(return_value=["domain1"])
+        service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN1])
         return service
 
     @pytest.fixture
@@ -663,7 +678,7 @@ class TestDomainScenariosRoutesRegularUser:
     def test_list_scenarios_domain_filter_no_access(self, client, mock_db, mock_user_service):
         """Test list scenarios with domain filter but no access"""
         mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
-        mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain1"])
+        mock_user_service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN1])
 
         response = client.get("/domain-scenarios?domain_key=domain2")
         assert response.status_code == 200
@@ -680,7 +695,7 @@ class TestDomainScenariosRoutesRegularUser:
     def test_count_scenarios_domain_filter_no_access(self, client, mock_db, mock_user_service):
         """Test count scenarios with domain filter but no access"""
         mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
-        mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain1"])
+        mock_user_service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN1])
 
         response = client.get("/domain-scenarios/count?domain_key=domain2")
         assert response.status_code == 200
@@ -691,18 +706,18 @@ class TestDomainScenariosRoutesRegularUser:
         scenario_id = ObjectId()
         mock_scenario = {
             "_id": scenario_id,
-            "key": "scenario1",
-            "name": "Test",
-            "domainKey": "domain2",  # Different domain
+            "key": STR_SCENARIO1,
+            "name": STR_TEST,
+            STR_DOMAINKEY: STR_DOMAIN2,  # Different domain
             "status": "active",
-            "subDomains": [],
+            STR_SUBDOMAINS: [],
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
         mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
-        mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain1"])
+        mock_user_service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN1])
 
         response = client.get(f"/domain-scenarios/{scenario_id}")
         assert response.status_code == 403
@@ -712,13 +727,13 @@ class TestDomainScenariosRoutesRegularUser:
         scenario_id = ObjectId()
         mock_scenario = {
             "_id": scenario_id,
-            "key": "scenario1",
-            "domainKey": "domain2"  # Different domain
+            "key": STR_SCENARIO1,
+            STR_DOMAINKEY: STR_DOMAIN2  # Different domain
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
         mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
-        mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain1"])
+        mock_user_service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN1])
 
         response = client.get(f"/domain-scenarios/{scenario_id}/playboards")
         assert response.status_code == 403

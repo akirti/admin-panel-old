@@ -22,6 +22,12 @@ PATH_BULK_UPLOAD_USERS = "/bulk/upload/users"
 
 EXPECTED_GCS_SERVICE_NOT_CONFIGURED = "GCS service not configured"
 EXPECTED_INVALID_ENTITY_TYPE = "Invalid entity type"
+FILE_DATA_CSV = "data.csv"
+FILE_U_CSV = "u.csv"
+MIME_TEXT_CSV = "text/csv"
+PATCH_FILE_VALIDATION_VALIDATE_UPLOAD = "easylifeauth.utils.file_validation.validate_upload"
+STR_CONTENT_DISPOSITION = "content-disposition"
+
 
 
 
@@ -129,7 +135,7 @@ class TestBulkUpload:
     # -- Happy-path uploads ------------------------------------------------
 
     @pytest.mark.parametrize("entity_type", VALID_TYPES)
-    @patch("easylifeauth.utils.file_validation.validate_upload")
+    @patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD)
     def test_upload_valid_entity_csv(
         self, mock_validate, entity_type, client, mock_bulk_service
     ):
@@ -137,7 +143,7 @@ class TestBulkUpload:
         csv_content = b"col1,col2\nval1,val2"
         response = client.post(
             f"/bulk/upload/{entity_type}",
-            files={"file": ("data.csv", BytesIO(csv_content), "text/csv")},
+            files={"file": (FILE_DATA_CSV, BytesIO(csv_content), MIME_TEXT_CSV)},
         )
         assert response.status_code == 200
         data = response.json()
@@ -146,10 +152,10 @@ class TestBulkUpload:
         assert data["failed"] == 1
         mock_validate.assert_called_once()
         mock_bulk_service.process_entity.assert_awaited_once_with(
-            entity_type, csv_content, "data.csv", True
+            entity_type, csv_content, FILE_DATA_CSV, True
         )
 
-    @patch("easylifeauth.utils.file_validation.validate_upload")
+    @patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD)
     def test_upload_xlsx_file(self, mock_validate, client, mock_bulk_service):
         """Uploading an XLSX file is accepted."""
         xlsx_content = b"PK\x03\x04fake-xlsx"
@@ -161,7 +167,7 @@ class TestBulkUpload:
         assert response.status_code == 200
         mock_bulk_service.process_entity.assert_awaited_once()
 
-    @patch("easylifeauth.utils.file_validation.validate_upload")
+    @patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD)
     def test_upload_send_password_emails_false(
         self, mock_validate, client, mock_bulk_service
     ):
@@ -169,7 +175,7 @@ class TestBulkUpload:
         csv_content = b"email\nuser@test.com"
         response = client.post(
             "/bulk/upload/users?send_password_emails=false",
-            files={"file": (EXPECTED_USERS_CSV, BytesIO(csv_content), "text/csv")},
+            files={"file": (EXPECTED_USERS_CSV, BytesIO(csv_content), MIME_TEXT_CSV)},
         )
         assert response.status_code == 200
         mock_bulk_service.process_entity.assert_awaited_once_with(
@@ -178,14 +184,14 @@ class TestBulkUpload:
 
     # -- process_entity returns plain dict (no to_dict) --------------------
 
-    @patch("easylifeauth.utils.file_validation.validate_upload")
+    @patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD)
     def test_upload_result_plain_dict(self, mock_validate, client, mock_bulk_service):
         """When process_entity returns a plain dict (no to_dict), it is used as-is."""
         plain = {"total": 2, "successful": 2, "failed": 0, "errors": []}
         mock_bulk_service.process_entity = AsyncMock(return_value=plain)
         response = client.post(
             PATH_BULK_UPLOAD_USERS,
-            files={"file": ("u.csv", BytesIO(b"c\n1"), "text/csv")},
+            files={"file": (FILE_U_CSV, BytesIO(b"c\n1"), MIME_TEXT_CSV)},
         )
         assert response.status_code == 200
         assert response.json() == plain
@@ -196,14 +202,14 @@ class TestBulkUpload:
         """An invalid entity_type yields 400."""
         response = client.post(
             "/bulk/upload/widgets",
-            files={"file": ("w.csv", BytesIO(b"c\n1"), "text/csv")},
+            files={"file": ("w.csv", BytesIO(b"c\n1"), MIME_TEXT_CSV)},
         )
         assert response.status_code == 400
         assert EXPECTED_INVALID_ENTITY_TYPE in response.json()["detail"]
 
     # -- ValueError from process_entity ------------------------------------
 
-    @patch("easylifeauth.utils.file_validation.validate_upload")
+    @patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD)
     def test_upload_value_error(self, mock_validate, client, mock_bulk_service):
         """A ValueError from process_entity maps to 400."""
         mock_bulk_service.process_entity = AsyncMock(
@@ -211,14 +217,14 @@ class TestBulkUpload:
         )
         response = client.post(
             PATH_BULK_UPLOAD_USERS,
-            files={"file": ("u.csv", BytesIO(b"c\n1"), "text/csv")},
+            files={"file": (FILE_U_CSV, BytesIO(b"c\n1"), MIME_TEXT_CSV)},
         )
         assert response.status_code == 400
         assert "Missing required column" in response.json()["detail"]
 
     # -- Generic exception from process_entity -----------------------------
 
-    @patch("easylifeauth.utils.file_validation.validate_upload")
+    @patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD)
     def test_upload_internal_error(self, mock_validate, client, mock_bulk_service):
         """An unexpected exception from process_entity maps to 500."""
         mock_bulk_service.process_entity = AsyncMock(
@@ -226,14 +232,14 @@ class TestBulkUpload:
         )
         response = client.post(
             PATH_BULK_UPLOAD_USERS,
-            files={"file": ("u.csv", BytesIO(b"c\n1"), "text/csv")},
+            files={"file": (FILE_U_CSV, BytesIO(b"c\n1"), MIME_TEXT_CSV)},
         )
         assert response.status_code == 500
         assert "Error processing file" in response.json()["detail"]
 
     # -- validate_upload raises HTTPException --------------------------------
 
-    @patch("easylifeauth.utils.file_validation.validate_upload")
+    @patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD)
     def test_upload_file_validation_failure(self, mock_validate, client):
         """When validate_upload raises, the error propagates (e.g. 400/422)."""
         from fastapi import HTTPException, status
@@ -268,8 +274,8 @@ class TestGetTemplate:
         """Download a CSV template for every valid entity type."""
         response = client.get(f"/bulk/template/{entity_type}?format=csv")
         assert response.status_code == 200
-        assert response.headers["content-type"].startswith("text/csv")
-        disposition = response.headers["content-disposition"]
+        assert response.headers["content-type"].startswith(MIME_TEXT_CSV)
+        disposition = response.headers[STR_CONTENT_DISPOSITION]
         assert f"{entity_type}_template.csv" in disposition
         # The body should contain the column header row from the mock DataFrame.
         body = response.text
@@ -285,7 +291,7 @@ class TestGetTemplate:
         assert response.status_code == 200
         ct = response.headers["content-type"]
         assert "spreadsheetml" in ct or "openxmlformats" in ct
-        disposition = response.headers["content-disposition"]
+        disposition = response.headers[STR_CONTENT_DISPOSITION]
         assert f"{entity_type}_template.xlsx" in disposition
         # XLSX files start with the ZIP magic bytes PK.
         assert response.content[:2] == b"PK"
@@ -296,7 +302,7 @@ class TestGetTemplate:
         """When no format query param is given, default is xlsx."""
         response = client.get("/bulk/template/users")
         assert response.status_code == 200
-        assert "users_template.xlsx" in response.headers["content-disposition"]
+        assert "users_template.xlsx" in response.headers[STR_CONTENT_DISPOSITION]
 
     # -- Invalid entity type -----------------------------------------------
 
@@ -361,11 +367,11 @@ class TestBulkUploadFromGCS:
         """Optional bucket_name is forwarded to gcs_service.download_file."""
         response = client_with_gcs.post(
             PATH_BULK_GCS_UPLOAD_USERS,
-            json={"file_path": "data.csv", "bucket_name": "my-bucket"},
+            json={"file_path": FILE_DATA_CSV, "bucket_name": "my-bucket"},
         )
         assert response.status_code == 200
         mock_gcs_service_configured.download_file.assert_awaited_once_with(
-            "data.csv", "my-bucket"
+            FILE_DATA_CSV, "my-bucket"
         )
 
     def test_gcs_upload_send_password_emails_false(
@@ -374,7 +380,7 @@ class TestBulkUploadFromGCS:
         """send_password_emails query param is forwarded to process_entity."""
         response = client_with_gcs.post(
             "/bulk/gcs/upload/users?send_password_emails=false",
-            json={"file_path": "data.csv"},
+            json={"file_path": FILE_DATA_CSV},
         )
         assert response.status_code == 200
         call_args = mock_bulk_service.process_entity.call_args
@@ -390,7 +396,7 @@ class TestBulkUploadFromGCS:
         mock_bulk_service.process_entity = AsyncMock(return_value=plain)
         response = client_with_gcs.post(
             PATH_BULK_GCS_UPLOAD_USERS,
-            json={"file_path": "data.csv"},
+            json={"file_path": FILE_DATA_CSV},
         )
         assert response.status_code == 200
         assert response.json() == plain
@@ -401,7 +407,7 @@ class TestBulkUploadFromGCS:
         """An invalid entity_type yields 400."""
         response = client_with_gcs.post(
             "/bulk/gcs/upload/widgets",
-            json={"file_path": "data.csv"},
+            json={"file_path": FILE_DATA_CSV},
         )
         assert response.status_code == 400
         assert EXPECTED_INVALID_ENTITY_TYPE in response.json()["detail"]
@@ -414,7 +420,7 @@ class TestBulkUploadFromGCS:
         # the module-level _gcs_service which is None in a test context.
         response = client.post(
             PATH_BULK_GCS_UPLOAD_USERS,
-            json={"file_path": "data.csv"},
+            json={"file_path": FILE_DATA_CSV},
         )
         assert response.status_code == 503
         assert EXPECTED_GCS_SERVICE_NOT_CONFIGURED in response.json()["detail"]
@@ -423,7 +429,7 @@ class TestBulkUploadFromGCS:
         """When gcs_service.is_configured() is False, yields 503."""
         response = client_with_unconfigured_gcs.post(
             PATH_BULK_GCS_UPLOAD_USERS,
-            json={"file_path": "data.csv"},
+            json={"file_path": FILE_DATA_CSV},
         )
         assert response.status_code == 503
         assert EXPECTED_GCS_SERVICE_NOT_CONFIGURED in response.json()["detail"]
@@ -453,7 +459,7 @@ class TestBulkUploadFromGCS:
         )
         response = client_with_gcs.post(
             PATH_BULK_GCS_UPLOAD_USERS,
-            json={"file_path": "data.csv"},
+            json={"file_path": FILE_DATA_CSV},
         )
         assert response.status_code == 400
         assert "bad column layout" in response.json()["detail"]
@@ -469,7 +475,7 @@ class TestBulkUploadFromGCS:
         )
         response = client_with_gcs.post(
             PATH_BULK_GCS_UPLOAD_USERS,
-            json={"file_path": "data.csv"},
+            json={"file_path": FILE_DATA_CSV},
         )
         assert response.status_code == 500
         assert "Error processing file" in response.json()["detail"]

@@ -27,6 +27,21 @@ from easylifeauth.security.access_control import (
 )
 
 PATH_GROUPS = "/groups"
+STR_CAN_READ = "can-read"
+STR_CUSTOMERID = "customerId"
+STR_EDITORS = "Editors"
+STR_G1 = "g1"
+STR_GROUPID = "groupId"
+STR_GRP1 = "grp1"
+STR_PERMISSIONID = "permissionId"
+STR_R1 = "r1"
+STR_SUPER_ADMINISTRATOR = "super-administrator"
+STR_TEAM_A = "team-a"
+STR_U1 = "U1"
+SUBPATH_GROUPS = "/groups/"
+TEST_EMAIL_U1 = "u1@ex.com"
+
+
 
 
 
@@ -57,7 +72,7 @@ def _empty_cursor():
     return gen()
 
 
-def _user(role="super-administrator") -> CurrentUser:
+def _user(role=STR_SUPER_ADMINISTRATOR) -> CurrentUser:
     return CurrentUser(
         user_id="507f1f77bcf86cd799439011",
         email=f"{role}@example.com",
@@ -90,17 +105,17 @@ class TestResolvePermissions:
         db = _mock_db()
         db.permissions.find_one = AsyncMock(side_effect=[
             None,  # ObjectId lookup fails
-            {"permissionId": "can-read", "_id": ObjectId()},  # key lookup
+            {STR_PERMISSIONID: STR_CAN_READ, "_id": ObjectId()},  # key lookup
         ])
-        result = await resolve_permissions(db, ["can-read"])
-        assert result == ["can-read"]
+        result = await resolve_permissions(db, [STR_CAN_READ])
+        assert result == [STR_CAN_READ]
 
     @pytest.mark.asyncio
     async def test_by_object_id(self):
         oid = ObjectId()
         db = _mock_db()
         db.permissions.find_one = AsyncMock(return_value={
-            "_id": oid, "permissionId": "can-write",
+            "_id": oid, STR_PERMISSIONID: "can-write",
         })
         result = await resolve_permissions(db, [str(oid)])
         assert result == ["can-write"]
@@ -117,9 +132,9 @@ class TestResolvePermissions:
         oid = ObjectId()
         db = _mock_db()
         db.permissions.find_one = AsyncMock(side_effect=[
-            {"_id": oid, "permissionId": "read"},       # by OID
+            {"_id": oid, STR_PERMISSIONID: "read"},       # by OID
             None,                                         # OID check for "write" fails (not valid OID)
-            {"permissionId": "write", "_id": ObjectId()}, # by key
+            {STR_PERMISSIONID: "write", "_id": ObjectId()}, # by key
         ])
         result = await resolve_permissions(db, [str(oid), "write"])
         assert result == ["read", "write"]
@@ -182,7 +197,7 @@ class TestResolveCustomers:
         db = _mock_db()
         db.customers.find_one = AsyncMock(side_effect=[
             None,  # OID check
-            {"customerId": "acme", "_id": ObjectId()},  # key
+            {STR_CUSTOMERID: "acme", "_id": ObjectId()},  # key
         ])
         result = await resolve_customers(db, ["acme"])
         assert result == ["acme"]
@@ -192,7 +207,7 @@ class TestResolveCustomers:
         oid = ObjectId()
         db = _mock_db()
         db.customers.find_one = AsyncMock(return_value={
-            "_id": oid, "customerId": "globex",
+            "_id": oid, STR_CUSTOMERID: "globex",
         })
         result = await resolve_customers(db, [str(oid)])
         assert result == ["globex"]
@@ -214,7 +229,7 @@ class TestNotifyUsersOfGroupChange:
     async def test_no_email_service(self):
         db = _mock_db()
         # Should not raise
-        await notify_users_of_group_change(db, "grp1", {"status": "changed"}, None)
+        await notify_users_of_group_change(db, STR_GRP1, {"status": "changed"}, None)
 
     @pytest.mark.asyncio
     async def test_sends_to_group_members(self):
@@ -222,12 +237,12 @@ class TestNotifyUsersOfGroupChange:
         email_svc = _mock_email_service()
 
         async def user_gen():
-            yield {"_id": ObjectId(), "email": "u1@ex.com", "full_name": "U1"}
+            yield {"_id": ObjectId(), "email": TEST_EMAIL_U1, "full_name": STR_U1}
             yield {"_id": ObjectId(), "email": "u2@ex.com", "full_name": "U2"}
 
         db.users.find.return_value = user_gen()
 
-        await notify_users_of_group_change(db, "grp1", {"status": "changed"}, email_svc)
+        await notify_users_of_group_change(db, STR_GRP1, {"status": "changed"}, email_svc)
         assert email_svc.send_role_change_notification.call_count == 2
 
     @pytest.mark.asyncio
@@ -237,12 +252,12 @@ class TestNotifyUsersOfGroupChange:
         email_svc.send_role_change_notification = AsyncMock(side_effect=Exception("SMTP error"))
 
         async def user_gen():
-            yield {"_id": ObjectId(), "email": "u1@ex.com", "full_name": "U1"}
+            yield {"_id": ObjectId(), "email": TEST_EMAIL_U1, "full_name": STR_U1}
 
         db.users.find.return_value = user_gen()
 
         # Should not raise, failures are silently caught
-        await notify_users_of_group_change(db, "grp1", {}, email_svc)
+        await notify_users_of_group_change(db, STR_GRP1, {}, email_svc)
 
 
 # ===========================================================================
@@ -255,7 +270,7 @@ class TestGroupCRUDIntegration:
     def _app(self):
         def factory(user=None, allow=True):
             if user is None:
-                user = _user("super-administrator")
+                user = _user(STR_SUPER_ADMINISTRATOR)
 
             app = FastAPI()
             app.include_router(router)
@@ -284,18 +299,18 @@ class TestGroupCRUDIntegration:
         db.groups.insert_one = AsyncMock(
             return_value=MagicMock(inserted_id=ObjectId())
         )
-        # Permissions resolution: "can-read" found by key
+        # Permissions resolution: STR_CAN_READ found by key
         db.permissions.find_one = AsyncMock(side_effect=[
-            None,  # OID check for "can-read"
-            {"permissionId": "can-read", "_id": ObjectId()},  # key check
+            None,  # OID check for STR_CAN_READ
+            {STR_PERMISSIONID: STR_CAN_READ, "_id": ObjectId()},  # key check
         ])
         # Domain resolution not needed for empty domains
         db.domains.find_one = AsyncMock(return_value=None)
 
         resp = client.post(PATH_GROUPS, json={
-            "groupId": "editors", "name": "Editors",
+            STR_GROUPID: "editors", "name": STR_EDITORS,
             "description": "Editor group",
-            "permissions": ["can-read"],
+            "permissions": [STR_CAN_READ],
             "domains": [],
             "status": "active", "priority": 2,
         })
@@ -315,7 +330,7 @@ class TestGroupCRUDIntegration:
         })
 
         resp = client.post(PATH_GROUPS, json={
-            "groupId": "fin-team", "name": "Finance Team",
+            STR_GROUPID: "fin-team", "name": "Finance Team",
             "description": "desc",
             "permissions": [],
             "domains": [str(oid)],
@@ -331,11 +346,11 @@ class TestGroupCRUDIntegration:
         )
         db.customers.find_one = AsyncMock(side_effect=[
             None,  # OID check
-            {"customerId": "acme", "_id": ObjectId()},  # key check
+            {STR_CUSTOMERID: "acme", "_id": ObjectId()},  # key check
         ])
 
         resp = client.post(PATH_GROUPS, json={
-            "groupId": "acme-grp", "name": "Acme Group",
+            STR_GROUPID: "acme-grp", "name": "Acme Group",
             "description": "desc",
             "permissions": [], "domains": [],
             "customers": ["acme"],
@@ -345,10 +360,10 @@ class TestGroupCRUDIntegration:
 
     def test_create_group_duplicate_rejected(self, _app):
         client, db, _ = _app()
-        db.groups.find_one = AsyncMock(return_value={"groupId": "editors"})
+        db.groups.find_one = AsyncMock(return_value={STR_GROUPID: "editors"})
 
         resp = client.post(PATH_GROUPS, json={
-            "groupId": "editors", "name": "Editors",
+            STR_GROUPID: "editors", "name": STR_EDITORS,
             "description": "desc", "permissions": [],
             "status": "active", "priority": 1,
         })
@@ -359,7 +374,7 @@ class TestGroupCRUDIntegration:
         client, db, email_svc = _app()
         oid = ObjectId()
         existing = {
-            "_id": oid, "groupId": "editors", "name": "Editors",
+            "_id": oid, STR_GROUPID: "editors", "name": STR_EDITORS,
             "description": "old", "permissions": ["read"],
             "status": "active", "priority": 2,
             "created_at": datetime.utcnow(),
@@ -377,7 +392,7 @@ class TestGroupCRUDIntegration:
         client, db, _ = _app()
         oid = ObjectId()
         db.groups.find_one = AsyncMock(return_value={
-            "_id": oid, "groupId": "editors",
+            "_id": oid, STR_GROUPID: "editors",
         })
         db.groups.delete_one = AsyncMock(return_value=MagicMock(deleted_count=1))
 
@@ -390,7 +405,7 @@ class TestGroupCRUDIntegration:
         client, db, email_svc = _app()
         oid = ObjectId()
         db.groups.find_one = AsyncMock(return_value={
-            "_id": oid, "groupId": "editors", "status": "active",
+            "_id": oid, STR_GROUPID: "editors", "status": "active",
         })
         db.users.find.return_value = _empty_cursor()
 
@@ -402,7 +417,7 @@ class TestGroupCRUDIntegration:
         client, db, email_svc = _app()
         oid = ObjectId()
         db.groups.find_one = AsyncMock(return_value={
-            "_id": oid, "groupId": "editors", "status": "inactive",
+            "_id": oid, STR_GROUPID: "editors", "status": "inactive",
         })
         db.users.find.return_value = _empty_cursor()
 
@@ -426,7 +441,7 @@ class TestGroupDomainAssignment:
 
         async def groups_cursor():
             yield {
-                "groupId": "finance-team",
+                STR_GROUPID: "finance-team",
                 "domains": ["finance", "accounting"],
                 "status": "active",
             }
@@ -446,13 +461,13 @@ class TestGroupDomainAssignment:
         db.roles.find.return_value = _empty_cursor()
 
         async def groups_cursor():
-            yield {"groupId": "team-a", "domains": ["finance"], "status": "active"}
-            yield {"groupId": "team-b", "domains": ["hr", "legal"], "status": "active"}
+            yield {STR_GROUPID: STR_TEAM_A, "domains": ["finance"], "status": "active"}
+            yield {STR_GROUPID: "team-b", "domains": ["hr", "legal"], "status": "active"}
 
         db.groups.find.return_value = groups_cursor()
 
         svc = UserService(db, MagicMock())
-        user = {"domains": [], "roles": [], "groups": ["team-a", "team-b"]}
+        user = {"domains": [], "roles": [], "groups": [STR_TEAM_A, "team-b"]}
         result = await svc.resolve_user_domains(user)
         assert set(result) == {"finance", "hr", "legal"}
 
@@ -464,7 +479,7 @@ class TestGroupDomainAssignment:
         db.roles.find.return_value = _empty_cursor()
 
         async def groups_cursor():
-            yield {"groupId": "super-group", "domains": ["all"], "status": "active"}
+            yield {STR_GROUPID: "super-group", "domains": ["all"], "status": "active"}
 
         db.groups.find.return_value = groups_cursor()
 
@@ -481,12 +496,12 @@ class TestGroupDomainAssignment:
         db.roles.find.return_value = _empty_cursor()
 
         async def groups_cursor():
-            yield {"groupId": "team-a", "domains": ["hr"], "status": "active"}
+            yield {STR_GROUPID: STR_TEAM_A, "domains": ["hr"], "status": "active"}
 
         db.groups.find.return_value = groups_cursor()
 
         svc = UserService(db, MagicMock())
-        user = {"domains": ["finance"], "roles": [], "groups": ["team-a"]}
+        user = {"domains": ["finance"], "roles": [], "groups": [STR_TEAM_A]}
         result = await svc.resolve_user_domains(user)
         assert set(result) == {"finance", "hr"}
 
@@ -508,7 +523,7 @@ class TestInactiveGroupExclusion:
         # Only active groups are returned by the query (status filter in query)
         async def groups_cursor():
             # This group is active - should be included
-            yield {"groupId": "active-grp", "domains": ["finance"], "status": "active"}
+            yield {STR_GROUPID: "active-grp", "domains": ["finance"], "status": "active"}
 
         db.groups.find.return_value = groups_cursor()
 
@@ -551,13 +566,13 @@ class TestResolveUserPermissions:
         db = _mock_db()
 
         async def roles_cursor():
-            yield {"roleId": "r1", "permissions": ["read", "write"], "status": "active"}
+            yield {"roleId": STR_R1, "permissions": ["read", "write"], "status": "active"}
 
         db.roles.find.return_value = roles_cursor()
         db.groups.find.return_value = _empty_cursor()
 
         svc = UserService(db, MagicMock())
-        user = {"roles": ["r1"], "groups": []}
+        user = {"roles": [STR_R1], "groups": []}
         result = await svc.resolve_user_permissions(user)
         assert set(result) == {"read", "write"}
 
@@ -569,12 +584,12 @@ class TestResolveUserPermissions:
         db.roles.find.return_value = _empty_cursor()
 
         async def groups_cursor():
-            yield {"groupId": "g1", "permissions": ["read", "export"], "status": "active"}
+            yield {STR_GROUPID: STR_G1, "permissions": ["read", "export"], "status": "active"}
 
         db.groups.find.return_value = groups_cursor()
 
         svc = UserService(db, MagicMock())
-        user = {"roles": [], "groups": ["g1"]}
+        user = {"roles": [], "groups": [STR_G1]}
         result = await svc.resolve_user_permissions(user)
         assert set(result) == {"read", "export"}
 
@@ -585,16 +600,16 @@ class TestResolveUserPermissions:
         db = _mock_db()
 
         async def roles_cursor():
-            yield {"roleId": "r1", "permissions": ["read", "write"], "status": "active"}
+            yield {"roleId": STR_R1, "permissions": ["read", "write"], "status": "active"}
 
         async def groups_cursor():
-            yield {"groupId": "g1", "permissions": ["read", "delete"], "status": "active"}
+            yield {STR_GROUPID: STR_G1, "permissions": ["read", "delete"], "status": "active"}
 
         db.roles.find.return_value = roles_cursor()
         db.groups.find.return_value = groups_cursor()
 
         svc = UserService(db, MagicMock())
-        user = {"roles": ["r1"], "groups": ["g1"]}
+        user = {"roles": [STR_R1], "groups": [STR_G1]}
         result = await svc.resolve_user_permissions(user)
         assert set(result) == {"read", "write", "delete"}
 
@@ -647,7 +662,7 @@ class TestGetGroupUsers:
             app = FastAPI()
             app.include_router(router)
             db = _mock_db()
-            user = _user("super-administrator")
+            user = _user(STR_SUPER_ADMINISTRATOR)
 
             app.dependency_overrides[require_group_admin] = lambda: user
             app.dependency_overrides[require_super_admin] = lambda: user
@@ -661,11 +676,11 @@ class TestGetGroupUsers:
         client, db = _app()
         oid = ObjectId()
         db.groups.find_one = AsyncMock(return_value={
-            "_id": oid, "groupId": "editors",
+            "_id": oid, STR_GROUPID: "editors",
         })
 
         async def user_cursor():
-            yield {"_id": ObjectId(), "email": "u1@ex.com", "full_name": "U1", "groups": ["editors"]}
+            yield {"_id": ObjectId(), "email": TEST_EMAIL_U1, "full_name": STR_U1, "groups": ["editors"]}
             yield {"_id": ObjectId(), "email": "u2@ex.com", "full_name": "U2", "groups": ["editors"]}
 
         db.users.find.return_value = user_cursor()

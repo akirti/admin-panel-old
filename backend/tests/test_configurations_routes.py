@@ -28,6 +28,38 @@ PATH_CONFIGURATIONS_NONEXISTENT = "/configurations/nonexistent"
 PATH_CONFIGURATIONS_UPLOAD = "/configurations/upload"
 
 EXPECTED_SELECT = "SELECT *"
+DATE_2024_01_01 = "2024-01-01"
+DATE_2024_01_01T00_00_00 = "2024-01-01T00:00:00"
+FILE_CONFIGURATIONS_VERSIONED_V1_FILE_XLSX = "configurations/versioned/v1_file.xlsx"
+FILE_DATA_XLSX = "data.xlsx"
+FILE_FILE_XLSX = "file.xlsx"
+MIME_APPLICATION_JSON = "application/json"
+MIME_APPLICATION_VND_OPENXMLFORMATS_OFFICEDOCUMENT_SPREADSHEETML_SHEET = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE = "easylifeauth.api.configurations_routes._gcs_service"
+PATCH_CONFIGURATIONS_ROUTES_SYNC_CONFIG_TO_GCS = "easylifeauth.api.configurations_routes.sync_config_to_gcs"
+PATCH_FILE_VALIDATION_VALIDATE_UPLOAD = "easylifeauth.utils.file_validation.validate_upload"
+STR_CONFIG_123 = "config_123"
+STR_GCS_CONFIG = "gcs-config"
+STR_GCS_DATA = "gcs-data"
+STR_L1 = "l1"
+STR_LOOKUP_CONFIG = "lookup-config"
+STR_LOOKUP_DATA = "lookup-data"
+STR_O1 = "o1"
+STR_PROCESS_CONFIG = "process-config"
+STR_Q1 = "q1"
+STR_SNAPSHOT_DATA = "snapshot-data"
+STR_SUPER_ADMINISTRATOR = "super-administrator"
+STR_TEST_BUCKET = "test-bucket"
+STR_TEST_CONFIG = "test-config"
+STR_UK = "UK"
+STR_UPDATED_CONFIG = "updated-config"
+STR_US = "US"
+STR_UTF_8 = "utf-8"
+STR_VERSIONED_CONFIG = "versioned-config"
+STR_XLSX_CONFIG = "xlsx-config"
+SUBPATH_CONFIGURATIONS = "/configurations/"
+
+
 
 
 
@@ -95,10 +127,10 @@ class TestHelperFunctions:
 
     def test_db_configuration_types(self):
         """Test DbConfigurationTypes enum values"""
-        assert DbConfigurationTypes.LOOKUP_DATA_TYPE.value == "lookup-data"
-        assert DbConfigurationTypes.PROCESS_TYPE.value == "process-config"
-        assert DbConfigurationTypes.SNAP_SHOT_TYPE.value == "snapshot-data"
-        assert DbConfigurationTypes.GCS_DATA_TYPE.value == "gcs-data"
+        assert DbConfigurationTypes.LOOKUP_DATA_TYPE.value == STR_LOOKUP_DATA
+        assert DbConfigurationTypes.PROCESS_TYPE.value == STR_PROCESS_CONFIG
+        assert DbConfigurationTypes.SNAP_SHOT_TYPE.value == STR_SNAPSHOT_DATA
+        assert DbConfigurationTypes.GCS_DATA_TYPE.value == STR_GCS_DATA
 
 
 class TestGCSServiceInitialization:
@@ -111,9 +143,9 @@ class TestGCSServiceInitialization:
             mock_service.is_configured.return_value = True
             MockGCS.return_value = mock_service
 
-            init_gcs_service({"bucket_name": "test-bucket"})
+            init_gcs_service({"bucket_name": STR_TEST_BUCKET})
 
-            MockGCS.assert_called_once_with({"bucket_name": "test-bucket"})
+            MockGCS.assert_called_once_with({"bucket_name": STR_TEST_BUCKET})
 
     def test_init_gcs_service_without_config(self):
         """Test init_gcs_service without config"""
@@ -154,7 +186,7 @@ class TestConfigurationsRoutes:
         """Create mock super admin user"""
         user = MagicMock()
         user.email = MOCK_EMAIL_ADMIN_TEST
-        user.roles = ["super-administrator"]
+        user.roles = [STR_SUPER_ADMINISTRATOR]
         return user
 
     @pytest.fixture
@@ -168,9 +200,9 @@ class TestConfigurationsRoutes:
         """Test list configurations endpoint"""
         config = {
             "_id": ObjectId(),
-            "config_id": "config_123",
-            "key": "test-config",
-            "type": "lookup-data",
+            "config_id": STR_CONFIG_123,
+            "key": STR_TEST_CONFIG,
+            "type": STR_LOOKUP_DATA,
             "row_update_stp": datetime.utcnow()
         }
 
@@ -242,9 +274,9 @@ class TestConfigurationsRoutes:
         """Test get configuration by config_id"""
         config = {
             "_id": ObjectId(),
-            "config_id": "config_123",
-            "key": "test-config",
-            "type": "lookup-data"
+            "config_id": STR_CONFIG_123,
+            "key": STR_TEST_CONFIG,
+            "type": STR_LOOKUP_DATA
         }
 
         mock_db.configurations.find_one = AsyncMock(return_value=config.copy())
@@ -257,9 +289,9 @@ class TestConfigurationsRoutes:
         obj_id = ObjectId()
         config = {
             "_id": obj_id,
-            "config_id": "config_123",
-            "key": "test-config",
-            "type": "lookup-data"
+            "config_id": STR_CONFIG_123,
+            "key": STR_TEST_CONFIG,
+            "type": STR_LOOKUP_DATA
         }
 
         # First query by config_id returns None, second by _id returns config
@@ -279,9 +311,9 @@ class TestConfigurationsRoutes:
         """Test get configuration of GCS type"""
         config = {
             "_id": ObjectId(),
-            "config_id": "config_123",
-            "key": "test-config",
-            "type": "gcs-data",
+            "config_id": STR_CONFIG_123,
+            "key": STR_TEST_CONFIG,
+            "type": STR_GCS_DATA,
             "gcs": {"path": MOCK_GCS_FILE_JSON}
         }
 
@@ -297,7 +329,7 @@ class TestConfigurationsRoutes:
 
         config_data = {
             "key": "new-config",
-            "type": "lookup-data",
+            "type": STR_LOOKUP_DATA,
             "status": "active"
         }
 
@@ -310,7 +342,7 @@ class TestConfigurationsRoutes:
 
         config_data = {
             "key": "existing",
-            "type": "lookup-data",
+            "type": STR_LOOKUP_DATA,
             "status": "active"
         }
 
@@ -323,9 +355,9 @@ class TestConfigurationsRoutes:
         config_id = ObjectId()
         existing = {
             "_id": config_id,
-            "config_id": "config_123",
-            "key": "test-config",
-            "type": "lookup-data",
+            "config_id": STR_CONFIG_123,
+            "key": STR_TEST_CONFIG,
+            "type": STR_LOOKUP_DATA,
             "lookups": {"old": "data"},
             "queries": {},
             "logics": {},
@@ -333,7 +365,7 @@ class TestConfigurationsRoutes:
             "data": {},
         }
         updated = existing.copy()
-        updated["key"] = "updated-config"
+        updated["key"] = STR_UPDATED_CONFIG
 
         # find_one is called: (1) to find existing, (2) to check duplicate key, (3) to return updated doc
         mock_db.configurations.find_one = AsyncMock(
@@ -341,14 +373,14 @@ class TestConfigurationsRoutes:
         )
         mock_db.configurations.update_one = AsyncMock()
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", None):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, None):
             response = client.put(
                 PATH_CONFIGURATIONS_CONFIG_123,
-                json={"key": "updated-config", "lookups": {"new": "data"}}
+                json={"key": STR_UPDATED_CONFIG, "lookups": {"new": "data"}}
             )
         assert response.status_code == 200
         data = response.json()
-        assert data["key"] == "updated-config"
+        assert data["key"] == STR_UPDATED_CONFIG
 
     def test_update_configuration_not_found(self, client, mock_db):
         """Test update configuration not found"""
@@ -359,7 +391,7 @@ class TestConfigurationsRoutes:
 
     def test_delete_configuration(self, client, mock_db):
         """Test delete configuration endpoint"""
-        mock_db.configurations.find_one = AsyncMock(return_value={"config_id": "config_123", "_id": ObjectId()})
+        mock_db.configurations.find_one = AsyncMock(return_value={"config_id": STR_CONFIG_123, "_id": ObjectId()})
         mock_db.configurations.delete_one = AsyncMock(return_value=MagicMock(deleted_count=1))
 
         response = client.delete(PATH_CONFIGURATIONS_CONFIG_123)
@@ -378,9 +410,9 @@ class TestConfigurationsRoutes:
         config_id = ObjectId()
         existing = {
             "_id": config_id,
-            "config_id": "config_123",
-            "key": "test-config",
-            "type": "lookup-data",
+            "config_id": STR_CONFIG_123,
+            "key": STR_TEST_CONFIG,
+            "type": STR_LOOKUP_DATA,
         }
         other_config = {"_id": ObjectId(), "key": "taken-key"}
 
@@ -401,9 +433,9 @@ class TestConfigurationsRoutes:
         obj_id = ObjectId()
         existing = {
             "_id": obj_id,
-            "config_id": "config_123",
-            "key": "test-config",
-            "type": "lookup-data",
+            "config_id": STR_CONFIG_123,
+            "key": STR_TEST_CONFIG,
+            "type": STR_LOOKUP_DATA,
             "lookups": {},
             "queries": {},
             "logics": {},
@@ -419,7 +451,7 @@ class TestConfigurationsRoutes:
         )
         mock_db.configurations.update_one = AsyncMock()
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", None):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, None):
             response = client.put(
                 f"/configurations/{obj_id}",
                 json={"lookups": {"updated": True}}
@@ -431,9 +463,9 @@ class TestConfigurationsRoutes:
         config_id = ObjectId()
         existing = {
             "_id": config_id,
-            "config_id": "config_123",
-            "key": "test-config",
-            "type": "lookup-data",
+            "config_id": STR_CONFIG_123,
+            "key": STR_TEST_CONFIG,
+            "type": STR_LOOKUP_DATA,
             "lookups": None,
             "queries": None,
             "logics": None,
@@ -452,7 +484,7 @@ class TestConfigurationsRoutes:
         )
         mock_db.configurations.update_one = AsyncMock()
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", None):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, None):
             response = client.put(
                 PATH_CONFIGURATIONS_CONFIG_123,
                 json={}
@@ -468,7 +500,7 @@ class TestConfigurationsRoutes:
         config = {
             "_id": obj_id,
             "config_id": "config_456",
-            "key": "test-config",
+            "key": STR_TEST_CONFIG,
         }
 
         # find_one: (1) by config_id -> None, (2) by _id -> found
@@ -477,7 +509,7 @@ class TestConfigurationsRoutes:
         )
         mock_db.configurations.delete_one = AsyncMock(return_value=MagicMock(deleted_count=1))
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", None):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, None):
             response = client.delete(f"/configurations/{obj_id}")
         assert response.status_code == 200
         assert "deleted" in response.json()["message"].lower()
@@ -488,8 +520,8 @@ class TestConfigurationsRoutes:
         config = {
             "_id": obj_id,
             "config_id": "config_gcs",
-            "key": "gcs-config",
-            "type": "gcs-data",
+            "key": STR_GCS_CONFIG,
+            "type": STR_GCS_DATA,
             "gcs": {
                 "versions": [
                     {"gcs_key": "configurations/gcs-config/v1_file.xlsx"},
@@ -505,7 +537,7 @@ class TestConfigurationsRoutes:
         mock_gcs.is_configured.return_value = True
         mock_gcs.delete_file = AsyncMock()
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", mock_gcs):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, mock_gcs):
             response = client.delete("/configurations/config_gcs")
 
         assert response.status_code == 200
@@ -518,7 +550,7 @@ class TestConfigurationsRoutes:
             "_id": obj_id,
             "config_id": "config_sync",
             "key": "sync-config",
-            "type": "lookup-data",
+            "type": STR_LOOKUP_DATA,
             "gcs_sync": {"gcs_path": "configurations/sync-config/config.json"},
         }
 
@@ -529,7 +561,7 @@ class TestConfigurationsRoutes:
         mock_gcs.is_configured.return_value = True
         mock_gcs.delete_file = AsyncMock()
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", mock_gcs):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, mock_gcs):
             response = client.delete("/configurations/config_sync")
 
         assert response.status_code == 200
@@ -554,7 +586,7 @@ class TestConfigurationsRoutes:
         mock_gcs.is_configured.return_value = True
         mock_gcs.delete_file = AsyncMock(side_effect=Exception("GCS error"))
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", mock_gcs):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, mock_gcs):
             response = client.delete("/configurations/config_fail")
 
         assert response.status_code == 200
@@ -564,8 +596,8 @@ class TestConfigurationsRoutes:
         config = {
             "_id": ObjectId(),
             "config_id": "config_gcs",
-            "key": "gcs-config",
-            "type": "gcs-data",
+            "key": STR_GCS_CONFIG,
+            "type": STR_GCS_DATA,
             "gcs": {"path": MOCK_GCS_FILE},
         }
 
@@ -581,20 +613,20 @@ class TestConfigurationsRoutes:
         config = {
             "_id": ObjectId(),
             "config_id": "config_lookup",
-            "key": "lookup-config",
-            "type": "lookup-data",
+            "key": STR_LOOKUP_CONFIG,
+            "type": STR_LOOKUP_DATA,
             "gcs_sync": {"gcs_path": "configurations/lookup-config/config.json"},
             "lookups": {"old": "data"},
         }
 
         mock_gcs = MagicMock()
         mock_gcs.is_configured.return_value = True
-        gcs_data = json.dumps({"lookups": {"new": "gcs_data"}}).encode("utf-8")
+        gcs_data = json.dumps({"lookups": {"new": "gcs_data"}}).encode(STR_UTF_8)
         mock_gcs.download_file = AsyncMock(return_value=gcs_data)
 
         mock_db.configurations.find_one = AsyncMock(return_value=config.copy())
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", mock_gcs):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, mock_gcs):
             response = client.get("/configurations/config_lookup?source=gcs")
 
         assert response.status_code == 200
@@ -608,7 +640,7 @@ class TestConfigurationsRoutes:
             "_id": ObjectId(),
             "config_id": "config_no_path",
             "key": "no-path-config",
-            "type": "lookup-data",
+            "type": STR_LOOKUP_DATA,
             "gcs_sync": {},
         }
 
@@ -617,7 +649,7 @@ class TestConfigurationsRoutes:
 
         mock_db.configurations.find_one = AsyncMock(return_value=config.copy())
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", mock_gcs):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, mock_gcs):
             response = client.get("/configurations/config_no_path?source=gcs")
 
         assert response.status_code == 200
@@ -630,7 +662,7 @@ class TestConfigurationsRoutes:
             "_id": ObjectId(),
             "config_id": "config_fail",
             "key": "fail-config",
-            "type": "lookup-data",
+            "type": STR_LOOKUP_DATA,
             "gcs_sync": {"gcs_path": "configurations/fail-config/config.json"},
         }
 
@@ -640,7 +672,7 @@ class TestConfigurationsRoutes:
 
         mock_db.configurations.find_one = AsyncMock(return_value=config.copy())
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", mock_gcs):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, mock_gcs):
             response = client.get("/configurations/config_fail?source=gcs")
 
         assert response.status_code == 200
@@ -667,7 +699,7 @@ class TestConfigurationDownload:
     def mock_super_admin(self):
         user = MagicMock()
         user.email = MOCK_EMAIL_ADMIN_TEST
-        user.roles = ["super-administrator"]
+        user.roles = [STR_SUPER_ADMINISTRATOR]
         return user
 
     @pytest.fixture
@@ -688,11 +720,11 @@ class TestConfigurationDownload:
         config = {
             "_id": ObjectId(),
             "config_id": "config_proc",
-            "key": "process-config",
-            "type": "process-config",
-            "queries": {"q1": EXPECTED_SELECT},
-            "logics": {"l1": "if x"},
-            "operations": {"o1": "insert"},
+            "key": STR_PROCESS_CONFIG,
+            "type": STR_PROCESS_CONFIG,
+            "queries": {STR_Q1: EXPECTED_SELECT},
+            "logics": {STR_L1: "if x"},
+            "operations": {STR_O1: "insert"},
         }
 
         mock_db.configurations.find_one = AsyncMock(return_value=config.copy())
@@ -700,18 +732,18 @@ class TestConfigurationDownload:
         response = client.get("/configurations/config_proc/download")
         assert response.status_code == 200
         data = response.json()
-        assert data["queries"] == {"q1": EXPECTED_SELECT}
-        assert data["logics"] == {"l1": "if x"}
-        assert data["operations"] == {"o1": "insert"}
+        assert data["queries"] == {STR_Q1: EXPECTED_SELECT}
+        assert data["logics"] == {STR_L1: "if x"}
+        assert data["operations"] == {STR_O1: "insert"}
 
     def test_download_lookup_type_returns_json(self, client, mock_db):
         """Test download for lookup-data type returns lookups"""
         config = {
             "_id": ObjectId(),
             "config_id": "config_lookup",
-            "key": "lookup-config",
-            "type": "lookup-data",
-            "lookups": {"countries": ["US", "UK"]},
+            "key": STR_LOOKUP_CONFIG,
+            "type": STR_LOOKUP_DATA,
+            "lookups": {"countries": [STR_US, STR_UK]},
         }
 
         mock_db.configurations.find_one = AsyncMock(return_value=config.copy())
@@ -719,7 +751,7 @@ class TestConfigurationDownload:
         response = client.get("/configurations/config_lookup/download")
         assert response.status_code == 200
         data = response.json()
-        assert data["lookups"] == {"countries": ["US", "UK"]}
+        assert data["lookups"] == {"countries": [STR_US, STR_UK]}
 
     def test_download_snapshot_type_returns_json(self, client, mock_db):
         """Test download for snapshot-data type returns data"""
@@ -727,8 +759,8 @@ class TestConfigurationDownload:
             "_id": ObjectId(),
             "config_id": "config_snap",
             "key": "snapshot-config",
-            "type": "snapshot-data",
-            "data": {"snapshot": "2024-01-01"},
+            "type": STR_SNAPSHOT_DATA,
+            "data": {"snapshot": DATE_2024_01_01},
         }
 
         mock_db.configurations.find_one = AsyncMock(return_value=config.copy())
@@ -736,7 +768,7 @@ class TestConfigurationDownload:
         response = client.get("/configurations/config_snap/download")
         assert response.status_code == 200
         data = response.json()
-        assert data["data"] == {"snapshot": "2024-01-01"}
+        assert data["data"] == {"snapshot": DATE_2024_01_01}
 
     def test_download_gcs_type_no_gcs_info(self, client, mock_db):
         """Test download for gcs-data type with no gcs info"""
@@ -744,7 +776,7 @@ class TestConfigurationDownload:
             "_id": ObjectId(),
             "config_id": "config_gcs_empty",
             "key": "gcs-empty",
-            "type": "gcs-data",
+            "type": STR_GCS_DATA,
             "gcs": None,
         }
 
@@ -759,14 +791,14 @@ class TestConfigurationDownload:
         config = {
             "_id": ObjectId(),
             "config_id": "config_versioned",
-            "key": "versioned-config",
-            "type": "gcs-data",
+            "key": STR_VERSIONED_CONFIG,
+            "type": STR_GCS_DATA,
             "gcs": {
                 "current_gcs_key": "configurations/versioned/v2_file.xlsx",
-                "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "file_name": "file.xlsx",
+                "content_type": MIME_APPLICATION_VND_OPENXMLFORMATS_OFFICEDOCUMENT_SPREADSHEETML_SHEET,
+                "file_name": FILE_FILE_XLSX,
                 "versions": [
-                    {"version": 1, "gcs_key": "configurations/versioned/v1_file.xlsx"},
+                    {"version": 1, "gcs_key": FILE_CONFIGURATIONS_VERSIONED_V1_FILE_XLSX},
                     {"version": 2, "gcs_key": "configurations/versioned/v2_file.xlsx"},
                 ],
             },
@@ -778,23 +810,23 @@ class TestConfigurationDownload:
         mock_gcs.is_configured.return_value = True
         mock_gcs.download_file = AsyncMock(return_value=b"file-content-v1")
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", mock_gcs):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, mock_gcs):
             response = client.get("/configurations/config_versioned/download?version=1")
 
         assert response.status_code == 200
-        mock_gcs.download_file.assert_called_once_with("configurations/versioned/v1_file.xlsx")
+        mock_gcs.download_file.assert_called_once_with(FILE_CONFIGURATIONS_VERSIONED_V1_FILE_XLSX)
 
     def test_download_gcs_type_version_not_found(self, client, mock_db):
         """Test download for gcs-data type with nonexistent version"""
         config = {
             "_id": ObjectId(),
             "config_id": "config_versioned",
-            "key": "versioned-config",
-            "type": "gcs-data",
+            "key": STR_VERSIONED_CONFIG,
+            "type": STR_GCS_DATA,
             "gcs": {
-                "current_gcs_key": "configurations/versioned/v1_file.xlsx",
+                "current_gcs_key": FILE_CONFIGURATIONS_VERSIONED_V1_FILE_XLSX,
                 "versions": [
-                    {"version": 1, "gcs_key": "configurations/versioned/v1_file.xlsx"},
+                    {"version": 1, "gcs_key": FILE_CONFIGURATIONS_VERSIONED_V1_FILE_XLSX},
                 ],
             },
         }
@@ -811,11 +843,11 @@ class TestConfigurationDownload:
             "_id": ObjectId(),
             "config_id": "config_current",
             "key": "current-config",
-            "type": "gcs-data",
+            "type": STR_GCS_DATA,
             "gcs": {
                 "current_gcs_key": "configurations/current/v2_file.xlsx",
-                "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "file_name": "file.xlsx",
+                "content_type": MIME_APPLICATION_VND_OPENXMLFORMATS_OFFICEDOCUMENT_SPREADSHEETML_SHEET,
+                "file_name": FILE_FILE_XLSX,
                 "versions": [],
             },
         }
@@ -826,7 +858,7 @@ class TestConfigurationDownload:
         mock_gcs.is_configured.return_value = True
         mock_gcs.download_file = AsyncMock(return_value=b"file-content-v2")
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", mock_gcs):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, mock_gcs):
             response = client.get("/configurations/config_current/download")
 
         assert response.status_code == 200
@@ -838,7 +870,7 @@ class TestConfigurationDownload:
             "_id": ObjectId(),
             "config_id": "config_nokey",
             "key": "nokey-config",
-            "type": "gcs-data",
+            "type": STR_GCS_DATA,
             "gcs": {"versions": []},
         }
 
@@ -854,17 +886,17 @@ class TestConfigurationDownload:
             "_id": ObjectId(),
             "config_id": "config_nogcs",
             "key": "nogcs-config",
-            "type": "gcs-data",
+            "type": STR_GCS_DATA,
             "gcs": {
                 "current_gcs_key": "configurations/nogcs/v1_file.xlsx",
                 "content_type": "application/octet-stream",
-                "file_name": "file.xlsx",
+                "file_name": FILE_FILE_XLSX,
             },
         }
 
         mock_db.configurations.find_one = AsyncMock(return_value=config.copy())
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", None):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, None):
             response = client.get("/configurations/config_nogcs/download")
 
         assert response.status_code == 503
@@ -876,11 +908,11 @@ class TestConfigurationDownload:
             "_id": ObjectId(),
             "config_id": "config_dlnone",
             "key": "dlnone-config",
-            "type": "gcs-data",
+            "type": STR_GCS_DATA,
             "gcs": {
                 "current_gcs_key": "configurations/dlnone/v1_file.xlsx",
                 "content_type": "application/octet-stream",
-                "file_name": "file.xlsx",
+                "file_name": FILE_FILE_XLSX,
             },
         }
 
@@ -890,7 +922,7 @@ class TestConfigurationDownload:
         mock_gcs.is_configured.return_value = True
         mock_gcs.download_file = AsyncMock(return_value=None)
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", mock_gcs):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, mock_gcs):
             response = client.get("/configurations/config_dlnone/download")
 
         assert response.status_code == 404
@@ -916,7 +948,7 @@ class TestConfigurationVersions:
     def mock_super_admin(self):
         user = MagicMock()
         user.email = MOCK_EMAIL_ADMIN_TEST
-        user.roles = ["super-administrator"]
+        user.roles = [STR_SUPER_ADMINISTRATOR]
         return user
 
     @pytest.fixture
@@ -937,8 +969,8 @@ class TestConfigurationVersions:
         config = {
             "_id": ObjectId(),
             "config_id": "config_lookup",
-            "key": "lookup-config",
-            "type": "lookup-data",
+            "key": STR_LOOKUP_CONFIG,
+            "type": STR_LOOKUP_DATA,
         }
 
         mock_db.configurations.find_one = AsyncMock(return_value=config.copy())
@@ -954,12 +986,12 @@ class TestConfigurationVersions:
         config = {
             "_id": ObjectId(),
             "config_id": "config_versioned",
-            "key": "versioned-config",
-            "type": "gcs-data",
+            "key": STR_VERSIONED_CONFIG,
+            "type": STR_GCS_DATA,
             "gcs": {
                 "current_version": 3,
                 "versions": [
-                    {"version": 1, "gcs_key": "v1_file.xlsx", "upload_date": "2024-01-01"},
+                    {"version": 1, "gcs_key": "v1_file.xlsx", "upload_date": DATE_2024_01_01},
                     {"version": 2, "gcs_key": "v2_file.xlsx", "upload_date": "2024-02-01"},
                     {"version": 3, "gcs_key": "v3_file.xlsx", "upload_date": "2024-03-01"},
                 ],
@@ -972,7 +1004,7 @@ class TestConfigurationVersions:
         assert response.status_code == 200
         data = response.json()
         assert data["config_id"] == "config_versioned"
-        assert data["key"] == "versioned-config"
+        assert data["key"] == STR_VERSIONED_CONFIG
         assert data["current_version"] == 3
         assert len(data["versions"]) == 3
 
@@ -982,7 +1014,7 @@ class TestConfigurationVersions:
             "_id": ObjectId(),
             "config_id": "config_empty_gcs",
             "key": "empty-gcs-config",
-            "type": "gcs-data",
+            "type": STR_GCS_DATA,
             "gcs": {},
         }
 
@@ -1000,7 +1032,7 @@ class TestConfigurationVersions:
             "_id": ObjectId(),
             "config_id": "config_null_gcs",
             "key": "null-gcs-config",
-            "type": "gcs-data",
+            "type": STR_GCS_DATA,
             "gcs": None,
         }
 
@@ -1025,7 +1057,7 @@ class TestGCSStatus:
     def mock_super_admin(self):
         user = MagicMock()
         user.email = MOCK_EMAIL_ADMIN_TEST
-        user.roles = ["super-administrator"]
+        user.roles = [STR_SUPER_ADMINISTRATOR]
         return user
 
     @pytest.fixture
@@ -1035,7 +1067,7 @@ class TestGCSStatus:
 
     def test_gcs_status_not_initialized(self, client):
         """Test GCS status when service is not initialized"""
-        with patch("easylifeauth.api.configurations_routes._gcs_service", None):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, None):
             response = client.get(PATH_CONFIGURATIONS_GCS_STATUS)
 
         assert response.status_code == 200
@@ -1048,16 +1080,16 @@ class TestGCSStatus:
         """Test GCS status when service is configured"""
         mock_gcs = MagicMock()
         mock_gcs.is_configured.return_value = True
-        mock_gcs.bucket_name = "test-bucket"
+        mock_gcs.bucket_name = STR_TEST_BUCKET
         mock_gcs.get_init_error.return_value = None
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", mock_gcs):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, mock_gcs):
             response = client.get(PATH_CONFIGURATIONS_GCS_STATUS)
 
         assert response.status_code == 200
         data = response.json()
         assert data["configured"] is True
-        assert data["bucket_name"] == "test-bucket"
+        assert data["bucket_name"] == STR_TEST_BUCKET
 
     def test_gcs_status_not_configured(self, client):
         """Test GCS status when service exists but is not configured"""
@@ -1065,7 +1097,7 @@ class TestGCSStatus:
         mock_gcs.is_configured.return_value = False
         mock_gcs.get_init_error.return_value = "Missing credentials"
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", mock_gcs):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, mock_gcs):
             response = client.get(PATH_CONFIGURATIONS_GCS_STATUS)
 
         assert response.status_code == 200
@@ -1105,7 +1137,7 @@ class TestSyncConfigToGCS:
         mock_gcs = MagicMock()
         mock_gcs.is_configured.return_value = True
 
-        config = {"key": "test", "type": "gcs-data"}
+        config = {"key": "test", "type": STR_GCS_DATA}
         result = await sync_config_to_gcs(config, mock_gcs)
         assert result is None
 
@@ -1119,11 +1151,11 @@ class TestSyncConfigToGCS:
         mock_gcs.upload_file = AsyncMock(return_value=MOCK_URL_GCS)
 
         config = {
-            "config_id": "config_123",
+            "config_id": STR_CONFIG_123,
             "key": "test-lookup",
-            "type": "lookup-data",
-            "lookups": {"countries": ["US", "UK"]},
-            "row_update_stp": "2024-01-01T00:00:00",
+            "type": STR_LOOKUP_DATA,
+            "lookups": {"countries": [STR_US, STR_UK]},
+            "row_update_stp": DATE_2024_01_01T00_00_00,
         }
 
         result = await sync_config_to_gcs(config, mock_gcs)
@@ -1133,8 +1165,8 @@ class TestSyncConfigToGCS:
 
         # Verify the uploaded content contains lookups
         call_args = mock_gcs.upload_file.call_args
-        uploaded_content = json.loads(call_args.kwargs["file_content"].decode("utf-8"))
-        assert uploaded_content["lookups"] == {"countries": ["US", "UK"]}
+        uploaded_content = json.loads(call_args.kwargs["file_content"].decode(STR_UTF_8))
+        assert uploaded_content["lookups"] == {"countries": [STR_US, STR_UK]}
 
     @pytest.mark.asyncio
     async def test_sync_process_type(self):
@@ -1148,11 +1180,11 @@ class TestSyncConfigToGCS:
         config = {
             "config_id": "config_proc",
             "key": "test-process",
-            "type": "process-config",
-            "queries": {"q1": "SELECT"},
-            "logics": {"l1": "if"},
-            "operations": {"o1": "insert"},
-            "row_update_stp": "2024-01-01T00:00:00",
+            "type": STR_PROCESS_CONFIG,
+            "queries": {STR_Q1: "SELECT"},
+            "logics": {STR_L1: "if"},
+            "operations": {STR_O1: "insert"},
+            "row_update_stp": DATE_2024_01_01T00_00_00,
         }
 
         result = await sync_config_to_gcs(config, mock_gcs)
@@ -1160,7 +1192,7 @@ class TestSyncConfigToGCS:
         assert result["synced"] is True
 
         call_args = mock_gcs.upload_file.call_args
-        uploaded_content = json.loads(call_args.kwargs["file_content"].decode("utf-8"))
+        uploaded_content = json.loads(call_args.kwargs["file_content"].decode(STR_UTF_8))
         assert "queries" in uploaded_content
         assert "logics" in uploaded_content
         assert "operations" in uploaded_content
@@ -1177,9 +1209,9 @@ class TestSyncConfigToGCS:
         config = {
             "config_id": "config_snap",
             "key": "test-snapshot",
-            "type": "snapshot-data",
-            "data": {"snapshot_date": "2024-01-01"},
-            "row_update_stp": "2024-01-01T00:00:00",
+            "type": STR_SNAPSHOT_DATA,
+            "data": {"snapshot_date": DATE_2024_01_01},
+            "row_update_stp": DATE_2024_01_01T00_00_00,
         }
 
         result = await sync_config_to_gcs(config, mock_gcs)
@@ -1187,8 +1219,8 @@ class TestSyncConfigToGCS:
         assert result["synced"] is True
 
         call_args = mock_gcs.upload_file.call_args
-        uploaded_content = json.loads(call_args.kwargs["file_content"].decode("utf-8"))
-        assert uploaded_content["data"] == {"snapshot_date": "2024-01-01"}
+        uploaded_content = json.loads(call_args.kwargs["file_content"].decode(STR_UTF_8))
+        assert uploaded_content["data"] == {"snapshot_date": DATE_2024_01_01}
 
     @pytest.mark.asyncio
     async def test_sync_upload_returns_none(self):
@@ -1200,11 +1232,11 @@ class TestSyncConfigToGCS:
         mock_gcs.upload_file = AsyncMock(return_value=None)
 
         config = {
-            "config_id": "config_123",
+            "config_id": STR_CONFIG_123,
             "key": "test",
-            "type": "lookup-data",
+            "type": STR_LOOKUP_DATA,
             "lookups": {},
-            "row_update_stp": "2024-01-01T00:00:00",
+            "row_update_stp": DATE_2024_01_01T00_00_00,
         }
 
         result = await sync_config_to_gcs(config, mock_gcs)
@@ -1220,11 +1252,11 @@ class TestSyncConfigToGCS:
         mock_gcs.upload_file = AsyncMock(side_effect=Exception("Upload error"))
 
         config = {
-            "config_id": "config_123",
+            "config_id": STR_CONFIG_123,
             "key": "test",
-            "type": "lookup-data",
+            "type": STR_LOOKUP_DATA,
             "lookups": {},
-            "row_update_stp": "2024-01-01T00:00:00",
+            "row_update_stp": DATE_2024_01_01T00_00_00,
         }
 
         result = await sync_config_to_gcs(config, mock_gcs)
@@ -1250,7 +1282,7 @@ class TestConfigurationUpload:
     def mock_super_admin(self):
         user = MagicMock()
         user.email = MOCK_EMAIL_ADMIN_TEST
-        user.roles = ["super-administrator"]
+        user.roles = [STR_SUPER_ADMINISTRATOR]
         return user
 
     @pytest.fixture
@@ -1265,15 +1297,15 @@ class TestConfigurationUpload:
         mock_db.configurations.insert_one = AsyncMock(return_value=MagicMock(inserted_id=ObjectId()))
         mock_db.configurations.update_one = AsyncMock()
 
-        json_data = json.dumps({"lookups": {"countries": ["US", "UK"]}}).encode("utf-8")
+        json_data = json.dumps({"lookups": {"countries": [STR_US, STR_UK]}}).encode(STR_UTF_8)
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", None):
-            with patch("easylifeauth.api.configurations_routes.sync_config_to_gcs", new_callable=AsyncMock, return_value=None):
-                with patch("easylifeauth.utils.file_validation.validate_upload"):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, None):
+            with patch(PATCH_CONFIGURATIONS_ROUTES_SYNC_CONFIG_TO_GCS, new_callable=AsyncMock, return_value=None):
+                with patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD):
                     response = client.post(
                         PATH_CONFIGURATIONS_UPLOAD,
                         data={"key": "new-lookup"},
-                        files={"file": ("lookups.json", io.BytesIO(json_data), "application/json")},
+                        files={"file": ("lookups.json", io.BytesIO(json_data), MIME_APPLICATION_JSON)},
                     )
 
         assert response.status_code == 200
@@ -1289,17 +1321,17 @@ class TestConfigurationUpload:
         mock_db.configurations.update_one = AsyncMock()
 
         json_data = json.dumps({
-            "queries": {"q1": EXPECTED_SELECT},
-            "logics": {"l1": "if true"},
-        }).encode("utf-8")
+            "queries": {STR_Q1: EXPECTED_SELECT},
+            "logics": {STR_L1: "if true"},
+        }).encode(STR_UTF_8)
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", None):
-            with patch("easylifeauth.api.configurations_routes.sync_config_to_gcs", new_callable=AsyncMock, return_value=None):
-                with patch("easylifeauth.utils.file_validation.validate_upload"):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, None):
+            with patch(PATCH_CONFIGURATIONS_ROUTES_SYNC_CONFIG_TO_GCS, new_callable=AsyncMock, return_value=None):
+                with patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD):
                     response = client.post(
                         PATH_CONFIGURATIONS_UPLOAD,
                         data={"key": "new-process"},
-                        files={"file": ("process.json", io.BytesIO(json_data), "application/json")},
+                        files={"file": ("process.json", io.BytesIO(json_data), MIME_APPLICATION_JSON)},
                     )
 
         assert response.status_code == 200
@@ -1310,15 +1342,15 @@ class TestConfigurationUpload:
         mock_db.configurations.insert_one = AsyncMock(return_value=MagicMock(inserted_id=ObjectId()))
         mock_db.configurations.update_one = AsyncMock()
 
-        json_data = json.dumps({"data": {"snapshot": "2024-01-01"}}).encode("utf-8")
+        json_data = json.dumps({"data": {"snapshot": DATE_2024_01_01}}).encode(STR_UTF_8)
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", None):
-            with patch("easylifeauth.api.configurations_routes.sync_config_to_gcs", new_callable=AsyncMock, return_value=None):
-                with patch("easylifeauth.utils.file_validation.validate_upload"):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, None):
+            with patch(PATCH_CONFIGURATIONS_ROUTES_SYNC_CONFIG_TO_GCS, new_callable=AsyncMock, return_value=None):
+                with patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD):
                     response = client.post(
                         PATH_CONFIGURATIONS_UPLOAD,
                         data={"key": "new-snapshot"},
-                        files={"file": ("snapshot.json", io.BytesIO(json_data), "application/json")},
+                        files={"file": ("snapshot.json", io.BytesIO(json_data), MIME_APPLICATION_JSON)},
                     )
 
         assert response.status_code == 200
@@ -1329,15 +1361,15 @@ class TestConfigurationUpload:
         mock_db.configurations.insert_one = AsyncMock(return_value=MagicMock(inserted_id=ObjectId()))
         mock_db.configurations.update_one = AsyncMock()
 
-        json_data = json.dumps({"custom_field": "value"}).encode("utf-8")
+        json_data = json.dumps({"custom_field": "value"}).encode(STR_UTF_8)
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", None):
-            with patch("easylifeauth.api.configurations_routes.sync_config_to_gcs", new_callable=AsyncMock, return_value=None):
-                with patch("easylifeauth.utils.file_validation.validate_upload"):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, None):
+            with patch(PATCH_CONFIGURATIONS_ROUTES_SYNC_CONFIG_TO_GCS, new_callable=AsyncMock, return_value=None):
+                with patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD):
                     response = client.post(
                         PATH_CONFIGURATIONS_UPLOAD,
                         data={"key": "new-custom"},
-                        files={"file": ("custom.json", io.BytesIO(json_data), "application/json")},
+                        files={"file": ("custom.json", io.BytesIO(json_data), MIME_APPLICATION_JSON)},
                     )
 
         assert response.status_code == 200
@@ -1348,7 +1380,7 @@ class TestConfigurationUpload:
             "_id": ObjectId(),
             "config_id": "config_existing",
             "key": "existing-config",
-            "type": "lookup-data",
+            "type": STR_LOOKUP_DATA,
         }
 
         # find_one: (1) check existing by key -> found, (2) after update for sync
@@ -1357,15 +1389,15 @@ class TestConfigurationUpload:
         )
         mock_db.configurations.update_one = AsyncMock()
 
-        json_data = json.dumps({"lookups": {"updated": True}}).encode("utf-8")
+        json_data = json.dumps({"lookups": {"updated": True}}).encode(STR_UTF_8)
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", None):
-            with patch("easylifeauth.api.configurations_routes.sync_config_to_gcs", new_callable=AsyncMock, return_value=None):
-                with patch("easylifeauth.utils.file_validation.validate_upload"):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, None):
+            with patch(PATCH_CONFIGURATIONS_ROUTES_SYNC_CONFIG_TO_GCS, new_callable=AsyncMock, return_value=None):
+                with patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD):
                     response = client.post(
                         PATH_CONFIGURATIONS_UPLOAD,
                         data={"key": "existing-config"},
-                        files={"file": ("updated.json", io.BytesIO(json_data), "application/json")},
+                        files={"file": ("updated.json", io.BytesIO(json_data), MIME_APPLICATION_JSON)},
                     )
 
         assert response.status_code == 200
@@ -1378,15 +1410,15 @@ class TestConfigurationUpload:
         mock_db.configurations.insert_one = AsyncMock(return_value=MagicMock(inserted_id=ObjectId()))
         mock_db.configurations.update_one = AsyncMock()
 
-        json_data = json.dumps({"arbitrary": "data"}).encode("utf-8")
+        json_data = json.dumps({"arbitrary": "data"}).encode(STR_UTF_8)
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", None):
-            with patch("easylifeauth.api.configurations_routes.sync_config_to_gcs", new_callable=AsyncMock, return_value=None):
-                with patch("easylifeauth.utils.file_validation.validate_upload"):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, None):
+            with patch(PATCH_CONFIGURATIONS_ROUTES_SYNC_CONFIG_TO_GCS, new_callable=AsyncMock, return_value=None):
+                with patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD):
                     response = client.post(
                         PATH_CONFIGURATIONS_UPLOAD,
-                        data={"key": "typed-config", "config_type": "process-config"},
-                        files={"file": ("config.json", io.BytesIO(json_data), "application/json")},
+                        data={"key": "typed-config", "config_type": STR_PROCESS_CONFIG},
+                        files={"file": ("config.json", io.BytesIO(json_data), MIME_APPLICATION_JSON)},
                     )
 
         assert response.status_code == 200
@@ -1397,11 +1429,11 @@ class TestConfigurationUpload:
 
         invalid_json = b"{ not valid json }"
 
-        with patch("easylifeauth.utils.file_validation.validate_upload"):
+        with patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD):
             response = client.post(
                 PATH_CONFIGURATIONS_UPLOAD,
                 data={"key": "bad-json"},
-                files={"file": ("bad.json", io.BytesIO(invalid_json), "application/json")},
+                files={"file": ("bad.json", io.BytesIO(invalid_json), MIME_APPLICATION_JSON)},
             )
 
         assert response.status_code == 400
@@ -1413,12 +1445,12 @@ class TestConfigurationUpload:
 
         xlsx_content = b"PK\x03\x04fake xlsx content"
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", None):
-            with patch("easylifeauth.utils.file_validation.validate_upload"):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, None):
+            with patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD):
                 response = client.post(
                     PATH_CONFIGURATIONS_UPLOAD,
-                    data={"key": "xlsx-config"},
-                    files={"file": ("data.xlsx", io.BytesIO(xlsx_content), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+                    data={"key": STR_XLSX_CONFIG},
+                    files={"file": (FILE_DATA_XLSX, io.BytesIO(xlsx_content), MIME_APPLICATION_VND_OPENXMLFORMATS_OFFICEDOCUMENT_SPREADSHEETML_SHEET)},
                 )
 
         assert response.status_code == 400
@@ -1433,30 +1465,30 @@ class TestConfigurationUpload:
 
         mock_gcs = MagicMock()
         mock_gcs.is_configured.return_value = True
-        mock_gcs.bucket_name = "test-bucket"
+        mock_gcs.bucket_name = STR_TEST_BUCKET
         mock_gcs.upload_file = AsyncMock(return_value=MOCK_URL_GCS_TEST)
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", mock_gcs):
-            with patch("easylifeauth.utils.file_validation.validate_upload"):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, mock_gcs):
+            with patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD):
                 response = client.post(
                     PATH_CONFIGURATIONS_UPLOAD,
-                    data={"key": "xlsx-config"},
-                    files={"file": ("data.xlsx", io.BytesIO(xlsx_content), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+                    data={"key": STR_XLSX_CONFIG},
+                    files={"file": (FILE_DATA_XLSX, io.BytesIO(xlsx_content), MIME_APPLICATION_VND_OPENXMLFORMATS_OFFICEDOCUMENT_SPREADSHEETML_SHEET)},
                 )
 
         assert response.status_code == 200
         data = response.json()
         assert "uploaded successfully" in data["message"]
         assert data["version"] == 1
-        assert data["key"] == "xlsx-config"
+        assert data["key"] == STR_XLSX_CONFIG
 
     def test_upload_xlsx_existing_config_increments_version(self, client, mock_db):
         """Test uploading XLSX file to existing config increments version"""
         existing = {
             "_id": ObjectId(),
             "config_id": "config_xlsx",
-            "key": "xlsx-config",
-            "type": "gcs-data",
+            "key": STR_XLSX_CONFIG,
+            "type": STR_GCS_DATA,
             "gcs": {
                 "current_version": 2,
                 "versions": [
@@ -1473,15 +1505,15 @@ class TestConfigurationUpload:
 
         mock_gcs = MagicMock()
         mock_gcs.is_configured.return_value = True
-        mock_gcs.bucket_name = "test-bucket"
+        mock_gcs.bucket_name = STR_TEST_BUCKET
         mock_gcs.upload_file = AsyncMock(return_value=MOCK_URL_GCS_TEST)
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", mock_gcs):
-            with patch("easylifeauth.utils.file_validation.validate_upload"):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, mock_gcs):
+            with patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD):
                 response = client.post(
                     PATH_CONFIGURATIONS_UPLOAD,
-                    data={"key": "xlsx-config"},
-                    files={"file": ("data.xlsx", io.BytesIO(xlsx_content), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+                    data={"key": STR_XLSX_CONFIG},
+                    files={"file": (FILE_DATA_XLSX, io.BytesIO(xlsx_content), MIME_APPLICATION_VND_OPENXMLFORMATS_OFFICEDOCUMENT_SPREADSHEETML_SHEET)},
                 )
 
         assert response.status_code == 200
@@ -1496,15 +1528,15 @@ class TestConfigurationUpload:
 
         mock_gcs = MagicMock()
         mock_gcs.is_configured.return_value = True
-        mock_gcs.bucket_name = "test-bucket"
+        mock_gcs.bucket_name = STR_TEST_BUCKET
         mock_gcs.upload_file = AsyncMock(return_value=None)
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", mock_gcs):
-            with patch("easylifeauth.utils.file_validation.validate_upload"):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, mock_gcs):
+            with patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD):
                 response = client.post(
                     PATH_CONFIGURATIONS_UPLOAD,
                     data={"key": "failing-xlsx"},
-                    files={"file": ("data.xlsx", io.BytesIO(xlsx_content), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+                    files={"file": (FILE_DATA_XLSX, io.BytesIO(xlsx_content), MIME_APPLICATION_VND_OPENXMLFORMATS_OFFICEDOCUMENT_SPREADSHEETML_SHEET)},
                 )
 
         assert response.status_code == 500
@@ -1516,20 +1548,20 @@ class TestConfigurationUpload:
         mock_db.configurations.insert_one = AsyncMock(return_value=MagicMock(inserted_id=ObjectId()))
         mock_db.configurations.update_one = AsyncMock()
 
-        json_data = json.dumps({"lookups": {"synced": True}}).encode("utf-8")
+        json_data = json.dumps({"lookups": {"synced": True}}).encode(STR_UTF_8)
 
         sync_result = {
             "synced": True,
             "gcs_path": "configurations/synced-config/config.json",
-            "sync_date": "2024-01-01T00:00:00",
+            "sync_date": DATE_2024_01_01T00_00_00,
         }
 
-        with patch("easylifeauth.api.configurations_routes.sync_config_to_gcs", new_callable=AsyncMock, return_value=sync_result):
-            with patch("easylifeauth.utils.file_validation.validate_upload"):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_SYNC_CONFIG_TO_GCS, new_callable=AsyncMock, return_value=sync_result):
+            with patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD):
                 response = client.post(
                     PATH_CONFIGURATIONS_UPLOAD,
                     data={"key": "synced-config"},
-                    files={"file": ("synced.json", io.BytesIO(json_data), "application/json")},
+                    files={"file": ("synced.json", io.BytesIO(json_data), MIME_APPLICATION_JSON)},
                 )
 
         assert response.status_code == 200
@@ -1556,7 +1588,7 @@ class TestCreateConfigurationGCSSync:
     def mock_super_admin(self):
         user = MagicMock()
         user.email = MOCK_EMAIL_ADMIN_TEST
-        user.roles = ["super-administrator"]
+        user.roles = [STR_SUPER_ADMINISTRATOR]
         return user
 
     @pytest.fixture
@@ -1574,13 +1606,13 @@ class TestCreateConfigurationGCSSync:
         sync_result = {
             "synced": True,
             "gcs_path": "configurations/new-config/config.json",
-            "sync_date": "2024-01-01T00:00:00",
+            "sync_date": DATE_2024_01_01T00_00_00,
         }
 
-        with patch("easylifeauth.api.configurations_routes.sync_config_to_gcs", new_callable=AsyncMock, return_value=sync_result) as mock_sync:
+        with patch(PATCH_CONFIGURATIONS_ROUTES_SYNC_CONFIG_TO_GCS, new_callable=AsyncMock, return_value=sync_result) as mock_sync:
             response = client.post(
                 PATH_CONFIGURATIONS,
-                json={"key": "new-config", "type": "lookup-data"}
+                json={"key": "new-config", "type": STR_LOOKUP_DATA}
             )
 
         assert response.status_code == 200
@@ -1593,10 +1625,10 @@ class TestCreateConfigurationGCSSync:
         mock_db.configurations.find_one = AsyncMock(return_value=None)
         mock_db.configurations.insert_one = AsyncMock(return_value=MagicMock(inserted_id=ObjectId()))
 
-        with patch("easylifeauth.api.configurations_routes.sync_config_to_gcs", new_callable=AsyncMock) as mock_sync:
+        with patch(PATCH_CONFIGURATIONS_ROUTES_SYNC_CONFIG_TO_GCS, new_callable=AsyncMock) as mock_sync:
             response = client.post(
                 PATH_CONFIGURATIONS,
-                json={"key": "gcs-config", "type": "gcs-data"}
+                json={"key": STR_GCS_CONFIG, "type": STR_GCS_DATA}
             )
 
         assert response.status_code == 200
@@ -1607,12 +1639,12 @@ class TestCreateConfigurationGCSSync:
         mock_db.configurations.find_one = AsyncMock(return_value=None)
         mock_db.configurations.insert_one = AsyncMock(return_value=MagicMock(inserted_id=ObjectId()))
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", None):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, None):
             response = client.post(
                 PATH_CONFIGURATIONS,
                 json={
                     "key": "full-config",
-                    "type": "process-config",
+                    "type": STR_PROCESS_CONFIG,
                     "lookups": {"a": 1},
                     "queries": {"b": 2},
                     "logics": {"c": 3},
@@ -1634,10 +1666,10 @@ class TestCreateConfigurationGCSSync:
         mock_db.configurations.find_one = AsyncMock(return_value=None)
         mock_db.configurations.insert_one = AsyncMock(return_value=MagicMock(inserted_id=ObjectId()))
 
-        with patch("easylifeauth.api.configurations_routes._gcs_service", None):
+        with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, None):
             response = client.post(
                 PATH_CONFIGURATIONS,
-                json={"key": "minimal-config", "type": "lookup-data"}
+                json={"key": "minimal-config", "type": STR_LOOKUP_DATA}
             )
 
         assert response.status_code == 200
@@ -1668,7 +1700,7 @@ class TestUpdateConfigurationGCSSync:
     def mock_super_admin(self):
         user = MagicMock()
         user.email = MOCK_EMAIL_ADMIN_TEST
-        user.roles = ["super-administrator"]
+        user.roles = [STR_SUPER_ADMINISTRATOR]
         return user
 
     @pytest.fixture
@@ -1682,9 +1714,9 @@ class TestUpdateConfigurationGCSSync:
         config_id = ObjectId()
         existing = {
             "_id": config_id,
-            "config_id": "config_123",
-            "key": "test-config",
-            "type": "lookup-data",
+            "config_id": STR_CONFIG_123,
+            "key": STR_TEST_CONFIG,
+            "type": STR_LOOKUP_DATA,
             "lookups": {},
             "queries": {},
             "logics": {},
@@ -1703,10 +1735,10 @@ class TestUpdateConfigurationGCSSync:
         sync_result = {
             "synced": True,
             "gcs_path": "configurations/test-config/config.json",
-            "sync_date": "2024-01-01T00:00:00",
+            "sync_date": DATE_2024_01_01T00_00_00,
         }
 
-        with patch("easylifeauth.api.configurations_routes.sync_config_to_gcs", new_callable=AsyncMock, return_value=sync_result) as mock_sync:
+        with patch(PATCH_CONFIGURATIONS_ROUTES_SYNC_CONFIG_TO_GCS, new_callable=AsyncMock, return_value=sync_result) as mock_sync:
             response = client.put(
                 PATH_CONFIGURATIONS_CONFIG_123,
                 json={"lookups": {"new": "data"}}
@@ -1723,8 +1755,8 @@ class TestUpdateConfigurationGCSSync:
         existing = {
             "_id": config_id,
             "config_id": "config_gcs",
-            "key": "gcs-config",
-            "type": "gcs-data",
+            "key": STR_GCS_CONFIG,
+            "type": STR_GCS_DATA,
             "lookups": {},
             "queries": {},
             "logics": {},
@@ -1738,7 +1770,7 @@ class TestUpdateConfigurationGCSSync:
         )
         mock_db.configurations.update_one = AsyncMock()
 
-        with patch("easylifeauth.api.configurations_routes.sync_config_to_gcs", new_callable=AsyncMock) as mock_sync:
+        with patch(PATCH_CONFIGURATIONS_ROUTES_SYNC_CONFIG_TO_GCS, new_callable=AsyncMock) as mock_sync:
             response = client.put(
                 "/configurations/config_gcs",
                 json={"data": {"updated": True}}

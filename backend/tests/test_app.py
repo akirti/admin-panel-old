@@ -9,6 +9,10 @@ from easylifeauth.errors.auth_error import AuthError
 from mock_data import MOCK_EMAIL, MOCK_URL_FRONTEND, MOCK_URL_MONGODB
 
 PATH_ROOT = "/"
+PATCH_EASYLIFEAUTH_APP_DATABASEMANAGER = "easylifeauth.app.DatabaseManager"
+PATCH_EASYLIFEAUTH_APP_INIT_DEPENDENCIES = "easylifeauth.app.init_dependencies"
+PATCH_EASYLIFEAUTH_APP_TOKENMANAGER = "easylifeauth.app.TokenManager"
+
 
 
 
@@ -131,16 +135,16 @@ class TestLifespanWithConfig:
     @pytest.mark.asyncio
     async def test_lifespan_with_db_config(self):
         """Test lifespan initializes database when config provided"""
-        with patch('easylifeauth.app.DatabaseManager') as MockDB:
+        with patch(PATCH_EASYLIFEAUTH_APP_DATABASEMANAGER) as MockDB:
             mock_db = MagicMock()
             mock_db.ping = AsyncMock(return_value=True)
             mock_db.close = MagicMock()
             MockDB.return_value = mock_db
 
-            with patch('easylifeauth.app.TokenManager') as MockTM:
+            with patch(PATCH_EASYLIFEAUTH_APP_TOKENMANAGER) as MockTM:
                 MockTM.return_value = MagicMock()
 
-                with patch('easylifeauth.app.init_dependencies') as mock_init:
+                with patch(PATCH_EASYLIFEAUTH_APP_INIT_DEPENDENCIES) as mock_init:
                     app = create_app(
                         db_config={"uri": MOCK_URL_MONGODB, "database": "test"},
                         token_secret="test_secret"
@@ -155,14 +159,14 @@ class TestLifespanWithConfig:
     @pytest.mark.asyncio
     async def test_lifespan_db_connection_failure(self):
         """Test lifespan handles database connection failure"""
-        with patch('easylifeauth.app.DatabaseManager') as MockDB:
+        with patch(PATCH_EASYLIFEAUTH_APP_DATABASEMANAGER) as MockDB:
             mock_db = MagicMock()
             mock_db.ping = AsyncMock(return_value=False)
             mock_db.close = MagicMock()
             MockDB.return_value = mock_db
 
-            with patch('easylifeauth.app.TokenManager'):
-                with patch('easylifeauth.app.init_dependencies'):
+            with patch(PATCH_EASYLIFEAUTH_APP_TOKENMANAGER):
+                with patch(PATCH_EASYLIFEAUTH_APP_INIT_DEPENDENCIES):
                     app = create_app(
                         db_config={"uri": MOCK_URL_MONGODB, "database": "test"},
                         token_secret="test_secret"
@@ -175,14 +179,14 @@ class TestLifespanWithConfig:
     @pytest.mark.asyncio
     async def test_lifespan_db_connection_exception(self):
         """Test lifespan handles database connection exception"""
-        with patch('easylifeauth.app.DatabaseManager') as MockDB:
+        with patch(PATCH_EASYLIFEAUTH_APP_DATABASEMANAGER) as MockDB:
             mock_db = MagicMock()
             mock_db.ping = AsyncMock(side_effect=Exception("Connection refused"))
             mock_db.close = MagicMock()
             MockDB.return_value = mock_db
 
-            with patch('easylifeauth.app.TokenManager'):
-                with patch('easylifeauth.app.init_dependencies'):
+            with patch(PATCH_EASYLIFEAUTH_APP_TOKENMANAGER):
+                with patch(PATCH_EASYLIFEAUTH_APP_INIT_DEPENDENCIES):
                     app = create_app(
                         db_config={"uri": MOCK_URL_MONGODB, "database": "test"},
                         token_secret="test_secret"
@@ -195,17 +199,17 @@ class TestLifespanWithConfig:
     @pytest.mark.asyncio
     async def test_lifespan_with_email_service(self):
         """Test lifespan initializes email service when config provided"""
-        with patch('easylifeauth.app.DatabaseManager') as MockDB:
+        with patch(PATCH_EASYLIFEAUTH_APP_DATABASEMANAGER) as MockDB:
             mock_db = MagicMock()
             mock_db.ping = AsyncMock(return_value=True)
             mock_db.close = MagicMock()
             MockDB.return_value = mock_db
 
-            with patch('easylifeauth.app.TokenManager'):
+            with patch(PATCH_EASYLIFEAUTH_APP_TOKENMANAGER):
                 with patch('easylifeauth.app.EmailService') as MockEmail:
                     MockEmail.return_value = MagicMock()
 
-                    with patch('easylifeauth.app.init_dependencies'):
+                    with patch(PATCH_EASYLIFEAUTH_APP_INIT_DEPENDENCIES):
                         app = create_app(
                             db_config={"uri": MOCK_URL_MONGODB, "database": "test"},
                             token_secret="test_secret",

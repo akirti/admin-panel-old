@@ -6,6 +6,11 @@ import asyncio
 
 from easylifeauth.services.gcs_service import GCSService
 from mock_data import MOCK_GCS_PATH_FILE, MOCK_URL_SIGNED, MOCK_URL_SIGNED_SHORT
+FILE_PATH_FILE_TXT = "path/file.txt"
+MIME_TEXT_PLAIN = "text/plain"
+STR_PREFIX = "prefix/"
+STR_TEST_BUCKET = "test-bucket"
+
 
 
 class TestGCSServiceInit:
@@ -26,14 +31,14 @@ class TestGCSServiceInit:
 
     def test_init_no_credentials(self):
         """Test init without credentials"""
-        service = GCSService({"bucket_name": "test-bucket"})
+        service = GCSService({"bucket_name": STR_TEST_BUCKET})
         assert service.is_configured() is False
         assert "credentials_json" in service.get_init_error()
 
     def test_init_invalid_json_credentials(self):
         """Test init with invalid JSON credentials"""
         service = GCSService({
-            "bucket_name": "test-bucket",
+            "bucket_name": STR_TEST_BUCKET,
             "credentials_json": "invalid json {"
         })
         assert service.is_configured() is False
@@ -42,7 +47,7 @@ class TestGCSServiceInit:
     def test_init_credentials_missing_type(self):
         """Test init with credentials missing type field"""
         service = GCSService({
-            "bucket_name": "test-bucket",
+            "bucket_name": STR_TEST_BUCKET,
             "credentials_json": '{"project_id": "test"}'
         })
         assert service.is_configured() is False
@@ -76,7 +81,7 @@ class TestGCSServiceConfiguredOperations:
         """Create service with mocked client"""
         service = GCSService()
         service.client = MagicMock()
-        service.bucket_name = "test-bucket"
+        service.bucket_name = STR_TEST_BUCKET
         return service
 
     def test_sync_download_file_success(self, mock_service):
@@ -90,7 +95,7 @@ class TestGCSServiceConfiguredOperations:
 
         mock_service.client.bucket.return_value = mock_bucket
 
-        result = mock_service._sync_download_file("path/file.txt", "test-bucket")
+        result = mock_service._sync_download_file(FILE_PATH_FILE_TXT, STR_TEST_BUCKET)
         assert result == b"file content"
 
     def test_sync_download_file_not_found(self, mock_service):
@@ -103,14 +108,14 @@ class TestGCSServiceConfiguredOperations:
 
         mock_service.client.bucket.return_value = mock_bucket
 
-        result = mock_service._sync_download_file("path/file.txt", "test-bucket")
+        result = mock_service._sync_download_file(FILE_PATH_FILE_TXT, STR_TEST_BUCKET)
         assert result is None
 
     def test_sync_download_file_exception(self, mock_service):
         """Test sync download with exception"""
         mock_service.client.bucket.side_effect = Exception("Network error")
 
-        result = mock_service._sync_download_file("path/file.txt", "test-bucket")
+        result = mock_service._sync_download_file(FILE_PATH_FILE_TXT, STR_TEST_BUCKET)
         assert result is None
 
     def test_sync_upload_file_success(self, mock_service):
@@ -122,7 +127,7 @@ class TestGCSServiceConfiguredOperations:
         mock_service.client.bucket.return_value = mock_bucket
 
         result = mock_service._sync_upload_file(
-            b"content", "path/file.txt", "text/plain", "test-bucket"
+            b"content", FILE_PATH_FILE_TXT, MIME_TEXT_PLAIN, STR_TEST_BUCKET
         )
         assert result == MOCK_GCS_PATH_FILE
         mock_blob.upload_from_string.assert_called_once()
@@ -132,7 +137,7 @@ class TestGCSServiceConfiguredOperations:
         mock_service.client.bucket.side_effect = Exception("Upload error")
 
         result = mock_service._sync_upload_file(
-            b"content", "path/file.txt", "text/plain", "test-bucket"
+            b"content", FILE_PATH_FILE_TXT, MIME_TEXT_PLAIN, STR_TEST_BUCKET
         )
         assert result is None
 
@@ -142,7 +147,7 @@ class TestGCSServiceConfiguredOperations:
         mock_blob1.name = "file1.txt"
         mock_blob1.size = 100
         mock_blob1.updated = datetime.now(timezone.utc)
-        mock_blob1.content_type = "text/plain"
+        mock_blob1.content_type = MIME_TEXT_PLAIN
 
         mock_blob2 = MagicMock()
         mock_blob2.name = "file2.csv"
@@ -155,7 +160,7 @@ class TestGCSServiceConfiguredOperations:
 
         mock_service.client.bucket.return_value = mock_bucket
 
-        result = mock_service._sync_list_files("prefix/", "test-bucket")
+        result = mock_service._sync_list_files(STR_PREFIX, STR_TEST_BUCKET)
         assert len(result) == 2
         assert result[0]["name"] == "file1.txt"
         assert result[1]["name"] == "file2.csv"
@@ -164,7 +169,7 @@ class TestGCSServiceConfiguredOperations:
         """Test sync list files with exception"""
         mock_service.client.bucket.side_effect = Exception("List error")
 
-        result = mock_service._sync_list_files("prefix/", "test-bucket")
+        result = mock_service._sync_list_files(STR_PREFIX, STR_TEST_BUCKET)
         assert result == []
 
     def test_sync_delete_file_success(self, mock_service):
@@ -175,7 +180,7 @@ class TestGCSServiceConfiguredOperations:
 
         mock_service.client.bucket.return_value = mock_bucket
 
-        result = mock_service._sync_delete_file("path/file.txt", "test-bucket")
+        result = mock_service._sync_delete_file(FILE_PATH_FILE_TXT, STR_TEST_BUCKET)
         assert result is True
         mock_blob.delete.assert_called_once()
 
@@ -183,7 +188,7 @@ class TestGCSServiceConfiguredOperations:
         """Test sync delete with exception"""
         mock_service.client.bucket.side_effect = Exception("Delete error")
 
-        result = mock_service._sync_delete_file("path/file.txt", "test-bucket")
+        result = mock_service._sync_delete_file(FILE_PATH_FILE_TXT, STR_TEST_BUCKET)
         assert result is False
 
     def test_sync_file_exists_true(self, mock_service):
@@ -195,7 +200,7 @@ class TestGCSServiceConfiguredOperations:
 
         mock_service.client.bucket.return_value = mock_bucket
 
-        result = mock_service._sync_file_exists("path/file.txt", "test-bucket")
+        result = mock_service._sync_file_exists(FILE_PATH_FILE_TXT, STR_TEST_BUCKET)
         assert result is True
 
     def test_sync_file_exists_false(self, mock_service):
@@ -207,14 +212,14 @@ class TestGCSServiceConfiguredOperations:
 
         mock_service.client.bucket.return_value = mock_bucket
 
-        result = mock_service._sync_file_exists("path/file.txt", "test-bucket")
+        result = mock_service._sync_file_exists(FILE_PATH_FILE_TXT, STR_TEST_BUCKET)
         assert result is False
 
     def test_sync_file_exists_exception(self, mock_service):
         """Test sync file exists with exception"""
         mock_service.client.bucket.side_effect = Exception("Check error")
 
-        result = mock_service._sync_file_exists("path/file.txt", "test-bucket")
+        result = mock_service._sync_file_exists(FILE_PATH_FILE_TXT, STR_TEST_BUCKET)
         assert result is False
 
     def test_sync_get_signed_url_success(self, mock_service):
@@ -226,14 +231,14 @@ class TestGCSServiceConfiguredOperations:
 
         mock_service.client.bucket.return_value = mock_bucket
 
-        result = mock_service._sync_get_signed_url("path/file.txt", 60, "test-bucket")
+        result = mock_service._sync_get_signed_url(FILE_PATH_FILE_TXT, 60, STR_TEST_BUCKET)
         assert result == MOCK_URL_SIGNED
 
     def test_sync_get_signed_url_exception(self, mock_service):
         """Test sync get signed URL with exception"""
         mock_service.client.bucket.side_effect = Exception("URL error")
 
-        result = mock_service._sync_get_signed_url("path/file.txt", 60, "test-bucket")
+        result = mock_service._sync_get_signed_url(FILE_PATH_FILE_TXT, 60, STR_TEST_BUCKET)
         assert result is None
 
 
@@ -245,14 +250,14 @@ class TestGCSServiceAsyncMethods:
         """Create service with mocked client"""
         service = GCSService()
         service.client = MagicMock()
-        service.bucket_name = "test-bucket"
+        service.bucket_name = STR_TEST_BUCKET
         return service
 
     @pytest.mark.asyncio
     async def test_download_file_not_configured(self):
         """Test download when not configured"""
         service = GCSService()
-        result = await service.download_file("path/file.txt")
+        result = await service.download_file(FILE_PATH_FILE_TXT)
         assert result is None
 
     @pytest.mark.asyncio
@@ -265,7 +270,7 @@ class TestGCSServiceAsyncMethods:
         mock_bucket.blob.return_value = mock_blob
         mock_service.client.bucket.return_value = mock_bucket
 
-        result = await mock_service.download_file("path/file.txt")
+        result = await mock_service.download_file(FILE_PATH_FILE_TXT)
         assert result == b"content"
 
     @pytest.mark.asyncio
@@ -278,14 +283,14 @@ class TestGCSServiceAsyncMethods:
         mock_bucket.blob.return_value = mock_blob
         mock_service.client.bucket.return_value = mock_bucket
 
-        result = await mock_service.download_file("path/file.txt", "custom-bucket")
+        result = await mock_service.download_file(FILE_PATH_FILE_TXT, "custom-bucket")
         assert result == b"content"
 
     @pytest.mark.asyncio
     async def test_upload_file_not_configured(self):
         """Test upload when not configured"""
         service = GCSService()
-        result = await service.upload_file(b"content", "path/file.txt")
+        result = await service.upload_file(b"content", FILE_PATH_FILE_TXT)
         assert result is None
 
     @pytest.mark.asyncio
@@ -297,7 +302,7 @@ class TestGCSServiceAsyncMethods:
         mock_service.client.bucket.return_value = mock_bucket
 
         result = await mock_service.upload_file(
-            b"content", "path/file.txt", "text/plain"
+            b"content", FILE_PATH_FILE_TXT, MIME_TEXT_PLAIN
         )
         assert "gs://" in result
 
@@ -305,7 +310,7 @@ class TestGCSServiceAsyncMethods:
     async def test_list_files_not_configured(self):
         """Test list files when not configured"""
         service = GCSService()
-        result = await service.list_files("prefix/")
+        result = await service.list_files(STR_PREFIX)
         assert result == []
 
     @pytest.mark.asyncio
@@ -315,20 +320,20 @@ class TestGCSServiceAsyncMethods:
         mock_blob.name = "file.txt"
         mock_blob.size = 100
         mock_blob.updated = datetime.now(timezone.utc)
-        mock_blob.content_type = "text/plain"
+        mock_blob.content_type = MIME_TEXT_PLAIN
 
         mock_bucket = MagicMock()
         mock_bucket.list_blobs.return_value = [mock_blob]
         mock_service.client.bucket.return_value = mock_bucket
 
-        result = await mock_service.list_files("prefix/")
+        result = await mock_service.list_files(STR_PREFIX)
         assert len(result) == 1
 
     @pytest.mark.asyncio
     async def test_delete_file_not_configured(self):
         """Test delete when not configured"""
         service = GCSService()
-        result = await service.delete_file("path/file.txt")
+        result = await service.delete_file(FILE_PATH_FILE_TXT)
         assert result is False
 
     @pytest.mark.asyncio
@@ -339,14 +344,14 @@ class TestGCSServiceAsyncMethods:
         mock_bucket.blob.return_value = mock_blob
         mock_service.client.bucket.return_value = mock_bucket
 
-        result = await mock_service.delete_file("path/file.txt")
+        result = await mock_service.delete_file(FILE_PATH_FILE_TXT)
         assert result is True
 
     @pytest.mark.asyncio
     async def test_file_exists_not_configured(self):
         """Test file exists when not configured"""
         service = GCSService()
-        result = await service.file_exists("path/file.txt")
+        result = await service.file_exists(FILE_PATH_FILE_TXT)
         assert result is False
 
     @pytest.mark.asyncio
@@ -358,14 +363,14 @@ class TestGCSServiceAsyncMethods:
         mock_bucket.blob.return_value = mock_blob
         mock_service.client.bucket.return_value = mock_bucket
 
-        result = await mock_service.file_exists("path/file.txt")
+        result = await mock_service.file_exists(FILE_PATH_FILE_TXT)
         assert result is True
 
     @pytest.mark.asyncio
     async def test_get_signed_url_not_configured(self):
         """Test get signed URL when not configured"""
         service = GCSService()
-        result = await service.get_signed_url("path/file.txt")
+        result = await service.get_signed_url(FILE_PATH_FILE_TXT)
         assert result is None
 
     @pytest.mark.asyncio
@@ -377,7 +382,7 @@ class TestGCSServiceAsyncMethods:
         mock_bucket.blob.return_value = mock_blob
         mock_service.client.bucket.return_value = mock_bucket
 
-        result = await mock_service.get_signed_url("path/file.txt", 30)
+        result = await mock_service.get_signed_url(FILE_PATH_FILE_TXT, 30)
         assert result == MOCK_URL_SIGNED_SHORT
 
 
@@ -409,12 +414,12 @@ class TestGCSServiceInitWithMockedLibraries:
             'google.oauth2.service_account': mock_sa
         }):
             service = GCSService({
-                "bucket_name": "test-bucket",
+                "bucket_name": STR_TEST_BUCKET,
                 "credentials_json": '{"type": "service_account", "project_id": "test"}'
             })
 
             # Verify the service was configured
-            assert service.bucket_name == "test-bucket"
+            assert service.bucket_name == STR_TEST_BUCKET
 
     def test_init_import_error(self):
         """Test initialization when google-cloud-storage not installed"""
@@ -441,8 +446,8 @@ class TestGCSServiceInitWithMockedLibraries:
             'google.oauth2.service_account': mock_sa
         }):
             service = GCSService({
-                "bucket_name": "test-bucket",
+                "bucket_name": STR_TEST_BUCKET,
                 "credentials_json": {"type": "service_account", "project_id": "test"}
             })
             # With mocked google libraries, it should configure successfully
-            assert service.bucket_name == "test-bucket"
+            assert service.bucket_name == STR_TEST_BUCKET

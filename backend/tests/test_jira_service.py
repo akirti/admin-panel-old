@@ -12,6 +12,22 @@ EXPECTED_NETWORK_ERROR = "Network error"
 EXPECTED_TEST_COMMENT = "Test comment"
 EXPECTED_TEST_REQUEST = "Test Request"
 EXPECTED_TO_DO = "To Do"
+DATE_2024_01_01 = "2024-01-01"
+DATE_2024_01_02 = "2024-01-02"
+FILE_FILE_TXT = "file.txt"
+FILE_TEST_TXT = "test.txt"
+NUM_10001 = "10001"
+NUM_12345 = "12345"
+PATCH_JIRA_SERVICE_JIRA = "easylifeauth.services.jira_service.JIRA"
+STR_ATT_123 = "att-123"
+STR_DONE = "Done"
+STR_REQUESTID = "requestId"
+STR_REQ_001 = "REQ-001"
+STR_TEST = "TEST"
+STR_TEST_1 = "TEST-1"
+STR_USER2 = "user2"
+
+
 
 
 
@@ -19,7 +35,7 @@ EXPECTED_TO_DO = "To Do"
 class TestJiraServiceInit:
     """Tests for JiraService initialization"""
 
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     def test_init_default(self, mock_jira):
         """Test default initialization (disabled)"""
         from easylifeauth.services.jira_service import JiraService
@@ -33,7 +49,7 @@ class TestJiraServiceInit:
         """Test initialization with full config"""
         pass
 
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     def test_init_partial_config(self, mock_jira):
         """Test initialization with partial config (disabled)"""
         from easylifeauth.services.jira_service import JiraService
@@ -43,7 +59,7 @@ class TestJiraServiceInit:
         service = JiraService(config)
         assert service.enabled is False
 
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     def test_init_default_project_key(self, mock_jira):
         """Test default project key"""
         from easylifeauth.services.jira_service import JiraService
@@ -66,7 +82,7 @@ class TestJiraServiceHelpers:
     """Tests for helper methods"""
 
     @pytest.fixture
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     def service(self, mock_jira):
         """Create enabled service"""
         from easylifeauth.services.jira_service import JiraService
@@ -74,22 +90,22 @@ class TestJiraServiceHelpers:
             "base_url": MOCK_URL_JIRA_BASE,
             "email": MOCK_EMAIL,
             "api_token": "test_token",
-            "project_key": "TEST"
+            "project_key": STR_TEST
         })
 
     def test_build_description_basic(self, service):
         """Test building basic description"""
         request = {
-            "requestId": "REQ-001",
+            STR_REQUESTID: STR_REQ_001,
             "requestType": "scenario",
             "dataDomain": "finance",
             "status": "pending",
             "description": "Test description",
             "email": MOCK_EMAIL_USER,
-            "row_add_stp": "2024-01-01"
+            "row_add_stp": DATE_2024_01_01
         }
         desc = service._build_description(request)
-        assert "REQ-001" in desc
+        assert STR_REQ_001 in desc
         assert "scenario" in desc
         assert "finance" in desc
         assert "Test description" in desc
@@ -97,7 +113,7 @@ class TestJiraServiceHelpers:
     def test_build_description_with_steps(self, service):
         """Test building description with steps"""
         request = {
-            "requestId": "REQ-001",
+            STR_REQUESTID: STR_REQ_001,
             "steps": [
                 {"description": "Step 1"},
                 {"description": "Step 2"}
@@ -111,7 +127,7 @@ class TestJiraServiceHelpers:
     def test_build_description_empty_steps(self, service):
         """Test building description with empty steps"""
         request = {
-            "requestId": "REQ-001",
+            STR_REQUESTID: STR_REQ_001,
             "steps": []
         }
         desc = service._build_description(request)
@@ -129,11 +145,11 @@ class TestJiraServiceHelpers:
         request = {
             "comments": [
                 {"username": "user1", "comment": "First comment"},
-                {"username": "user2", "comment": "Latest comment"}
+                {"username": STR_USER2, "comment": "Latest comment"}
             ]
         }
         comment = service._build_update_comment(request, "comment")
-        assert "user2" in comment
+        assert STR_USER2 in comment
         assert "Latest comment" in comment
 
     def test_build_update_comment_empty_comments(self, service):
@@ -174,7 +190,7 @@ class TestJiraServiceCreateTicket:
     """Tests for create_ticket method"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_create_ticket_disabled(self, mock_jira):
         """Test create ticket when service is disabled"""
         from easylifeauth.services.jira_service import JiraService
@@ -183,36 +199,36 @@ class TestJiraServiceCreateTicket:
         assert result is None
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_create_ticket_success(self, mock_jira):
         """Test successful ticket creation"""
         from easylifeauth.services.jira_service import JiraService
 
         mock_issue = MagicMock()
-        mock_issue.id = "12345"
-        mock_issue.key = "TEST-1"
+        mock_issue.id = NUM_12345
+        mock_issue.key = STR_TEST_1
         mock_jira.return_value.create_issue.return_value = mock_issue
 
         service = JiraService({
             "base_url": MOCK_URL_JIRA_BASE,
             "email": MOCK_EMAIL,
             "api_token": "test_token",
-            "project_key": "TEST"
+            "project_key": STR_TEST
         })
 
         result = await service.create_ticket({
-            "requestId": "REQ-001",
+            STR_REQUESTID: STR_REQ_001,
             "name": EXPECTED_TEST_REQUEST,
             "dataDomain": "finance"
         })
 
         assert result is not None
-        assert result["ticket_id"] == "12345"
-        assert result["ticket_key"] == "TEST-1"
+        assert result["ticket_id"] == NUM_12345
+        assert result["ticket_key"] == STR_TEST_1
         assert result["sync_status"] == "synced"
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_create_ticket_jira_error(self, mock_jira):
         """Test ticket creation with Jira error"""
         from jira.exceptions import JIRAError
@@ -224,16 +240,16 @@ class TestJiraServiceCreateTicket:
             "base_url": MOCK_URL_JIRA_BASE,
             "email": MOCK_EMAIL,
             "api_token": "test_token",
-            "project_key": "TEST"
+            "project_key": STR_TEST
         })
 
-        result = await service.create_ticket({"requestId": "REQ-001"})
+        result = await service.create_ticket({STR_REQUESTID: STR_REQ_001})
 
         assert result["sync_status"] == "failed"
         assert "error" in result
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_create_ticket_exception(self, mock_jira):
         """Test ticket creation with general exception"""
         from easylifeauth.services.jira_service import JiraService
@@ -244,10 +260,10 @@ class TestJiraServiceCreateTicket:
             "base_url": MOCK_URL_JIRA_BASE,
             "email": MOCK_EMAIL,
             "api_token": "test_token",
-            "project_key": "TEST"
+            "project_key": STR_TEST
         })
 
-        result = await service.create_ticket({"requestId": "REQ-001"})
+        result = await service.create_ticket({STR_REQUESTID: STR_REQ_001})
 
         assert result["sync_status"] == "failed"
         assert EXPECTED_NETWORK_ERROR in result["error"]
@@ -257,16 +273,16 @@ class TestJiraServiceUpdateTicket:
     """Tests for update_ticket method"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_update_ticket_disabled(self, mock_jira):
         """Test update ticket when disabled"""
         from easylifeauth.services.jira_service import JiraService
         service = JiraService()
-        result = await service.update_ticket("TEST-1", {})
+        result = await service.update_ticket(STR_TEST_1, {})
         assert result is None
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_update_ticket_no_key(self, mock_jira):
         """Test update ticket without key"""
         from easylifeauth.services.jira_service import JiraService
@@ -279,7 +295,7 @@ class TestJiraServiceUpdateTicket:
         assert result is None
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_update_ticket_success(self, mock_jira):
         """Test successful ticket update"""
         from easylifeauth.services.jira_service import JiraService
@@ -292,13 +308,13 @@ class TestJiraServiceUpdateTicket:
             "api_token": "test_token"
         })
 
-        result = await service.update_ticket("TEST-1", {"status": "approved"}, "status_change")
+        result = await service.update_ticket(STR_TEST_1, {"status": "approved"}, "status_change")
 
         assert result is not None
         assert result["sync_status"] == "synced"
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_update_ticket_jira_error(self, mock_jira):
         """Test ticket update with Jira error"""
         from jira.exceptions import JIRAError
@@ -312,12 +328,12 @@ class TestJiraServiceUpdateTicket:
             "api_token": "test_token"
         })
 
-        result = await service.update_ticket("TEST-1", {})
+        result = await service.update_ticket(STR_TEST_1, {})
 
         assert result["sync_status"] == "failed"
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_update_ticket_exception(self, mock_jira):
         """Test ticket update with exception"""
         from easylifeauth.services.jira_service import JiraService
@@ -330,7 +346,7 @@ class TestJiraServiceUpdateTicket:
             "api_token": "test_token"
         })
 
-        result = await service.update_ticket("TEST-1", {})
+        result = await service.update_ticket(STR_TEST_1, {})
 
         assert result["sync_status"] == "failed"
 
@@ -339,16 +355,16 @@ class TestJiraServiceAddAttachment:
     """Tests for add_attachment method"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_add_attachment_disabled(self, mock_jira):
         """Test add attachment when disabled"""
         from easylifeauth.services.jira_service import JiraService
         service = JiraService()
-        result = await service.add_attachment("TEST-1", b"content", "file.txt")
+        result = await service.add_attachment(STR_TEST_1, b"content", FILE_FILE_TXT)
         assert result is None
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_add_attachment_no_key(self, mock_jira):
         """Test add attachment without key"""
         from easylifeauth.services.jira_service import JiraService
@@ -357,17 +373,17 @@ class TestJiraServiceAddAttachment:
             "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
-        result = await service.add_attachment("", b"content", "file.txt")
+        result = await service.add_attachment("", b"content", FILE_FILE_TXT)
         assert result is None
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_add_attachment_success(self, mock_jira):
         """Test successful attachment upload"""
         from easylifeauth.services.jira_service import JiraService
 
         mock_attachment = MagicMock()
-        mock_attachment.id = "att-123"
+        mock_attachment.id = STR_ATT_123
         mock_jira.return_value.add_attachment.return_value = mock_attachment
 
         service = JiraService({
@@ -376,13 +392,13 @@ class TestJiraServiceAddAttachment:
             "api_token": "test_token"
         })
 
-        result = await service.add_attachment("TEST-1", b"file content", "test.txt")
+        result = await service.add_attachment(STR_TEST_1, b"file content", FILE_TEST_TXT)
 
         assert result is not None
-        assert result["attachment_id"] == "att-123"
+        assert result["attachment_id"] == STR_ATT_123
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_add_attachment_jira_error(self, mock_jira):
         """Test attachment upload with Jira error"""
         from jira.exceptions import JIRAError
@@ -396,12 +412,12 @@ class TestJiraServiceAddAttachment:
             "api_token": "test_token"
         })
 
-        result = await service.add_attachment("TEST-1", b"content", "file.txt")
+        result = await service.add_attachment(STR_TEST_1, b"content", FILE_FILE_TXT)
 
         assert result is None
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_add_attachment_exception(self, mock_jira):
         """Test attachment with exception"""
         from easylifeauth.services.jira_service import JiraService
@@ -414,7 +430,7 @@ class TestJiraServiceAddAttachment:
             "api_token": "test_token"
         })
 
-        result = await service.add_attachment("TEST-1", b"content", "file.txt")
+        result = await service.add_attachment(STR_TEST_1, b"content", FILE_FILE_TXT)
 
         assert result is None
 
@@ -423,16 +439,16 @@ class TestJiraServiceTransitionTicket:
     """Tests for transition_ticket method"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_transition_disabled(self, mock_jira):
         """Test transition when disabled"""
         from easylifeauth.services.jira_service import JiraService
         service = JiraService()
-        result = await service.transition_ticket("TEST-1", "Done")
+        result = await service.transition_ticket(STR_TEST_1, STR_DONE)
         assert result is None
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_transition_no_key(self, mock_jira):
         """Test transition without key"""
         from easylifeauth.services.jira_service import JiraService
@@ -441,18 +457,18 @@ class TestJiraServiceTransitionTicket:
             "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
-        result = await service.transition_ticket("", "Done")
+        result = await service.transition_ticket("", STR_DONE)
         assert result is None
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_transition_success(self, mock_jira):
         """Test successful transition"""
         from easylifeauth.services.jira_service import JiraService
 
         mock_jira.return_value.transitions.return_value = [
             {"id": "1", "name": EXPECTED_TO_DO},
-            {"id": "2", "name": "Done"}
+            {"id": "2", "name": STR_DONE}
         ]
         mock_jira.return_value.transition_issue.return_value = None
 
@@ -462,13 +478,13 @@ class TestJiraServiceTransitionTicket:
             "api_token": "test_token"
         })
 
-        result = await service.transition_ticket("TEST-1", "Done")
+        result = await service.transition_ticket(STR_TEST_1, STR_DONE)
 
         assert result is not None
         assert result["sync_status"] == "synced"
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_transition_no_matching_status(self, mock_jira):
         """Test transition with no matching status"""
         from easylifeauth.services.jira_service import JiraService
@@ -483,13 +499,13 @@ class TestJiraServiceTransitionTicket:
             "api_token": "test_token"
         })
 
-        result = await service.transition_ticket("TEST-1", "Unknown Status")
+        result = await service.transition_ticket(STR_TEST_1, "Unknown Status")
 
         assert result["sync_status"] == "failed"
         assert "not found" in result["error"]
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_transition_jira_error(self, mock_jira):
         """Test transition with Jira error"""
         from jira.exceptions import JIRAError
@@ -503,12 +519,12 @@ class TestJiraServiceTransitionTicket:
             "api_token": "test_token"
         })
 
-        result = await service.transition_ticket("TEST-1", "Done")
+        result = await service.transition_ticket(STR_TEST_1, STR_DONE)
 
         assert result["sync_status"] == "failed"
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_transition_exception(self, mock_jira):
         """Test transition with exception"""
         from easylifeauth.services.jira_service import JiraService
@@ -521,7 +537,7 @@ class TestJiraServiceTransitionTicket:
             "api_token": "test_token"
         })
 
-        result = await service.transition_ticket("TEST-1", "Done")
+        result = await service.transition_ticket(STR_TEST_1, STR_DONE)
 
         assert result["sync_status"] == "failed"
 
@@ -530,7 +546,7 @@ class TestJiraServiceTestConnection:
     """Tests for test_connection method"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_connection_disabled(self, mock_jira):
         """Test connection when disabled"""
         from easylifeauth.services.jira_service import JiraService
@@ -539,7 +555,7 @@ class TestJiraServiceTestConnection:
         assert result["connected"] is False
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_connection_success(self, mock_jira):
         """Test successful connection"""
         from easylifeauth.services.jira_service import JiraService
@@ -561,7 +577,7 @@ class TestJiraServiceTestConnection:
         assert result["user"] == "Test User"
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_connection_error(self, mock_jira):
         """Test connection error"""
         from jira.exceptions import JIRAError
@@ -584,7 +600,7 @@ class TestJiraServiceGetProjects:
     """Tests for get_projects method"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_get_projects_disabled(self, mock_jira):
         """Test get projects when disabled"""
         from easylifeauth.services.jira_service import JiraService
@@ -593,14 +609,14 @@ class TestJiraServiceGetProjects:
         assert result == []
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_get_projects_success(self, mock_jira):
         """Test successful get projects"""
         from easylifeauth.services.jira_service import JiraService
 
         mock_project = MagicMock()
-        mock_project.id = "10001"
-        mock_project.key = "TEST"
+        mock_project.id = NUM_10001
+        mock_project.key = STR_TEST
         mock_project.name = "Test Project"
         mock_project.projectTypeKey = "software"
         mock_jira.return_value.projects.return_value = [mock_project]
@@ -614,10 +630,10 @@ class TestJiraServiceGetProjects:
         result = await service.get_projects()
 
         assert len(result) == 1
-        assert result[0]["key"] == "TEST"
+        assert result[0]["key"] == STR_TEST
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_get_projects_error(self, mock_jira):
         """Test get projects error"""
         from jira.exceptions import JIRAError
@@ -640,7 +656,7 @@ class TestJiraServiceGetUserTasks:
     """Tests for get_user_tasks method"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_get_user_tasks_disabled(self, mock_jira):
         """Test get user tasks when disabled"""
         from easylifeauth.services.jira_service import JiraService
@@ -649,21 +665,21 @@ class TestJiraServiceGetUserTasks:
         assert result == []
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_get_user_tasks_success(self, mock_jira):
         """Test successful get user tasks"""
         from easylifeauth.services.jira_service import JiraService
 
         mock_issue = MagicMock()
-        mock_issue.id = "10001"
-        mock_issue.key = "TEST-1"
+        mock_issue.id = NUM_10001
+        mock_issue.key = STR_TEST_1
         mock_issue.fields.summary = "Test Issue"
         mock_issue.fields.status.name = EXPECTED_OPEN
         mock_issue.fields.issuetype.name = EXPECTED_TASK
         mock_issue.fields.priority = MagicMock()
         mock_issue.fields.priority.name = "Medium"
-        mock_issue.fields.created = "2024-01-01"
-        mock_issue.fields.updated = "2024-01-02"
+        mock_issue.fields.created = DATE_2024_01_01
+        mock_issue.fields.updated = DATE_2024_01_02
         mock_issue.fields.reporter = MagicMock()
         mock_issue.fields.reporter.displayName = "Reporter"
         mock_issue.fields.assignee = MagicMock()
@@ -680,10 +696,10 @@ class TestJiraServiceGetUserTasks:
         result = await service.get_user_tasks(MOCK_EMAIL_USER_TEST)
 
         assert len(result) == 1
-        assert result[0]["key"] == "TEST-1"
+        assert result[0]["key"] == STR_TEST_1
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_get_user_tasks_with_filters(self, mock_jira):
         """Test get user tasks with project and status filters"""
         from easylifeauth.services.jira_service import JiraService
@@ -696,12 +712,12 @@ class TestJiraServiceGetUserTasks:
             "api_token": "test_token"
         })
 
-        result = await service.get_user_tasks(MOCK_EMAIL_USER_TEST, project_key="TEST", status=EXPECTED_OPEN)
+        result = await service.get_user_tasks(MOCK_EMAIL_USER_TEST, project_key=STR_TEST, status=EXPECTED_OPEN)
 
         assert result == []
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_get_user_tasks_error(self, mock_jira):
         """Test get user tasks error"""
         from jira.exceptions import JIRAError
@@ -724,23 +740,23 @@ class TestJiraServiceGetTasksByRequestId:
     """Tests for get_tasks_by_request_id method"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_get_tasks_by_request_id_disabled(self, mock_jira):
         """Test get tasks by request ID when disabled"""
         from easylifeauth.services.jira_service import JiraService
         service = JiraService()
-        result = await service.get_tasks_by_request_id("REQ-001")
+        result = await service.get_tasks_by_request_id(STR_REQ_001)
         assert result == []
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_get_tasks_by_request_id_success(self, mock_jira):
         """Test successful get tasks by request ID"""
         from easylifeauth.services.jira_service import JiraService
 
         mock_issue = MagicMock()
-        mock_issue.id = "10001"
-        mock_issue.key = "TEST-1"
+        mock_issue.id = NUM_10001
+        mock_issue.key = STR_TEST_1
         mock_issue.fields.summary = "[REQ-001] Test"
         mock_issue.fields.status.name = EXPECTED_OPEN
 
@@ -752,24 +768,24 @@ class TestJiraServiceGetTasksByRequestId:
             "api_token": "test_token"
         })
 
-        result = await service.get_tasks_by_request_id("REQ-001")
+        result = await service.get_tasks_by_request_id(STR_REQ_001)
 
         assert len(result) == 1
-        assert result[0]["key"] == "TEST-1"
+        assert result[0]["key"] == STR_TEST_1
 
 
 class TestJiraServiceGetLatestProject:
     """Tests for get_latest_project method"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_get_latest_project_success(self, mock_jira):
         """Test successful get latest project"""
         from easylifeauth.services.jira_service import JiraService
 
         mock_project = MagicMock()
-        mock_project.id = "10001"
-        mock_project.key = "TEST"
+        mock_project.id = NUM_10001
+        mock_project.key = STR_TEST
         mock_project.name = "Test Project"
         mock_project.projectTypeKey = "software"
         mock_jira.return_value.projects.return_value = [mock_project]
@@ -783,10 +799,10 @@ class TestJiraServiceGetLatestProject:
         result = await service.get_latest_project()
 
         assert result is not None
-        assert result["key"] == "TEST"
+        assert result["key"] == STR_TEST
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_get_latest_project_none(self, mock_jira):
         """Test get latest project when no projects"""
         from easylifeauth.services.jira_service import JiraService
@@ -808,7 +824,7 @@ class TestJiraServiceGetIssueTypes:
     """Tests for get_issue_types method"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_get_issue_types_disabled(self, mock_jira):
         """Test get issue types when disabled"""
         from easylifeauth.services.jira_service import JiraService
@@ -817,7 +833,7 @@ class TestJiraServiceGetIssueTypes:
         assert result == []
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_get_issue_types_success(self, mock_jira):
         """Test successful get issue types"""
         from easylifeauth.services.jira_service import JiraService
@@ -844,7 +860,7 @@ class TestJiraServiceGetStatuses:
     """Tests for get_statuses method"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_get_statuses_disabled(self, mock_jira):
         """Test get statuses when disabled"""
         from easylifeauth.services.jira_service import JiraService
@@ -853,7 +869,7 @@ class TestJiraServiceGetStatuses:
         assert result == []
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_get_statuses_success(self, mock_jira):
         """Test successful get statuses"""
         from easylifeauth.services.jira_service import JiraService
@@ -880,7 +896,7 @@ class TestJiraServiceGetStatuses:
 class TestJiraServiceClose:
     """Tests for close method"""
 
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     def test_close(self, mock_jira):
         """Test close executor"""
         from easylifeauth.services.jira_service import JiraService
@@ -893,16 +909,16 @@ class TestJiraServiceSyncStatusChange:
     """Tests for sync_status_change method"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_sync_status_change_disabled(self, mock_jira):
         """Test sync status when disabled"""
         from easylifeauth.services.jira_service import JiraService
         service = JiraService()
-        result = await service.sync_status_change("TEST-1", "approved")
+        result = await service.sync_status_change(STR_TEST_1, "approved")
         assert result is None
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_sync_status_change_no_key(self, mock_jira):
         """Test sync status without key"""
         from easylifeauth.services.jira_service import JiraService
@@ -915,7 +931,7 @@ class TestJiraServiceSyncStatusChange:
         assert result is None
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_sync_status_change_success(self, mock_jira):
         """Test successful status sync with transition"""
         from easylifeauth.services.jira_service import JiraService
@@ -933,13 +949,13 @@ class TestJiraServiceSyncStatusChange:
             "api_token": "test_token"
         })
 
-        result = await service.sync_status_change("TEST-1", "accepted", comment="Status updated")
+        result = await service.sync_status_change(STR_TEST_1, "accepted", comment="Status updated")
 
         assert result is not None
         assert result["sync_status"] == "synced"
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_sync_status_change_transition_not_found(self, mock_jira):
         """Test status sync when transition not found"""
         from easylifeauth.services.jira_service import JiraService
@@ -955,13 +971,13 @@ class TestJiraServiceSyncStatusChange:
             "api_token": "test_token"
         })
 
-        result = await service.sync_status_change("TEST-1", "unknown-status")
+        result = await service.sync_status_change(STR_TEST_1, "unknown-status")
 
         # Should still sync even if transition not found, just add comment
         assert result is not None
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_sync_status_change_jira_error(self, mock_jira):
         """Test status sync with Jira error"""
         from jira.exceptions import JIRAError
@@ -975,7 +991,7 @@ class TestJiraServiceSyncStatusChange:
             "api_token": "test_token"
         })
 
-        result = await service.sync_status_change("TEST-1", "accepted")
+        result = await service.sync_status_change(STR_TEST_1, "accepted")
 
         assert result["sync_status"] == "failed"
 
@@ -984,16 +1000,16 @@ class TestJiraServiceUpdateDescription:
     """Tests for update_description method"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_update_description_disabled(self, mock_jira):
         """Test update description when disabled"""
         from easylifeauth.services.jira_service import JiraService
         service = JiraService()
-        result = await service.update_description("TEST-1", {})
+        result = await service.update_description(STR_TEST_1, {})
         assert result is None
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_update_description_success(self, mock_jira):
         """Test successful description update"""
         from easylifeauth.services.jira_service import JiraService
@@ -1008,8 +1024,8 @@ class TestJiraServiceUpdateDescription:
             "api_token": "test_token"
         })
 
-        result = await service.update_description("TEST-1", {
-            "requestId": "REQ-001",
+        result = await service.update_description(STR_TEST_1, {
+            STR_REQUESTID: STR_REQ_001,
             "description": "Updated description"
         })
 
@@ -1017,7 +1033,7 @@ class TestJiraServiceUpdateDescription:
         assert result["sync_status"] == "synced"
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_update_description_jira_error(self, mock_jira):
         """Test description update with error"""
         from jira.exceptions import JIRAError
@@ -1031,7 +1047,7 @@ class TestJiraServiceUpdateDescription:
             "api_token": "test_token"
         })
 
-        result = await service.update_description("TEST-1", {})
+        result = await service.update_description(STR_TEST_1, {})
 
         assert result["sync_status"] == "failed"
 
@@ -1040,16 +1056,16 @@ class TestJiraServiceAddComment:
     """Tests for add_comment method"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_add_comment_disabled(self, mock_jira):
         """Test add comment when disabled"""
         from easylifeauth.services.jira_service import JiraService
         service = JiraService()
-        result = await service.add_comment("TEST-1", EXPECTED_TEST_COMMENT)
+        result = await service.add_comment(STR_TEST_1, EXPECTED_TEST_COMMENT)
         assert result is None
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_add_comment_success(self, mock_jira):
         """Test successful add comment"""
         from easylifeauth.services.jira_service import JiraService
@@ -1062,13 +1078,13 @@ class TestJiraServiceAddComment:
             "api_token": "test_token"
         })
 
-        result = await service.add_comment("TEST-1", EXPECTED_TEST_COMMENT, author_name="John Doe")
+        result = await service.add_comment(STR_TEST_1, EXPECTED_TEST_COMMENT, author_name="John Doe")
 
         assert result is not None
         assert result["sync_status"] == "synced"
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_add_comment_jira_error(self, mock_jira):
         """Test add comment with error"""
         from jira.exceptions import JIRAError
@@ -1082,7 +1098,7 @@ class TestJiraServiceAddComment:
             "api_token": "test_token"
         })
 
-        result = await service.add_comment("TEST-1", EXPECTED_TEST_COMMENT)
+        result = await service.add_comment(STR_TEST_1, EXPECTED_TEST_COMMENT)
 
         assert result["sync_status"] == "failed"
 
@@ -1091,16 +1107,16 @@ class TestJiraServiceUpdateDueDate:
     """Tests for update_due_date method"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_update_due_date_disabled(self, mock_jira):
         """Test update due date when disabled"""
         from easylifeauth.services.jira_service import JiraService
         service = JiraService()
-        result = await service.update_due_date("TEST-1", datetime.now())
+        result = await service.update_due_date(STR_TEST_1, datetime.now())
         assert result is None
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_update_due_date_success(self, mock_jira):
         """Test successful due date update"""
         from easylifeauth.services.jira_service import JiraService
@@ -1115,13 +1131,13 @@ class TestJiraServiceUpdateDueDate:
             "api_token": "test_token"
         })
 
-        result = await service.update_due_date("TEST-1", datetime.now())
+        result = await service.update_due_date(STR_TEST_1, datetime.now())
 
         assert result is not None
         assert result["sync_status"] == "synced"
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_update_due_date_jira_error(self, mock_jira):
         """Test due date update with error"""
         from jira.exceptions import JIRAError
@@ -1135,7 +1151,7 @@ class TestJiraServiceUpdateDueDate:
             "api_token": "test_token"
         })
 
-        result = await service.update_due_date("TEST-1", datetime.now())
+        result = await service.update_due_date(STR_TEST_1, datetime.now())
 
         assert result["sync_status"] == "failed"
 
@@ -1143,7 +1159,7 @@ class TestJiraServiceUpdateDueDate:
 class TestJiraServiceStripHtml:
     """Tests for _strip_html helper method"""
 
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     def test_strip_html_basic(self, mock_jira):
         """Test stripping basic HTML"""
         from easylifeauth.services.jira_service import JiraService
@@ -1151,7 +1167,7 @@ class TestJiraServiceStripHtml:
         result = service._strip_html("<p>Hello <b>World</b></p>")
         assert result == "Hello World"
 
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     def test_strip_html_with_br(self, mock_jira):
         """Test stripping HTML with line breaks"""
         from easylifeauth.services.jira_service import JiraService
@@ -1160,7 +1176,7 @@ class TestJiraServiceStripHtml:
         assert "Line 1" in result
         assert "Line 2" in result
 
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     def test_strip_html_empty(self, mock_jira):
         """Test stripping empty HTML"""
         from easylifeauth.services.jira_service import JiraService
@@ -1168,7 +1184,7 @@ class TestJiraServiceStripHtml:
         result = service._strip_html("")
         assert result == ""
 
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     def test_strip_html_no_html(self, mock_jira):
         """Test stripping plain text"""
         from easylifeauth.services.jira_service import JiraService
@@ -1180,7 +1196,7 @@ class TestJiraServiceStripHtml:
 class TestJiraServiceInitClient:
     """Tests for _init_client method"""
 
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     def test_init_client_jira_error(self, mock_jira):
         """Test init client with JiraError"""
         from jira.exceptions import JIRAError
@@ -1200,7 +1216,7 @@ class TestJiraServiceInitClient:
         assert service.enabled is False
         assert service._client is None
 
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     def test_init_client_exception(self, mock_jira):
         """Test init client with general exception"""
         from easylifeauth.services.jira_service import JiraService
@@ -1223,7 +1239,7 @@ class TestJiraServiceInitClient:
 class TestJiraServiceGetClient:
     """Tests for _get_client method"""
 
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     def test_get_client_disabled(self, mock_jira):
         """Test get client when disabled"""
         from easylifeauth.services.jira_service import JiraService
@@ -1231,7 +1247,7 @@ class TestJiraServiceGetClient:
         result = service._get_client()
         assert result is None
 
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     def test_get_client_lazy_init(self, mock_jira):
         """Test get client initializes lazily"""
         from easylifeauth.services.jira_service import JiraService
@@ -1251,16 +1267,16 @@ class TestJiraServiceSetStartDate:
     """Tests for _set_start_date method"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_set_start_date_disabled(self, mock_jira):
         """Test set start date when disabled"""
         from easylifeauth.services.jira_service import JiraService
         service = JiraService()
         # Should not raise
-        await service._set_start_date("TEST-1", datetime.now())
+        await service._set_start_date(STR_TEST_1, datetime.now())
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_set_start_date_success(self, mock_jira):
         """Test set start date success"""
         from easylifeauth.services.jira_service import JiraService
@@ -1276,23 +1292,23 @@ class TestJiraServiceSetStartDate:
         })
 
         # Should not raise
-        await service._set_start_date("TEST-1", datetime.now())
+        await service._set_start_date(STR_TEST_1, datetime.now())
 
 
 class TestJiraServiceAddAttachmentFromUrl:
     """Tests for add_attachment_from_url method"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_add_attachment_from_url_disabled(self, mock_jira):
         """Test add attachment from URL when disabled"""
         from easylifeauth.services.jira_service import JiraService
         service = JiraService()
-        result = await service.add_attachment_from_url("TEST-1", MOCK_URL_FILE_HTTP, "file.txt")
+        result = await service.add_attachment_from_url(STR_TEST_1, MOCK_URL_FILE_HTTP, FILE_FILE_TXT)
         assert result is None
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_add_attachment_from_url_no_key(self, mock_jira):
         """Test add attachment from URL without key"""
         from easylifeauth.services.jira_service import JiraService
@@ -1301,17 +1317,17 @@ class TestJiraServiceAddAttachmentFromUrl:
             "email": MOCK_EMAIL,
             "api_token": "test_token"
         })
-        result = await service.add_attachment_from_url("", MOCK_URL_FILE_HTTP, "file.txt")
+        result = await service.add_attachment_from_url("", MOCK_URL_FILE_HTTP, FILE_FILE_TXT)
         assert result is None
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_add_attachment_from_gcs_url(self, mock_jira):
         """Test add attachment from GCS URL"""
         from easylifeauth.services.jira_service import JiraService
 
         mock_attachment = MagicMock()
-        mock_attachment.id = "att-123"
+        mock_attachment.id = STR_ATT_123
         mock_jira.return_value.add_attachment.return_value = mock_attachment
 
         mock_gcs_client = MagicMock()
@@ -1328,17 +1344,17 @@ class TestJiraServiceAddAttachmentFromUrl:
         })
 
         result = await service.add_attachment_from_url(
-            "TEST-1",
+            STR_TEST_1,
             MOCK_GCS_BUCKET_NAME_FILE,
-            "file.txt",
+            FILE_FILE_TXT,
             gcs_client=mock_gcs_client
         )
 
         assert result is not None
-        assert result["attachment_id"] == "att-123"
+        assert result["attachment_id"] == STR_ATT_123
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_add_attachment_from_invalid_url(self, mock_jira):
         """Test add attachment from invalid URL"""
         from easylifeauth.services.jira_service import JiraService
@@ -1350,9 +1366,9 @@ class TestJiraServiceAddAttachmentFromUrl:
         })
 
         result = await service.add_attachment_from_url(
-            "TEST-1",
+            STR_TEST_1,
             MOCK_URL_FTP_INVALID,
-            "file.txt"
+            FILE_FILE_TXT
         )
 
         assert result is None
@@ -1362,7 +1378,7 @@ class TestJiraServiceCreateTicketAdvanced:
     """Advanced tests for create_ticket method"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_create_ticket_no_project(self, mock_jira):
         """Test create ticket when no project available"""
         from easylifeauth.services.jira_service import JiraService
@@ -1376,20 +1392,20 @@ class TestJiraServiceCreateTicketAdvanced:
             "project_key": None  # No default project
         })
 
-        result = await service.create_ticket({"requestId": "REQ-001"})
+        result = await service.create_ticket({STR_REQUESTID: STR_REQ_001})
 
         assert result["sync_status"] == "failed"
         assert "No project" in result["error"]
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_create_ticket_with_comments(self, mock_jira):
         """Test create ticket with existing comments"""
         from easylifeauth.services.jira_service import JiraService
 
         mock_issue = MagicMock()
-        mock_issue.id = "12345"
-        mock_issue.key = "TEST-1"
+        mock_issue.id = NUM_12345
+        mock_issue.key = STR_TEST_1
         mock_jira.return_value.create_issue.return_value = mock_issue
         mock_jira.return_value.add_comment.return_value = MagicMock()
 
@@ -1397,15 +1413,15 @@ class TestJiraServiceCreateTicketAdvanced:
             "base_url": MOCK_URL_JIRA_BASE,
             "email": MOCK_EMAIL,
             "api_token": "test_token",
-            "project_key": "TEST"
+            "project_key": STR_TEST
         })
 
         result = await service.create_ticket({
-            "requestId": "REQ-001",
+            STR_REQUESTID: STR_REQ_001,
             "name": EXPECTED_TEST_REQUEST,
             "comments": [
-                {"comment": "First comment", "username": "user1", "commentDate": "2024-01-01"},
-                {"comment": "Second comment", "username": "user2", "commentDate": "2024-01-02"}
+                {"comment": "First comment", "username": "user1", "commentDate": DATE_2024_01_01},
+                {"comment": "Second comment", "username": STR_USER2, "commentDate": DATE_2024_01_02}
             ]
         })
 
@@ -1414,57 +1430,57 @@ class TestJiraServiceCreateTicketAdvanced:
         assert mock_jira.return_value.add_comment.call_count >= 2
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_create_ticket_with_files(self, mock_jira):
         """Test create ticket with file attachments"""
         from easylifeauth.services.jira_service import JiraService
 
         mock_issue = MagicMock()
-        mock_issue.id = "12345"
-        mock_issue.key = "TEST-1"
+        mock_issue.id = NUM_12345
+        mock_issue.key = STR_TEST_1
         mock_jira.return_value.create_issue.return_value = mock_issue
-        mock_jira.return_value.add_attachment.return_value = MagicMock(id="att-123")
+        mock_jira.return_value.add_attachment.return_value = MagicMock(id=STR_ATT_123)
 
         mock_file_storage = MagicMock()
-        mock_file_storage.download_file = AsyncMock(return_value=(b"file content", "test.txt"))
+        mock_file_storage.download_file = AsyncMock(return_value=(b"file content", FILE_TEST_TXT))
 
         service = JiraService({
             "base_url": MOCK_URL_JIRA_BASE,
             "email": MOCK_EMAIL,
             "api_token": "test_token",
-            "project_key": "TEST"
+            "project_key": STR_TEST
         })
 
         result = await service.create_ticket({
-            "requestId": "REQ-001",
+            STR_REQUESTID: STR_REQ_001,
             "name": EXPECTED_TEST_REQUEST,
             "files": [
-                {"gcs_path": "path/to/file.txt", "file_name": "test.txt"}
+                {"gcs_path": "path/to/file.txt", "file_name": FILE_TEST_TXT}
             ]
         }, file_storage_service=mock_file_storage)
 
         assert result["sync_status"] == "synced"
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_create_ticket_with_custom_target_days(self, mock_jira):
         """Test create ticket with custom target days"""
         from easylifeauth.services.jira_service import JiraService
 
         mock_issue = MagicMock()
-        mock_issue.id = "12345"
-        mock_issue.key = "TEST-1"
+        mock_issue.id = NUM_12345
+        mock_issue.key = STR_TEST_1
         mock_jira.return_value.create_issue.return_value = mock_issue
 
         service = JiraService({
             "base_url": MOCK_URL_JIRA_BASE,
             "email": MOCK_EMAIL,
             "api_token": "test_token",
-            "project_key": "TEST"
+            "project_key": STR_TEST
         })
 
         result = await service.create_ticket({
-            "requestId": "REQ-001",
+            STR_REQUESTID: STR_REQ_001,
             "name": EXPECTED_TEST_REQUEST,
             "row_add_stp": "2024-01-01T00:00:00Z"
         }, target_days=14)
@@ -1476,14 +1492,14 @@ class TestJiraServiceGetTasksByRequestIdAdvanced:
     """Advanced tests for get_tasks_by_request_id method"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_get_tasks_with_project_filter(self, mock_jira):
         """Test get tasks by request ID with project filter"""
         from easylifeauth.services.jira_service import JiraService
 
         mock_issue = MagicMock()
-        mock_issue.id = "10001"
-        mock_issue.key = "TEST-1"
+        mock_issue.id = NUM_10001
+        mock_issue.key = STR_TEST_1
         mock_issue.fields.summary = "[REQ-001] Test"
         mock_issue.fields.status.name = EXPECTED_OPEN
         mock_jira.return_value.search_issues.return_value = [mock_issue]
@@ -1494,12 +1510,12 @@ class TestJiraServiceGetTasksByRequestIdAdvanced:
             "api_token": "test_token"
         })
 
-        result = await service.get_tasks_by_request_id("REQ-001", project_key="TEST")
+        result = await service.get_tasks_by_request_id(STR_REQ_001, project_key=STR_TEST)
 
         assert len(result) == 1
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_get_tasks_jira_error(self, mock_jira):
         """Test get tasks by request ID with Jira error"""
         from jira.exceptions import JIRAError
@@ -1513,7 +1529,7 @@ class TestJiraServiceGetTasksByRequestIdAdvanced:
             "api_token": "test_token"
         })
 
-        result = await service.get_tasks_by_request_id("REQ-001")
+        result = await service.get_tasks_by_request_id(STR_REQ_001)
 
         assert result == []
 
@@ -1522,20 +1538,20 @@ class TestJiraServiceGetUserTasksAdvanced:
     """Advanced tests for get_user_tasks"""
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.jira_service.JIRA')
+    @patch(PATCH_JIRA_SERVICE_JIRA)
     async def test_get_user_tasks_no_priority(self, mock_jira):
         """Test get user tasks when issue has no priority"""
         from easylifeauth.services.jira_service import JiraService
 
         mock_issue = MagicMock()
-        mock_issue.id = "10001"
-        mock_issue.key = "TEST-1"
+        mock_issue.id = NUM_10001
+        mock_issue.key = STR_TEST_1
         mock_issue.fields.summary = "Test Issue"
         mock_issue.fields.status.name = EXPECTED_OPEN
         mock_issue.fields.issuetype.name = EXPECTED_TASK
         mock_issue.fields.priority = None  # No priority
-        mock_issue.fields.created = "2024-01-01"
-        mock_issue.fields.updated = "2024-01-02"
+        mock_issue.fields.created = DATE_2024_01_01
+        mock_issue.fields.updated = DATE_2024_01_02
         mock_issue.fields.reporter = None
         mock_issue.fields.assignee = None
 

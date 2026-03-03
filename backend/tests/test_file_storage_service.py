@@ -8,6 +8,12 @@ from unittest.mock import MagicMock, patch
 from datetime import datetime, timezone
 
 from easylifeauth.services.file_storage_service import FileStorageService
+FILE_TEST_CSV = "test.csv"
+PATCH_GOOGLE_CLOUD_STORAGE = "google.cloud.storage"
+STR_REQ_001 = "REQ-001"
+STR_TEST_BUCKET = "test-bucket"
+
+
 
 
 class TestFileStorageServiceInit:
@@ -32,10 +38,10 @@ class TestFileStorageServiceInit:
 
     def test_init_gcs_without_package(self):
         """Test GCS initialization when google-cloud-storage is not installed"""
-        with patch.dict('sys.modules', {'google.cloud': None, 'google.cloud.storage': None}):
+        with patch.dict('sys.modules', {'google.cloud': None, PATCH_GOOGLE_CLOUD_STORAGE: None}):
             service = FileStorageService({
                 "type": "gcs",
-                "bucket_name": "test-bucket"
+                "bucket_name": STR_TEST_BUCKET
             })
             # Should fall back to local
             assert service.storage_type == "local"
@@ -47,7 +53,7 @@ class TestFileStorageServiceInit:
             mock_init.return_value = False
             service = FileStorageService({
                 "type": "gcs",
-                "bucket_name": "test-bucket",
+                "bucket_name": STR_TEST_BUCKET,
                 "credentials_json": "invalid json"
             })
             # Falls back to local
@@ -79,18 +85,18 @@ class TestFileStorageServiceHelpers:
 
     def test_generate_file_path(self, service):
         """Test file path generation"""
-        path = service._generate_file_path("REQ-001", "test.csv", "files")
+        path = service._generate_file_path(STR_REQ_001, FILE_TEST_CSV, "files")
         assert "scenario_requests/REQ-001/files/" in path
-        assert "test.csv" in path
+        assert FILE_TEST_CSV in path
 
     def test_generate_file_path_sanitizes_name(self, service):
         """Test file path generation sanitizes filename"""
-        path = service._generate_file_path("REQ-001", "test file!@#.csv")
+        path = service._generate_file_path(STR_REQ_001, "test file!@#.csv")
         assert "test_file___" in path
 
     def test_get_mime_type_csv(self, service):
         """Test MIME type detection for CSV"""
-        mime = service._get_mime_type("test.csv")
+        mime = service._get_mime_type(FILE_TEST_CSV)
         assert mime in ("text/csv", "application/vnd.ms-excel")
 
     def test_get_mime_type_json(self, service):
@@ -111,7 +117,7 @@ class TestFileStorageServiceHelpers:
 
     def test_get_file_type_csv(self, service):
         """Test file type detection for CSV"""
-        assert service._get_file_type("test.csv") == "csv"
+        assert service._get_file_type(FILE_TEST_CSV) == "csv"
 
     def test_get_file_type_json(self, service):
         """Test file type detection for JSON"""
@@ -152,15 +158,15 @@ class TestFileStorageServiceLocalOps:
     async def test_upload_file_success(self, service):
         """Test successful file upload"""
         result = await service.upload_file(
-            request_id="REQ-001",
-            file_name="test.csv",
+            request_id=STR_REQ_001,
+            file_name=FILE_TEST_CSV,
             file_content=b"col1,col2\n1,2",
             folder="files",
             uploaded_by=MOCK_EMAIL
         )
 
         assert result is not None
-        assert result["file_name"] == "test.csv"
+        assert result["file_name"] == FILE_TEST_CSV
         assert result["file_type"] == "csv"
         assert result["status"] == "A"
         assert result["uploaded_by"] == MOCK_EMAIL
@@ -171,8 +177,8 @@ class TestFileStorageServiceLocalOps:
         """Test upload when service is disabled"""
         service = FileStorageService()
         result = await service.upload_file(
-            request_id="REQ-001",
-            file_name="test.csv",
+            request_id=STR_REQ_001,
+            file_name=FILE_TEST_CSV,
             file_content=b"data"
         )
         assert result is None
@@ -182,13 +188,13 @@ class TestFileStorageServiceLocalOps:
         """Test downloading local file"""
         # First upload a file
         await service.upload_file(
-            request_id="REQ-001",
+            request_id=STR_REQ_001,
             file_name="test.txt",
             file_content=b"test content"
         )
 
         # Get the path from list_files
-        files = await service.list_files("REQ-001", "files")
+        files = await service.list_files(STR_REQ_001, "files")
         assert len(files) > 0
 
         result = await service.download_file(files[0]["gcs_path"])
@@ -214,7 +220,7 @@ class TestFileStorageServiceLocalOps:
         """Test deleting local file"""
         # First upload a file
         upload_result = await service.upload_file(
-            request_id="REQ-001",
+            request_id=STR_REQ_001,
             file_name="delete_me.txt",
             file_content=b"to be deleted"
         )
@@ -244,10 +250,10 @@ class TestFileStorageServiceLocalOps:
     async def test_list_files(self, service):
         """Test listing files"""
         # Upload some files
-        await service.upload_file("REQ-001", "file1.txt", b"content1")
-        await service.upload_file("REQ-001", "file2.csv", b"col1,col2")
+        await service.upload_file(STR_REQ_001, "file1.txt", b"content1")
+        await service.upload_file(STR_REQ_001, "file2.csv", b"col1,col2")
 
-        files = await service.list_files("REQ-001", "files")
+        files = await service.list_files(STR_REQ_001, "files")
         assert len(files) == 2
 
     @pytest.mark.asyncio
@@ -260,7 +266,7 @@ class TestFileStorageServiceLocalOps:
     async def test_list_files_disabled(self):
         """Test list when service is disabled"""
         service = FileStorageService()
-        result = await service.list_files("REQ-001")
+        result = await service.list_files(STR_REQ_001)
         assert result == []
 
 
@@ -282,9 +288,9 @@ class TestFileStorageServicePreview:
     async def test_preview_json_file(self, service):
         """Test JSON file preview"""
         json_content = b'{"key": "value", "number": 123}'
-        await service.upload_file("REQ-001", "data.json", json_content)
+        await service.upload_file(STR_REQ_001, "data.json", json_content)
 
-        files = await service.list_files("REQ-001", "files")
+        files = await service.list_files(STR_REQ_001, "files")
         result = await service.get_file_content_for_preview(files[0]["gcs_path"], "json")
 
         assert result is not None
@@ -295,9 +301,9 @@ class TestFileStorageServicePreview:
     async def test_preview_csv_file(self, service):
         """Test CSV file preview"""
         csv_content = b"name,age\nJohn,30\nJane,25"
-        await service.upload_file("REQ-001", "data.csv", csv_content)
+        await service.upload_file(STR_REQ_001, "data.csv", csv_content)
 
-        files = await service.list_files("REQ-001", "files")
+        files = await service.list_files(STR_REQ_001, "files")
         result = await service.get_file_content_for_preview(files[0]["gcs_path"], "csv")
 
         assert result is not None
@@ -310,9 +316,9 @@ class TestFileStorageServicePreview:
         """Test image file preview"""
         # Minimal PNG file (1x1 transparent pixel)
         png_content = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
-        await service.upload_file("REQ-001", "image.png", png_content)
+        await service.upload_file(STR_REQ_001, "image.png", png_content)
 
-        files = await service.list_files("REQ-001", "files")
+        files = await service.list_files(STR_REQ_001, "files")
         result = await service.get_file_content_for_preview(files[0]["gcs_path"], "image")
 
         assert result is not None
@@ -323,9 +329,9 @@ class TestFileStorageServicePreview:
     async def test_preview_text_file(self, service):
         """Test text file preview"""
         text_content = b"This is plain text content."
-        await service.upload_file("REQ-001", "readme.txt", text_content)
+        await service.upload_file(STR_REQ_001, "readme.txt", text_content)
 
-        files = await service.list_files("REQ-001", "files")
+        files = await service.list_files(STR_REQ_001, "files")
         result = await service.get_file_content_for_preview(files[0]["gcs_path"], "text")
 
         assert result is not None
@@ -336,9 +342,9 @@ class TestFileStorageServicePreview:
     async def test_preview_other_file(self, service):
         """Test other file type preview"""
         binary_content = b"\x00\x01\x02\x03"
-        await service.upload_file("REQ-001", "data.bin", binary_content)
+        await service.upload_file(STR_REQ_001, "data.bin", binary_content)
 
-        files = await service.list_files("REQ-001", "files")
+        files = await service.list_files(STR_REQ_001, "files")
         result = await service.get_file_content_for_preview(files[0]["gcs_path"], "other")
 
         assert result is not None
@@ -362,9 +368,9 @@ class TestFileStorageServicePreview:
         df.to_excel(buffer, index=False)
         excel_content = buffer.getvalue()
 
-        await service.upload_file("REQ-001", "data.xlsx", excel_content)
+        await service.upload_file(STR_REQ_001, "data.xlsx", excel_content)
 
-        files = await service.list_files("REQ-001", "files")
+        files = await service.list_files(STR_REQ_001, "files")
         result = await service.get_file_content_for_preview(files[0]["gcs_path"], "excel")
 
         assert result is not None
@@ -388,11 +394,11 @@ class TestFileStorageServiceGCS:
         service.enabled = True
         service.storage_type = "gcs"
         service.gcs_client = mock_client
-        service.bucket_name = "test-bucket"
+        service.bucket_name = STR_TEST_BUCKET
 
         result = await service.upload_file(
-            request_id="REQ-001",
-            file_name="test.csv",
+            request_id=STR_REQ_001,
+            file_name=FILE_TEST_CSV,
             file_content=b"data"
         )
 
@@ -478,9 +484,9 @@ class TestFileStorageServiceGCS:
         service.enabled = True
         service.storage_type = "gcs"
         service.gcs_client = mock_client
-        service.bucket_name = "test-bucket"
+        service.bucket_name = STR_TEST_BUCKET
 
-        files = await service.list_files("REQ-001", "files")
+        files = await service.list_files(STR_REQ_001, "files")
 
         assert len(files) == 1
         assert files[0]["file_name"] == "test1.csv"
@@ -501,11 +507,11 @@ class TestFileStorageServiceGCS:
         service.enabled = True
         service.storage_type = "gcs"
         service.gcs_client = mock_client
-        service.bucket_name = "test-bucket"
+        service.bucket_name = STR_TEST_BUCKET
 
         result = await service.upload_file(
-            request_id="REQ-001",
-            file_name="test.csv",
+            request_id=STR_REQ_001,
+            file_name=FILE_TEST_CSV,
             file_content=b"data"
         )
 
@@ -557,7 +563,7 @@ class TestFileStorageServiceGCS:
         service.storage_type = "gcs"
         service.gcs_client = None
 
-        result = await service.list_files("REQ-001", "files")
+        result = await service.list_files(STR_REQ_001, "files")
         assert result == []
 
 
@@ -570,7 +576,7 @@ class TestFileStorageServiceGCSInit:
 
         # The import happens inside _init_gcs_client, so we need to skip if google packages aren't installed
         service = FileStorageService()
-        service.bucket_name = "test-bucket"
+        service.bucket_name = STR_TEST_BUCKET
         result = service._init_gcs_client(valid_creds)
 
         # Result will be False if google-cloud-storage is not installed, which is expected
@@ -581,7 +587,7 @@ class TestFileStorageServiceGCSInit:
         creds_dict = {"type": "service_account", "project_id": "test"}
 
         service = FileStorageService()
-        service.bucket_name = "test-bucket"
+        service.bucket_name = STR_TEST_BUCKET
         result = service._init_gcs_client(creds_dict)
 
         # Result depends on whether google-cloud-storage is installed
@@ -589,7 +595,7 @@ class TestFileStorageServiceGCSInit:
     def test_init_gcs_with_invalid_json(self):
         """Test GCS initialization with invalid JSON"""
         service = FileStorageService()
-        service.bucket_name = "test-bucket"
+        service.bucket_name = STR_TEST_BUCKET
 
         result = service._init_gcs_client("not valid json {{{")
 
@@ -599,7 +605,7 @@ class TestFileStorageServiceGCSInit:
     def test_init_gcs_credentials_missing_type(self):
         """Test GCS initialization with credentials missing 'type' field"""
         service = FileStorageService()
-        service.bucket_name = "test-bucket"
+        service.bucket_name = STR_TEST_BUCKET
 
         # Valid JSON but missing 'type' field
         result = service._init_gcs_client('{"project_id": "test"}')
@@ -610,11 +616,11 @@ class TestFileStorageServiceGCSInit:
     def test_init_gcs_with_default_credentials_exception(self):
         """Test GCS initialization with default credentials that fail"""
         service = FileStorageService()
-        service.bucket_name = "test-bucket"
+        service.bucket_name = STR_TEST_BUCKET
 
-        with patch.dict('sys.modules', {'google': MagicMock(), 'google.cloud': MagicMock(), 'google.cloud.storage': MagicMock()}):
+        with patch.dict('sys.modules', {'google': MagicMock(), 'google.cloud': MagicMock(), PATCH_GOOGLE_CLOUD_STORAGE: MagicMock()}):
             import sys
-            mock_storage = sys.modules['google.cloud.storage']
+            mock_storage = sys.modules[PATCH_GOOGLE_CLOUD_STORAGE]
             mock_storage.Client.side_effect = Exception("ADC not configured")
 
             result = service._init_gcs_client(None)
@@ -642,9 +648,9 @@ class TestFileStorageServicePreviewEdgeCases:
         """Test PDF file preview (download only)"""
         # Minimal PDF content
         pdf_content = b'%PDF-1.0\n1 0 obj\n<<\n>>\nendobj\ntrailer\n<<\n>>\n%%EOF'
-        await service.upload_file("REQ-001", "doc.pdf", pdf_content)
+        await service.upload_file(STR_REQ_001, "doc.pdf", pdf_content)
 
-        files = await service.list_files("REQ-001", "files")
+        files = await service.list_files(STR_REQ_001, "files")
         result = await service.get_file_content_for_preview(files[0]["gcs_path"], "pdf")
 
         assert result is not None
@@ -654,9 +660,9 @@ class TestFileStorageServicePreviewEdgeCases:
     async def test_preview_json_invalid(self, service):
         """Test JSON file preview with invalid JSON"""
         invalid_json = b'{"invalid json'
-        await service.upload_file("REQ-001", "bad.json", invalid_json)
+        await service.upload_file(STR_REQ_001, "bad.json", invalid_json)
 
-        files = await service.list_files("REQ-001", "files")
+        files = await service.list_files(STR_REQ_001, "files")
         result = await service.get_file_content_for_preview(files[0]["gcs_path"], "json")
 
         # Should return error type on parse error (exception is caught in service)
@@ -667,9 +673,9 @@ class TestFileStorageServicePreviewEdgeCases:
     async def test_preview_csv_empty_headers(self, service):
         """Test CSV preview with empty content"""
         empty_csv = b""
-        await service.upload_file("REQ-001", "empty.csv", empty_csv)
+        await service.upload_file(STR_REQ_001, "empty.csv", empty_csv)
 
-        files = await service.list_files("REQ-001", "files")
+        files = await service.list_files(STR_REQ_001, "files")
         result = await service.get_file_content_for_preview(files[0]["gcs_path"], "csv")
 
         # Should handle empty CSV
@@ -704,8 +710,8 @@ class TestFileStorageServiceLocalStorageExceptions:
         with patch('builtins.open', side_effect=PermissionError("Permission denied")):
             with patch('os.makedirs'):
                 result = await service.upload_file(
-                    request_id="REQ-001",
-                    file_name="test.csv",
+                    request_id=STR_REQ_001,
+                    file_name=FILE_TEST_CSV,
                     file_content=b"data"
                 )
 

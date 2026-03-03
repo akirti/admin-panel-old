@@ -9,6 +9,21 @@ from easylifeauth.services.new_scenarios_service import NewScenarioService
 from easylifeauth.errors.auth_error import AuthError
 
 EXPECTED_TEST_COMMENT = "Test comment"
+DATE_2024_01_01T00_00_00Z = "2024-01-01T00:00:00Z"
+FILE_OUTPUT_CSV = "output.csv"
+FILE_PATH_FILE_CSV = "path/file.csv"
+FILE_TEST_CSV = "test.csv"
+OID_9011 = "507f1f77bcf86cd799439011"
+OID_9012 = "507f1f77bcf86cd799439012"
+STR_DATADOMAIN = "dataDomain"
+STR_FLOWORDER = "flowOrder"
+STR_JIRA_123 = "JIRA-123"
+STR_REQUESTID = "requestId"
+STR_REQ_SCR_0001 = "REQ-SCR-0001"
+STR_REQ_SCR_9999 = "REQ-SCR-9999"
+STR_TEST = "Test"
+STR_TEST_DOMAIN = "test-domain"
+
 
 
 
@@ -24,7 +39,7 @@ class TestNewScenarioService:
     def sample_user(self):
         """Sample user data for tests"""
         return {
-            "user_id": "507f1f77bcf86cd799439011",
+            "user_id": OID_9011,
             "email": MOCK_EMAIL,
             "full_name": "Test User",
             "username": "testuser",
@@ -35,7 +50,7 @@ class TestNewScenarioService:
     def sample_admin_user(self):
         """Sample admin user data for tests"""
         return {
-            "user_id": "507f1f77bcf86cd799439012",
+            "user_id": OID_9012,
             "email": MOCK_EMAIL_ADMIN,
             "full_name": "Admin User",
             "username": "admin",
@@ -48,7 +63,7 @@ class TestNewScenarioService:
         mock_cursor = MagicMock()
         mock_cursor.sort = MagicMock(return_value=mock_cursor)
         mock_cursor.limit = MagicMock(return_value=mock_cursor)
-        mock_cursor.to_list = AsyncMock(return_value=[{"requestId": "REQ-SCR-0005"}])
+        mock_cursor.to_list = AsyncMock(return_value=[{STR_REQUESTID: "REQ-SCR-0005"}])
         mock_db.scenario_requests.find = MagicMock(return_value=mock_cursor)
 
         result = await scenario_service.generate_next_id()
@@ -66,7 +81,7 @@ class TestNewScenarioService:
 
         result = await scenario_service.generate_next_id()
 
-        assert result == "REQ-SCR-0001"
+        assert result == STR_REQ_SCR_0001
 
     @pytest.mark.asyncio
     async def test_save_success(self, scenario_service, mock_db, sample_scenario_request_data, sample_user):
@@ -79,7 +94,7 @@ class TestNewScenarioService:
         mock_db.scenario_requests.find = MagicMock(return_value=mock_cursor)
 
         # Mock domain validation
-        mock_db.domains.find_one = AsyncMock(return_value={"key": "test-domain", "status": "active"})
+        mock_db.domains.find_one = AsyncMock(return_value={"key": STR_TEST_DOMAIN, "status": "active"})
 
         mock_db.scenario_requests.insert_one = AsyncMock(
             return_value=MagicMock(inserted_id=ObjectId())
@@ -90,7 +105,7 @@ class TestNewScenarioService:
             {
                 "name": "Test Scenario",
                 "description": "Test Description",
-                "dataDomain": "test-domain",
+                STR_DATADOMAIN: STR_TEST_DOMAIN,
                 "email": MOCK_EMAIL
             },
             current_user=sample_user
@@ -132,7 +147,7 @@ class TestNewScenarioService:
 
         result = await scenario_service.update(
             {
-                "request_id": "REQ-SCR-0001",
+                "request_id": STR_REQ_SCR_0001,
                 "description": "Updated Description"
             },
             current_user=sample_user
@@ -150,7 +165,7 @@ class TestNewScenarioService:
 
         result = await scenario_service.update(
             {
-                "request_id": "REQ-SCR-0001",
+                "request_id": STR_REQ_SCR_0001,
                 "status": "P",
                 "status_comment": "Processing request"
             },
@@ -185,7 +200,7 @@ class TestNewScenarioService:
 
         with pytest.raises(AuthError) as exc_info:
             await scenario_service.update(
-                {"request_id": "REQ-SCR-0001", "description": "Name"},
+                {"request_id": STR_REQ_SCR_0001, "description": "Name"},
                 current_user=sample_user
             )
         assert exc_info.value.status_code == 403
@@ -195,9 +210,9 @@ class TestNewScenarioService:
         """Test getting scenario request"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value=sample_scenario_request_data)
 
-        result = await scenario_service.get("REQ-SCR-0001")
+        result = await scenario_service.get(STR_REQ_SCR_0001)
 
-        assert result["requestId"] == "REQ-SCR-0001"
+        assert result[STR_REQUESTID] == STR_REQ_SCR_0001
 
     @pytest.mark.asyncio
     async def test_get_missing_id(self, scenario_service):
@@ -212,7 +227,7 @@ class TestNewScenarioService:
         mock_db.scenario_requests.find_one = AsyncMock(return_value=None)
 
         with pytest.raises(AuthError) as exc_info:
-            await scenario_service.get("REQ-SCR-9999")
+            await scenario_service.get(STR_REQ_SCR_9999)
         assert exc_info.value.status_code == 404
 
     @pytest.mark.asyncio
@@ -227,7 +242,7 @@ class TestNewScenarioService:
         mock_db.scenario_requests.count_documents = AsyncMock(return_value=1)
 
         result = await scenario_service.get_all(
-            user_id="507f1f77bcf86cd799439011",
+            user_id=OID_9011,
             pagination={"page": 0, "limit": 25}
         )
 
@@ -298,13 +313,13 @@ class TestNewScenarioService:
         """Test getting domains for dropdown"""
         mock_cursor = MagicMock()
         mock_cursor.sort = MagicMock(return_value=mock_cursor)
-        mock_cursor.to_list = AsyncMock(return_value=[{"key": "test-domain", "name": "Test Domain"}])
+        mock_cursor.to_list = AsyncMock(return_value=[{"key": STR_TEST_DOMAIN, "name": "Test Domain"}])
         mock_db.domains.find = MagicMock(return_value=mock_cursor)
 
         result = await scenario_service.get_domains()
 
         assert len(result) == 1
-        assert result[0]["key"] == "test-domain"
+        assert result[0]["key"] == STR_TEST_DOMAIN
 
     @pytest.mark.asyncio
     async def test_save_invalid_domain(self, scenario_service, mock_db):
@@ -321,9 +336,9 @@ class TestNewScenarioService:
 
         with pytest.raises(AuthError) as exc_info:
             await scenario_service.save({
-                "name": "Test",
-                "description": "Test",
-                "dataDomain": "invalid-domain"
+                "name": STR_TEST,
+                "description": STR_TEST,
+                STR_DATADOMAIN: "invalid-domain"
             })
         assert exc_info.value.status_code == 400
         assert "Invalid domain" in str(exc_info.value.message)
@@ -333,8 +348,8 @@ class TestNewScenarioService:
         """Test saving without name"""
         with pytest.raises(AuthError) as exc_info:
             await scenario_service.save({
-                "dataDomain": "test",
-                "description": "Test"
+                STR_DATADOMAIN: "test",
+                "description": STR_TEST
             })
         assert exc_info.value.status_code == 400
         assert "name is required" in str(exc_info.value.message)
@@ -344,8 +359,8 @@ class TestNewScenarioService:
         """Test saving without description"""
         with pytest.raises(AuthError) as exc_info:
             await scenario_service.save({
-                "dataDomain": "test",
-                "name": "Test"
+                STR_DATADOMAIN: "test",
+                "name": STR_TEST
             })
         assert exc_info.value.status_code == 400
         assert "description is required" in str(exc_info.value.message)
@@ -354,24 +369,24 @@ class TestNewScenarioService:
     async def test_get_user_info_success(self, scenario_service, mock_db):
         """Test getting user info by ID"""
         mock_db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
+            "_id": ObjectId(OID_9011),
             "email": MOCK_EMAIL_USER,
             "full_name": "Test User",
             "username": "testuser"
         })
 
-        result = await scenario_service._get_user_info("507f1f77bcf86cd799439011")
+        result = await scenario_service._get_user_info(OID_9011)
 
         assert result is not None
         assert result["email"] == MOCK_EMAIL_USER
-        assert result["user_id"] == "507f1f77bcf86cd799439011"
+        assert result["user_id"] == OID_9011
 
     @pytest.mark.asyncio
     async def test_get_user_info_not_found(self, scenario_service, mock_db):
         """Test getting user info when not found"""
         mock_db.users.find_one = AsyncMock(return_value=None)
 
-        result = await scenario_service._get_user_info("507f1f77bcf86cd799439011")
+        result = await scenario_service._get_user_info(OID_9011)
 
         assert result is None
 
@@ -388,15 +403,15 @@ class TestNewScenarioService:
     async def test_get_domain_info_success(self, scenario_service, mock_db):
         """Test getting domain info"""
         mock_db.domains.find_one = AsyncMock(return_value={
-            "key": "test-domain",
+            "key": STR_TEST_DOMAIN,
             "name": "Test Domain",
             "status": "active"
         })
 
-        result = await scenario_service._get_domain_info("test-domain")
+        result = await scenario_service._get_domain_info(STR_TEST_DOMAIN)
 
         assert result is not None
-        assert result["key"] == "test-domain"
+        assert result["key"] == STR_TEST_DOMAIN
 
     @pytest.mark.asyncio
     async def test_send_notifications_no_email_service(self, mock_db, mock_token_manager):
@@ -446,7 +461,7 @@ class TestNewScenarioService:
             mock_db, mock_token_manager, mock_email_service, jira_service=None
         )
 
-        result = await service._create_jira_ticket({"requestId": "REQ-SCR-0001"})
+        result = await service._create_jira_ticket({STR_REQUESTID: STR_REQ_SCR_0001})
 
         assert result is None
 
@@ -455,7 +470,7 @@ class TestNewScenarioService:
         """Test create jira ticket success"""
         mock_jira = MagicMock()
         mock_jira.create_ticket = AsyncMock(return_value={
-            "ticket_key": "JIRA-123",
+            "ticket_key": STR_JIRA_123,
             "sync_status": "synced"
         })
 
@@ -463,10 +478,10 @@ class TestNewScenarioService:
             mock_db, mock_token_manager, mock_email_service, jira_service=mock_jira
         )
 
-        result = await service._create_jira_ticket({"requestId": "REQ-SCR-0001"})
+        result = await service._create_jira_ticket({STR_REQUESTID: STR_REQ_SCR_0001})
 
         assert result is not None
-        assert result["ticket_key"] == "JIRA-123"
+        assert result["ticket_key"] == STR_JIRA_123
 
     @pytest.mark.asyncio
     async def test_create_jira_ticket_failure(self, mock_db, mock_token_manager, mock_email_service):
@@ -478,7 +493,7 @@ class TestNewScenarioService:
             mock_db, mock_token_manager, mock_email_service, jira_service=mock_jira
         )
 
-        result = await service._create_jira_ticket({"requestId": "REQ-SCR-0001"})
+        result = await service._create_jira_ticket({STR_REQUESTID: STR_REQ_SCR_0001})
 
         assert result is not None
         assert result["sync_status"] == "failed"
@@ -491,7 +506,7 @@ class TestNewScenarioService:
         )
 
         # Should not raise
-        await service._update_jira_ticket({"requestId": "REQ-SCR-0001"}, "status_change")
+        await service._update_jira_ticket({STR_REQUESTID: STR_REQ_SCR_0001}, "status_change")
 
     @pytest.mark.asyncio
     async def test_update_jira_ticket_no_ticket_key(self, mock_db, mock_token_manager, mock_email_service):
@@ -502,7 +517,7 @@ class TestNewScenarioService:
         )
 
         # Should not call jira service
-        await service._update_jira_ticket({"requestId": "REQ-SCR-0001"}, "status_change")
+        await service._update_jira_ticket({STR_REQUESTID: STR_REQ_SCR_0001}, "status_change")
 
         mock_jira.sync_status_change.assert_not_called() if hasattr(mock_jira, 'sync_status_change') else None
 
@@ -511,7 +526,7 @@ class TestNewScenarioService:
         """Test update jira ticket on status change"""
         mock_jira = MagicMock()
         mock_jira.sync_status_change = AsyncMock(return_value={
-            "last_synced": "2024-01-01T00:00:00Z",
+            "last_synced": DATE_2024_01_01T00_00_00Z,
             "sync_status": "synced"
         })
         mock_db.scenario_requests.update_one = AsyncMock()
@@ -522,8 +537,8 @@ class TestNewScenarioService:
 
         await service._update_jira_ticket(
             {
-                "requestId": "REQ-SCR-0001",
-                "jira_integration": {"ticket_key": "JIRA-123"},
+                STR_REQUESTID: STR_REQ_SCR_0001,
+                "jira_integration": {"ticket_key": STR_JIRA_123},
                 "status": "P"
             },
             "status_change",
@@ -537,7 +552,7 @@ class TestNewScenarioService:
         """Test update jira ticket on status change with target date"""
         mock_jira = MagicMock()
         mock_jira.sync_status_change = AsyncMock(return_value={
-            "last_synced": "2024-01-01T00:00:00Z",
+            "last_synced": DATE_2024_01_01T00_00_00Z,
             "sync_status": "synced"
         })
         mock_jira.update_due_date = AsyncMock()
@@ -549,8 +564,8 @@ class TestNewScenarioService:
 
         await service._update_jira_ticket(
             {
-                "requestId": "REQ-SCR-0001",
-                "jira_integration": {"ticket_key": "JIRA-123"},
+                STR_REQUESTID: STR_REQ_SCR_0001,
+                "jira_integration": {"ticket_key": STR_JIRA_123},
                 "status": "P"
             },
             "status_change",
@@ -566,7 +581,7 @@ class TestNewScenarioService:
         mock_jira = MagicMock()
         mock_jira._strip_html = MagicMock(return_value=EXPECTED_TEST_COMMENT)
         mock_jira.add_comment = AsyncMock(return_value={
-            "last_synced": "2024-01-01T00:00:00Z",
+            "last_synced": DATE_2024_01_01T00_00_00Z,
             "sync_status": "synced"
         })
         mock_db.scenario_requests.update_one = AsyncMock()
@@ -577,8 +592,8 @@ class TestNewScenarioService:
 
         await service._update_jira_ticket(
             {
-                "requestId": "REQ-SCR-0001",
-                "jira_integration": {"ticket_key": "JIRA-123"},
+                STR_REQUESTID: STR_REQ_SCR_0001,
+                "jira_integration": {"ticket_key": STR_JIRA_123},
                 "comments": [{"comment": EXPECTED_TEST_COMMENT, "username": "testuser"}]
             },
             "comment"
@@ -591,7 +606,7 @@ class TestNewScenarioService:
         """Test update jira ticket description"""
         mock_jira = MagicMock()
         mock_jira.update_description = AsyncMock(return_value={
-            "last_synced": "2024-01-01T00:00:00Z",
+            "last_synced": DATE_2024_01_01T00_00_00Z,
             "sync_status": "synced"
         })
         mock_db.scenario_requests.update_one = AsyncMock()
@@ -602,8 +617,8 @@ class TestNewScenarioService:
 
         await service._update_jira_ticket(
             {
-                "requestId": "REQ-SCR-0001",
-                "jira_integration": {"ticket_key": "JIRA-123"},
+                STR_REQUESTID: STR_REQ_SCR_0001,
+                "jira_integration": {"ticket_key": STR_JIRA_123},
                 "description": "Updated description"
             },
             "description"
@@ -616,7 +631,7 @@ class TestNewScenarioService:
         """Test update jira ticket general update"""
         mock_jira = MagicMock()
         mock_jira.update_ticket = AsyncMock(return_value={
-            "last_synced": "2024-01-01T00:00:00Z",
+            "last_synced": DATE_2024_01_01T00_00_00Z,
             "sync_status": "synced"
         })
         mock_db.scenario_requests.update_one = AsyncMock()
@@ -627,8 +642,8 @@ class TestNewScenarioService:
 
         await service._update_jira_ticket(
             {
-                "requestId": "REQ-SCR-0001",
-                "jira_integration": {"ticket_key": "JIRA-123"}
+                STR_REQUESTID: STR_REQ_SCR_0001,
+                "jira_integration": {"ticket_key": STR_JIRA_123}
             },
             "general"
         )
@@ -648,8 +663,8 @@ class TestNewScenarioService:
         # Should not raise
         await service._update_jira_ticket(
             {
-                "requestId": "REQ-SCR-0001",
-                "jira_integration": {"ticket_key": "JIRA-123"},
+                STR_REQUESTID: STR_REQ_SCR_0001,
+                "jira_integration": {"ticket_key": STR_JIRA_123},
                 "status": "P"
             },
             "status_change"
@@ -659,13 +674,13 @@ class TestNewScenarioService:
     async def test_add_workflow_entry(self, scenario_service, mock_db):
         """Test adding workflow entry"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
+            STR_REQUESTID: STR_REQ_SCR_0001,
             "work_flow": []
         })
         mock_db.scenario_requests.update_one = AsyncMock()
 
         result = await scenario_service._add_workflow_entry(
-            request_id="REQ-SCR-0001",
+            request_id=STR_REQ_SCR_0001,
             from_status="S",
             to_status="P",
             assigned_by={"user_id": "123", "email": MOCK_EMAIL_ADMIN_TEST, "full_name": "Admin"},
@@ -675,25 +690,25 @@ class TestNewScenarioService:
 
         assert result["from_status"] == "S"
         assert result["to_status"] == "P"
-        assert result["flowOrder"] == 1
+        assert result[STR_FLOWORDER] == 1
 
     @pytest.mark.asyncio
     async def test_add_workflow_entry_without_assigned_to(self, scenario_service, mock_db):
         """Test adding workflow entry without assigned_to"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
-            "work_flow": [{"flowOrder": 1}]
+            STR_REQUESTID: STR_REQ_SCR_0001,
+            "work_flow": [{STR_FLOWORDER: 1}]
         })
         mock_db.scenario_requests.update_one = AsyncMock()
 
         result = await scenario_service._add_workflow_entry(
-            request_id="REQ-SCR-0001",
+            request_id=STR_REQ_SCR_0001,
             from_status="P",
             to_status="A",
             assigned_by={"user_id": "123", "email": MOCK_EMAIL_ADMIN_TEST, "username": "admin"}
         )
 
-        assert result["flowOrder"] == 2
+        assert result[STR_FLOWORDER] == 2
         assert "assigned_to" not in result
 
     def test_can_edit_request_as_admin(self, scenario_service, sample_admin_user):
@@ -763,11 +778,11 @@ class TestNewScenarioServiceFileOperations:
         """Create mock file storage service"""
         mock = MagicMock()
         mock.upload_file = AsyncMock(return_value={
-            "file_name": "test.csv",
+            "file_name": FILE_TEST_CSV,
             "gcs_path": "requests/REQ-SCR-0001/files/test.csv",
             "file_type": "csv"
         })
-        mock.download_file = AsyncMock(return_value=(b"file content", "test.csv"))
+        mock.download_file = AsyncMock(return_value=(b"file content", FILE_TEST_CSV))
         mock.get_file_content_for_preview = AsyncMock(return_value={
             "type": "text",
             "content": "preview content"
@@ -786,7 +801,7 @@ class TestNewScenarioServiceFileOperations:
     def sample_user(self):
         """Sample user data"""
         return {
-            "user_id": "507f1f77bcf86cd799439011",
+            "user_id": OID_9011,
             "email": MOCK_EMAIL,
             "roles": ["user"]
         }
@@ -795,7 +810,7 @@ class TestNewScenarioServiceFileOperations:
     def sample_admin(self):
         """Sample admin data"""
         return {
-            "user_id": "507f1f77bcf86cd799439012",
+            "user_id": OID_9012,
             "email": MOCK_EMAIL_ADMIN,
             "roles": ["administrator"]
         }
@@ -807,7 +822,7 @@ class TestNewScenarioServiceFileOperations:
 
         with pytest.raises(AuthError) as exc_info:
             await service.upload_file(
-                "REQ-SCR-0001", "test.csv", b"data", "files", sample_user
+                STR_REQ_SCR_0001, FILE_TEST_CSV, b"data", "files", sample_user
             )
         assert exc_info.value.status_code == 500
 
@@ -818,7 +833,7 @@ class TestNewScenarioServiceFileOperations:
 
         with pytest.raises(AuthError) as exc_info:
             await service_with_file_storage.upload_file(
-                "REQ-SCR-9999", "test.csv", b"data", "files", sample_user
+                STR_REQ_SCR_9999, FILE_TEST_CSV, b"data", "files", sample_user
             )
         assert exc_info.value.status_code == 404
 
@@ -826,31 +841,31 @@ class TestNewScenarioServiceFileOperations:
     async def test_upload_file_success_user(self, service_with_file_storage, mock_db, mock_file_storage, sample_user):
         """Test successful file upload as creator"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
+            STR_REQUESTID: STR_REQ_SCR_0001,
             "user_id": sample_user["user_id"],
             "status": "S"
         })
         mock_db.scenario_requests.update_one = AsyncMock()
 
         result = await service_with_file_storage.upload_file(
-            "REQ-SCR-0001", "test.csv", b"data", "files", sample_user
+            STR_REQ_SCR_0001, FILE_TEST_CSV, b"data", "files", sample_user
         )
 
         assert result is not None
-        assert result["file_name"] == "test.csv"
+        assert result["file_name"] == FILE_TEST_CSV
 
     @pytest.mark.asyncio
     async def test_upload_file_forbidden(self, service_with_file_storage, mock_db, sample_user):
         """Test upload file without permission"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
+            STR_REQUESTID: STR_REQ_SCR_0001,
             "user_id": "different_user",
             "status": "S"
         })
 
         with pytest.raises(AuthError) as exc_info:
             await service_with_file_storage.upload_file(
-                "REQ-SCR-0001", "test.csv", b"data", "files", sample_user
+                STR_REQ_SCR_0001, FILE_TEST_CSV, b"data", "files", sample_user
             )
         assert exc_info.value.status_code == 403
 
@@ -858,14 +873,14 @@ class TestNewScenarioServiceFileOperations:
     async def test_upload_bucket_file_admin(self, service_with_file_storage, mock_db, mock_file_storage, sample_admin):
         """Test bucket file upload as admin"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
+            STR_REQUESTID: STR_REQ_SCR_0001,
             "user_id": "some_user",
             "status": "accepted"  # ScenarioRequestStatusTypes.ACCEPTED.value
         })
         mock_db.scenario_requests.update_one = AsyncMock()
 
         result = await service_with_file_storage.upload_file(
-            "REQ-SCR-0001", "output.csv", b"data", "buckets", sample_admin, "Output file"
+            STR_REQ_SCR_0001, FILE_OUTPUT_CSV, b"data", "buckets", sample_admin, "Output file"
         )
 
         assert result is not None
@@ -874,14 +889,14 @@ class TestNewScenarioServiceFileOperations:
     async def test_upload_bucket_file_non_admin(self, service_with_file_storage, mock_db, sample_user):
         """Test bucket file upload as non-admin fails"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
+            STR_REQUESTID: STR_REQ_SCR_0001,
             "user_id": sample_user["user_id"],
             "status": "accepted"
         })
 
         with pytest.raises(AuthError) as exc_info:
             await service_with_file_storage.upload_file(
-                "REQ-SCR-0001", "output.csv", b"data", "buckets", sample_user
+                STR_REQ_SCR_0001, FILE_OUTPUT_CSV, b"data", "buckets", sample_user
             )
         assert exc_info.value.status_code == 403
 
@@ -889,14 +904,14 @@ class TestNewScenarioServiceFileOperations:
     async def test_upload_bucket_file_wrong_status(self, service_with_file_storage, mock_db, sample_admin):
         """Test bucket file upload with wrong status fails"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
+            STR_REQUESTID: STR_REQ_SCR_0001,
             "user_id": "some_user",
             "status": "submitted"  # Submitted - not yet accepted
         })
 
         with pytest.raises(AuthError) as exc_info:
             await service_with_file_storage.upload_file(
-                "REQ-SCR-0001", "output.csv", b"data", "buckets", sample_admin
+                STR_REQ_SCR_0001, FILE_OUTPUT_CSV, b"data", "buckets", sample_admin
             )
         assert exc_info.value.status_code == 400
 
@@ -904,7 +919,7 @@ class TestNewScenarioServiceFileOperations:
     async def test_upload_file_storage_failure(self, service_with_file_storage, mock_db, mock_file_storage, sample_user):
         """Test upload when file storage fails"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
+            STR_REQUESTID: STR_REQ_SCR_0001,
             "user_id": sample_user["user_id"],
             "status": "S"
         })
@@ -912,7 +927,7 @@ class TestNewScenarioServiceFileOperations:
 
         with pytest.raises(AuthError) as exc_info:
             await service_with_file_storage.upload_file(
-                "REQ-SCR-0001", "test.csv", b"data", "files", sample_user
+                STR_REQ_SCR_0001, FILE_TEST_CSV, b"data", "files", sample_user
             )
         assert exc_info.value.status_code == 500
 
@@ -922,7 +937,7 @@ class TestNewScenarioServiceFileOperations:
         service = NewScenarioService(mock_db, mock_token_manager, mock_email_service)
 
         with pytest.raises(AuthError) as exc_info:
-            await service.get_file_preview("REQ-SCR-0001", "path/file.csv", sample_user)
+            await service.get_file_preview(STR_REQ_SCR_0001, FILE_PATH_FILE_CSV, sample_user)
         assert exc_info.value.status_code == 500
 
     @pytest.mark.asyncio
@@ -932,7 +947,7 @@ class TestNewScenarioServiceFileOperations:
 
         with pytest.raises(AuthError) as exc_info:
             await service_with_file_storage.get_file_preview(
-                "REQ-SCR-9999", "path/file.csv", sample_user
+                STR_REQ_SCR_9999, FILE_PATH_FILE_CSV, sample_user
             )
         assert exc_info.value.status_code == 404
 
@@ -940,14 +955,14 @@ class TestNewScenarioServiceFileOperations:
     async def test_get_file_preview_file_not_found(self, service_with_file_storage, mock_db, sample_user):
         """Test get file preview when file not in request"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
+            STR_REQUESTID: STR_REQ_SCR_0001,
             "files": [],
             "buckets": []
         })
 
         with pytest.raises(AuthError) as exc_info:
             await service_with_file_storage.get_file_preview(
-                "REQ-SCR-0001", "path/nonexistent.csv", sample_user
+                STR_REQ_SCR_0001, "path/nonexistent.csv", sample_user
             )
         assert exc_info.value.status_code == 404
 
@@ -955,13 +970,13 @@ class TestNewScenarioServiceFileOperations:
     async def test_get_file_preview_success(self, service_with_file_storage, mock_db, mock_file_storage, sample_user):
         """Test successful file preview"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
-            "files": [{"gcs_path": "path/file.csv", "file_type": "csv"}],
+            STR_REQUESTID: STR_REQ_SCR_0001,
+            "files": [{"gcs_path": FILE_PATH_FILE_CSV, "file_type": "csv"}],
             "buckets": []
         })
 
         result = await service_with_file_storage.get_file_preview(
-            "REQ-SCR-0001", "path/file.csv", sample_user
+            STR_REQ_SCR_0001, FILE_PATH_FILE_CSV, sample_user
         )
 
         assert result is not None
@@ -971,13 +986,13 @@ class TestNewScenarioServiceFileOperations:
     async def test_get_file_preview_from_buckets(self, service_with_file_storage, mock_db, mock_file_storage, sample_user):
         """Test file preview from buckets array"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
+            STR_REQUESTID: STR_REQ_SCR_0001,
             "files": [],
             "buckets": [{"gcs_path": "path/bucket_file.csv", "file_type": "csv"}]
         })
 
         result = await service_with_file_storage.get_file_preview(
-            "REQ-SCR-0001", "path/bucket_file.csv", sample_user
+            STR_REQ_SCR_0001, "path/bucket_file.csv", sample_user
         )
 
         assert result is not None
@@ -986,14 +1001,14 @@ class TestNewScenarioServiceFileOperations:
     async def test_get_file_preview_null_result(self, service_with_file_storage, mock_db, mock_file_storage, sample_user):
         """Test file preview when storage returns None"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
-            "files": [{"gcs_path": "path/file.csv", "file_type": "csv"}],
+            STR_REQUESTID: STR_REQ_SCR_0001,
+            "files": [{"gcs_path": FILE_PATH_FILE_CSV, "file_type": "csv"}],
             "buckets": []
         })
         mock_file_storage.get_file_content_for_preview = AsyncMock(return_value=None)
 
         result = await service_with_file_storage.get_file_preview(
-            "REQ-SCR-0001", "path/file.csv", sample_user
+            STR_REQ_SCR_0001, FILE_PATH_FILE_CSV, sample_user
         )
 
         assert result["type"] == "error"
@@ -1004,7 +1019,7 @@ class TestNewScenarioServiceFileOperations:
         service = NewScenarioService(mock_db, mock_token_manager, mock_email_service)
 
         with pytest.raises(AuthError) as exc_info:
-            await service.download_file("REQ-SCR-0001", "path/file.csv", sample_user)
+            await service.download_file(STR_REQ_SCR_0001, FILE_PATH_FILE_CSV, sample_user)
         assert exc_info.value.status_code == 500
 
     @pytest.mark.asyncio
@@ -1014,7 +1029,7 @@ class TestNewScenarioServiceFileOperations:
 
         with pytest.raises(AuthError) as exc_info:
             await service_with_file_storage.download_file(
-                "REQ-SCR-9999", "path/file.csv", sample_user
+                STR_REQ_SCR_9999, FILE_PATH_FILE_CSV, sample_user
             )
         assert exc_info.value.status_code == 404
 
@@ -1022,11 +1037,11 @@ class TestNewScenarioServiceFileOperations:
     async def test_download_file_success(self, service_with_file_storage, mock_db, mock_file_storage, sample_user):
         """Test successful file download"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001"
+            STR_REQUESTID: STR_REQ_SCR_0001
         })
 
         result = await service_with_file_storage.download_file(
-            "REQ-SCR-0001", "path/file.csv", sample_user
+            STR_REQ_SCR_0001, FILE_PATH_FILE_CSV, sample_user
         )
 
         assert result is not None
@@ -1045,7 +1060,7 @@ class TestNewScenarioServiceUpdateAdvanced:
     def sample_admin(self):
         """Sample admin data"""
         return {
-            "user_id": "507f1f77bcf86cd799439012",
+            "user_id": OID_9012,
             "email": MOCK_EMAIL_ADMIN,
             "full_name": "Admin User",
             "roles": ["administrator"]
@@ -1058,7 +1073,7 @@ class TestNewScenarioServiceUpdateAdvanced:
 
         with pytest.raises(AuthError) as exc_info:
             await scenario_service.update(
-                {"request_id": "REQ-SCR-9999", "description": "Test"},
+                {"request_id": STR_REQ_SCR_9999, "description": STR_TEST},
                 sample_admin
             )
         assert exc_info.value.status_code == 404
@@ -1067,14 +1082,14 @@ class TestNewScenarioServiceUpdateAdvanced:
     async def test_update_status_change_without_comment(self, scenario_service, mock_db, sample_admin):
         """Test status change without comment fails"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
+            STR_REQUESTID: STR_REQ_SCR_0001,
             "status": "S",
             "_id": ObjectId()
         })
 
         with pytest.raises(AuthError) as exc_info:
             await scenario_service.update(
-                {"request_id": "REQ-SCR-0001", "status": "P"},
+                {"request_id": STR_REQ_SCR_0001, "status": "P"},
                 sample_admin
             )
         assert exc_info.value.status_code == 400
@@ -1084,7 +1099,7 @@ class TestNewScenarioServiceUpdateAdvanced:
     async def test_update_new_comment(self, scenario_service, mock_db, sample_admin):
         """Test adding new comment"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
+            STR_REQUESTID: STR_REQ_SCR_0001,
             "status": "S",
             "_id": ObjectId(),
             "comments": []
@@ -1093,7 +1108,7 @@ class TestNewScenarioServiceUpdateAdvanced:
 
         result = await scenario_service.update(
             {
-                "request_id": "REQ-SCR-0001",
+                "request_id": STR_REQ_SCR_0001,
                 "new_comment": {"comment": EXPECTED_TEST_COMMENT}
             },
             sample_admin
@@ -1106,7 +1121,7 @@ class TestNewScenarioServiceUpdateAdvanced:
     async def test_update_comment_by_non_creator(self, scenario_service, mock_db):
         """Test that any logged-in user can comment even if not the creator"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
+            STR_REQUESTID: STR_REQ_SCR_0001,
             "user_id": "creator_user_id",
             "email": MOCK_EMAIL_CREATOR,
             "status": "S",
@@ -1124,7 +1139,7 @@ class TestNewScenarioServiceUpdateAdvanced:
 
         result = await scenario_service.update(
             {
-                "request_id": "REQ-SCR-0001",
+                "request_id": STR_REQ_SCR_0001,
                 "new_comment": {"comment": "I have a question about this"}
             },
             non_creator
@@ -1137,7 +1152,7 @@ class TestNewScenarioServiceUpdateAdvanced:
     async def test_update_edit_blocked_for_non_creator(self, scenario_service, mock_db):
         """Test that non-creator cannot edit fields (only comment)"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
+            STR_REQUESTID: STR_REQ_SCR_0001,
             "user_id": "creator_user_id",
             "email": MOCK_EMAIL_CREATOR,
             "status": "S",
@@ -1153,7 +1168,7 @@ class TestNewScenarioServiceUpdateAdvanced:
         with pytest.raises(AuthError) as exc_info:
             await scenario_service.update(
                 {
-                    "request_id": "REQ-SCR-0001",
+                    "request_id": STR_REQ_SCR_0001,
                     "description": "Trying to edit someone else's request"
                 },
                 non_creator
@@ -1164,7 +1179,7 @@ class TestNewScenarioServiceUpdateAdvanced:
     async def test_update_new_workflow(self, scenario_service, mock_db, sample_admin):
         """Test adding new workflow entry"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
+            STR_REQUESTID: STR_REQ_SCR_0001,
             "status": "S",
             "_id": ObjectId(),
             "work_flow": []
@@ -1178,7 +1193,7 @@ class TestNewScenarioServiceUpdateAdvanced:
 
         result = await scenario_service.update(
             {
-                "request_id": "REQ-SCR-0001",
+                "request_id": STR_REQ_SCR_0001,
                 "new_workflow": {
                     "assigned_to": "507f1f77bcf86cd799439013",
                     "to_status": "P",
@@ -1194,7 +1209,7 @@ class TestNewScenarioServiceUpdateAdvanced:
     async def test_update_add_jira_links(self, scenario_service, mock_db, sample_admin):
         """Test adding jira links"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
+            STR_REQUESTID: STR_REQ_SCR_0001,
             "status": "S",
             "_id": ObjectId(),
             "jira_links": []
@@ -1203,7 +1218,7 @@ class TestNewScenarioServiceUpdateAdvanced:
 
         result = await scenario_service.update(
             {
-                "request_id": "REQ-SCR-0001",
+                "request_id": STR_REQ_SCR_0001,
                 "jira_links": [
                     {"url": MOCK_URL_JIRA_LINK, "description": "Related ticket"}
                 ]
@@ -1219,7 +1234,7 @@ class TestNewScenarioServiceUpdateAdvanced:
     async def test_update_remove_jira_link(self, scenario_service, mock_db, sample_admin):
         """Test removing jira link by index"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
+            STR_REQUESTID: STR_REQ_SCR_0001,
             "status": "S",
             "_id": ObjectId(),
             "jira_links": [{"url": MOCK_URL_JIRA_LINK}]
@@ -1228,7 +1243,7 @@ class TestNewScenarioServiceUpdateAdvanced:
 
         result = await scenario_service.update(
             {
-                "request_id": "REQ-SCR-0001",
+                "request_id": STR_REQ_SCR_0001,
                 "remove_jira_link_index": 0
             },
             sample_admin
@@ -1241,14 +1256,14 @@ class TestNewScenarioServiceUpdateAdvanced:
     async def test_update_using_requestId_key(self, scenario_service, mock_db, sample_admin):
         """Test update using requestId instead of request_id"""
         mock_db.scenario_requests.find_one = AsyncMock(return_value={
-            "requestId": "REQ-SCR-0001",
+            STR_REQUESTID: STR_REQ_SCR_0001,
             "status": "S",
             "_id": ObjectId()
         })
         mock_db.scenario_requests.update_one = AsyncMock()
 
         result = await scenario_service.update(
-            {"requestId": "REQ-SCR-0001", "description": "Updated"},
+            {STR_REQUESTID: STR_REQ_SCR_0001, "description": "Updated"},
             sample_admin
         )
 

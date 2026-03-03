@@ -11,6 +11,26 @@ from easylifeauth.utils.config import ConfigurationLoader, ConfigValueSimulator
 from mock_data import MOCK_PATH_CONFIG, MOCK_URL_HTTP_A, MOCK_URL_HTTP_B, MOCK_URL_MONGODB_MYDB, MOCK_URL_MONGODB_SIM
 
 ENV_PREFIX = f"{ENVIRONEMNT_VARIABLE_PREFIX}_"
+CFG_DB_HOST = "db.host"
+CFG_DB_PORT = "db.port"
+CFG_SERVER_ENV = "server.env."
+EXT_JSON = ".json"
+FILE_CONFIG_JSON = "config.json"
+FILE_SIM_JSON = "sim.json"
+JSON_DB = "{db"
+JSON_DB_HOST = "{db.host}"
+JSON_DB_PORT = "{db.port}"
+JSON_VALUE = "{}"
+STR_DB = "_DB"
+STR_HOST = "HOST"
+STR_HOST_BRACE = "host}"
+STR_PORT = "PORT"
+STR_SIM_HOST = "sim-host"
+STR_TEST = "TEST"
+STR_TEST_DB = "TEST_DB"
+STR_TEST_FEATURE = "TEST_FEATURE"
+
+
 
 
 class TestLoadJsonFile:
@@ -38,7 +58,7 @@ class TestLoadJsonFile:
     def test_empty_json_object(self, tmp_path):
         """Test loading file with empty JSON object"""
         f = tmp_path / "empty.json"
-        f.write_text("{}")
+        f.write_text(JSON_VALUE)
         result = ConfigurationLoader._load_json_file(str(f))
         assert result == {}
 
@@ -113,15 +133,15 @@ class TestResolvePlaceholders:
 
     def test_exact_match_string(self):
         """Test exact placeholder replaced with string value"""
-        config = "{db.host}"
-        lookup = {"db.host": "localhost"}
+        config = JSON_DB_HOST
+        lookup = {CFG_DB_HOST: "localhost"}
         result = ConfigurationLoader._resolve_placeholders(config, lookup)
         assert result == "localhost"
 
     def test_exact_match_int(self):
         """Test exact placeholder replaced with integer (typed replacement)"""
-        config = "{db.port}"
-        lookup = {"db.port": 5432}
+        config = JSON_DB_PORT
+        lookup = {CFG_DB_PORT: 5432}
         result = ConfigurationLoader._resolve_placeholders(config, lookup)
         assert result == 5432
 
@@ -157,7 +177,7 @@ class TestResolvePlaceholders:
     def test_embedded_placeholder_string_interpolation(self):
         """Test embedded placeholder does string interpolation"""
         config = "mongodb://{db.host}:{db.port}/mydb"
-        lookup = {"db.host": "localhost", "db.port": 27017}
+        lookup = {CFG_DB_HOST: "localhost", CFG_DB_PORT: 27017}
         result = ConfigurationLoader._resolve_placeholders(config, lookup)
         assert result == MOCK_URL_MONGODB_MYDB
 
@@ -200,12 +220,12 @@ class TestResolvePlaceholders:
         """Test that dicts are resolved recursively"""
         config = {
             "db": {
-                "host": "{db.host}",
-                "port": "{db.port}",
+                "host": JSON_DB_HOST,
+                "port": JSON_DB_PORT,
             },
             "name": "myapp",
         }
-        lookup = {"db.host": "localhost", "db.port": 5432}
+        lookup = {CFG_DB_HOST: "localhost", CFG_DB_PORT: 5432}
         result = ConfigurationLoader._resolve_placeholders(config, lookup)
         assert result == {
             "db": {"host": "localhost", "port": 5432},
@@ -255,7 +275,7 @@ class TestLoadSimulatorFile:
     def test_missing_file_returns_empty_dict(self, tmp_path):
         """Test that a missing simulator file returns empty dict"""
         result = ConfigValueSimulator.load_simulator_file(
-            str(tmp_path / "nope.json"), "TEST"
+            str(tmp_path / "nope.json"), STR_TEST
         )
         assert result == {}
 
@@ -263,12 +283,12 @@ class TestLoadSimulatorFile:
         """Test loading flat JSON returns raw data dict"""
         sep = OS_PROPERTY_SEPRATOR
         data = {f"db{sep}host": "localhost", f"db{sep}port": 5432}
-        f = tmp_path / "sim.json"
+        f = tmp_path / FILE_SIM_JSON
         f.write_text(json.dumps(data))
         env_keys = [f"TEST_DB{sep}HOST", f"TEST_DB{sep}PORT"]
         self._cleanup_env(env_keys)
         try:
-            result = ConfigValueSimulator.load_simulator_file(str(f), "TEST")
+            result = ConfigValueSimulator.load_simulator_file(str(f), STR_TEST)
             assert result == data
         finally:
             self._cleanup_env(env_keys)
@@ -276,12 +296,12 @@ class TestLoadSimulatorFile:
     def test_sets_string_env_var(self, tmp_path):
         """Test that string values are set correctly as env vars"""
         sep = OS_PROPERTY_SEPRATOR
-        f = tmp_path / "sim.json"
+        f = tmp_path / FILE_SIM_JSON
         f.write_text(json.dumps({f"app{sep}name": "myapp"}))
         env_key = f"TEST_APP{sep}NAME"
         self._cleanup_env([env_key])
         try:
-            ConfigValueSimulator.load_simulator_file(str(f), "TEST")
+            ConfigValueSimulator.load_simulator_file(str(f), STR_TEST)
             assert os.environ[env_key] == "myapp"
         finally:
             self._cleanup_env([env_key])
@@ -289,12 +309,12 @@ class TestLoadSimulatorFile:
     def test_sets_int_env_var(self, tmp_path):
         """Test that integer values are converted to string env vars"""
         sep = OS_PROPERTY_SEPRATOR
-        f = tmp_path / "sim.json"
+        f = tmp_path / FILE_SIM_JSON
         f.write_text(json.dumps({f"server{sep}port": 8080}))
         env_key = f"TEST_SERVER{sep}PORT"
         self._cleanup_env([env_key])
         try:
-            ConfigValueSimulator.load_simulator_file(str(f), "TEST")
+            ConfigValueSimulator.load_simulator_file(str(f), STR_TEST)
             assert os.environ[env_key] == "8080"
         finally:
             self._cleanup_env([env_key])
@@ -302,12 +322,12 @@ class TestLoadSimulatorFile:
     def test_sets_bool_env_var(self, tmp_path):
         """Test that bool values are set as lowercase strings"""
         sep = OS_PROPERTY_SEPRATOR
-        f = tmp_path / "sim.json"
+        f = tmp_path / FILE_SIM_JSON
         f.write_text(json.dumps({f"feature{sep}on": True, f"feature{sep}off": False}))
         env_keys = [f"TEST_FEATURE{sep}ON", f"TEST_FEATURE{sep}OFF"]
         self._cleanup_env(env_keys)
         try:
-            ConfigValueSimulator.load_simulator_file(str(f), "TEST")
+            ConfigValueSimulator.load_simulator_file(str(f), STR_TEST)
             assert os.environ[f"TEST_FEATURE{sep}ON"] == "true"
             assert os.environ[f"TEST_FEATURE{sep}OFF"] == "false"
         finally:
@@ -316,12 +336,12 @@ class TestLoadSimulatorFile:
     def test_sets_list_env_var_as_json(self, tmp_path):
         """Test that list values are JSON-serialized in env vars"""
         sep = OS_PROPERTY_SEPRATOR
-        f = tmp_path / "sim.json"
+        f = tmp_path / FILE_SIM_JSON
         f.write_text(json.dumps({f"allowed{sep}hosts": ["a", "b"]}))
         env_key = f"TEST_ALLOWED{sep}HOSTS"
         self._cleanup_env([env_key])
         try:
-            ConfigValueSimulator.load_simulator_file(str(f), "TEST")
+            ConfigValueSimulator.load_simulator_file(str(f), STR_TEST)
             assert os.environ[env_key] == '["a", "b"]'
         finally:
             self._cleanup_env([env_key])
@@ -329,12 +349,12 @@ class TestLoadSimulatorFile:
     def test_sets_dict_env_var_as_json(self, tmp_path):
         """Test that dict values are JSON-serialized in env vars"""
         sep = OS_PROPERTY_SEPRATOR
-        f = tmp_path / "sim.json"
+        f = tmp_path / FILE_SIM_JSON
         f.write_text(json.dumps({f"db{sep}options": {"ssl": True}}))
         env_key = f"TEST_DB{sep}OPTIONS"
         self._cleanup_env([env_key])
         try:
-            ConfigValueSimulator.load_simulator_file(str(f), "TEST")
+            ConfigValueSimulator.load_simulator_file(str(f), STR_TEST)
             assert json.loads(os.environ[env_key]) == {"ssl": True}
         finally:
             self._cleanup_env([env_key])
@@ -346,8 +366,8 @@ class TestConfigurationLoaderInit:
     def test_environment_param_triggers_load_environment(self, tmp_path):
         """Test that passing environment= calls load_environment, not legacy"""
         # Create minimal config.json so it doesn't fail
-        (tmp_path / "config.json").write_text("{}")
-        (tmp_path / "production.json").write_text("{}")
+        (tmp_path / FILE_CONFIG_JSON).write_text(JSON_VALUE)
+        (tmp_path / "production.json").write_text(JSON_VALUE)
 
         clean_env = {k: v for k, v in os.environ.items()
                      if not k.startswith(ENV_PREFIX)}
@@ -363,7 +383,7 @@ class TestConfigurationLoaderInit:
         with patch.object(ConfigurationLoader, '_load_config') as mock_load, \
              patch.object(ConfigurationLoader, '_apply_env_vars') as mock_apply:
             loader = ConfigurationLoader(config_path=MOCK_PATH_CONFIG)
-            mock_load.assert_called_once_with("config.json")
+            mock_load.assert_called_once_with(FILE_CONFIG_JSON)
             mock_apply.assert_called_once()
 
     def test_environment_does_not_call_legacy(self):
@@ -387,11 +407,11 @@ class TestLoadEnvironmentPipeline:
         """Test full config pipeline: simulator → localenv → env → config.json"""
         env = "dev"
         # Simulator: flat key-values
-        sim = {"db.host": "simhost", "db.port": 5432}
+        sim = {CFG_DB_HOST: "simhost", CFG_DB_PORT: 5432}
         (tmp_path / f"server.env.{env}.json").write_text(json.dumps(sim))
 
         # localenv-dev.json: references simulator values
-        localenv = {"database": {"host": "{db.host}", "port": "{db.port}"}}
+        localenv = {"database": {"host": JSON_DB_HOST, "port": JSON_DB_PORT}}
         (tmp_path / f"localenv-{env}.json").write_text(json.dumps(localenv))
 
         # dev.json: references localenv-flattened values
@@ -400,7 +420,7 @@ class TestLoadEnvironmentPipeline:
 
         # config.json: uses env-resolved values
         config = {"db_url": "{connection_string}", "db_host": "{database.host}"}
-        (tmp_path / "config.json").write_text(json.dumps(config))
+        (tmp_path / FILE_CONFIG_JSON).write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
                      if not k.startswith(ENV_PREFIX)}
@@ -414,7 +434,7 @@ class TestLoadEnvironmentPipeline:
 
     def test_missing_files_graceful(self, tmp_path):
         """Test that missing localenv/env/simulator files don't crash"""
-        (tmp_path / "config.json").write_text('{"static": "value"}')
+        (tmp_path / FILE_CONFIG_JSON).write_text('{"static": "value"}')
 
         clean_env = {k: v for k, v in os.environ.items()
                      if not k.startswith(ENV_PREFIX)}
@@ -427,7 +447,7 @@ class TestLoadEnvironmentPipeline:
 
     def test_env_json_merges_into_config(self, tmp_path):
         """Test that env.json extra keys merge into resolved config"""
-        (tmp_path / "config.json").write_text('{"base": "val"}')
+        (tmp_path / FILE_CONFIG_JSON).write_text('{"base": "val"}')
         (tmp_path / "staging.json").write_text('{"extra_from_env": "added"}')
 
         clean_env = {k: v for k, v in os.environ.items()
@@ -443,14 +463,14 @@ class TestLoadEnvironmentPipeline:
     def test_localenv_wins_over_simulator(self, tmp_path):
         """Test that localenv values override simulator values in lookup"""
         env = "dev"
-        sim = {"db.host": "sim-host"}
+        sim = {CFG_DB_HOST: STR_SIM_HOST}
         (tmp_path / f"server.env.{env}.json").write_text(json.dumps(sim))
 
         localenv = {"db": {"host": "local-host"}}
         (tmp_path / f"localenv-{env}.json").write_text(json.dumps(localenv))
 
-        config = {"host": "{db.host}"}
-        (tmp_path / "config.json").write_text(json.dumps(config))
+        config = {"host": JSON_DB_HOST}
+        (tmp_path / FILE_CONFIG_JSON).write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
                      if not k.startswith(ENV_PREFIX)}
@@ -470,7 +490,7 @@ class TestLoadEnvironmentPipeline:
         (tmp_path / "dev.json").write_text(json.dumps(env_json))
 
         config = {"port": "{server.port}"}
-        (tmp_path / "config.json").write_text(json.dumps(config))
+        (tmp_path / FILE_CONFIG_JSON).write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
                      if not k.startswith(ENV_PREFIX)}
@@ -492,7 +512,7 @@ class TestAuthenticationTypoFix:
         (tmp_path / f"server.env.{env}.json").write_text(json.dumps(sim))
 
         config = {"auth_secret": "{environment.authentication.secret}"}
-        (tmp_path / "config.json").write_text(json.dumps(config))
+        (tmp_path / FILE_CONFIG_JSON).write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
                      if not k.startswith(ENV_PREFIX)}
@@ -510,7 +530,7 @@ class TestAuthenticationTypoFix:
         (tmp_path / f"server.env.{env}.json").write_text(json.dumps(sim))
 
         config = {"auth_secret": "{environment.authenitcation.secret}"}
-        (tmp_path / "config.json").write_text(json.dumps(config))
+        (tmp_path / FILE_CONFIG_JSON).write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
                      if not k.startswith(ENV_PREFIX)}
@@ -530,11 +550,11 @@ class TestEnvVarOverrides:
         """Test that env prefix env vars override simulator values"""
         sep = OS_PROPERTY_SEPRATOR
         env = "dev"
-        sim = {f"db{sep}host": "sim-host", f"db{sep}port": 5432}
+        sim = {f"db{sep}host": STR_SIM_HOST, f"db{sep}port": 5432}
         (tmp_path / f"server.env.{env}.json").write_text(json.dumps(sim))
 
         config = {"host": f"{{db{sep}host}}", "port": f"{{db{sep}port}}"}
-        (tmp_path / "config.json").write_text(json.dumps(config))
+        (tmp_path / FILE_CONFIG_JSON).write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
                      if not k.startswith(ENV_PREFIX)}
@@ -553,7 +573,7 @@ class TestEnvVarOverrides:
         env = "dev"
         # No simulator file — only config.json template
         config = {"db": {"host": f"{{db{sep}host}}", "port": f"{{db{sep}port}}"}}
-        (tmp_path / "config.json").write_text(json.dumps(config))
+        (tmp_path / FILE_CONFIG_JSON).write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
                      if not k.startswith(ENV_PREFIX)}
@@ -572,11 +592,11 @@ class TestEnvVarOverrides:
         """Test that db_info underscore is preserved via reverse map"""
         sep = OS_PROPERTY_SEPRATOR
         env = "dev"
-        sim = {f"databases{sep}auth{sep}db_info{sep}host": "sim-host"}
+        sim = {f"databases{sep}auth{sep}db_info{sep}host": STR_SIM_HOST}
         (tmp_path / f"server.env.{env}.json").write_text(json.dumps(sim))
 
         config = {"host": f"{{databases{sep}auth{sep}db_info{sep}host}}"}
-        (tmp_path / "config.json").write_text(json.dumps(config))
+        (tmp_path / FILE_CONFIG_JSON).write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
                      if not k.startswith(ENV_PREFIX)}
@@ -593,7 +613,7 @@ class TestEnvVarOverrides:
         """Test that {prefix}_ENVIRONMENT is not treated as a config value"""
         env = "dev"
         config = {"name": "app"}
-        (tmp_path / "config.json").write_text(json.dumps(config))
+        (tmp_path / FILE_CONFIG_JSON).write_text(json.dumps(config))
 
         clean_env = {k: v for k, v in os.environ.items()
                      if not k.startswith(ENV_PREFIX)}

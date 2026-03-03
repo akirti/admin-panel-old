@@ -19,6 +19,20 @@ SEARCH_PAYMENT = "payment"
 
 EXPECTED_DB_ERROR = "DB error"
 EXPECTED_NOT_JSON = "Not JSON"
+CFG_DATA_TOKEN = "data.token"
+FILE_F_PEM = "f.pem"
+FILE_SOME_PATH_PEM = "some/path.pem"
+METHOD_GET = "GET"
+METHOD_POST = "POST"
+MIME_APPLICATION_JSON = "application/json"
+PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT = "easylifeauth.services.api_config_service.httpx.AsyncClient"
+PATCH_API_CONFIG_SERVICE_X509 = "easylifeauth.services.api_config_service.x509"
+STR_AUTHORIZATION = "Authorization"
+STR_OAUTH2 = "oauth2"
+STR_PAYMENT_API = "payment-api"
+STR_SSL_API = "ssl-api"
+STR_TEST_API = "test-api"
+
 
 
 
@@ -187,7 +201,7 @@ class TestListConfigs:
         oid = ObjectId()
         cursor = mock_collection.find.return_value
         cursor.to_list = AsyncMock(return_value=[
-            {"_id": oid, "name": EXPECTED_TEST_API, "key": "test-api"},
+            {"_id": oid, "name": EXPECTED_TEST_API, "key": STR_TEST_API},
             {"_id": ObjectId(), "name": "Other API", "key": "other-api"}
         ])
         mock_collection.count_documents = AsyncMock(return_value=2)
@@ -242,7 +256,7 @@ class TestGetConfigById:
         mock_collection.find_one = AsyncMock(return_value={
             "_id": oid,
             "name": EXPECTED_TEST_API,
-            "key": "test-api"
+            "key": STR_TEST_API
         })
 
         result = await service.get_config_by_id(str(oid))
@@ -316,16 +330,16 @@ class TestGetConfigByKey:
         oid = ObjectId()
         mock_collection.find_one = AsyncMock(return_value={
             "_id": oid,
-            "key": "payment-api",
+            "key": STR_PAYMENT_API,
             "name": "Payment API"
         })
 
-        result = await service.get_config_by_key("payment-api")
+        result = await service.get_config_by_key(STR_PAYMENT_API)
 
         assert result is not None
-        assert result["key"] == "payment-api"
+        assert result["key"] == STR_PAYMENT_API
         assert result["_id"] == str(oid)
-        mock_collection.find_one.assert_called_once_with({"key": "payment-api"})
+        mock_collection.find_one.assert_called_once_with({"key": STR_PAYMENT_API})
 
     @pytest.mark.asyncio
     async def test_get_config_by_key_not_found(self, service, mock_collection):
@@ -489,7 +503,7 @@ class TestUpdateConfig:
         oid = ObjectId()
         mock_collection.find_one_and_update = AsyncMock(return_value={
             "_id": oid,
-            "key": "test-api",
+            "key": STR_TEST_API,
             "name": EXPECTED_UPDATED_API,
             "updated_by": MOCK_EMAIL_ADMIN
         })
@@ -508,7 +522,7 @@ class TestUpdateConfig:
         oid = ObjectId()
         mock_collection.find_one_and_update = AsyncMock(return_value={
             "_id": oid,
-            "key": "test-api",
+            "key": STR_TEST_API,
             "name": "Updated"
         })
 
@@ -527,7 +541,7 @@ class TestUpdateConfig:
         oid = ObjectId()
         mock_collection.find_one = AsyncMock(return_value={
             "_id": oid,
-            "key": "test-api",
+            "key": STR_TEST_API,
             "name": "Existing"
         })
 
@@ -544,7 +558,7 @@ class TestUpdateConfig:
         oid = ObjectId()
         mock_collection.find_one_and_update = AsyncMock(return_value={
             "_id": oid,
-            "key": "test-api"
+            "key": STR_TEST_API
         })
 
         await service.update_config(str(oid), {"name": "New Name"}, MOCK_EMAIL_EDITOR)
@@ -560,18 +574,18 @@ class TestUpdateConfig:
         """Test that auth_type enum is converted to string during update."""
         oid = ObjectId()
         mock_enum = MagicMock()
-        mock_enum.value = "oauth2"
+        mock_enum.value = STR_OAUTH2
 
         mock_collection.find_one_and_update = AsyncMock(return_value={
             "_id": oid,
-            "auth_type": "oauth2"
+            "auth_type": STR_OAUTH2
         })
 
         await service.update_config(str(oid), {"auth_type": mock_enum}, MOCK_EMAIL_ADMIN)
 
         call_args = mock_collection.find_one_and_update.call_args
         set_data = call_args[0][1][MONGO_SET]
-        assert set_data["auth_type"] == "oauth2"
+        assert set_data["auth_type"] == STR_OAUTH2
 
     @pytest.mark.asyncio
     async def test_update_config_not_found(self, service, mock_collection):
@@ -644,7 +658,7 @@ class TestDeleteConfig:
         oid = ObjectId()
         mock_collection.find_one = AsyncMock(return_value={
             "_id": oid,
-            "key": "test-api"
+            "key": STR_TEST_API
         })
 
         result = await service.delete_config(str(oid))
@@ -674,7 +688,7 @@ class TestDeleteConfig:
 
         mock_collection.find_one = AsyncMock(return_value={
             "_id": str(oid),
-            "key": "ssl-api",
+            "key": STR_SSL_API,
             "ssl_cert_gcs_path": "api_configs/certs/ssl-api/cert.pem",
             "ssl_key_gcs_path": "api_configs/certs/ssl-api/key.pem",
             "ssl_ca_gcs_path": "api_configs/certs/ssl-api/ca.pem"
@@ -695,8 +709,8 @@ class TestDeleteConfig:
 
         mock_collection.find_one = AsyncMock(return_value={
             "_id": str(oid),
-            "key": "ssl-api",
-            "ssl_cert_gcs_path": "some/path.pem"
+            "key": STR_SSL_API,
+            "ssl_cert_gcs_path": FILE_SOME_PATH_PEM
         })
 
         result = await service.delete_config(str(oid))
@@ -712,8 +726,8 @@ class TestDeleteConfig:
 
         mock_collection.find_one = AsyncMock(return_value={
             "_id": str(oid),
-            "key": "ssl-api",
-            "ssl_cert_gcs_path": "some/path.pem"
+            "key": STR_SSL_API,
+            "ssl_cert_gcs_path": FILE_SOME_PATH_PEM
         })
 
         result = await service.delete_config(str(oid))
@@ -814,13 +828,13 @@ class TestUploadCertificate:
         """Test successful certificate upload."""
         file_content = b"-----BEGIN CERTIFICATE-----\nfake\n-----END CERTIFICATE-----"
 
-        with patch("easylifeauth.services.api_config_service.x509") as mock_x509:
+        with patch(PATCH_API_CONFIG_SERVICE_X509) as mock_x509:
             mock_cert = MagicMock()
             mock_cert.not_valid_after_utc.isoformat.return_value = "2025-12-31T00:00:00"
             mock_x509.load_pem_x509_certificate.return_value = mock_cert
 
             result = await service.upload_certificate(
-                config_key="payment-api",
+                config_key=STR_PAYMENT_API,
                 cert_type="cert",
                 file_content=file_content,
                 file_name="server.pem",
@@ -841,7 +855,7 @@ class TestUploadCertificate:
         file_content = b"-----BEGIN PRIVATE KEY-----\nfake\n-----END PRIVATE KEY-----"
 
         result = await service.upload_certificate(
-            config_key="payment-api",
+            config_key=STR_PAYMENT_API,
             cert_type="key",
             file_content=file_content,
             file_name="server.key",
@@ -856,7 +870,7 @@ class TestUploadCertificate:
         """Test CA certificate upload with expiry parsing."""
         file_content = b"-----BEGIN CERTIFICATE-----\nfake\n-----END CERTIFICATE-----"
 
-        with patch("easylifeauth.services.api_config_service.x509") as mock_x509:
+        with patch(PATCH_API_CONFIG_SERVICE_X509) as mock_x509:
             mock_cert = MagicMock()
             mock_cert.not_valid_after_utc.isoformat.return_value = "2026-06-15T00:00:00"
             mock_x509.load_pem_x509_certificate.return_value = mock_cert
@@ -877,7 +891,7 @@ class TestUploadCertificate:
         """Test that cert expiry parsing failure is handled gracefully."""
         file_content = b"not-a-real-certificate"
 
-        with patch("easylifeauth.services.api_config_service.x509") as mock_x509:
+        with patch(PATCH_API_CONFIG_SERVICE_X509) as mock_x509:
             mock_x509.load_pem_x509_certificate.side_effect = Exception("Invalid cert")
 
             result = await service.upload_certificate(
@@ -903,7 +917,7 @@ class TestUploadCertificate:
                 config_key="api",
                 cert_type="cert",
                 file_content=b"content",
-                file_name="f.pem",
+                file_name=FILE_F_PEM,
                 user_email=MOCK_EMAIL_ADMIN
             )
 
@@ -921,7 +935,7 @@ class TestUploadCertificate:
                 config_key="api",
                 cert_type="cert",
                 file_content=b"content",
-                file_name="f.pem",
+                file_name=FILE_F_PEM,
                 user_email=MOCK_EMAIL_ADMIN
             )
 
@@ -933,7 +947,7 @@ class TestUploadCertificate:
                 config_key="api",
                 cert_type="invalid",
                 file_content=b"content",
-                file_name="f.pem",
+                file_name=FILE_F_PEM,
                 user_email=MOCK_EMAIL_ADMIN
             )
 
@@ -998,7 +1012,7 @@ class TestDownloadCertToTemp:
         mock_db.db = MagicMock()
         service = ApiConfigService(mock_db, gcs_service=None)
 
-        result = await service._download_cert_to_temp("some/path.pem")
+        result = await service._download_cert_to_temp(FILE_SOME_PATH_PEM)
 
         assert result is None
 
@@ -1011,7 +1025,7 @@ class TestDownloadCertToTemp:
         mock_gcs.is_configured = MagicMock(return_value=False)
         service = ApiConfigService(mock_db, gcs_service=mock_gcs)
 
-        result = await service._download_cert_to_temp("some/path.pem")
+        result = await service._download_cert_to_temp(FILE_SOME_PATH_PEM)
 
         assert result is None
 
@@ -1020,7 +1034,7 @@ class TestDownloadCertToTemp:
         """Test returns None when download raises an exception."""
         mock_gcs.download_file = AsyncMock(side_effect=Exception("Download failed"))
 
-        result = await service._download_cert_to_temp("some/path.pem")
+        result = await service._download_cert_to_temp(FILE_SOME_PATH_PEM)
 
         assert result is None
 
@@ -1029,7 +1043,7 @@ class TestDownloadCertToTemp:
         """Test returns None when download returns None (empty content)."""
         mock_gcs.download_file = AsyncMock(return_value=None)
 
-        result = await service._download_cert_to_temp("some/path.pem")
+        result = await service._download_cert_to_temp(FILE_SOME_PATH_PEM)
 
         assert result is None
 
@@ -1105,7 +1119,7 @@ class TestExtractTokenFromResponse:
         """Test that non-dict intermediate value returns None."""
         response_data = {"data": "not-a-dict"}
 
-        result = service._extract_token_from_response(response_data, "data.token")
+        result = service._extract_token_from_response(response_data, CFG_DATA_TOKEN)
 
         assert result is None
 
@@ -1166,7 +1180,7 @@ class TestObtainLoginToken:
         """Test successful login token retrieval."""
         auth_config = {
             "login_endpoint": MOCK_URL_AUTH_LOGIN,
-            "login_method": "POST",
+            "login_method": METHOD_POST,
             "username_field": "email",
             "password_field": "password",
             "username": MOCK_EMAIL_USER,
@@ -1178,7 +1192,7 @@ class TestObtainLoginToken:
         mock_response.status_code = 200
         mock_response.json.return_value = {"access_token": "login-token-xyz"}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1203,7 +1217,7 @@ class TestObtainLoginToken:
         mock_response.status_code = 401
         mock_response.text = "Unauthorized"
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1228,7 +1242,7 @@ class TestObtainLoginToken:
         mock_response.status_code = 200
         mock_response.json.side_effect = Exception(EXPECTED_NOT_JSON)
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1247,14 +1261,14 @@ class TestObtainLoginToken:
             "login_endpoint": MOCK_URL_AUTH_LOGIN,
             "username": "user",
             "password": MOCK_DB_PASSWORD,
-            "token_response_path": "data.token"
+            "token_response_path": CFG_DATA_TOKEN
         }
 
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"result": "ok"}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1276,7 +1290,7 @@ class TestObtainLoginToken:
             "password": MOCK_DB_PASSWORD
         }
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(side_effect=httpx.ConnectTimeout("timeout"))
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1298,7 +1312,7 @@ class TestObtainLoginToken:
             "password": MOCK_DB_PASSWORD
         }
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(side_effect=httpx.ConnectError("refused"))
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1319,7 +1333,7 @@ class TestObtainLoginToken:
             "password": MOCK_DB_PASSWORD
         }
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(side_effect=RuntimeError("something broke"))
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1345,7 +1359,7 @@ class TestObtainLoginToken:
         mock_response.status_code = 200
         mock_response.json.return_value = {"access_token": "token"}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1373,7 +1387,7 @@ class TestObtainLoginToken:
         mock_response.status_code = 200
         mock_response.json.return_value = {"access_token": "tok"}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1423,7 +1437,7 @@ class TestObtainOAuth2Token:
         mock_response.status_code = 200
         mock_response.json.return_value = {"access_token": "oauth-token-abc"}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1450,7 +1464,7 @@ class TestObtainOAuth2Token:
         mock_response.status_code = 200
         mock_response.json.return_value = {"access_token": "scoped-token"}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1478,7 +1492,7 @@ class TestObtainOAuth2Token:
         mock_response.status_code = 403
         mock_response.text = "Forbidden"
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1503,7 +1517,7 @@ class TestObtainOAuth2Token:
         mock_response.status_code = 200
         mock_response.json.side_effect = Exception("not json")
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1525,7 +1539,7 @@ class TestObtainOAuth2Token:
             "client_secret": MOCK_CLIENT_SECRET
         }
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.post = AsyncMock(side_effect=httpx.ConnectTimeout("timeout"))
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1547,7 +1561,7 @@ class TestObtainOAuth2Token:
             "client_secret": MOCK_CLIENT_SECRET
         }
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.post = AsyncMock(side_effect=httpx.ConnectError("refused"))
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1568,7 +1582,7 @@ class TestObtainOAuth2Token:
             "client_secret": MOCK_CLIENT_SECRET
         }
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.post = AsyncMock(side_effect=RuntimeError("boom"))
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1587,14 +1601,14 @@ class TestObtainOAuth2Token:
             "token_endpoint": MOCK_URL_AUTH_OAUTH,
             "client_id": "cid",
             "client_secret": MOCK_CLIENT_SECRET,
-            "token_response_path": "data.token"
+            "token_response_path": CFG_DATA_TOKEN
         }
 
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"access_token": "tok"}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1619,7 +1633,7 @@ class TestObtainOAuth2Token:
         mock_response.status_code = 200
         mock_response.json.return_value = {"access_token": "tok"}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1646,7 +1660,7 @@ class TestObtainOAuth2Token:
         mock_response.status_code = 200
         mock_response.json.return_value = {"access_token": "tok"}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1674,17 +1688,17 @@ class TestTestApi:
         """Test a simple GET request that succeeds."""
         config = {
             "endpoint": MOCK_URL_API_HEALTH,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 10,
             "auth_type": "none"
         }
 
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.headers = {"content-type": "application/json"}
+        mock_response.headers = {"content-type": MIME_APPLICATION_JSON}
         mock_response.json.return_value = {"status": "ok"}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1717,7 +1731,7 @@ class TestTestApi:
         mock_response.json.side_effect = Exception("no body")
         mock_response.text = ""
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1737,7 +1751,7 @@ class TestTestApi:
         """Test API with basic auth headers."""
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 5,
             "auth_type": "basic",
             "auth_config": {"username": "user", "password": MOCK_DB_PASSWORD}
@@ -1748,7 +1762,7 @@ class TestTestApi:
         mock_response.headers = {}
         mock_response.json.return_value = {"ok": True}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1759,15 +1773,15 @@ class TestTestApi:
 
         assert result["success"] is True
         call_kwargs = mock_client.request.call_args[1]
-        assert "Authorization" in call_kwargs["headers"]
-        assert call_kwargs["headers"]["Authorization"].startswith("Basic ")
+        assert STR_AUTHORIZATION in call_kwargs["headers"]
+        assert call_kwargs["headers"][STR_AUTHORIZATION].startswith("Basic ")
 
     @pytest.mark.asyncio
     async def test_test_api_bearer_auth(self, service):
         """Test API with bearer token auth."""
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 5,
             "auth_type": "bearer",
             "auth_config": {"token": "my-bearer-token"}
@@ -1778,7 +1792,7 @@ class TestTestApi:
         mock_response.headers = {}
         mock_response.json.return_value = {}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1788,14 +1802,14 @@ class TestTestApi:
             result = await service.test_api(config)
 
         call_kwargs = mock_client.request.call_args[1]
-        assert call_kwargs["headers"]["Authorization"] == "Bearer my-bearer-token"
+        assert call_kwargs["headers"][STR_AUTHORIZATION] == "Bearer my-bearer-token"
 
     @pytest.mark.asyncio
     async def test_test_api_api_key_in_header(self, service):
         """Test API with API key in header."""
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 5,
             "auth_type": "api_key",
             "auth_config": {
@@ -1810,7 +1824,7 @@ class TestTestApi:
         mock_response.headers = {}
         mock_response.json.return_value = {}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1827,7 +1841,7 @@ class TestTestApi:
         """Test API with API key in query params."""
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 5,
             "auth_type": "api_key",
             "auth_config": {
@@ -1842,7 +1856,7 @@ class TestTestApi:
         mock_response.headers = {}
         mock_response.json.return_value = {}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1859,7 +1873,7 @@ class TestTestApi:
         """Test API with login_token auth type."""
         config = {
             "endpoint": MOCK_URL_API_DATA,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 10,
             "auth_type": "login_token",
             "auth_config": {
@@ -1867,7 +1881,7 @@ class TestTestApi:
                 "username": "user",
                 "password": MOCK_DB_PASSWORD,
                 "token_type": "Bearer",
-                "token_header_name": "Authorization"
+                "token_header_name": STR_AUTHORIZATION
             }
         }
 
@@ -1879,7 +1893,7 @@ class TestTestApi:
             mock_response.headers = {}
             mock_response.json.return_value = {"data": [1, 2, 3]}
 
-            with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+            with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
                 mock_client = AsyncMock()
                 mock_client.request = AsyncMock(return_value=mock_response)
                 mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1890,14 +1904,14 @@ class TestTestApi:
 
         assert result["success"] is True
         call_kwargs = mock_client.request.call_args[1]
-        assert call_kwargs["headers"]["Authorization"] == "Bearer obtained-token"
+        assert call_kwargs["headers"][STR_AUTHORIZATION] == "Bearer obtained-token"
 
     @pytest.mark.asyncio
     async def test_test_api_login_token_auth_failure(self, service):
         """Test API returns auth error when login_token fails."""
         config = {
             "endpoint": MOCK_URL_API_DATA,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 10,
             "auth_type": "login_token",
             "auth_config": {
@@ -1922,15 +1936,15 @@ class TestTestApi:
         """Test API with oauth2 auth type."""
         config = {
             "endpoint": MOCK_URL_API_DATA,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 10,
-            "auth_type": "oauth2",
+            "auth_type": STR_OAUTH2,
             "auth_config": {
                 "token_endpoint": MOCK_URL_AUTH_TOKEN,
                 "client_id": "cid",
                 "client_secret": MOCK_CLIENT_SECRET,
                 "token_type": "Bearer",
-                "token_header_name": "Authorization"
+                "token_header_name": STR_AUTHORIZATION
             }
         }
 
@@ -1942,7 +1956,7 @@ class TestTestApi:
             mock_response.headers = {}
             mock_response.json.return_value = {}
 
-            with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+            with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
                 mock_client = AsyncMock()
                 mock_client.request = AsyncMock(return_value=mock_response)
                 mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -1953,16 +1967,16 @@ class TestTestApi:
 
         assert result["success"] is True
         call_kwargs = mock_client.request.call_args[1]
-        assert call_kwargs["headers"]["Authorization"] == "Bearer oauth-token"
+        assert call_kwargs["headers"][STR_AUTHORIZATION] == "Bearer oauth-token"
 
     @pytest.mark.asyncio
     async def test_test_api_oauth2_auth_failure(self, service):
         """Test API returns auth error when oauth2 fails."""
         config = {
             "endpoint": MOCK_URL_API_DATA,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 10,
-            "auth_type": "oauth2",
+            "auth_type": STR_OAUTH2,
             "auth_config": {
                 "token_endpoint": MOCK_URL_AUTH_TOKEN,
                 "client_id": "cid",
@@ -1984,7 +1998,7 @@ class TestTestApi:
         """Test API where status code does not match expected."""
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 5,
             "auth_type": "none",
             "ping_expected_status": 200
@@ -1995,7 +2009,7 @@ class TestTestApi:
         mock_response.headers = {}
         mock_response.json.return_value = {"error": "not found"}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -2012,7 +2026,7 @@ class TestTestApi:
         """Test API with non-JSON response body."""
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 5,
             "auth_type": "none"
         }
@@ -2023,7 +2037,7 @@ class TestTestApi:
         mock_response.json.side_effect = Exception(EXPECTED_NOT_JSON)
         mock_response.text = "<html>Hello</html>"
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -2039,7 +2053,7 @@ class TestTestApi:
         """Test API with long non-JSON response is truncated."""
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 5,
             "auth_type": "none"
         }
@@ -2051,7 +2065,7 @@ class TestTestApi:
         mock_response.json.side_effect = Exception(EXPECTED_NOT_JSON)
         mock_response.text = long_text
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -2069,12 +2083,12 @@ class TestTestApi:
         import httpx
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 1,
             "auth_type": "none"
         }
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(side_effect=httpx.ConnectTimeout("timeout"))
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -2093,12 +2107,12 @@ class TestTestApi:
         import httpx
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 1,
             "auth_type": "none"
         }
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(side_effect=httpx.ReadTimeout("read timeout"))
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -2116,12 +2130,12 @@ class TestTestApi:
         import httpx
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "POST",
+            "method": METHOD_POST,
             "timeout": 1,
             "auth_type": "none"
         }
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(side_effect=httpx.WriteTimeout("write timeout"))
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -2139,12 +2153,12 @@ class TestTestApi:
         import httpx
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 1,
             "auth_type": "none"
         }
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(side_effect=httpx.PoolTimeout("pool timeout"))
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -2162,12 +2176,12 @@ class TestTestApi:
         import httpx
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 5,
             "auth_type": "none"
         }
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(side_effect=httpx.ConnectError("refused"))
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -2184,12 +2198,12 @@ class TestTestApi:
         """Test API with SSL error."""
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 5,
             "auth_type": "none"
         }
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(side_effect=ssl.SSLError("certificate verify failed"))
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -2206,12 +2220,12 @@ class TestTestApi:
         """Test API with unexpected exception."""
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 5,
             "auth_type": "none"
         }
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(side_effect=RuntimeError("unexpected"))
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -2228,7 +2242,7 @@ class TestTestApi:
         """Test that test_params override config params."""
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 5,
             "auth_type": "none",
             "params": {"page": 1}
@@ -2241,7 +2255,7 @@ class TestTestApi:
         mock_response.headers = {}
         mock_response.json.return_value = {}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -2258,7 +2272,7 @@ class TestTestApi:
         """Test that test_body override config body for POST."""
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "POST",
+            "method": METHOD_POST,
             "timeout": 5,
             "auth_type": "none",
             "body": {"original": True}
@@ -2271,7 +2285,7 @@ class TestTestApi:
         mock_response.headers = {}
         mock_response.json.return_value = {}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -2288,7 +2302,7 @@ class TestTestApi:
         """Test that body is not sent for GET requests."""
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 5,
             "auth_type": "none",
             "body": {"data": "value"}
@@ -2299,7 +2313,7 @@ class TestTestApi:
         mock_response.headers = {}
         mock_response.json.return_value = {}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -2316,7 +2330,7 @@ class TestTestApi:
         """Test API with SSL verification disabled."""
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 5,
             "auth_type": "none",
             "ssl_verify": False
@@ -2327,7 +2341,7 @@ class TestTestApi:
         mock_response.headers = {}
         mock_response.json.return_value = {}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -2345,7 +2359,7 @@ class TestTestApi:
         """Test API with proxy configuration."""
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 5,
             "auth_type": "none",
             "use_proxy": True,
@@ -2357,7 +2371,7 @@ class TestTestApi:
         mock_response.headers = {}
         mock_response.json.return_value = {}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -2374,7 +2388,7 @@ class TestTestApi:
         """Test that proxy is not used when use_proxy is False."""
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 5,
             "auth_type": "none",
             "use_proxy": False,
@@ -2386,7 +2400,7 @@ class TestTestApi:
         mock_response.headers = {}
         mock_response.json.return_value = {}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -2403,10 +2417,10 @@ class TestTestApi:
         """Test API with custom headers from config."""
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 5,
             "auth_type": "none",
-            "headers": {"X-Custom": "value", "Accept": "application/json"}
+            "headers": {"X-Custom": "value", "Accept": MIME_APPLICATION_JSON}
         }
 
         mock_response = MagicMock()
@@ -2414,7 +2428,7 @@ class TestTestApi:
         mock_response.headers = {}
         mock_response.json.return_value = {}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -2425,14 +2439,14 @@ class TestTestApi:
 
         call_kwargs = mock_client.request.call_args[1]
         assert call_kwargs["headers"]["X-Custom"] == "value"
-        assert call_kwargs["headers"]["Accept"] == "application/json"
+        assert call_kwargs["headers"]["Accept"] == MIME_APPLICATION_JSON
 
     @pytest.mark.asyncio
     async def test_test_api_login_token_no_token_type(self, service):
         """Test login_token auth with empty token_type (no prefix)."""
         config = {
             "endpoint": MOCK_URL_API_DATA,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 10,
             "auth_type": "login_token",
             "auth_config": {
@@ -2440,7 +2454,7 @@ class TestTestApi:
                 "username": "user",
                 "password": MOCK_DB_PASSWORD,
                 "token_type": "",
-                "token_header_name": "Authorization"
+                "token_header_name": STR_AUTHORIZATION
             }
         }
 
@@ -2452,7 +2466,7 @@ class TestTestApi:
             mock_response.headers = {}
             mock_response.json.return_value = {}
 
-            with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+            with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
                 mock_client = AsyncMock()
                 mock_client.request = AsyncMock(return_value=mock_response)
                 mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -2463,14 +2477,14 @@ class TestTestApi:
 
         call_kwargs = mock_client.request.call_args[1]
         # When token_type is empty (falsy), token is used directly
-        assert call_kwargs["headers"]["Authorization"] == "raw-token"
+        assert call_kwargs["headers"][STR_AUTHORIZATION] == "raw-token"
 
     @pytest.mark.asyncio
     async def test_test_api_result_structure(self, service):
         """Test that the result dict always has the expected keys."""
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 5,
             "auth_type": "none"
         }
@@ -2480,7 +2494,7 @@ class TestTestApi:
         mock_response.headers = {}
         mock_response.json.return_value = {}
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.request = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -2499,7 +2513,7 @@ class TestTestApi:
         import httpx
         config = {
             "endpoint": MOCK_URL_API,
-            "method": "GET",
+            "method": METHOD_GET,
             "timeout": 5,
             "auth_type": "none"
         }
@@ -2507,7 +2521,7 @@ class TestTestApi:
         mock_resp = MagicMock()
         mock_resp.status_code = 500
 
-        with patch("easylifeauth.services.api_config_service.httpx.AsyncClient") as mock_client_cls:
+        with patch(PATCH_API_CONFIG_SERVICE_HTTPX_ASYNCCLIENT) as mock_client_cls:
             mock_client = AsyncMock()
             error = httpx.HTTPStatusError(
                 "Server Error",
@@ -2553,12 +2567,12 @@ class TestToggleStatus:
         oid = ObjectId()
         mock_collection.find_one = AsyncMock(return_value={
             "_id": oid,
-            "key": "test-api",
+            "key": STR_TEST_API,
             "status": "active"
         })
         mock_collection.find_one_and_update = AsyncMock(return_value={
             "_id": oid,
-            "key": "test-api",
+            "key": STR_TEST_API,
             "status": "inactive"
         })
 
@@ -2575,12 +2589,12 @@ class TestToggleStatus:
         oid = ObjectId()
         mock_collection.find_one = AsyncMock(return_value={
             "_id": oid,
-            "key": "test-api",
+            "key": STR_TEST_API,
             "status": "inactive"
         })
         mock_collection.find_one_and_update = AsyncMock(return_value={
             "_id": oid,
-            "key": "test-api",
+            "key": STR_TEST_API,
             "status": "active"
         })
 
@@ -2597,12 +2611,12 @@ class TestToggleStatus:
         oid = ObjectId()
         mock_collection.find_one = AsyncMock(return_value={
             "_id": oid,
-            "key": "test-api"
+            "key": STR_TEST_API
             # No 'status' field
         })
         mock_collection.find_one_and_update = AsyncMock(return_value={
             "_id": oid,
-            "key": "test-api",
+            "key": STR_TEST_API,
             "status": "active"
         })
 

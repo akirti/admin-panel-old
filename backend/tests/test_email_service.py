@@ -10,6 +10,21 @@ from mock_data import MOCK_EMAIL_NOREPLY, MOCK_EMAIL_NOREPLY_EASYLIFE, MOCK_EMAI
 EXPECTED_SMTP_ERROR = "SMTP Error"
 EXPECTED_STEP = "Step 1"
 EXPECTED_TEST_USER = "Test User"
+DATE_2024_01_01 = "2024-01-01"
+PATCH_EMAIL_SERVICE_AIOSMTPLIB_SEND = "easylifeauth.services.email_service.aiosmtplib.send"
+STR_ABC123 = "abc123"
+STR_DATADOMAIN = "dataDomain"
+STR_OL = "<ol>"
+STR_REQUESTID = "requestId"
+STR_REQ_SCR_0001 = "REQ-SCR-0001"
+STR_ROWUPDATESTP = "rowUpdateStp"
+STR_SCENARIONAME = "scenarioName"
+STR_STEPQUERIES = "stepQueries"
+STR_SUBJECT = "Subject"
+STR_TEST = "Test"
+STR_TO = "To"
+
+
 
 
 
@@ -31,13 +46,13 @@ class TestEmailService:
         """Test preparing password reset email template"""
         result = email_service._prepare_email_template(
             to_email=MOCK_EMAIL_USER_TEST,
-            reset_token="abc123",
+            reset_token=STR_ABC123,
             reset_url=MOCK_URL_RESET
         )
 
         assert isinstance(result, MIMEMultipart)
-        assert result["To"] == MOCK_EMAIL_USER_TEST
-        assert result["Subject"] == "Password Reset Request"
+        assert result[STR_TO] == MOCK_EMAIL_USER_TEST
+        assert result[STR_SUBJECT] == "Password Reset Request"
 
     def test_prepare_feedback_email_template(self, email_service):
         """Test preparing feedback email template"""
@@ -47,12 +62,12 @@ class TestEmailService:
                 "rating": 5,
                 "improvements": "None",
                 "suggestions": "Great!",
-                "createdAt": "2024-01-01"
+                "createdAt": DATE_2024_01_01
             }
         )
 
         assert isinstance(result, MIMEMultipart)
-        assert result["To"] == MOCK_EMAIL_USER_TEST
+        assert result[STR_TO] == MOCK_EMAIL_USER_TEST
 
     def test_prepare_feedback_email_template_no_data(self, email_service):
         """Test preparing feedback email with no data"""
@@ -67,12 +82,12 @@ class TestEmailService:
         """Test generating scenario steps HTML"""
         data = {
             "steps": [EXPECTED_STEP, "Step 2"],
-            "stepQueries": ["SELECT 1", "SELECT 2"]
+            STR_STEPQUERIES: ["SELECT 1", "SELECT 2"]
         }
 
         result = email_service._generate_scenario_steps_template(data)
 
-        assert "<ol>" in result
+        assert STR_OL in result
         assert EXPECTED_STEP in result
         assert "SELECT 1" in result
 
@@ -80,14 +95,14 @@ class TestEmailService:
         """Test generating steps with empty data"""
         result = email_service._generate_scenario_steps_template({})
 
-        assert "<ol>" in result
+        assert STR_OL in result
         assert "</ol>" in result
 
     def test_generate_scenario_steps_template_mismatched(self, email_service):
         """Test generating steps with mismatched lengths"""
         data = {
             "steps": [EXPECTED_STEP, "Step 2", "Step 3"],
-            "stepQueries": ["Query 1"]
+            STR_STEPQUERIES: ["Query 1"]
         }
 
         result = email_service._generate_scenario_steps_template(data)
@@ -98,16 +113,16 @@ class TestEmailService:
     def test_prepare_scenario_email_template(self, email_service):
         """Test preparing scenario request email"""
         data = {
-            "requestId": "REQ-SCR-0001",
-            "scenarioName": "Test Scenario",
+            STR_REQUESTID: STR_REQ_SCR_0001,
+            STR_SCENARIONAME: "Test Scenario",
             "description": "Test Description",
-            "dataDomain": "test-domain",
+            STR_DATADOMAIN: "test-domain",
             "databases": ["db1"],
             "steps": [EXPECTED_STEP],
-            "stepQueries": ["Query 1"],
+            STR_STEPQUERIES: ["Query 1"],
             "filters": ["filter1"],
             "status": "S",
-            "rowUpdateStp": "2024-01-01"
+            STR_ROWUPDATESTP: DATE_2024_01_01
         }
 
         result = email_service._prepare_scenario_email_template(
@@ -116,18 +131,18 @@ class TestEmailService:
         )
 
         assert isinstance(result, MIMEMultipart)
-        assert "REQ-SCR-0001" in result["Subject"]
+        assert STR_REQ_SCR_0001 in result[STR_SUBJECT]
 
     def test_prepare_scenario_email_template_with_comments(self, email_service):
         """Test preparing scenario email with comments"""
         data = {
-            "requestId": "REQ-SCR-0001",
-            "scenarioName": "Test Scenario",
-            "description": "Test",
-            "dataDomain": "test",
+            STR_REQUESTID: STR_REQ_SCR_0001,
+            STR_SCENARIONAME: "Test Scenario",
+            "description": STR_TEST,
+            STR_DATADOMAIN: "test",
             "status": "P",
             "comments": ["Comment 1", "Comment 2"],
-            "rowUpdateStp": "2024-01-01"
+            STR_ROWUPDATESTP: DATE_2024_01_01
         }
 
         result = email_service._prepare_scenario_email_template(
@@ -138,7 +153,7 @@ class TestEmailService:
         assert isinstance(result, MIMEMultipart)
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    @patch(PATCH_EMAIL_SERVICE_AIOSMTPLIB_SEND)
     async def test_send_reset_email_success(self, mock_send, email_service):
         """Test sending reset email successfully"""
         mock_send.return_value = AsyncMock()
@@ -146,14 +161,14 @@ class TestEmailService:
         # Should not raise
         await email_service.send_reset_email(
             to_email=MOCK_EMAIL_USER_TEST,
-            reset_token="abc123",
+            reset_token=STR_ABC123,
             reset_url=MOCK_URL_RESET
         )
 
         mock_send.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    @patch(PATCH_EMAIL_SERVICE_AIOSMTPLIB_SEND)
     async def test_send_reset_email_failure(self, mock_send, email_service):
         """Test sending reset email with failure"""
         mock_send.side_effect = Exception(EXPECTED_SMTP_ERROR)
@@ -161,12 +176,12 @@ class TestEmailService:
         with pytest.raises(EmailError):
             await email_service.send_reset_email(
                 to_email=MOCK_EMAIL_USER_TEST,
-                reset_token="abc123",
+                reset_token=STR_ABC123,
                 reset_url=MOCK_URL_RESET
             )
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    @patch(PATCH_EMAIL_SERVICE_AIOSMTPLIB_SEND)
     async def test_send_feedback_email_success(self, mock_send, email_service):
         """Test sending feedback email successfully"""
         mock_send.return_value = AsyncMock()
@@ -179,7 +194,7 @@ class TestEmailService:
         mock_send.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    @patch(PATCH_EMAIL_SERVICE_AIOSMTPLIB_SEND)
     async def test_send_feedback_email_failure(self, mock_send, email_service):
         """Test sending feedback email with failure"""
         mock_send.side_effect = Exception(EXPECTED_SMTP_ERROR)
@@ -191,7 +206,7 @@ class TestEmailService:
             )
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    @patch(PATCH_EMAIL_SERVICE_AIOSMTPLIB_SEND)
     async def test_send_scenario_email_success(self, mock_send, email_service):
         """Test sending scenario email successfully"""
         mock_send.return_value = AsyncMock()
@@ -199,19 +214,19 @@ class TestEmailService:
         await email_service.send_scenario_email(
             to_email=MOCK_EMAIL_USER_TEST,
             data={
-                "requestId": "REQ-SCR-0001",
-                "scenarioName": "Test",
-                "description": "Test",
-                "dataDomain": "test",
+                STR_REQUESTID: STR_REQ_SCR_0001,
+                STR_SCENARIONAME: STR_TEST,
+                "description": STR_TEST,
+                STR_DATADOMAIN: "test",
                 "status": "S",
-                "rowUpdateStp": "2024-01-01"
+                STR_ROWUPDATESTP: DATE_2024_01_01
             }
         )
 
         mock_send.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    @patch(PATCH_EMAIL_SERVICE_AIOSMTPLIB_SEND)
     async def test_send_scenario_email_failure(self, mock_send, email_service):
         """Test sending scenario email with failure"""
         mock_send.side_effect = Exception(EXPECTED_SMTP_ERROR)
@@ -220,10 +235,10 @@ class TestEmailService:
             await email_service.send_scenario_email(
                 to_email=MOCK_EMAIL_USER_TEST,
                 data={
-                    "requestId": "REQ-SCR-0001",
-                    "scenarioName": "Test",
+                    STR_REQUESTID: STR_REQ_SCR_0001,
+                    STR_SCENARIONAME: STR_TEST,
                     "status": "S",
-                    "rowUpdateStp": "2024-01-01"
+                    STR_ROWUPDATESTP: DATE_2024_01_01
                 }
             )
 
@@ -260,23 +275,23 @@ class TestEmailService:
         )
 
         assert isinstance(result, MIMEMultipart)
-        assert result["To"] == MOCK_EMAIL_USER_TEST
-        assert "Welcome" in result["Subject"]
+        assert result[STR_TO] == MOCK_EMAIL_USER_TEST
+        assert "Welcome" in result[STR_SUBJECT]
 
     def test_prepare_password_reset_email_template(self, email_service):
         """Test preparing password reset email template"""
         result = email_service._prepare_password_reset_email_template(
             to_email=MOCK_EMAIL_USER_TEST,
             full_name=EXPECTED_TEST_USER,
-            reset_token="abc123"
+            reset_token=STR_ABC123
         )
 
         assert isinstance(result, MIMEMultipart)
-        assert result["To"] == MOCK_EMAIL_USER_TEST
-        assert "Password Reset" in result["Subject"]
+        assert result[STR_TO] == MOCK_EMAIL_USER_TEST
+        assert "Password Reset" in result[STR_SUBJECT]
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    @patch(PATCH_EMAIL_SERVICE_AIOSMTPLIB_SEND)
     async def test_send_welcome_email_success(self, mock_send, email_service):
         """Test sending welcome email successfully"""
         mock_send.return_value = AsyncMock()
@@ -290,7 +305,7 @@ class TestEmailService:
         mock_send.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    @patch(PATCH_EMAIL_SERVICE_AIOSMTPLIB_SEND)
     async def test_send_welcome_email_failure(self, mock_send, email_service):
         """Test sending welcome email with failure"""
         mock_send.side_effect = Exception(EXPECTED_SMTP_ERROR)
@@ -303,7 +318,7 @@ class TestEmailService:
             )
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    @patch(PATCH_EMAIL_SERVICE_AIOSMTPLIB_SEND)
     async def test_send_welcome_email_with_tls(self, mock_send, email_service_with_tls):
         """Test sending welcome email with TLS"""
         mock_send.return_value = AsyncMock()
@@ -320,7 +335,7 @@ class TestEmailService:
         assert call_kwargs.get("start_tls") is True
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    @patch(PATCH_EMAIL_SERVICE_AIOSMTPLIB_SEND)
     async def test_send_password_reset_email_success(self, mock_send, email_service):
         """Test sending password reset email successfully"""
         mock_send.return_value = AsyncMock()
@@ -328,13 +343,13 @@ class TestEmailService:
         await email_service.send_password_reset_email(
             to_email=MOCK_EMAIL_USER_TEST,
             full_name=EXPECTED_TEST_USER,
-            reset_token="abc123"
+            reset_token=STR_ABC123
         )
 
         mock_send.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    @patch(PATCH_EMAIL_SERVICE_AIOSMTPLIB_SEND)
     async def test_send_password_reset_email_failure(self, mock_send, email_service):
         """Test sending password reset email with failure"""
         mock_send.side_effect = Exception(EXPECTED_SMTP_ERROR)
@@ -343,11 +358,11 @@ class TestEmailService:
             await email_service.send_password_reset_email(
                 to_email=MOCK_EMAIL_USER_TEST,
                 full_name=EXPECTED_TEST_USER,
-                reset_token="abc123"
+                reset_token=STR_ABC123
             )
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    @patch(PATCH_EMAIL_SERVICE_AIOSMTPLIB_SEND)
     async def test_send_password_reset_email_with_tls(self, mock_send, email_service_with_tls):
         """Test sending password reset email with TLS"""
         mock_send.return_value = AsyncMock()
@@ -355,7 +370,7 @@ class TestEmailService:
         await email_service_with_tls.send_password_reset_email(
             to_email=MOCK_EMAIL_USER_TEST,
             full_name=EXPECTED_TEST_USER,
-            reset_token="abc123"
+            reset_token=STR_ABC123
         )
 
         mock_send.assert_called_once()
@@ -363,14 +378,14 @@ class TestEmailService:
         assert call_kwargs.get("start_tls") is True
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    @patch(PATCH_EMAIL_SERVICE_AIOSMTPLIB_SEND)
     async def test_send_reset_email_with_tls(self, mock_send, email_service_with_tls):
         """Test sending reset email with TLS"""
         mock_send.return_value = AsyncMock()
 
         await email_service_with_tls.send_reset_email(
             to_email=MOCK_EMAIL_USER_TEST,
-            reset_token="abc123",
+            reset_token=STR_ABC123,
             reset_url=MOCK_URL_RESET
         )
 
@@ -379,7 +394,7 @@ class TestEmailService:
         assert call_kwargs.get("start_tls") is True
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    @patch(PATCH_EMAIL_SERVICE_AIOSMTPLIB_SEND)
     async def test_send_feedback_email_with_tls(self, mock_send, email_service_with_tls):
         """Test sending feedback email with TLS"""
         mock_send.return_value = AsyncMock()
@@ -394,7 +409,7 @@ class TestEmailService:
         assert call_kwargs.get("start_tls") is True
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    @patch(PATCH_EMAIL_SERVICE_AIOSMTPLIB_SEND)
     async def test_send_scenario_email_with_tls(self, mock_send, email_service_with_tls):
         """Test sending scenario email with TLS"""
         mock_send.return_value = AsyncMock()
@@ -402,10 +417,10 @@ class TestEmailService:
         await email_service_with_tls.send_scenario_email(
             to_email=MOCK_EMAIL_USER_TEST,
             data={
-                "requestId": "REQ-SCR-0001",
-                "scenarioName": "Test",
+                STR_REQUESTID: STR_REQ_SCR_0001,
+                STR_SCENARIONAME: STR_TEST,
                 "status": "S",
-                "rowUpdateStp": "2024-01-01"
+                STR_ROWUPDATESTP: DATE_2024_01_01
             }
         )
 
@@ -414,14 +429,14 @@ class TestEmailService:
         assert call_kwargs.get("start_tls") is True
 
     @pytest.mark.asyncio
-    @patch('easylifeauth.services.email_service.aiosmtplib.send')
+    @patch(PATCH_EMAIL_SERVICE_AIOSMTPLIB_SEND)
     async def test_send_reset_email_no_auth(self, mock_send, email_service_no_auth):
         """Test sending reset email without authentication"""
         mock_send.return_value = AsyncMock()
 
         await email_service_no_auth.send_reset_email(
             to_email=MOCK_EMAIL_USER_TEST,
-            reset_token="abc123",
+            reset_token=STR_ABC123,
             reset_url=MOCK_URL_RESET
         )
 
@@ -434,12 +449,12 @@ class TestEmailService:
         """Test generating steps when steps/queries are not lists"""
         data = {
             "steps": "not a list",
-            "stepQueries": "also not a list"
+            STR_STEPQUERIES: "also not a list"
         }
 
         result = email_service._generate_scenario_steps_template(data)
 
-        assert "<ol>" in result
+        assert STR_OL in result
         assert "</ol>" in result
 
     def test_email_service_default_config(self):

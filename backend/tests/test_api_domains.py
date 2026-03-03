@@ -19,6 +19,13 @@ PATH_DOMAINS_NONEXISTENT = "/domains/nonexistent"
 
 EXPECTED_DOMAIN = "Domain 1"
 EXPECTED_SUBDOMAIN = "Subdomain 1"
+OID_9011 = "507f1f77bcf86cd799439011"
+STR_DOMAIN1 = "domain1"
+STR_DOMAIN2 = "domain2"
+STR_SUBDOMAIN1 = "subdomain1"
+STR_SUBDOMAINS = "subDomains"
+SUBPATH_DOMAIN1 = "/domain1"
+
 
 
 
@@ -44,12 +51,12 @@ class TestCheckDomainAccess:
 
     def test_check_domain_access_with_specific_domain(self):
         """Test access check with specific domain"""
-        assert check_domain_access(["domain1", "domain2"], "domain1") is True
-        assert check_domain_access(["domain1", "domain2"], "domain3") is False
+        assert check_domain_access([STR_DOMAIN1, STR_DOMAIN2], STR_DOMAIN1) is True
+        assert check_domain_access([STR_DOMAIN1, STR_DOMAIN2], "domain3") is False
 
     def test_check_domain_access_empty_list(self):
         """Test access check with empty domain list"""
-        assert check_domain_access([], "domain1") is False
+        assert check_domain_access([], STR_DOMAIN1) is False
 
 
 class TestGetUserAccessibleDomains:
@@ -99,7 +106,7 @@ class TestGetUserAccessibleDomains:
             "email": MOCK_EMAIL_USER
         })
         mock_user_service = MagicMock()
-        mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain1", "domain2"])
+        mock_user_service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN1, STR_DOMAIN2])
 
         current_user = CurrentUser(
             user_id="test",
@@ -110,7 +117,7 @@ class TestGetUserAccessibleDomains:
         )
 
         result = await get_user_accessible_domains(current_user, mock_db, mock_user_service)
-        assert result == ["domain1", "domain2"]
+        assert result == [STR_DOMAIN1, STR_DOMAIN2]
 
 
 class TestDomainsRoutes:
@@ -120,7 +127,7 @@ class TestDomainsRoutes:
     def mock_super_admin_user(self):
         """Create mock super admin user"""
         return CurrentUser(
-            user_id="507f1f77bcf86cd799439011",
+            user_id=OID_9011,
             email=MOCK_EMAIL_ADMIN,
             roles=["super_admin", "super-administrator"],
             groups=[],
@@ -135,7 +142,7 @@ class TestDomainsRoutes:
             email=MOCK_EMAIL_USER,
             roles=["user"],
             groups=["viewer"],
-            domains=["domain1"]
+            domains=[STR_DOMAIN1]
         )
 
     @pytest.fixture
@@ -157,7 +164,7 @@ class TestDomainsRoutes:
     def mock_user_service(self):
         """Create mock user service"""
         service = MagicMock()
-        service.resolve_user_domains = AsyncMock(return_value=["domain1"])
+        service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN1])
         return service
 
     @pytest.fixture
@@ -182,14 +189,14 @@ class TestDomainsRoutes:
         """Test getting all domains as super admin"""
         async def domain_cursor():
             yield {
-                "_id": ObjectId("507f1f77bcf86cd799439011"),
-                "key": "domain1",
+                "_id": ObjectId(OID_9011),
+                "key": STR_DOMAIN1,
                 "name": EXPECTED_DOMAIN,
                 "description": "Test domain",
-                "path": "/domain1",
+                "path": SUBPATH_DOMAIN1,
                 "status": "active",
                 "order": 1,
-                "subDomains": [],
+                STR_SUBDOMAINS: [],
                 "created_at": datetime.utcnow(),
                 "updated_at": datetime.utcnow()
             }
@@ -235,14 +242,14 @@ class TestDomainsRoutes:
     def test_get_domain_success(self, client, mock_db):
         """Test getting a specific domain"""
         domain_data = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "key": "domain1",
+            "_id": ObjectId(OID_9011),
+            "key": STR_DOMAIN1,
             "name": EXPECTED_DOMAIN,
             "description": "Test domain",
-            "path": "/domain1",
+            "path": SUBPATH_DOMAIN1,
             "status": "active",
             "order": 1,
-            "subDomains": [],
+            STR_SUBDOMAINS: [],
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
@@ -251,7 +258,7 @@ class TestDomainsRoutes:
         response = client.get(PATH_DOMAINS_ID)
         assert response.status_code == 200
         data = response.json()
-        assert data["key"] == "domain1"
+        assert data["key"] == STR_DOMAIN1
 
     def test_get_domain_not_found(self, client, mock_db):
         """Test getting non-existent domain"""
@@ -264,7 +271,7 @@ class TestDomainsRoutes:
         """Test creating a new domain"""
         mock_db.domains.find_one = AsyncMock(return_value=None)
         mock_db.domains.insert_one = AsyncMock(
-            return_value=MagicMock(inserted_id=ObjectId("507f1f77bcf86cd799439011"))
+            return_value=MagicMock(inserted_id=ObjectId(OID_9011))
         )
 
         response = client.post(PATH_DOMAINS, json={
@@ -297,14 +304,14 @@ class TestDomainsRoutes:
     def test_update_domain_success(self, client, mock_db):
         """Test updating a domain"""
         existing_domain = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "key": "domain1",
+            "_id": ObjectId(OID_9011),
+            "key": STR_DOMAIN1,
             "name": EXPECTED_DOMAIN,
             "description": "Old description",
-            "path": "/domain1",
+            "path": SUBPATH_DOMAIN1,
             "status": "active",
             "order": 1,
-            "subDomains": [],
+            STR_SUBDOMAINS: [],
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
@@ -330,8 +337,8 @@ class TestDomainsRoutes:
     def test_delete_domain_success(self, client, mock_db):
         """Test deleting a domain"""
         mock_db.domains.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "key": "domain1"
+            "_id": ObjectId(OID_9011),
+            "key": STR_DOMAIN1
         })
         mock_db.domains.delete_one = AsyncMock(return_value=MagicMock(deleted_count=1))
         mock_db.roles = MagicMock()
@@ -357,8 +364,8 @@ class TestDomainsRoutes:
     def test_toggle_domain_status(self, client, mock_db):
         """Test toggling domain status"""
         mock_db.domains.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "key": "domain1",
+            "_id": ObjectId(OID_9011),
+            "key": STR_DOMAIN1,
             "status": "active"
         })
 
@@ -377,18 +384,18 @@ class TestDomainsRoutes:
     def test_add_subdomain(self, client, mock_db):
         """Test adding a subdomain"""
         domain_data = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "key": "domain1",
+            "_id": ObjectId(OID_9011),
+            "key": STR_DOMAIN1,
             "name": EXPECTED_DOMAIN,
-            "path": "/domain1",
+            "path": SUBPATH_DOMAIN1,
             "status": "active",
-            "subDomains": []
+            STR_SUBDOMAINS: []
         }
         # find_one called twice: once to check exists, once to get updated
         mock_db.domains.find_one = AsyncMock(side_effect=[domain_data, domain_data])
 
         response = client.post("/domains/507f1f77bcf86cd799439011/subdomains", json={
-            "key": "subdomain1",
+            "key": STR_SUBDOMAIN1,
             "name": EXPECTED_SUBDOMAIN,
             "path": "/subdomain1",
             "status": "active"
@@ -402,7 +409,7 @@ class TestDomainsRoutes:
         mock_db.domains.find_one = AsyncMock(return_value=None)
 
         response = client.post("/domains/nonexistent/subdomains", json={
-            "key": "subdomain1",
+            "key": STR_SUBDOMAIN1,
             "name": EXPECTED_SUBDOMAIN,
             "path": "/subdomain1",
             "status": "active"
@@ -413,9 +420,9 @@ class TestDomainsRoutes:
     def test_remove_subdomain(self, client, mock_db):
         """Test removing a subdomain"""
         mock_db.domains.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "key": "domain1",
-            "subDomains": [{"key": "subdomain1", "name": EXPECTED_SUBDOMAIN}]
+            "_id": ObjectId(OID_9011),
+            "key": STR_DOMAIN1,
+            STR_SUBDOMAINS: [{"key": STR_SUBDOMAIN1, "name": EXPECTED_SUBDOMAIN}]
         })
 
         response = client.delete("/domains/507f1f77bcf86cd799439011/subdomains/subdomain1")

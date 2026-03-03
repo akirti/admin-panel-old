@@ -7,6 +7,16 @@ from bson import ObjectId
 
 from easylifeauth.services.bulk_upload_service import BulkUploadService, BulkUploadResult
 from mock_data import MOCK_EMAIL, MOCK_PASSWORD_HASH
+FILE_TEST_CSV = "test.csv"
+STR_CUST1 = "cust1"
+STR_CUSTOMERID = "customerId"
+STR_DOMAIN1 = "domain1"
+STR_DOMAINKEY = "domainKey"
+STR_GROUPID = "groupId"
+STR_PERM1 = "perm1"
+STR_ROLEID = "roleId"
+STR_SCENARIO1 = "scenario1"
+
 
 
 class TestBulkUploadResult:
@@ -94,7 +104,7 @@ class TestBulkUploadService:
     def test_parse_file_csv(self, service):
         """Test parsing CSV file"""
         csv_content = b"email,username\ntest@example.com,testuser"
-        df = service.parse_file(csv_content, "test.csv")
+        df = service.parse_file(csv_content, FILE_TEST_CSV)
         assert len(df) == 1
         assert df.iloc[0]["email"] == MOCK_EMAIL
 
@@ -296,7 +306,7 @@ class TestBulkUploadService:
     async def test_process_roles_success(self, service, mock_db):
         """Test processing roles successfully"""
         df = pd.DataFrame({
-            "roleId": ["admin"],
+            STR_ROLEID: ["admin"],
             "name": ["Administrator"],
             "description": ["Admin role"],
             "status": ["active"],
@@ -310,7 +320,7 @@ class TestBulkUploadService:
     async def test_process_roles_missing_id(self, service, mock_db):
         """Test processing role with missing roleId"""
         df = pd.DataFrame({
-            "roleId": [""],
+            STR_ROLEID: [""],
             "name": ["Admin"]
         })
 
@@ -320,10 +330,10 @@ class TestBulkUploadService:
     @pytest.mark.asyncio
     async def test_process_roles_existing(self, service, mock_db):
         """Test processing existing role (update)"""
-        mock_db.roles.find_one = AsyncMock(return_value={"roleId": "admin"})
+        mock_db.roles.find_one = AsyncMock(return_value={STR_ROLEID: "admin"})
 
         df = pd.DataFrame({
-            "roleId": ["admin"],
+            STR_ROLEID: ["admin"],
             "name": ["Administrator"]
         })
 
@@ -335,7 +345,7 @@ class TestBulkUploadService:
     async def test_process_groups_success(self, service, mock_db):
         """Test processing groups successfully"""
         df = pd.DataFrame({
-            "groupId": ["viewers"],
+            STR_GROUPID: ["viewers"],
             "name": ["Viewers"],
             "status": ["active"]
         })
@@ -347,7 +357,7 @@ class TestBulkUploadService:
     async def test_process_groups_missing_id(self, service, mock_db):
         """Test processing group with missing groupId"""
         df = pd.DataFrame({
-            "groupId": [""],
+            STR_GROUPID: [""],
             "name": ["Group"]
         })
 
@@ -357,10 +367,10 @@ class TestBulkUploadService:
     @pytest.mark.asyncio
     async def test_process_groups_existing(self, service, mock_db):
         """Test processing existing group (update)"""
-        mock_db.groups.find_one = AsyncMock(return_value={"groupId": "viewers"})
+        mock_db.groups.find_one = AsyncMock(return_value={STR_GROUPID: "viewers"})
 
         df = pd.DataFrame({
-            "groupId": ["viewers"],
+            STR_GROUPID: ["viewers"],
             "name": ["Viewers"]
         })
 
@@ -372,7 +382,7 @@ class TestBulkUploadService:
     async def test_process_domains_success(self, service, mock_db):
         """Test processing domains successfully"""
         df = pd.DataFrame({
-            "key": ["domain1"],
+            "key": [STR_DOMAIN1],
             "name": ["Domain 1"],
             "path": ["/domain1"],
             "status": ["active"]
@@ -395,10 +405,10 @@ class TestBulkUploadService:
     @pytest.mark.asyncio
     async def test_process_domains_existing(self, service, mock_db):
         """Test processing existing domain (update)"""
-        mock_db.domains.find_one = AsyncMock(return_value={"key": "domain1"})
+        mock_db.domains.find_one = AsyncMock(return_value={"key": STR_DOMAIN1})
 
         df = pd.DataFrame({
-            "key": ["domain1"],
+            "key": [STR_DOMAIN1],
             "name": ["Domain 1"]
         })
 
@@ -410,9 +420,9 @@ class TestBulkUploadService:
     async def test_process_domain_scenarios_success(self, service, mock_db):
         """Test processing domain scenarios successfully"""
         df = pd.DataFrame({
-            "key": ["scenario1"],
+            "key": [STR_SCENARIO1],
             "name": ["Scenario 1"],
-            "domainKey": ["domain1"],
+            STR_DOMAINKEY: [STR_DOMAIN1],
             "status": ["active"]
         })
 
@@ -425,7 +435,7 @@ class TestBulkUploadService:
         df = pd.DataFrame({
             "key": [""],
             "name": ["Scenario"],
-            "domainKey": ["domain1"]
+            STR_DOMAINKEY: [STR_DOMAIN1]
         })
 
         result = await service.process_domain_scenarios(df)
@@ -434,12 +444,12 @@ class TestBulkUploadService:
     @pytest.mark.asyncio
     async def test_process_domain_scenarios_existing(self, service, mock_db):
         """Test processing existing domain scenario (update)"""
-        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": "scenario1"})
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": STR_SCENARIO1})
 
         df = pd.DataFrame({
-            "key": ["scenario1"],
+            "key": [STR_SCENARIO1],
             "name": ["Scenario 1"],
-            "domainKey": ["domain1"]
+            STR_DOMAINKEY: [STR_DOMAIN1]
         })
 
         result = await service.process_domain_scenarios(df)
@@ -450,7 +460,7 @@ class TestBulkUploadService:
     async def test_process_customers_success(self, service, mock_db):
         """Test processing customers successfully"""
         df = pd.DataFrame({
-            "customerId": ["cust1"],
+            STR_CUSTOMERID: [STR_CUST1],
             "name": ["Customer 1"],
             "status": ["active"]
         })
@@ -462,7 +472,7 @@ class TestBulkUploadService:
     async def test_process_customers_missing_id(self, service, mock_db):
         """Test processing customer with missing customerId"""
         df = pd.DataFrame({
-            "customerId": [""],
+            STR_CUSTOMERID: [""],
             "name": ["Customer"]
         })
 
@@ -473,7 +483,7 @@ class TestBulkUploadService:
     async def test_process_customers_missing_name(self, service, mock_db):
         """Test processing customer with missing name"""
         df = pd.DataFrame({
-            "customerId": ["cust1"],
+            STR_CUSTOMERID: [STR_CUST1],
             "name": [""]
         })
 
@@ -483,10 +493,10 @@ class TestBulkUploadService:
     @pytest.mark.asyncio
     async def test_process_customers_existing(self, service, mock_db):
         """Test processing existing customer (update)"""
-        mock_db.customers.find_one = AsyncMock(return_value={"customerId": "cust1"})
+        mock_db.customers.find_one = AsyncMock(return_value={STR_CUSTOMERID: STR_CUST1})
 
         df = pd.DataFrame({
-            "customerId": ["cust1"],
+            STR_CUSTOMERID: [STR_CUST1],
             "name": ["Customer 1"]
         })
 
@@ -498,7 +508,7 @@ class TestBulkUploadService:
     async def test_process_permissions_success(self, service, mock_db):
         """Test processing permissions successfully"""
         df = pd.DataFrame({
-            "key": ["perm1"],
+            "key": [STR_PERM1],
             "name": ["Permission 1"],
             "module": ["users"],
             "actions": ["read,write"]
@@ -523,7 +533,7 @@ class TestBulkUploadService:
     async def test_process_permissions_missing_name(self, service, mock_db):
         """Test processing permission with missing name"""
         df = pd.DataFrame({
-            "key": ["perm1"],
+            "key": [STR_PERM1],
             "name": [""],
             "module": ["users"]
         })
@@ -535,7 +545,7 @@ class TestBulkUploadService:
     async def test_process_permissions_missing_module(self, service, mock_db):
         """Test processing permission with missing module"""
         df = pd.DataFrame({
-            "key": ["perm1"],
+            "key": [STR_PERM1],
             "name": ["Permission"],
             "module": [""]
         })
@@ -546,10 +556,10 @@ class TestBulkUploadService:
     @pytest.mark.asyncio
     async def test_process_permissions_existing(self, service, mock_db):
         """Test processing existing permission (update)"""
-        mock_db.permissions.find_one = AsyncMock(return_value={"key": "perm1"})
+        mock_db.permissions.find_one = AsyncMock(return_value={"key": STR_PERM1})
 
         df = pd.DataFrame({
-            "key": ["perm1"],
+            "key": [STR_PERM1],
             "name": ["Permission 1"],
             "module": ["users"]
         })
@@ -563,7 +573,7 @@ class TestBulkUploadService:
         """Test process_entity for users"""
         csv_content = b"email,username\ntest@example.com,testuser"
 
-        result = await service.process_entity("users", csv_content, "test.csv", send_password_emails=False)
+        result = await service.process_entity("users", csv_content, FILE_TEST_CSV, send_password_emails=False)
         assert result.successful == 1
 
     @pytest.mark.asyncio
@@ -571,7 +581,7 @@ class TestBulkUploadService:
         """Test process_entity for roles"""
         csv_content = b"roleId,name\nadmin,Administrator"
 
-        result = await service.process_entity("roles", csv_content, "test.csv")
+        result = await service.process_entity("roles", csv_content, FILE_TEST_CSV)
         assert result.successful == 1
 
     @pytest.mark.asyncio
@@ -580,7 +590,7 @@ class TestBulkUploadService:
         csv_content = b"email,username\n"
 
         with pytest.raises(ValueError) as exc:
-            await service.process_entity("users", csv_content, "test.csv")
+            await service.process_entity("users", csv_content, FILE_TEST_CSV)
         assert "empty" in str(exc.value).lower()
 
     @pytest.mark.asyncio
@@ -589,7 +599,7 @@ class TestBulkUploadService:
         csv_content = b"name,description\nTest,Desc"
 
         with pytest.raises(ValueError) as exc:
-            await service.process_entity("users", csv_content, "test.csv")
+            await service.process_entity("users", csv_content, FILE_TEST_CSV)
         assert "missing required columns" in str(exc.value).lower()
 
     @pytest.mark.asyncio
@@ -598,7 +608,7 @@ class TestBulkUploadService:
         csv_content = b"email,username\ntest@example.com,test"
 
         with pytest.raises(ValueError) as exc:
-            await service.process_entity("unknown", csv_content, "test.csv")
+            await service.process_entity("unknown", csv_content, FILE_TEST_CSV)
         assert "unknown entity type" in str(exc.value).lower()
 
     def test_get_template_users(self, service):
@@ -610,7 +620,7 @@ class TestBulkUploadService:
     def test_get_template_roles(self, service):
         """Test getting template for roles"""
         template = service.get_template("roles")
-        assert "roleId" in template.columns
+        assert STR_ROLEID in template.columns
         assert "name" in template.columns
 
     def test_get_template_unknown(self, service):

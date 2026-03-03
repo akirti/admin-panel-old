@@ -21,6 +21,22 @@ from tests.test_config_values import (
     EXPECTED_CORS_ORIGINS, EXPECTED_JIRA_BASE_URL,
 )
 from mock_data import MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV, MOCK_URL_MONGODB_MYHOST
+CFG_APP_NAME = "app.name"
+CFG_DATABASE_HOST = "database.host"
+CFG_DB_HOST = "db.host"
+CFG_DB_PORT = "db.port"
+CFG_SERVER_ENV = "server.env."
+EXT_JSON = ".json"
+FILE_CONFIG_JSON = "config.json"
+FILE_SIM_JSON = "sim.json"
+JSON_DB_HOST = "{db.host}"
+NUM_5432 = "5432"
+STR_LOCALENV = "localenv-"
+STR_LOCALENV_HOST = "localenv-host"
+STR_SIM_HOST = "sim-host"
+STR_SIM_VAL = "sim-val"
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -66,20 +82,20 @@ class TestPlaceholderResolution:
     def test_simulator_values_resolve_in_config(self, tmp_path, environment="production"):
         config_path = _create_config_dir(tmp_path, {
             f"server.env.{environment}.json": {
-                "app.name": "test-app",
-                "db.host": "localhost",
-                "db.port": 27017,
+                CFG_APP_NAME: "test-app",
+                CFG_DB_HOST: "localhost",
+                CFG_DB_PORT: 27017,
             },
-            "config.json": {
+            FILE_CONFIG_JSON: {
                 "application": {"name": "{app.name}"},
-                "database": {"host": "{db.host}", "port": "{db.port}"},
+                "database": {"host": JSON_DB_HOST, "port": "{db.port}"},
             },
             "production.json": {},
             f"localenv-{environment}.json": {},
         })
         loader = ConfigurationLoader(config_path=config_path, environment=environment)
         assert loader.get_config_by_path("application.name") == "test-app"
-        assert loader.get_config_by_path("database.host") == "localhost"
+        assert loader.get_config_by_path(CFG_DATABASE_HOST) == "localhost"
         assert loader.get_config_by_path("database.port") == 27017
 
     def test_nested_placeholder_resolution(self, tmp_path, environment="production"):
@@ -88,7 +104,7 @@ class TestPlaceholderResolution:
             f"server.env.{environment}.json": {
                 "db.collections": ["users", "tokens", "sessions"],
             },
-            "config.json": {
+            FILE_CONFIG_JSON: {
                 "database": {"collections": "{db.collections}"},
             },
             f"{environment}.json": {},
@@ -102,10 +118,10 @@ class TestPlaceholderResolution:
         """Embedded placeholders within a string should be resolved."""
         config_path = _create_config_dir(tmp_path, {
             f"server.env.{environment}.json": {
-                "db.host": "myhost",
-                "db.port": 27017,
+                CFG_DB_HOST: "myhost",
+                CFG_DB_PORT: 27017,
             },
-            "config.json": {
+            FILE_CONFIG_JSON: {
                 "connection_string": "mongodb://{db.host}:{db.port}/mydb",
             },
             f"{environment}.json": {},
@@ -118,7 +134,7 @@ class TestPlaceholderResolution:
         """Placeholders with no matching value should be kept as-is."""
         config_path = _create_config_dir(tmp_path, {
             f"server.env.{environment}.json": {},
-            "config.json": {"item": "{nonexistent.path}"},
+            FILE_CONFIG_JSON: {"item": "{nonexistent.path}"},
             f"{environment}.json": {},
             f"localenv-{environment}.json": {},
         })
@@ -132,7 +148,7 @@ class TestPlaceholderResolution:
                 "feature.enabled": True,
                 "feature.debug": False,
             },
-            "config.json": {
+            FILE_CONFIG_JSON: {
                 "feature": {
                     "enabled": "{feature.enabled}",
                     "debug": "{feature.debug}",
@@ -152,7 +168,7 @@ class TestPlaceholderResolution:
                 "server.port": 8080,
                 "pool.size": 50,
             },
-            "config.json": {
+            FILE_CONFIG_JSON: {
                 "server": {"port": "{server.port}"},
                 "pool": {"size": "{pool.size}"},
             },
@@ -171,42 +187,42 @@ class TestLayeredOverrides:
         """localenv values should override simulator values."""
         config_path = _create_config_dir(tmp_path, {
             f"server.env.{environment}.json": {
-                "db.host": "sim-host",
-                "db.port": 27017,
+                CFG_DB_HOST: STR_SIM_HOST,
+                CFG_DB_PORT: 27017,
             },
             f"localenv-{environment}.json": {
-                "db": {"host": "localenv-host"},
+                "db": {"host": STR_LOCALENV_HOST},
             },
             f"{environment}.json": {},
-            "config.json": {
-                "database": {"host": "{db.host}", "port": "{db.port}"},
+            FILE_CONFIG_JSON: {
+                "database": {"host": JSON_DB_HOST, "port": "{db.port}"},
             },
         })
         loader = ConfigurationLoader(config_path=config_path, environment=environment)
-        assert loader.get_config_by_path("database.host") == "localenv-host"
+        assert loader.get_config_by_path(CFG_DATABASE_HOST) == STR_LOCALENV_HOST
         assert loader.get_config_by_path("database.port") == 27017
 
     def test_env_overrides_localenv(self, tmp_path, environment="staging"):
         """Environment file values should override localenv values."""
         config_path = _create_config_dir(tmp_path, {
-            f"server.env.{environment}.json": {"db.host": "sim-host"},
-            f"localenv-{environment}.json": {"db": {"host": "localenv-host"}},
+            f"server.env.{environment}.json": {CFG_DB_HOST: STR_SIM_HOST},
+            f"localenv-{environment}.json": {"db": {"host": STR_LOCALENV_HOST}},
             f"{environment}.json": {"db": {"host": "env-host"}},
-            "config.json": {"database": {"host": "{db.host}"}},
+            FILE_CONFIG_JSON: {"database": {"host": JSON_DB_HOST}},
         })
         loader = ConfigurationLoader(config_path=config_path, environment=environment)
-        assert loader.get_config_by_path("database.host") == "env-host"
+        assert loader.get_config_by_path(CFG_DATABASE_HOST) == "env-host"
 
     def test_env_file_adds_extra_properties(self, tmp_path, environment="production"):
         """Environment file should merge extra properties into final config."""
         config_path = _create_config_dir(tmp_path, {
             f"server.env.{environment}.json": {},
-            "config.json": {"app": {"name": "base-app"}},
+            FILE_CONFIG_JSON: {"app": {"name": "base-app"}},
             f"{environment}.json": {"app": {"version": "2.0"}},
             f"localenv-{environment}.json": {},
         })
         loader = ConfigurationLoader(config_path=config_path, environment=environment)
-        assert loader.get_config_by_path("app.name") == "base-app"
+        assert loader.get_config_by_path(CFG_APP_NAME) == "base-app"
         assert loader.get_config_by_path("app.version") == "2.0"
 
 
@@ -215,35 +231,35 @@ class TestMissingFiles:
 
     def test_missing_simulator_file(self, tmp_path, environment="production"):
         config_path = _create_config_dir(tmp_path, {
-            "config.json": {"app": {"name": "fallback"}},
+            FILE_CONFIG_JSON: {"app": {"name": "fallback"}},
             f"{environment}.json": {},
             f"localenv-{environment}.json": {},
         })
         loader = ConfigurationLoader(config_path=config_path, environment=environment)
-        assert loader.get_config_by_path("app.name") == "fallback"
+        assert loader.get_config_by_path(CFG_APP_NAME) == "fallback"
 
     def test_missing_localenv_file(self, tmp_path, environment="production"):
         config_path = _create_config_dir(tmp_path, {
-            f"server.env.{environment}.json": {"val": "sim-val"},
-            "config.json": {"item": "{val}"},
+            f"server.env.{environment}.json": {"val": STR_SIM_VAL},
+            FILE_CONFIG_JSON: {"item": "{val}"},
             f"{environment}.json": {},
         })
         loader = ConfigurationLoader(config_path=config_path, environment=environment)
-        assert loader.get_config_by_path("item") == "sim-val"
+        assert loader.get_config_by_path("item") == STR_SIM_VAL
 
     def test_missing_env_file(self, tmp_path, environment="production"):
         config_path = _create_config_dir(tmp_path, {
-            f"server.env.{environment}.json": {"val": "sim-val"},
-            "config.json": {"item": "{val}"},
+            f"server.env.{environment}.json": {"val": STR_SIM_VAL},
+            FILE_CONFIG_JSON: {"item": "{val}"},
             f"localenv-{environment}.json": {},
         })
         loader = ConfigurationLoader(config_path=config_path, environment=environment)
-        assert loader.get_config_by_path("item") == "sim-val"
+        assert loader.get_config_by_path("item") == STR_SIM_VAL
 
     def test_all_optional_files_missing(self, tmp_path):
         """Only config.json exists — unresolved placeholders kept."""
         config_path = _create_config_dir(tmp_path, {
-            "config.json": {"item": "{missing.val}", "static": "hello"},
+            FILE_CONFIG_JSON: {"item": "{missing.val}", "static": "hello"},
         })
         loader = ConfigurationLoader(config_path=config_path, environment="production")
         assert loader.get_config_by_path("static") == "hello"
@@ -255,20 +271,20 @@ class TestDifferentEnvironments:
 
     def test_staging_environment(self, tmp_path, environment="staging"):
         config_path = _create_config_dir(tmp_path, {
-            f"server.env.{environment}.json": {"db.host": "sim-host"},
+            f"server.env.{environment}.json": {CFG_DB_HOST: STR_SIM_HOST},
             f"localenv-{environment}.json": {},
             f"{environment}.json": {"db": {"host": "staging-db.example.com"}},
-            "config.json": {"database": {"host": "{db.host}"}},
+            FILE_CONFIG_JSON: {"database": {"host": JSON_DB_HOST}},
         })
         loader = ConfigurationLoader(config_path=config_path, environment=environment)
-        assert loader.get_config_by_path("database.host") == "staging-db.example.com"
+        assert loader.get_config_by_path(CFG_DATABASE_HOST) == "staging-db.example.com"
 
     def test_dev_environment(self, tmp_path, environment="dev"):
         config_path = _create_config_dir(tmp_path, {
             f"server.env.{environment}.json": {},
             f"localenv-{environment}.json": {"app": {"debug": True}},
             f"{environment}.json": {},
-            "config.json": {"app": {"debug": "{app.debug}"}},
+            FILE_CONFIG_JSON: {"app": {"debug": "{app.debug}"}},
         })
         loader = ConfigurationLoader(config_path=config_path, environment=environment)
         assert loader.get_config_by_path("app.debug") is True
@@ -286,7 +302,7 @@ class TestGetDBConfig:
         """get_DB_config should handle 'db_info' key."""
         config_path = _create_config_dir(tmp_path, {
             f"server.env.{environment}.json": {},
-            "config.json": {
+            FILE_CONFIG_JSON: {
                 "databases": {
                     "mydb": {
                         "db_info": {"host": "testhost", "port": 3306}
@@ -306,7 +322,7 @@ class TestGetDBConfig:
         """get_DB_config should handle flat database config (no db_info wrapper)."""
         config_path = _create_config_dir(tmp_path, {
             f"server.env.{environment}.json": {},
-            "config.json": {
+            FILE_CONFIG_JSON: {
                 "databases": {
                     "mydb": {"host": "flathost", "port": 5432}
                 }
@@ -322,7 +338,7 @@ class TestGetDBConfig:
     def test_nonexistent_token_returns_none(self, tmp_path, environment="production"):
         config_path = _create_config_dir(tmp_path, {
             f"server.env.{environment}.json": {},
-            "config.json": {"databases": {}},
+            FILE_CONFIG_JSON: {"databases": {}},
             f"{environment}.json": {},
             f"localenv-{environment}.json": {},
         })
@@ -333,7 +349,7 @@ class TestGetDBConfig:
         """Returned config should be a deep copy — mutations don't affect loader."""
         config_path = _create_config_dir(tmp_path, {
             f"server.env.{environment}.json": {},
-            "config.json": {
+            FILE_CONFIG_JSON: {
                 "databases": {
                     "mydb": {"db_info": {"host": "original"}}
                 }
@@ -358,14 +374,14 @@ class TestConfigValueSimulator:
 
     def test_load_simulator_sets_env_vars(self, tmp_path):
         sep = OS_PROPERTY_SEPRATOR
-        sim_file = tmp_path / "sim.json"
+        sim_file = tmp_path / FILE_SIM_JSON
         sim_file.write_text(json.dumps({
             f"app{sep}name": "test",
             f"db{sep}port": 5432,
         }))
         result = ConfigValueSimulator.load_simulator_file(str(sim_file), "TESTSIM")
         assert os.environ.get(f"TESTSIM_APP{sep}NAME") == "test"
-        assert os.environ.get(f"TESTSIM_DB{sep}PORT") == "5432"
+        assert os.environ.get(f"TESTSIM_DB{sep}PORT") == NUM_5432
         assert result == {f"app{sep}name": "test", f"db{sep}port": 5432}
 
     def test_load_simulator_handles_missing_file(self):
@@ -374,7 +390,7 @@ class TestConfigValueSimulator:
 
     def test_load_simulator_handles_complex_values(self, tmp_path):
         sep = OS_PROPERTY_SEPRATOR
-        sim_file = tmp_path / "sim.json"
+        sim_file = tmp_path / FILE_SIM_JSON
         sim_file.write_text(json.dumps({
             f"db{sep}collections": ["users", "tokens"],
             f"feature{sep}flags": {"debug": True},
@@ -385,7 +401,7 @@ class TestConfigValueSimulator:
 
     def test_load_simulator_handles_booleans(self, tmp_path):
         sep = OS_PROPERTY_SEPRATOR
-        sim_file = tmp_path / "sim.json"
+        sim_file = tmp_path / FILE_SIM_JSON
         sim_file.write_text(json.dumps({
             f"feature{sep}enabled": True,
             f"feature{sep}debug": False,
@@ -396,10 +412,10 @@ class TestConfigValueSimulator:
 
     def test_set_os_environment(self):
         sep = OS_PROPERTY_SEPRATOR
-        values = {"db": {"host": "localhost", "port": "5432"}, "name": "app"}
+        values = {"db": {"host": "localhost", "port": NUM_5432}, "name": "app"}
         ConfigValueSimulator.set_os_environment(values, "TESTSET")
         assert os.environ.get(f"TESTSET_DB{sep}HOST") == "localhost"
-        assert os.environ.get(f"TESTSET_DB{sep}PORT") == "5432"
+        assert os.environ.get(f"TESTSET_DB{sep}PORT") == NUM_5432
         assert os.environ.get("TESTSET_NAME") == "app"
 
 
@@ -419,7 +435,7 @@ class TestRealConfigFiles:
     def config_path(self, tmp_path):
         return _create_config_dir(tmp_path, {
             "server.env.production.json": SIMULATOR_DATA,
-            "config.json": CONFIG_JSON,
+            FILE_CONFIG_JSON: CONFIG_JSON,
             "production.json": {},
             "localenv-production.json": {},
         })

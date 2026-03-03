@@ -6,6 +6,9 @@ from bson import ObjectId
 
 from easylifeauth.services.playboard_service import PlayboardService
 from easylifeauth.errors.playboard_error import PlayboardNotFoundError, PlayboardBadError
+OID_9015 = "507f1f77bcf86cd799439015"
+OID_9099 = "507f1f77bcf86cd799439099"
+
 
 
 class TestPlayboardService:
@@ -85,7 +88,7 @@ class TestPlayboardService:
         """Test getting playboard by ObjectId"""
         mock_db.playboards.find_one = AsyncMock(return_value=sample_playboard_data)
 
-        result = await playboard_service.get("507f1f77bcf86cd799439015")
+        result = await playboard_service.get(OID_9015)
 
         assert result is not None
 
@@ -103,7 +106,7 @@ class TestPlayboardService:
         """Test getting non-existent playboard"""
         mock_db.playboards.find_one = AsyncMock(return_value=None)
 
-        result = await playboard_service.get("507f1f77bcf86cd799439099")
+        result = await playboard_service.get(OID_9099)
 
         assert result is None
 
@@ -143,7 +146,7 @@ class TestPlayboardService:
         mock_db.playboards.find_one = AsyncMock(return_value=sample_playboard_data)
 
         result = await playboard_service.update(
-            {"_id": "507f1f77bcf86cd799439015", "order": 2},
+            {"_id": OID_9015, "order": 2},
             user_id="507f1f77bcf86cd799439011"
         )
 
@@ -158,7 +161,7 @@ class TestPlayboardService:
 
         with pytest.raises(PlayboardNotFoundError):
             await playboard_service.update(
-                {"_id": "507f1f77bcf86cd799439099", "order": 2},
+                {"_id": OID_9099, "order": 2},
                 user_id="test"
             )
 
@@ -170,7 +173,7 @@ class TestPlayboardService:
         )
         mock_db.playboards.find_one = AsyncMock(return_value=sample_playboard_data)
 
-        result = await playboard_service.update_status("507f1f77bcf86cd799439015", "I")
+        result = await playboard_service.update_status(OID_9015, "I")
 
         assert result is not None
 
@@ -188,7 +191,7 @@ class TestPlayboardService:
         )
 
         with pytest.raises(PlayboardBadError):
-            await playboard_service.update_status("507f1f77bcf86cd799439099", "A")
+            await playboard_service.update_status(OID_9099, "A")
 
     @pytest.mark.asyncio
     async def test_delete_success(self, playboard_service, mock_db):
@@ -197,7 +200,7 @@ class TestPlayboardService:
             return_value=MagicMock(matched_count=1)
         )
 
-        result = await playboard_service.delete("507f1f77bcf86cd799439015")
+        result = await playboard_service.delete(OID_9015)
 
         assert result["message"] == "Playboard deleted successfully"
 
@@ -209,4 +212,4 @@ class TestPlayboardService:
         )
 
         with pytest.raises(PlayboardNotFoundError):
-            await playboard_service.delete("507f1f77bcf86cd799439099")
+            await playboard_service.delete(OID_9099)

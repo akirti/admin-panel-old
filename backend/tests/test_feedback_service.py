@@ -9,6 +9,8 @@ from easylifeauth.services.feedback_service import FeedbackService
 from easylifeauth.errors.auth_error import AuthError
 
 EXPECTED_EMAIL_FAILED = "Email failed"
+OID_9016 = "507f1f77bcf86cd799439016"
+
 
 
 
@@ -90,7 +92,7 @@ class TestFeedbackService:
         mock_db.feedbacks.find_one = AsyncMock(return_value=sample_feedback_data)
         
         result = await feedback_service.update({
-            "feedback_id": "507f1f77bcf86cd799439016",
+            "feedback_id": OID_9016,
             "rating": 4
         })
         
@@ -108,7 +110,7 @@ class TestFeedbackService:
         """Test updating with only feedback_id and no other fields"""
         with pytest.raises(AuthError) as exc_info:
             await feedback_service.update({
-                "feedback_id": "507f1f77bcf86cd799439016"
+                "feedback_id": OID_9016
             })
         assert exc_info.value.status_code == 400
 
@@ -131,7 +133,7 @@ class TestFeedbackService:
         """Test getting feedback"""
         mock_db.feedbacks.find_one = AsyncMock(return_value=sample_feedback_data)
         
-        result = await feedback_service.get("507f1f77bcf86cd799439016")
+        result = await feedback_service.get(OID_9016)
         
         assert result is not None
         assert result["rating"] == 5
@@ -165,7 +167,7 @@ class TestFeedbackService:
 
         # Should not raise, just log the error
         result = await feedback_service.update({
-            "feedback_id": "507f1f77bcf86cd799439016",
+            "feedback_id": OID_9016,
             "rating": 4
         })
 
@@ -549,7 +551,7 @@ class TestFeedbackService:
     async def test_update_without_email_in_feedback(self, feedback_service, mock_db, mock_email_service):
         """Test updating feedback that has no email field"""
         feedback_without_email = {
-            "_id": ObjectId("507f1f77bcf86cd799439016"),
+            "_id": ObjectId(OID_9016),
             "rating": 5,
             "improvements": "None"
         }
@@ -558,7 +560,7 @@ class TestFeedbackService:
         mock_db.feedbacks.find_one = AsyncMock(return_value=feedback_without_email)
 
         result = await feedback_service.update({
-            "feedback_id": "507f1f77bcf86cd799439016",
+            "feedback_id": OID_9016,
             "rating": 4
         })
 

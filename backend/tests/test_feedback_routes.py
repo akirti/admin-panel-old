@@ -16,6 +16,11 @@ PATH_FEEDBACK_ADMIN_LIST = "/feedback/admin/list"
 PATH_FEEDBACK_STATS = "/feedback/stats"
 
 EXPECTED_GREAT_APP = "Great app!"
+STR_ERROR = "Error"
+STR_GREAT = "Great!"
+SUBPATH_FEEDBACK = "/feedback/"
+
+
 
 
 
@@ -89,7 +94,7 @@ class TestFeedbackRoutes:
 
     def test_create_public_feedback_error(self, client, mock_feedback_service):
         """Test create public feedback with error"""
-        mock_feedback_service.save_public = AsyncMock(side_effect=AuthError("Error"))
+        mock_feedback_service.save_public = AsyncMock(side_effect=AuthError(STR_ERROR))
 
         feedback_data = {
             "rating": 5,
@@ -129,7 +134,7 @@ class TestFeedbackRoutes:
 
     def test_get_feedback_stats_error(self, admin_client, mock_feedback_service):
         """Test get feedback stats with error"""
-        mock_feedback_service.get_stats = AsyncMock(side_effect=AuthError("Error"))
+        mock_feedback_service.get_stats = AsyncMock(side_effect=AuthError(STR_ERROR))
 
         response = admin_client.get(PATH_FEEDBACK_STATS)
         assert response.status_code == 400
@@ -137,7 +142,7 @@ class TestFeedbackRoutes:
     def test_get_all_feedback(self, client, mock_feedback_service, mock_user):
         """Test get all feedback endpoint"""
         result = [
-            {"id": str(ObjectId()), "rating": 5, "feedback": "Great!"},
+            {"id": str(ObjectId()), "rating": 5, "feedback": STR_GREAT},
             {"id": str(ObjectId()), "rating": 4, "feedback": "Good!"}
         ]
         mock_feedback_service.get_all = AsyncMock(return_value=result)
@@ -149,7 +154,7 @@ class TestFeedbackRoutes:
 
     def test_get_all_feedback_error(self, client, mock_feedback_service):
         """Test get all feedback with error"""
-        mock_feedback_service.get_all = AsyncMock(side_effect=AuthError("Error"))
+        mock_feedback_service.get_all = AsyncMock(side_effect=AuthError(STR_ERROR))
 
         response = client.get("/feedback/all")
         assert response.status_code == 400
@@ -158,7 +163,7 @@ class TestFeedbackRoutes:
         """Test get admin feedback list with pagination"""
         result = {
             "data": [
-                {"id": str(ObjectId()), "rating": 5, "feedback": "Great!"},
+                {"id": str(ObjectId()), "rating": 5, "feedback": STR_GREAT},
                 {"id": str(ObjectId()), "rating": 4, "feedback": "Good!"}
             ],
             "pagination": {"total": 2, "page": 0, "limit": 25}
@@ -188,7 +193,7 @@ class TestFeedbackRoutes:
 
     def test_get_admin_feedback_list_error(self, admin_client, mock_feedback_service):
         """Test get admin feedback list with error"""
-        mock_feedback_service.get_paginated = AsyncMock(side_effect=AuthError("Error"))
+        mock_feedback_service.get_paginated = AsyncMock(side_effect=AuthError(STR_ERROR))
 
         response = admin_client.get(PATH_FEEDBACK_ADMIN_LIST)
         assert response.status_code == 400
@@ -214,7 +219,7 @@ class TestFeedbackRoutes:
 
     def test_create_feedback_error(self, client, mock_feedback_service):
         """Test create feedback with error"""
-        mock_feedback_service.save = AsyncMock(side_effect=AuthError("Error"))
+        mock_feedback_service.save = AsyncMock(side_effect=AuthError(STR_ERROR))
 
         feedback_data = {
             "rating": 5,
@@ -263,7 +268,7 @@ class TestFeedbackRoutes:
         result = {
             "id": feedback_id,
             "rating": 5,
-            "feedback": "Great!"
+            "feedback": STR_GREAT
         }
         mock_feedback_service.get = AsyncMock(return_value=result)
 

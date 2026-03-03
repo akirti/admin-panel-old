@@ -16,6 +16,8 @@ EXPECTED_UPDATED_NAME = "Updated Name"
 PATH_AUTH_PROFILE = "/auth/profile"
 
 EXPECTED_TEST_USER = "Test User"
+OID_9011 = "507f1f77bcf86cd799439011"
+
 
 
 
@@ -94,7 +96,7 @@ class TestAuthRoutes:
     def test_register_success(self, client, mock_user_service):
         """Test successful user registration"""
         mock_user_service.register_user.return_value = {
-            "user_id": "507f1f77bcf86cd799439011",
+            "user_id": OID_9011,
             "email": MOCK_EMAIL,
             "username": "testuser",
             "full_name": EXPECTED_TEST_USER,
@@ -135,7 +137,7 @@ class TestAuthRoutes:
     def test_login_success(self, client, mock_user_service, mock_activity_log):
         """Test successful login"""
         mock_user_service.login_user.return_value = {
-            "user_id": "507f1f77bcf86cd799439011",
+            "user_id": OID_9011,
             "email": MOCK_EMAIL,
             "username": "testuser",
             "full_name": EXPECTED_TEST_USER,
@@ -145,7 +147,7 @@ class TestAuthRoutes:
             "access_token": "test_token",
             "refresh_token": "refresh_token",
             "expires_in": 3600,
-            "user": {"_id": "507f1f77bcf86cd799439011", "email": MOCK_EMAIL}
+            "user": {"_id": OID_9011, "email": MOCK_EMAIL}
         }
 
         response = client.post("/auth/login", json={
@@ -174,7 +176,7 @@ class TestAuthRoutes:
     def test_refresh_token_success(self, client, mock_token_manager, mock_db):
         """Test successful token refresh"""
         mock_token_manager.refresh_access_token.return_value = {
-            "user_id": "507f1f77bcf86cd799439011",
+            "user_id": OID_9011,
             "email": MOCK_EMAIL,
             "username": "testuser",
             "roles": ["user"],
@@ -268,7 +270,7 @@ class TestAuthRoutesProtected:
     def mock_current_user(self):
         """Create mock current user"""
         return CurrentUser(
-            user_id="507f1f77bcf86cd799439011",
+            user_id=OID_9011,
             email=MOCK_EMAIL,
             roles=["user"],
             groups=[],
@@ -313,7 +315,7 @@ class TestAuthRoutesProtected:
     def test_get_profile_success(self, client, mock_user_service):
         """Test getting user profile"""
         mock_user_service.get_user_by_id.return_value = {
-            "user_id": "507f1f77bcf86cd799439011",
+            "user_id": OID_9011,
             "email": MOCK_EMAIL,
             "username": "testuser",
             "full_name": EXPECTED_TEST_USER,
@@ -338,7 +340,7 @@ class TestAuthRoutesProtected:
     def test_update_profile_success(self, client, mock_user_service):
         """Test updating user profile"""
         mock_user_service.update_user_data.return_value = {
-            "user_id": "507f1f77bcf86cd799439011",
+            "user_id": OID_9011,
             "email": MOCK_EMAIL,
             "username": "testuser",
             "full_name": EXPECTED_UPDATED_NAME,
@@ -359,7 +361,7 @@ class TestAuthRoutesProtected:
     def test_update_password_success(self, client, mock_password_service):
         """Test updating password"""
         mock_password_service.update_user_password.return_value = {
-            "user_id": "507f1f77bcf86cd799439011",
+            "user_id": OID_9011,
             "email": MOCK_EMAIL,
             "username": "testuser",
             "roles": ["user"],

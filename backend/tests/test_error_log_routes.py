@@ -16,6 +16,14 @@ PATH_ERROR_LOGS_FORCE_ARCHIVE = "/error-logs/force-archive"
 PATH_ERROR_LOGS_LEVELS = "/error-logs/levels"
 PATH_ERROR_LOGS_STATS = "/error-logs/stats"
 PATH_ERROR_LOGS_TYPES = "/error-logs/types"
+ERR_KEYERROR = "KeyError"
+ERR_RUNTIMEERROR = "RuntimeError"
+ERR_VALUEERROR = "ValueError"
+LEVEL_CRITICAL = "CRITICAL"
+LEVEL_ERROR = "ERROR"
+LEVEL_WARNING = "WARNING"
+STR_NOT_INITIALIZED = "not initialized"
+
 
 
 
@@ -139,8 +147,8 @@ class TestErrorLogRoutes:
             "logs": [
                 {
                     "_id": "abc123",
-                    "level": "ERROR",
-                    "error_type": "ValueError",
+                    "level": LEVEL_ERROR,
+                    "error_type": ERR_VALUEERROR,
                     "message": "Something went wrong",
                     "timestamp": "2026-01-15T10:00:00"
                 }
@@ -155,7 +163,7 @@ class TestErrorLogRoutes:
         assert "data" in data
         assert "pagination" in data
         assert len(data["data"]) == 1
-        assert data["data"][0]["level"] == "ERROR"
+        assert data["data"][0]["level"] == LEVEL_ERROR
         assert data["pagination"]["total"] == 1
         assert data["pagination"]["page"] == 0
         assert data["pagination"]["limit"] == 25
@@ -187,7 +195,7 @@ class TestErrorLogRoutes:
         assert response.status_code == 200
 
         mock_service.get_current_logs.assert_awaited_once_with(
-            limit=25, offset=0, filters={"level": "CRITICAL"}
+            limit=25, offset=0, filters={"level": LEVEL_CRITICAL}
         )
 
     def test_list_error_logs_with_error_type_filter(self, client, mock_service):
@@ -198,7 +206,7 @@ class TestErrorLogRoutes:
         assert response.status_code == 200
 
         mock_service.get_current_logs.assert_awaited_once_with(
-            limit=25, offset=0, filters={"error_type": "ValueError"}
+            limit=25, offset=0, filters={"error_type": ERR_VALUEERROR}
         )
 
     def test_list_error_logs_with_search_filter(self, client, mock_service):
@@ -236,8 +244,8 @@ class TestErrorLogRoutes:
             limit=50,
             offset=50,
             filters={
-                "level": "ERROR",
-                "error_type": "KeyError",
+                "level": LEVEL_ERROR,
+                "error_type": ERR_KEYERROR,
                 "search": "missing",
                 "days": 30,
             }
@@ -258,7 +266,7 @@ class TestErrorLogRoutes:
         """Test listing error logs when service is None returns 503."""
         response = client_no_service.get(PATH_ERROR_LOGS)
         assert response.status_code == 503
-        assert "not initialized" in response.json()["detail"]
+        assert STR_NOT_INITIALIZED in response.json()["detail"]
 
     def test_list_error_logs_invalid_page(self, client):
         """Test that a negative page value is rejected by query validation."""
@@ -284,10 +292,10 @@ class TestErrorLogRoutes:
         mock_service.get_stats.return_value = {
             "total": 42,
             "days": 7,
-            "by_level": {"ERROR": 30, "WARNING": 10, "CRITICAL": 2},
+            "by_level": {LEVEL_ERROR: 30, LEVEL_WARNING: 10, LEVEL_CRITICAL: 2},
             "by_type": [
-                {"type": "ValueError", "count": 20},
-                {"type": "KeyError", "count": 12},
+                {"type": ERR_VALUEERROR, "count": 20},
+                {"type": ERR_KEYERROR, "count": 12},
             ],
             "timeline": [
                 {"date": "2026-01-10", "count": 5},
@@ -320,7 +328,7 @@ class TestErrorLogRoutes:
         """Test getting error stats when service is None returns 503."""
         response = client_no_service.get(PATH_ERROR_LOGS_STATS)
         assert response.status_code == 503
-        assert "not initialized" in response.json()["detail"]
+        assert STR_NOT_INITIALIZED in response.json()["detail"]
 
     def test_get_error_stats_invalid_days(self, client):
         """Test that days=0 is rejected by query validation."""
@@ -338,14 +346,14 @@ class TestErrorLogRoutes:
 
     def test_get_available_levels_success(self, client, mock_service):
         """Test getting available log levels from the service."""
-        mock_service.get_levels.return_value = ["CRITICAL", "ERROR", "WARNING"]
+        mock_service.get_levels.return_value = [LEVEL_CRITICAL, LEVEL_ERROR, LEVEL_WARNING]
 
         response = client.get(PATH_ERROR_LOGS_LEVELS)
         assert response.status_code == 200
 
         data = response.json()
         assert "levels" in data
-        assert sorted(data["levels"]) == ["CRITICAL", "ERROR", "WARNING"]
+        assert sorted(data["levels"]) == [LEVEL_CRITICAL, LEVEL_ERROR, LEVEL_WARNING]
 
         mock_service.get_levels.assert_awaited_once()
 
@@ -356,9 +364,9 @@ class TestErrorLogRoutes:
 
         data = response.json()
         assert "levels" in data
-        assert "ERROR" in data["levels"]
-        assert "WARNING" in data["levels"]
-        assert "CRITICAL" in data["levels"]
+        assert LEVEL_ERROR in data["levels"]
+        assert LEVEL_WARNING in data["levels"]
+        assert LEVEL_CRITICAL in data["levels"]
 
     # ------------------------------------------------------------------ #
     # GET /error-logs/types  (get_available_types)
@@ -367,7 +375,7 @@ class TestErrorLogRoutes:
     def test_get_available_types_success(self, client, mock_service):
         """Test getting available error types from the service."""
         mock_service.get_error_types.return_value = [
-            "KeyError", "RuntimeError", "ValueError"
+            ERR_KEYERROR, ERR_RUNTIMEERROR, ERR_VALUEERROR
         ]
 
         response = client.get(PATH_ERROR_LOGS_TYPES)
@@ -376,7 +384,7 @@ class TestErrorLogRoutes:
         data = response.json()
         assert "types" in data
         assert len(data["types"]) == 3
-        assert "ValueError" in data["types"]
+        assert ERR_VALUEERROR in data["types"]
 
         mock_service.get_error_types.assert_awaited_once()
 
@@ -404,7 +412,7 @@ class TestErrorLogRoutes:
         """Test getting current log file content."""
         mock_service.get_current_file_content.return_value = {
             "entries": [
-                {"level": "ERROR", "message": "Something failed", "timestamp": "2026-01-15T10:00:00"}
+                {"level": LEVEL_ERROR, "message": "Something failed", "timestamp": "2026-01-15T10:00:00"}
             ],
             "file_size_mb": 1.2,
             "file_path": MOCK_PATH_ERROR_LOG,
@@ -440,7 +448,7 @@ class TestErrorLogRoutes:
         """Test getting current file content when service is None returns 503."""
         response = client_no_service.get(PATH_ERROR_LOGS_CURRENT_FILE)
         assert response.status_code == 503
-        assert "not initialized" in response.json()["detail"]
+        assert STR_NOT_INITIALIZED in response.json()["detail"]
 
     def test_get_current_file_content_lines_too_low(self, client):
         """Test that lines=0 is rejected by query validation."""
@@ -506,7 +514,7 @@ class TestErrorLogRoutes:
         """Test listing archives when service is None returns 503."""
         response = client_no_service.get(PATH_ERROR_LOGS_ARCHIVES)
         assert response.status_code == 503
-        assert "not initialized" in response.json()["detail"]
+        assert STR_NOT_INITIALIZED in response.json()["detail"]
 
     # ------------------------------------------------------------------ #
     # GET /error-logs/archives/{archive_id}/download
@@ -557,7 +565,7 @@ class TestErrorLogRoutes:
         """Test getting download URL when service is None returns 503."""
         response = client_no_service.get("/error-logs/archives/aabbccdd/download")
         assert response.status_code == 503
-        assert "not initialized" in response.json()["detail"]
+        assert STR_NOT_INITIALIZED in response.json()["detail"]
 
     def test_get_archive_download_url_expiration_too_low(self, client):
         """Test that expiration_minutes below 5 is rejected."""
@@ -598,7 +606,7 @@ class TestErrorLogRoutes:
         """Test deleting an archive when service is None returns 503."""
         response = client_no_service.delete("/error-logs/archives/aabbccdd")
         assert response.status_code == 503
-        assert "not initialized" in response.json()["detail"]
+        assert STR_NOT_INITIALIZED in response.json()["detail"]
 
     # ------------------------------------------------------------------ #
     # POST /error-logs/force-archive  (force_archive)
@@ -640,7 +648,7 @@ class TestErrorLogRoutes:
         """Test force archive when service is None returns 503."""
         response = client_no_service.post(PATH_ERROR_LOGS_FORCE_ARCHIVE)
         assert response.status_code == 503
-        assert "not initialized" in response.json()["detail"]
+        assert STR_NOT_INITIALIZED in response.json()["detail"]
 
     def test_force_archive_partial_result(self, client, mock_service):
         """Test force archive when the result has some missing keys."""
@@ -739,7 +747,7 @@ class TestErrorLogRoutes:
         """Test cleanup when service is None returns 503."""
         response = client_no_service.delete("/error-logs/cleanup?days=90")
         assert response.status_code == 503
-        assert "not initialized" in response.json()["detail"]
+        assert STR_NOT_INITIALIZED in response.json()["detail"]
 
     def test_cleanup_old_archives_invalid_days(self, client):
         """Test that days=0 is rejected by query validation."""
@@ -765,7 +773,7 @@ class TestErrorLogRoutes:
         # Endpoints that return default values instead of 503
         levels_resp = client_no_service.get(PATH_ERROR_LOGS_LEVELS)
         assert levels_resp.status_code == 200
-        assert "ERROR" in levels_resp.json()["levels"]
+        assert LEVEL_ERROR in levels_resp.json()["levels"]
 
         types_resp = client_no_service.get(PATH_ERROR_LOGS_TYPES)
         assert types_resp.status_code == 200
@@ -786,11 +794,11 @@ class TestErrorLogRoutes:
                 "timestamp": f"2026-01-{15 + i}T10:00:00"
             }
             for i, (level, etype) in enumerate([
-                ("ERROR", "ValueError"),
-                ("WARNING", "DeprecationWarning"),
-                ("CRITICAL", "SystemExit"),
-                ("ERROR", "KeyError"),
-                ("ERROR", "RuntimeError"),
+                (LEVEL_ERROR, ERR_VALUEERROR),
+                (LEVEL_WARNING, "DeprecationWarning"),
+                (LEVEL_CRITICAL, "SystemExit"),
+                (LEVEL_ERROR, ERR_KEYERROR),
+                (LEVEL_ERROR, ERR_RUNTIMEERROR),
             ])
         ]
 
@@ -839,13 +847,13 @@ class TestErrorLogRoutes:
         full_stats = {
             "total": 150,
             "days": 14,
-            "by_level": {"ERROR": 100, "WARNING": 40, "CRITICAL": 10},
+            "by_level": {LEVEL_ERROR: 100, LEVEL_WARNING: 40, LEVEL_CRITICAL: 10},
             "by_type": [
-                {"type": "ValueError", "count": 50},
-                {"type": "KeyError", "count": 30},
+                {"type": ERR_VALUEERROR, "count": 50},
+                {"type": ERR_KEYERROR, "count": 30},
                 {"type": "TypeError", "count": 20},
                 {"type": "AttributeError", "count": 15},
-                {"type": "RuntimeError", "count": 10},
+                {"type": ERR_RUNTIMEERROR, "count": 10},
             ],
             "timeline": [
                 {"date": "2026-01-01", "count": 10},
@@ -866,7 +874,7 @@ class TestErrorLogRoutes:
         entries = [
             {
                 "timestamp": f"2026-02-20T10:0{i}:00",
-                "level": "ERROR",
+                "level": LEVEL_ERROR,
                 "error_type": "TestError",
                 "message": f"Test error message {i}"
             }

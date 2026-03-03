@@ -12,6 +12,8 @@ from easylifeauth.api.health_routes import (
 from easylifeauth.api.dependencies import get_db
 from easylifeauth.security.access_control import CurrentUser, require_admin
 from mock_data import MOCK_EMAIL_ADMIN_TEST
+PATCH_HEALTH_ROUTES_PSUTIL = "easylifeauth.api.health_routes.psutil"
+
 
 
 class TestHealthRoutes:
@@ -162,7 +164,7 @@ class TestCacheDecorator:
 class TestSystemMetrics:
     """Tests for system metrics functions"""
 
-    @patch('easylifeauth.api.health_routes.psutil')
+    @patch(PATCH_HEALTH_ROUTES_PSUTIL)
     def test_get_system_metrics_success(self, mock_psutil):
         """Test getting system metrics successfully"""
         # Clear cache
@@ -211,7 +213,7 @@ class TestSystemMetrics:
         assert result["memory"]["status"] == "healthy"
         assert result["disk"]["status"] == "healthy"
 
-    @patch('easylifeauth.api.health_routes.psutil')
+    @patch(PATCH_HEALTH_ROUTES_PSUTIL)
     def test_get_system_metrics_high_usage_warning(self, mock_psutil):
         """Test system metrics returns warning on high usage"""
         # Clear cache
@@ -250,7 +252,7 @@ class TestSystemMetrics:
         result = get_system_metrics()
         assert result["cpu"]["status"] == "warning"
 
-    @patch('easylifeauth.api.health_routes.psutil')
+    @patch(PATCH_HEALTH_ROUTES_PSUTIL)
     def test_get_system_metrics_error(self, mock_psutil):
         """Test system metrics handles errors"""
         # Clear cache

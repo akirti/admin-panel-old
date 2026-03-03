@@ -10,6 +10,13 @@ from mock_data import MOCK_EMAIL, MOCK_EMAIL_DELETE, MOCK_PASSWORD_HASH
 
 EXPECTED_USER_DOMAINS_UPDATED_SUCCESSFULLY = "User domains updated successfully"
 EXPECTED_USER_ROLE_UPDATED_SUCCESSFULLY = "User role updated successfully"
+OID_9011 = "507f1f77bcf86cd799439011"
+OID_9099 = "507f1f77bcf86cd799439099"
+STR_DOMAIN1 = "domain1"
+STR_GROUP_ADMINISTRATOR = "group-administrator"
+STR_SUPER_ADMINISTRATOR = "super-administrator"
+STR_TEAM_A = "team-a"
+
 
 
 
@@ -56,7 +63,7 @@ class TestAdminService:
         mock_db.users.count_documents = AsyncMock(return_value=1)
         
         result = await admin_service.get_all_users(
-            current_user={"roles": ["group-administrator"], "groups": ["team-a"]},
+            current_user={"roles": [STR_GROUP_ADMINISTRATOR], "groups": [STR_TEAM_A]},
             pagination={"page": 0, "limit": 25}
         )
         
@@ -68,7 +75,7 @@ class TestAdminService:
         mock_db.users.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
         
         result = await admin_service.update_user_status(
-            "507f1f77bcf86cd799439011",
+            OID_9011,
             True
         )
         
@@ -80,7 +87,7 @@ class TestAdminService:
         mock_db.users.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
         
         result = await admin_service.update_user_status(
-            "507f1f77bcf86cd799439011",
+            OID_9011,
             False
         )
         
@@ -93,7 +100,7 @@ class TestAdminService:
 
         with pytest.raises(AuthError) as exc_info:
             await admin_service.update_user_status(
-                "507f1f77bcf86cd799439099",
+                OID_9099,
                 True
             )
         assert exc_info.value.status_code == 404
@@ -104,7 +111,7 @@ class TestAdminService:
         mock_db.users.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
         
         result = await admin_service.update_user_role(
-            "507f1f77bcf86cd799439011",
+            OID_9011,
             ["user", "editor"]
         )
         
@@ -115,7 +122,7 @@ class TestAdminService:
         """Test updating with invalid roles"""
         with pytest.raises(AuthError) as exc_info:
             await admin_service.update_user_role(
-                "507f1f77bcf86cd799439011",
+                OID_9011,
                 ["invalid_role"]
             )
         assert exc_info.value.status_code == 400
@@ -127,7 +134,7 @@ class TestAdminService:
 
         with pytest.raises(AuthError) as exc_info:
             await admin_service.update_user_role(
-                "507f1f77bcf86cd799439099",
+                OID_9099,
                 ["user"]
             )
         assert exc_info.value.status_code == 404
@@ -138,7 +145,7 @@ class TestAdminService:
         mock_db.users.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
         
         result = await admin_service.update_user_groups(
-            "507f1f77bcf86cd799439011",
+            OID_9011,
             ["viewer", "editor"]
         )
         
@@ -151,7 +158,7 @@ class TestAdminService:
 
         with pytest.raises(AuthError) as exc_info:
             await admin_service.update_user_groups(
-                "507f1f77bcf86cd799439099",
+                OID_9099,
                 ["viewer"]
             )
         assert exc_info.value.status_code == 404
@@ -162,8 +169,8 @@ class TestAdminService:
         mock_db.users.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
         
         result = await admin_service.update_user_domains(
-            "507f1f77bcf86cd799439011",
-            ["domain1", "domain2"]
+            OID_9011,
+            [STR_DOMAIN1, "domain2"]
         )
         
         assert result["message"] == EXPECTED_USER_DOMAINS_UPDATED_SUCCESSFULLY
@@ -175,8 +182,8 @@ class TestAdminService:
 
         with pytest.raises(AuthError) as exc_info:
             await admin_service.update_user_domains(
-                "507f1f77bcf86cd799439099",
-                ["domain1"]
+                OID_9099,
+                [STR_DOMAIN1]
             )
         assert exc_info.value.status_code == 404
 
@@ -196,7 +203,7 @@ class TestAdminService:
         mock_db.users.count_documents = AsyncMock(return_value=1)
 
         result = await admin_service.get_all_users(
-            current_user={"roles": ["super-administrator"]},
+            current_user={"roles": [STR_SUPER_ADMINISTRATOR]},
             pagination={"page": 0, "limit": 25}
         )
 
@@ -263,12 +270,12 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_update_user_status_with_permission_check(self, admin_service, mock_db):
         """Test updating user status with permission check"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "roles": ["user"],
-            "groups": ["team-a"],
-            "domains": ["domain1"]
+            "groups": [STR_TEAM_A],
+            "domains": [STR_DOMAIN1]
         }
 
         mock_db.users.find_one = AsyncMock(return_value=target_user)
@@ -278,7 +285,7 @@ class TestAdminService:
         result = await admin_service.update_user_status(
             target_user_id,
             True,
-            current_user={"roles": ["super-administrator"]}
+            current_user={"roles": [STR_SUPER_ADMINISTRATOR]}
         )
 
         assert "activated" in result["message"]
@@ -286,11 +293,11 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_update_user_status_admin_managing_user(self, admin_service, mock_db):
         """Test admin updating regular user status"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "roles": ["user"],
-            "groups": ["team-a"]
+            "groups": [STR_TEAM_A]
         }
 
         mock_db.users.find_one = AsyncMock(return_value=target_user)
@@ -307,10 +314,10 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_update_user_status_admin_cannot_manage_super_admin(self, admin_service, mock_db):
         """Test that admin cannot manage super-admin"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
-            "roles": ["super-administrator"]
+            "roles": [STR_SUPER_ADMINISTRATOR]
         }
 
         mock_db.users.find_one = AsyncMock(return_value=target_user)
@@ -322,16 +329,16 @@ class TestAdminService:
                 current_user={"roles": ["administrator"]}
             )
         assert exc_info.value.status_code == 403
-        assert "super-administrator" in exc_info.value.message
+        assert STR_SUPER_ADMINISTRATOR in exc_info.value.message
 
     @pytest.mark.asyncio
     async def test_update_user_status_group_admin_same_group(self, admin_service, mock_db):
         """Test group admin can manage users in same group"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "roles": ["user"],
-            "groups": ["team-a"],
+            "groups": [STR_TEAM_A],
             "domains": []
         }
 
@@ -342,8 +349,8 @@ class TestAdminService:
             target_user_id,
             True,
             current_user={
-                "roles": ["group-administrator"],
-                "groups": ["team-a"],
+                "roles": [STR_GROUP_ADMINISTRATOR],
+                "groups": [STR_TEAM_A],
                 "domains": []
             }
         )
@@ -353,7 +360,7 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_update_user_status_group_admin_same_domain(self, admin_service, mock_db):
         """Test group admin can manage users in same domain"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "roles": ["user"],
@@ -368,7 +375,7 @@ class TestAdminService:
             target_user_id,
             True,
             current_user={
-                "roles": ["group-administrator"],
+                "roles": [STR_GROUP_ADMINISTRATOR],
                 "groups": [],
                 "domains": ["finance"]
             }
@@ -379,11 +386,11 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_update_user_status_group_admin_cannot_manage_admin(self, admin_service, mock_db):
         """Test group admin cannot manage administrator"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "roles": ["administrator"],
-            "groups": ["team-a"]
+            "groups": [STR_TEAM_A]
         }
 
         mock_db.users.find_one = AsyncMock(return_value=target_user)
@@ -393,8 +400,8 @@ class TestAdminService:
                 target_user_id,
                 False,
                 current_user={
-                    "roles": ["group-administrator"],
-                    "groups": ["team-a"],
+                    "roles": [STR_GROUP_ADMINISTRATOR],
+                    "groups": [STR_TEAM_A],
                     "domains": []
                 }
             )
@@ -403,7 +410,7 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_update_user_status_group_admin_different_group(self, admin_service, mock_db):
         """Test group admin cannot manage users in different group"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "roles": ["user"],
@@ -418,8 +425,8 @@ class TestAdminService:
                 target_user_id,
                 False,
                 current_user={
-                    "roles": ["group-administrator"],
-                    "groups": ["team-a"],
+                    "roles": [STR_GROUP_ADMINISTRATOR],
+                    "groups": [STR_TEAM_A],
                     "domains": []
                 }
             )
@@ -428,11 +435,11 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_update_user_status_regular_user_unauthorized(self, admin_service, mock_db):
         """Test regular user cannot manage others"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "roles": ["user"],
-            "groups": ["team-a"]
+            "groups": [STR_TEAM_A]
         }
 
         mock_db.users.find_one = AsyncMock(return_value=target_user)
@@ -441,14 +448,14 @@ class TestAdminService:
             await admin_service.update_user_status(
                 target_user_id,
                 False,
-                current_user={"roles": ["user"], "groups": ["team-a"]}
+                current_user={"roles": ["user"], "groups": [STR_TEAM_A]}
             )
         assert exc_info.value.status_code == 403
 
     @pytest.mark.asyncio
     async def test_update_user_role_with_current_user_permission(self, admin_service, mock_db):
         """Test updating user role with permission check"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "roles": ["user"]
@@ -460,7 +467,7 @@ class TestAdminService:
         result = await admin_service.update_user_role(
             target_user_id,
             ["user", "editor"],
-            current_user={"roles": ["super-administrator"]}
+            current_user={"roles": [STR_SUPER_ADMINISTRATOR]}
         )
 
         assert result["message"] == EXPECTED_USER_ROLE_UPDATED_SUCCESSFULLY
@@ -468,7 +475,7 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_update_user_role_admin_cannot_assign_super_admin(self, admin_service, mock_db):
         """Test admin cannot assign super-administrator role"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "roles": ["user"]
@@ -479,7 +486,7 @@ class TestAdminService:
         with pytest.raises(AuthError) as exc_info:
             await admin_service.update_user_role(
                 target_user_id,
-                ["super-administrator"],
+                [STR_SUPER_ADMINISTRATOR],
                 current_user={"roles": ["administrator"]}
             )
         assert exc_info.value.status_code == 403
@@ -487,11 +494,11 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_update_user_role_group_admin_limited_roles(self, admin_service, mock_db):
         """Test group admin can only assign viewer/user/editor roles"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "roles": ["user"],
-            "groups": ["team-a"]
+            "groups": [STR_TEAM_A]
         }
 
         mock_db.users.find_one = AsyncMock(return_value=target_user)
@@ -502,8 +509,8 @@ class TestAdminService:
                 target_user_id,
                 ["administrator"],
                 current_user={
-                    "roles": ["group-administrator"],
-                    "groups": ["team-a"]
+                    "roles": [STR_GROUP_ADMINISTRATOR],
+                    "groups": [STR_TEAM_A]
                 }
             )
         assert exc_info.value.status_code == 403
@@ -511,11 +518,11 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_update_user_role_group_admin_allowed_roles(self, admin_service, mock_db):
         """Test group admin can assign viewer/user/editor roles"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "roles": ["user"],
-            "groups": ["team-a"],
+            "groups": [STR_TEAM_A],
             "domains": []
         }
 
@@ -526,8 +533,8 @@ class TestAdminService:
             target_user_id,
             ["viewer", "editor"],
             current_user={
-                "roles": ["group-administrator"],
-                "groups": ["team-a"],
+                "roles": [STR_GROUP_ADMINISTRATOR],
+                "groups": [STR_TEAM_A],
                 "domains": []
             }
         )
@@ -537,7 +544,7 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_update_user_role_regular_user_unauthorized(self, admin_service, mock_db):
         """Test regular user cannot update roles"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "roles": ["user"]
@@ -560,7 +567,7 @@ class TestAdminService:
 
         with pytest.raises(AuthError) as exc_info:
             await admin_service.update_user_role(
-                "507f1f77bcf86cd799439011",
+                OID_9011,
                 ["user"],
                 current_user={"roles": ["administrator"]}
             )
@@ -569,11 +576,11 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_update_user_groups_with_permission(self, admin_service, mock_db):
         """Test updating user groups with permission check"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "roles": ["user"],
-            "groups": ["team-a"],
+            "groups": [STR_TEAM_A],
             "domains": []
         }
 
@@ -582,7 +589,7 @@ class TestAdminService:
 
         result = await admin_service.update_user_groups(
             target_user_id,
-            ["team-a", "team-b"],
+            [STR_TEAM_A, "team-b"],
             current_user={
                 "roles": ["administrator"],
                 "groups": [],
@@ -599,8 +606,8 @@ class TestAdminService:
 
         with pytest.raises(AuthError) as exc_info:
             await admin_service.update_user_groups(
-                "507f1f77bcf86cd799439011",
-                ["team-a"],
+                OID_9011,
+                [STR_TEAM_A],
                 current_user={"roles": ["administrator"]}
             )
         assert exc_info.value.status_code == 404
@@ -608,7 +615,7 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_update_user_domains_with_permission(self, admin_service, mock_db):
         """Test updating user domains with permission check"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "roles": ["user"],
@@ -634,7 +641,7 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_update_user_domains_group_admin_invalid_domains(self, admin_service, mock_db):
         """Test group admin cannot assign domains they don't have"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "roles": ["user"],
@@ -649,7 +656,7 @@ class TestAdminService:
                 target_user_id,
                 ["marketing", "hr"],  # domains they don't have
                 current_user={
-                    "roles": ["group-administrator"],
+                    "roles": [STR_GROUP_ADMINISTRATOR],
                     "groups": [],
                     "domains": ["finance"]  # only has finance
                 }
@@ -660,7 +667,7 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_update_user_domains_group_admin_valid_domains(self, admin_service, mock_db):
         """Test group admin can assign their own domains"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "roles": ["user"],
@@ -675,7 +682,7 @@ class TestAdminService:
             target_user_id,
             ["finance"],  # domain they have
             current_user={
-                "roles": ["group-administrator"],
+                "roles": [STR_GROUP_ADMINISTRATOR],
                 "groups": [],
                 "domains": ["finance"]
             }
@@ -690,7 +697,7 @@ class TestAdminService:
 
         with pytest.raises(AuthError) as exc_info:
             await admin_service.update_user_domains(
-                "507f1f77bcf86cd799439011",
+                OID_9011,
                 ["finance"],
                 current_user={"roles": ["administrator"]}
             )
@@ -699,7 +706,7 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_get_user_by_id_success(self, admin_service, mock_db):
         """Test getting user by ID successfully"""
-        user_id = "507f1f77bcf86cd799439011"
+        user_id = OID_9011
         user_data = {
             "_id": ObjectId(user_id),
             "email": MOCK_EMAIL,
@@ -722,7 +729,7 @@ class TestAdminService:
         """Test getting non-existent user by ID"""
         mock_db.users.find_one = AsyncMock(return_value=None)
 
-        result = await admin_service.get_user_by_id("507f1f77bcf86cd799439011")
+        result = await admin_service.get_user_by_id(OID_9011)
 
         assert result is None
 
@@ -738,7 +745,7 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_delete_user_success(self, admin_service, mock_db):
         """Test successful user deletion by super admin"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "email": MOCK_EMAIL_DELETE
@@ -752,7 +759,7 @@ class TestAdminService:
             target_user_id,
             current_user={
                 "user_id": "different_user_id",
-                "roles": ["super-administrator"]
+                "roles": [STR_SUPER_ADMINISTRATOR]
             }
         )
 
@@ -764,11 +771,11 @@ class TestAdminService:
         """Test that non-super-admin cannot delete users"""
         with pytest.raises(AuthError) as exc_info:
             await admin_service.delete_user(
-                "507f1f77bcf86cd799439011",
+                OID_9011,
                 current_user={"roles": ["administrator"]}
             )
         assert exc_info.value.status_code == 403
-        assert "super-administrator" in exc_info.value.message
+        assert STR_SUPER_ADMINISTRATOR in exc_info.value.message
 
     @pytest.mark.asyncio
     async def test_delete_user_not_found(self, admin_service, mock_db):
@@ -777,15 +784,15 @@ class TestAdminService:
 
         with pytest.raises(AuthError) as exc_info:
             await admin_service.delete_user(
-                "507f1f77bcf86cd799439011",
-                current_user={"roles": ["super-administrator"]}
+                OID_9011,
+                current_user={"roles": [STR_SUPER_ADMINISTRATOR]}
             )
         assert exc_info.value.status_code == 404
 
     @pytest.mark.asyncio
     async def test_delete_user_cannot_delete_self(self, admin_service, mock_db):
         """Test user cannot delete themselves"""
-        user_id = "507f1f77bcf86cd799439011"
+        user_id = OID_9011
         target_user = {
             "_id": ObjectId(user_id),
             "email": "self@example.com"
@@ -798,7 +805,7 @@ class TestAdminService:
                 user_id,
                 current_user={
                     "user_id": user_id,
-                    "roles": ["super-administrator"]
+                    "roles": [STR_SUPER_ADMINISTRATOR]
                 }
             )
         assert exc_info.value.status_code == 400
@@ -807,7 +814,7 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_delete_user_delete_failed(self, admin_service, mock_db):
         """Test when delete_one returns 0 deleted count"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "email": MOCK_EMAIL_DELETE
@@ -821,7 +828,7 @@ class TestAdminService:
                 target_user_id,
                 current_user={
                     "user_id": "different_user_id",
-                    "roles": ["super-administrator"]
+                    "roles": [STR_SUPER_ADMINISTRATOR]
                 }
             )
         assert exc_info.value.status_code == 404
@@ -829,7 +836,7 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_delete_user_no_current_user(self, admin_service, mock_db):
         """Test deleting user without current_user (system call)"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "email": MOCK_EMAIL_DELETE
@@ -846,7 +853,7 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_update_user_status_update_matched_zero(self, admin_service, mock_db):
         """Test status update when update_one matches 0 (race condition)"""
-        target_user_id = "507f1f77bcf86cd799439011"
+        target_user_id = OID_9011
         target_user = {
             "_id": ObjectId(target_user_id),
             "roles": ["user"]
@@ -859,6 +866,6 @@ class TestAdminService:
             await admin_service.update_user_status(
                 target_user_id,
                 True,
-                current_user={"roles": ["super-administrator"]}
+                current_user={"roles": [STR_SUPER_ADMINISTRATOR]}
             )
         assert exc_info.value.status_code == 404

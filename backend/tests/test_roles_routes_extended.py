@@ -29,6 +29,21 @@ from easylifeauth.security.access_control import CurrentUser, require_group_admi
 from mock_data import MOCK_EMAIL_ADMIN, MOCK_EMAIL_NOFULLNAME
 
 PATH_ROLES = "/roles"
+CFG_DOMAIN_FINANCE = "domain.finance"
+CFG_DOMAIN_HR = "domain.hr"
+CFG_DOMAIN_NEW = "domain.new"
+CFG_DOMAIN_SALES = "domain.sales"
+CFG_PERM_NEW = "perm.new"
+CFG_PERM_READ = "perm.read"
+CFG_PERM_RESOLVED = "perm.resolved"
+CFG_PERM_WRITE = "perm.write"
+STR_DOMAINID = "domainId"
+STR_PERMISSIONID = "permissionId"
+STR_ROLE1 = "role1"
+STR_ROLEID = "roleId"
+SUBPATH_ROLES = "/roles/"
+
+
 
 
 
@@ -53,7 +68,7 @@ def _make_role(
     """Return a role document dict suitable for mongo mock returns."""
     return {
         "_id": ObjectId(oid),
-        "roleId": role_id,
+        STR_ROLEID: role_id,
         "name": name,
         "description": description,
         "permissions": permissions or ["read"],
@@ -92,11 +107,11 @@ class TestResolvePermissions:
         db = MagicMock()
         db.permissions = MagicMock()
         db.permissions.find_one = AsyncMock(
-            return_value={"_id": ObjectId(VALID_OID), "permissionId": "perm.read"}
+            return_value={"_id": ObjectId(VALID_OID), STR_PERMISSIONID: CFG_PERM_READ}
         )
 
         result = await resolve_permissions(db, [VALID_OID])
-        assert result == ["perm.read"]
+        assert result == [CFG_PERM_READ]
         # Should have been called with an ObjectId filter
         db.permissions.find_one.assert_called_once_with({"_id": ObjectId(VALID_OID)})
 
@@ -105,15 +120,15 @@ class TestResolvePermissions:
         """Line 41: A non-ObjectId string is looked up by permissionId key."""
         db = MagicMock()
         db.permissions = MagicMock()
-        # First call (ObjectId.is_valid("perm.read") is False so this path is skipped)
-        # The function goes straight to find_one({"permissionId": ref})
+        # First call (ObjectId.is_valid(CFG_PERM_READ) is False so this path is skipped)
+        # The function goes straight to find_one({STR_PERMISSIONID: ref})
         db.permissions.find_one = AsyncMock(
-            return_value={"_id": ObjectId(VALID_OID), "permissionId": "perm.read"}
+            return_value={"_id": ObjectId(VALID_OID), STR_PERMISSIONID: CFG_PERM_READ}
         )
 
-        result = await resolve_permissions(db, ["perm.read"])
-        assert result == ["perm.read"]
-        db.permissions.find_one.assert_called_once_with({"permissionId": "perm.read"})
+        result = await resolve_permissions(db, [CFG_PERM_READ])
+        assert result == [CFG_PERM_READ]
+        db.permissions.find_one.assert_called_once_with({STR_PERMISSIONID: CFG_PERM_READ})
 
     @pytest.mark.asyncio
     async def test_unknown_ref_kept_as_is(self):
@@ -134,8 +149,8 @@ class TestResolvePermissions:
         async def side_effect(query):
             if "_id" in query:
                 return None  # Not found by _id
-            if "permissionId" in query:
-                return {"_id": ObjectId(VALID_OID_2), "permissionId": VALID_OID}
+            if STR_PERMISSIONID in query:
+                return {"_id": ObjectId(VALID_OID_2), STR_PERMISSIONID: VALID_OID}
             return None
 
         db.permissions.find_one = AsyncMock(side_effect=side_effect)
@@ -154,18 +169,18 @@ class TestResolvePermissions:
 
         async def side_effect(query):
             if "_id" in query:
-                return {"_id": ObjectId(oid), "permissionId": "perm.admin"}
-            if "permissionId" in query:
-                key = query["permissionId"]
-                if key == "perm.write":
-                    return {"_id": ObjectId(VALID_OID_2), "permissionId": "perm.write"}
+                return {"_id": ObjectId(oid), STR_PERMISSIONID: "perm.admin"}
+            if STR_PERMISSIONID in query:
+                key = query[STR_PERMISSIONID]
+                if key == CFG_PERM_WRITE:
+                    return {"_id": ObjectId(VALID_OID_2), STR_PERMISSIONID: CFG_PERM_WRITE}
                 return None  # unknown
             return None
 
         db.permissions.find_one = AsyncMock(side_effect=side_effect)
 
-        result = await resolve_permissions(db, [oid, "perm.write", "unknown.x"])
-        assert result == ["perm.admin", "perm.write", "unknown.x"]
+        result = await resolve_permissions(db, [oid, CFG_PERM_WRITE, "unknown.x"])
+        assert result == ["perm.admin", CFG_PERM_WRITE, "unknown.x"]
 
 
 # ---------------------------------------------------------------------------
@@ -190,11 +205,11 @@ class TestResolveDomains:
         # Set find_one directly on auto-created child — avoids Python 3.13
         # __dict__ vs _mock_children conflict with explicit collection assignment.
         db.data_domains.find_one = AsyncMock(
-            return_value={"_id": ObjectId(VALID_OID), "domainId": "domain.finance"}
+            return_value={"_id": ObjectId(VALID_OID), STR_DOMAINID: CFG_DOMAIN_FINANCE}
         )
 
         result = await resolve_domains(db, [VALID_OID])
-        assert result == ["domain.finance"]
+        assert result == [CFG_DOMAIN_FINANCE]
         db.data_domains.find_one.assert_called_once_with({"_id": ObjectId(VALID_OID)})
 
     @pytest.mark.asyncio
@@ -202,12 +217,12 @@ class TestResolveDomains:
         """Lines 68-70: A non-ObjectId string is looked up by domainId key."""
         db = MagicMock()
         db.data_domains.find_one = AsyncMock(
-            return_value={"_id": ObjectId(VALID_OID), "domainId": "domain.hr"}
+            return_value={"_id": ObjectId(VALID_OID), STR_DOMAINID: CFG_DOMAIN_HR}
         )
 
-        result = await resolve_domains(db, ["domain.hr"])
-        assert result == ["domain.hr"]
-        db.data_domains.find_one.assert_called_once_with({"domainId": "domain.hr"})
+        result = await resolve_domains(db, [CFG_DOMAIN_HR])
+        assert result == [CFG_DOMAIN_HR]
+        db.data_domains.find_one.assert_called_once_with({STR_DOMAINID: CFG_DOMAIN_HR})
 
     @pytest.mark.asyncio
     async def test_unknown_ref_kept_as_is(self):
@@ -238,18 +253,18 @@ class TestResolveDomains:
 
         async def side_effect(query):
             if "_id" in query:
-                return {"_id": ObjectId(oid), "domainId": "domain.resolved"}
-            if "domainId" in query:
-                key = query["domainId"]
-                if key == "domain.sales":
-                    return {"_id": ObjectId(VALID_OID_2), "domainId": "domain.sales"}
+                return {"_id": ObjectId(oid), STR_DOMAINID: "domain.resolved"}
+            if STR_DOMAINID in query:
+                key = query[STR_DOMAINID]
+                if key == CFG_DOMAIN_SALES:
+                    return {"_id": ObjectId(VALID_OID_2), STR_DOMAINID: CFG_DOMAIN_SALES}
                 return None
             return None
 
         db.data_domains.find_one = AsyncMock(side_effect=side_effect)
 
-        result = await resolve_domains(db, [oid, "domain.sales", "nope"])
-        assert result == ["domain.resolved", "domain.sales", "nope"]
+        result = await resolve_domains(db, [oid, CFG_DOMAIN_SALES, "nope"])
+        assert result == ["domain.resolved", CFG_DOMAIN_SALES, "nope"]
 
 
 # ---------------------------------------------------------------------------
@@ -264,7 +279,7 @@ class TestNotifyUsersOfRoleChangeExtended:
     async def test_no_email_service_returns_early(self):
         """Line 93-94: When email_service is None, returns immediately without querying users."""
         db = MagicMock()
-        await notify_users_of_role_change(db, "role1", {"status": "changed"}, None)
+        await notify_users_of_role_change(db, STR_ROLE1, {"status": "changed"}, None)
         db.users.find.assert_not_called()
 
     @pytest.mark.asyncio
@@ -283,7 +298,7 @@ class TestNotifyUsersOfRoleChangeExtended:
 
         # Should NOT raise
         await notify_users_of_role_change(
-            db, "role1", {"permissions": "changed"}, email_service
+            db, STR_ROLE1, {"permissions": "changed"}, email_service
         )
         email_service.send_role_change_notification.assert_called_once()
 
@@ -300,7 +315,7 @@ class TestNotifyUsersOfRoleChangeExtended:
         db.users.find.return_value = user_gen()
 
         await notify_users_of_role_change(
-            db, "role1", {"status": "changed"}, email_service
+            db, STR_ROLE1, {"status": "changed"}, email_service
         )
         email_service.send_role_change_notification.assert_called_once_with(
             MOCK_EMAIL_NOFULLNAME,
@@ -374,7 +389,7 @@ class TestRolesRoutesExtended:
 
     def test_list_roles_with_domain_filter(self, client, mock_db):
         """Line 130: domain query parameter adds 'domains' to the mongo query."""
-        role = _make_role(domains=["domain.finance"])
+        role = _make_role(domains=[CFG_DOMAIN_FINANCE])
 
         async def role_gen():
             yield role
@@ -390,16 +405,16 @@ class TestRolesRoutesExtended:
         assert response.status_code == 200
         data = response.json()
         assert len(data["data"]) == 1
-        assert data["data"][0]["roleId"] == "editor"
+        assert data["data"][0][STR_ROLEID] == "editor"
 
         # Verify the query dict passed to find included the domain filter
         call_args = mock_db.roles.find.call_args
         query_used = call_args[0][0] if call_args[0] else call_args[1].get("filter", {})
-        assert query_used.get("domains") == "domain.finance"
+        assert query_used.get("domains") == CFG_DOMAIN_FINANCE
 
     def test_list_roles_with_permission_filter(self, client, mock_db):
         """Line 132: permission query parameter adds 'permissions' to the mongo query."""
-        role = _make_role(permissions=["perm.write"])
+        role = _make_role(permissions=[CFG_PERM_WRITE])
 
         async def role_gen():
             yield role
@@ -418,7 +433,7 @@ class TestRolesRoutesExtended:
 
         call_args = mock_db.roles.find.call_args
         query_used = call_args[0][0] if call_args[0] else call_args[1].get("filter", {})
-        assert query_used.get("permissions") == "perm.write"
+        assert query_used.get("permissions") == CFG_PERM_WRITE
 
     def test_list_roles_with_domain_and_permission_filters(self, client, mock_db):
         """Both domain and permission filters applied together."""
@@ -460,8 +475,8 @@ class TestRolesRoutesExtended:
         assert response.status_code == 200
         data = response.json()
         assert len(data["data"]) == 2
-        assert data["data"][0]["roleId"] == "role-a"
-        assert data["data"][1]["roleId"] == "role-b"
+        assert data["data"][0][STR_ROLEID] == "role-a"
+        assert data["data"][1][STR_ROLEID] == "role-b"
 
     # -----------------------------------------------------------------------
     # count_roles with status filter (line 160)
@@ -499,25 +514,25 @@ class TestRolesRoutesExtended:
         )
         # resolve_permissions will look up each ref
         mock_db.permissions.find_one = AsyncMock(
-            return_value={"_id": ObjectId(VALID_OID), "permissionId": "perm.resolved"}
+            return_value={"_id": ObjectId(VALID_OID), STR_PERMISSIONID: CFG_PERM_RESOLVED}
         )
 
         response = client.post(
             PATH_ROLES,
             json={
-                "roleId": "new-role",
+                STR_ROLEID: "new-role",
                 "name": "New Role",
                 "description": "A new role",
-                "permissions": ["perm.resolved"],
+                "permissions": [CFG_PERM_RESOLVED],
                 "status": "active",
                 "priority": 5,
             },
         )
         assert response.status_code == 201
         data = response.json()
-        assert data["roleId"] == "new-role"
+        assert data[STR_ROLEID] == "new-role"
         # The permission should have been resolved (looked up by permissionId key)
-        assert "perm.resolved" in data["permissions"]
+        assert CFG_PERM_RESOLVED in data["permissions"]
 
     def test_create_role_resolves_domains(self, client, mock_db):
         """Line 208: domains list is resolved via resolve_domains."""
@@ -526,24 +541,24 @@ class TestRolesRoutesExtended:
             inserted_id=ObjectId(VALID_OID)
         )
         mock_db.data_domains.find_one = AsyncMock(
-            return_value={"_id": ObjectId(VALID_OID), "domainId": "domain.sales"}
+            return_value={"_id": ObjectId(VALID_OID), STR_DOMAINID: CFG_DOMAIN_SALES}
         )
 
         response = client.post(
             PATH_ROLES,
             json={
-                "roleId": "sales-role",
+                STR_ROLEID: "sales-role",
                 "name": "Sales Role",
                 "description": "Role for sales",
                 "permissions": [],
-                "domains": ["domain.sales"],
+                "domains": [CFG_DOMAIN_SALES],
                 "status": "active",
                 "priority": 3,
             },
         )
         assert response.status_code == 201
         data = response.json()
-        assert "domain.sales" in data["domains"]
+        assert CFG_DOMAIN_SALES in data["domains"]
 
     def test_create_role_resolves_permissions_with_objectid(self, client, mock_db):
         """Permissions containing a valid ObjectId string are resolved by _id lookup."""
@@ -554,14 +569,14 @@ class TestRolesRoutesExtended:
         mock_db.permissions.find_one = AsyncMock(
             return_value={
                 "_id": ObjectId(VALID_OID_2),
-                "permissionId": "perm.from_oid",
+                STR_PERMISSIONID: "perm.from_oid",
             }
         )
 
         response = client.post(
             PATH_ROLES,
             json={
-                "roleId": "oid-role",
+                STR_ROLEID: "oid-role",
                 "name": "OID Role",
                 "description": "Role with OID permission",
                 "permissions": [VALID_OID_2],
@@ -582,14 +597,14 @@ class TestRolesRoutesExtended:
         mock_db.data_domains.find_one = AsyncMock(
             return_value={
                 "_id": ObjectId(VALID_OID_2),
-                "domainId": "domain.from_oid",
+                STR_DOMAINID: "domain.from_oid",
             }
         )
 
         response = client.post(
             PATH_ROLES,
             json={
-                "roleId": "oid-domain-role",
+                STR_ROLEID: "oid-domain-role",
                 "name": "OID Domain Role",
                 "description": "Role with OID domain",
                 "permissions": [],
@@ -609,18 +624,18 @@ class TestRolesRoutesExtended:
     def test_update_role_resolves_permissions(self, client, mock_db, mock_email_service):
         """Line 245: permissions in update payload are resolved."""
         existing = _make_role(permissions=["old.perm"])
-        updated = _make_role(permissions=["perm.new"])
+        updated = _make_role(permissions=[CFG_PERM_NEW])
 
         # find_one is called multiple times: first for existing, then after update
         mock_db.roles.find_one = AsyncMock(side_effect=[existing, updated])
         mock_db.permissions.find_one = AsyncMock(
-            return_value={"_id": ObjectId(VALID_OID_2), "permissionId": "perm.new"}
+            return_value={"_id": ObjectId(VALID_OID_2), STR_PERMISSIONID: CFG_PERM_NEW}
         )
         mock_db.users.find.return_value = _empty_async_gen()
 
         response = client.put(
             f"/roles/{VALID_OID}",
-            json={"permissions": ["perm.new"]},
+            json={"permissions": [CFG_PERM_NEW]},
         )
         assert response.status_code == 200
         mock_db.roles.update_one.assert_called_once()
@@ -628,17 +643,17 @@ class TestRolesRoutesExtended:
     def test_update_role_resolves_domains(self, client, mock_db, mock_email_service):
         """Line 247: domains in update payload are resolved."""
         existing = _make_role(domains=["old.domain"])
-        updated = _make_role(domains=["domain.new"])
+        updated = _make_role(domains=[CFG_DOMAIN_NEW])
 
         mock_db.roles.find_one = AsyncMock(side_effect=[existing, updated])
         mock_db.data_domains.find_one = AsyncMock(
-            return_value={"_id": ObjectId(VALID_OID_2), "domainId": "domain.new"}
+            return_value={"_id": ObjectId(VALID_OID_2), STR_DOMAINID: CFG_DOMAIN_NEW}
         )
         mock_db.users.find.return_value = _empty_async_gen()
 
         response = client.put(
             f"/roles/{VALID_OID}",
-            json={"domains": ["domain.new"]},
+            json={"domains": [CFG_DOMAIN_NEW]},
         )
         assert response.status_code == 200
 
@@ -674,7 +689,7 @@ class TestRolesRoutesExtended:
     ):
         """When domains change, notify_users_of_role_change is called."""
         existing = _make_role(domains=[])
-        updated = _make_role(domains=["domain.new"])
+        updated = _make_role(domains=[CFG_DOMAIN_NEW])
 
         mock_db.roles.find_one = AsyncMock(side_effect=[existing, updated])
         mock_db.data_domains.find_one = AsyncMock(return_value=None)
@@ -690,7 +705,7 @@ class TestRolesRoutesExtended:
 
         response = client.put(
             f"/roles/{VALID_OID}",
-            json={"domains": ["domain.new"]},
+            json={"domains": [CFG_DOMAIN_NEW]},
         )
         assert response.status_code == 200
         mock_email_service.send_role_change_notification.assert_called_once()
@@ -731,7 +746,7 @@ class TestRolesRoutesExtended:
         """When ObjectId conversion raises but roleId lookup finds the role, it gets deleted."""
         role_doc = {
             "_id": ObjectId(VALID_OID),
-            "roleId": "my-role",
+            STR_ROLEID: "my-role",
         }
         mock_db.roles.find_one = AsyncMock(return_value=role_doc)
         # ObjectId("my-role") raises before delete_one is called in the try block,

@@ -24,6 +24,18 @@ EXPECTED_GROUP_A = "Group A"
 EXPECTED_NEW_USER = "New User"
 EXPECTED_TARGET_USER = "Target User"
 EXPECTED_TEST_USER = "Test User"
+OID_9011 = "507f1f77bcf86cd799439011"
+OID_9013 = "507f1f77bcf86cd799439013"
+STR_CUSTOMERID = "customerId"
+STR_CUST_001 = "CUST-001"
+STR_CUST_002 = "CUST-002"
+STR_GROUPID = "groupId"
+STR_GROUP_A = "group-a"
+STR_ROLEID = "roleId"
+STR_SUPER_ADMINISTRATOR = "super-administrator"
+STR_TEAM_A = "team-a"
+STR_U1 = "U1"
+
 
 
 
@@ -73,9 +85,9 @@ class TestUsersRoutes:
     def mock_super_admin_user(self):
         """Create mock super admin user"""
         return CurrentUser(
-            user_id="507f1f77bcf86cd799439011",
+            user_id=OID_9011,
             email=MOCK_EMAIL_ADMIN,
-            roles=["super-administrator"],
+            roles=[STR_SUPER_ADMINISTRATOR],
             groups=[],
             domains=[]
         )
@@ -190,7 +202,7 @@ class TestUsersRoutes:
     def test_get_user_success(self, client, mock_db):
         """Test getting a specific user"""
         user_data = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
+            "_id": ObjectId(OID_9011),
             "email": MOCK_EMAIL,
             "username": "testuser",
             "full_name": EXPECTED_TEST_USER,
@@ -219,7 +231,7 @@ class TestUsersRoutes:
         """Test creating a new user"""
         mock_db.users.find_one.return_value = None  # No existing user
         mock_db.users.insert_one.return_value = MagicMock(
-            inserted_id=ObjectId("507f1f77bcf86cd799439011")
+            inserted_id=ObjectId(OID_9011)
         )
 
         response = client.post(PATH_USERS, json={
@@ -281,7 +293,7 @@ class TestUsersRoutes:
         """Test creating user with welcome email"""
         mock_db.users.find_one.return_value = None
         mock_db.users.insert_one.return_value = MagicMock(
-            inserted_id=ObjectId("507f1f77bcf86cd799439011")
+            inserted_id=ObjectId(OID_9011)
         )
 
         response = client.post(PATH_USERS, json={
@@ -302,7 +314,7 @@ class TestUsersRoutes:
     def test_update_user_success(self, client, mock_db, mock_activity_log):
         """Test updating a user"""
         existing_user = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
+            "_id": ObjectId(OID_9011),
             "email": MOCK_EMAIL,
             "username": "testuser",
             "full_name": EXPECTED_TEST_USER,
@@ -336,7 +348,7 @@ class TestUsersRoutes:
     def test_delete_user_success(self, client, mock_db, mock_activity_log):
         """Test deleting a user"""
         mock_db.users.find_one.return_value = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
+            "_id": ObjectId(OID_9011),
             "email": MOCK_EMAIL
         }
         mock_db.users.delete_one.return_value = MagicMock(deleted_count=1)
@@ -357,7 +369,7 @@ class TestUsersRoutes:
     def test_toggle_user_status(self, client, mock_db, mock_activity_log):
         """Test toggling user status"""
         mock_db.users.find_one.return_value = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
+            "_id": ObjectId(OID_9011),
             "email": MOCK_EMAIL,
             "is_active": True
         }
@@ -377,7 +389,7 @@ class TestUsersRoutes:
     def test_send_password_reset_email(self, client, mock_db, mock_email_service):
         """Test sending password reset email"""
         mock_db.users.find_one.return_value = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
+            "_id": ObjectId(OID_9011),
             "email": MOCK_EMAIL,
             "full_name": EXPECTED_TEST_USER
         }
@@ -389,7 +401,7 @@ class TestUsersRoutes:
     def test_send_password_reset_no_email(self, client, mock_db, mock_email_service):
         """Test password reset without sending email"""
         mock_db.users.find_one.return_value = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
+            "_id": ObjectId(OID_9011),
             "email": MOCK_EMAIL,
             "full_name": EXPECTED_TEST_USER
         }
@@ -403,7 +415,7 @@ class TestUsersRoutes:
     def test_admin_reset_password(self, client, mock_db, mock_email_service):
         """Test admin resetting user password"""
         mock_db.users.find_one.return_value = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
+            "_id": ObjectId(OID_9011),
             "email": MOCK_EMAIL,
             "full_name": EXPECTED_TEST_USER
         }
@@ -416,7 +428,7 @@ class TestUsersRoutes:
     def test_admin_reset_password_no_email(self, client, mock_db, mock_email_service):
         """Test admin reset password without email"""
         mock_db.users.find_one.return_value = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
+            "_id": ObjectId(OID_9011),
             "email": MOCK_EMAIL,
             "full_name": EXPECTED_TEST_USER
         }
@@ -458,7 +470,7 @@ class TestResolveRolesAndGroups:
         """resolve_roles resolves valid ObjectId to roleId key (lines 52-55)."""
         from easylifeauth.api.users_routes import resolve_roles
         oid = str(ObjectId())
-        mock_db.roles.find_one = AsyncMock(return_value={"_id": ObjectId(oid), "roleId": "editor"})
+        mock_db.roles.find_one = AsyncMock(return_value={"_id": ObjectId(oid), STR_ROLEID: "editor"})
 
         result = await resolve_roles(mock_db, [oid])
         assert result == ["editor"]
@@ -470,7 +482,7 @@ class TestResolveRolesAndGroups:
         from easylifeauth.api.users_routes import resolve_roles
         # First call (ObjectId lookup) returns None because 'editor' is not a valid ObjectId
         # So it falls through to roleId lookup
-        mock_db.roles.find_one = AsyncMock(return_value={"roleId": "editor"})
+        mock_db.roles.find_one = AsyncMock(return_value={STR_ROLEID: "editor"})
 
         result = await resolve_roles(mock_db, ["editor"])
         assert result == ["editor"]
@@ -490,7 +502,7 @@ class TestResolveRolesAndGroups:
         from easylifeauth.api.users_routes import resolve_roles
         oid = str(ObjectId())
         # First call with _id returns None, second call with roleId returns the role
-        mock_db.roles.find_one = AsyncMock(side_effect=[None, {"roleId": oid}])
+        mock_db.roles.find_one = AsyncMock(side_effect=[None, {STR_ROLEID: oid}])
 
         result = await resolve_roles(mock_db, [oid])
         assert result == [oid]
@@ -507,19 +519,19 @@ class TestResolveRolesAndGroups:
         """resolve_groups resolves valid ObjectId to groupId key (lines 80-84)."""
         from easylifeauth.api.users_routes import resolve_groups
         oid = str(ObjectId())
-        mock_db.groups.find_one = AsyncMock(return_value={"_id": ObjectId(oid), "groupId": "team-a"})
+        mock_db.groups.find_one = AsyncMock(return_value={"_id": ObjectId(oid), STR_GROUPID: STR_TEAM_A})
 
         result = await resolve_groups(mock_db, [oid])
-        assert result == ["team-a"]
+        assert result == [STR_TEAM_A]
 
     @pytest.mark.asyncio
     async def test_resolve_groups_by_group_id_key(self, mock_db):
         """resolve_groups resolves groupId key string (lines 88-89)."""
         from easylifeauth.api.users_routes import resolve_groups
-        mock_db.groups.find_one = AsyncMock(return_value={"groupId": "team-a"})
+        mock_db.groups.find_one = AsyncMock(return_value={STR_GROUPID: STR_TEAM_A})
 
-        result = await resolve_groups(mock_db, ["team-a"])
-        assert result == ["team-a"]
+        result = await resolve_groups(mock_db, [STR_TEAM_A])
+        assert result == [STR_TEAM_A]
 
     @pytest.mark.asyncio
     async def test_resolve_groups_unknown_ref_kept(self, mock_db):
@@ -535,7 +547,7 @@ class TestResolveRolesAndGroups:
         """resolve_groups falls through to groupId lookup when ObjectId not found."""
         from easylifeauth.api.users_routes import resolve_groups
         oid = str(ObjectId())
-        mock_db.groups.find_one = AsyncMock(side_effect=[None, {"groupId": oid}])
+        mock_db.groups.find_one = AsyncMock(side_effect=[None, {STR_GROUPID: oid}])
 
         result = await resolve_groups(mock_db, [oid])
         assert result == [oid]
@@ -547,10 +559,10 @@ class TestAssignedCustomers:
     @pytest.fixture
     def mock_user(self):
         return CurrentUser(
-            user_id="507f1f77bcf86cd799439011",
+            user_id=OID_9011,
             email=MOCK_EMAIL_USER,
             roles=["user"],
-            groups=["group-a"],
+            groups=[STR_GROUP_A],
             domains=[]
         )
 
@@ -585,15 +597,15 @@ class TestAssignedCustomers:
     def test_assigned_customers_direct_assignments(self, client, mock_db):
         """Test getting directly assigned customers (lines 186-189)."""
         mock_db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "customers": ["CUST-001", "CUST-002"],
+            "_id": ObjectId(OID_9011),
+            "customers": [STR_CUST_001, STR_CUST_002],
             "groups": []
         })
 
         async def customer_cursor():
             for c in [
-                {"customerId": "CUST-001", "name": "Customer One", "tags": ["vip"], "unit": "U1"},
-                {"customerId": "CUST-002", "name": "Customer Two", "tags": [], "unit": "U2"},
+                {STR_CUSTOMERID: STR_CUST_001, "name": "Customer One", "tags": ["vip"], "unit": STR_U1},
+                {STR_CUSTOMERID: STR_CUST_002, "name": "Customer Two", "tags": [], "unit": "U2"},
             ]:
                 yield c
 
@@ -606,24 +618,24 @@ class TestAssignedCustomers:
         data = response.json()
         assert data["total"] == 2
         assert len(data["customers"]) == 2
-        assert data["customers"][0]["customerId"] == "CUST-001"
+        assert data["customers"][0][STR_CUSTOMERID] == STR_CUST_001
         assert data["customers"][0]["source"] == "direct"
 
     def test_assigned_customers_via_groups(self, client, mock_db):
         """Test getting customers assigned via groups (lines 192-203)."""
         mock_db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
+            "_id": ObjectId(OID_9011),
             "customers": [],
-            "groups": ["group-a"]
+            "groups": [STR_GROUP_A]
         })
 
         async def group_cursor():
-            yield {"groupId": "group-a", "name": EXPECTED_GROUP_A, "type": "customers", "status": "active", "customers": ["CUST-010"]}
+            yield {STR_GROUPID: STR_GROUP_A, "name": EXPECTED_GROUP_A, "type": "customers", "status": "active", "customers": ["CUST-010"]}
 
         mock_db.groups.find.return_value = group_cursor()
 
         async def customer_cursor():
-            yield {"customerId": "CUST-010", "name": "Group Customer", "tags": ["tag1"], "unit": "U3"}
+            yield {STR_CUSTOMERID: "CUST-010", "name": "Group Customer", "tags": ["tag1"], "unit": "U3"}
 
         mock_find = MagicMock()
         mock_find.sort.return_value = customer_cursor()
@@ -638,7 +650,7 @@ class TestAssignedCustomers:
     def test_assigned_customers_no_assignments(self, client, mock_db):
         """Test when user has no customer assignments (line 206)."""
         mock_db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
+            "_id": ObjectId(OID_9011),
             "customers": [],
             "groups": []
         })
@@ -652,13 +664,13 @@ class TestAssignedCustomers:
     def test_assigned_customers_with_search(self, client, mock_db):
         """Test assigned customers with search filter (lines 212-224)."""
         mock_db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "customers": ["CUST-001", "CUST-002"],
+            "_id": ObjectId(OID_9011),
+            "customers": [STR_CUST_001, STR_CUST_002],
             "groups": []
         })
 
         async def customer_cursor():
-            yield {"customerId": "CUST-001", "name": "Matching Customer", "tags": [], "unit": "U1"}
+            yield {STR_CUSTOMERID: STR_CUST_001, "name": "Matching Customer", "tags": [], "unit": STR_U1}
 
         mock_find = MagicMock()
         mock_find.sort.return_value = customer_cursor()
@@ -672,13 +684,13 @@ class TestAssignedCustomers:
     def test_assigned_customers_with_tag_filter(self, client, mock_db):
         """Test assigned customers with tag filter (lines 226-227)."""
         mock_db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "customers": ["CUST-001"],
+            "_id": ObjectId(OID_9011),
+            "customers": [STR_CUST_001],
             "groups": []
         })
 
         async def customer_cursor():
-            yield {"customerId": "CUST-001", "name": "VIP Customer", "tags": ["vip"], "unit": "U1"}
+            yield {STR_CUSTOMERID: STR_CUST_001, "name": "VIP Customer", "tags": ["vip"], "unit": STR_U1}
 
         mock_find = MagicMock()
         mock_find.sort.return_value = customer_cursor()
@@ -692,13 +704,13 @@ class TestAssignedCustomers:
     def test_assigned_customers_with_search_and_tag(self, client, mock_db):
         """Test assigned customers with both search and tag filters."""
         mock_db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "customers": ["CUST-001"],
+            "_id": ObjectId(OID_9011),
+            "customers": [STR_CUST_001],
             "groups": []
         })
 
         async def customer_cursor():
-            yield {"customerId": "CUST-001", "name": "VIP Customer", "tags": ["vip"], "unit": "U1"}
+            yield {STR_CUSTOMERID: STR_CUST_001, "name": "VIP Customer", "tags": ["vip"], "unit": STR_U1}
 
         mock_find = MagicMock()
         mock_find.sort.return_value = customer_cursor()
@@ -712,24 +724,24 @@ class TestAssignedCustomers:
     def test_assigned_customers_direct_and_group_merged(self, client, mock_db):
         """Test dedup: direct assignment takes precedence over group (lines 188-203)."""
         mock_db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "customers": ["CUST-001"],
-            "groups": ["group-a"]
+            "_id": ObjectId(OID_9011),
+            "customers": [STR_CUST_001],
+            "groups": [STR_GROUP_A]
         })
 
         async def group_cursor():
             yield {
-                "groupId": "group-a", "name": EXPECTED_GROUP_A,
+                STR_GROUPID: STR_GROUP_A, "name": EXPECTED_GROUP_A,
                 "type": "customers", "status": "active",
-                "customers": ["CUST-001", "CUST-002"]
+                "customers": [STR_CUST_001, STR_CUST_002]
             }
 
         mock_db.groups.find.return_value = group_cursor()
 
         async def customer_cursor():
             for c in [
-                {"customerId": "CUST-001", "name": "Shared", "tags": [], "unit": "U1"},
-                {"customerId": "CUST-002", "name": "Group Only", "tags": [], "unit": "U2"},
+                {STR_CUSTOMERID: STR_CUST_001, "name": "Shared", "tags": [], "unit": STR_U1},
+                {STR_CUSTOMERID: STR_CUST_002, "name": "Group Only", "tags": [], "unit": "U2"},
             ]:
                 yield c
 
@@ -742,10 +754,10 @@ class TestAssignedCustomers:
         data = response.json()
         assert data["total"] == 2
         # CUST-001 was direct, should stay "direct"
-        cust_001 = [c for c in data["customers"] if c["customerId"] == "CUST-001"][0]
+        cust_001 = [c for c in data["customers"] if c[STR_CUSTOMERID] == STR_CUST_001][0]
         assert cust_001["source"] == "direct"
         # CUST-002 was only from group
-        cust_002 = [c for c in data["customers"] if c["customerId"] == "CUST-002"][0]
+        cust_002 = [c for c in data["customers"] if c[STR_CUSTOMERID] == STR_CUST_002][0]
         assert cust_002["source"] == EXPECTED_GROUP_A
 
 
@@ -755,10 +767,10 @@ class TestCustomerTags:
     @pytest.fixture
     def mock_user(self):
         return CurrentUser(
-            user_id="507f1f77bcf86cd799439011",
+            user_id=OID_9011,
             email=MOCK_EMAIL_USER,
             roles=["user"],
-            groups=["group-a"],
+            groups=[STR_GROUP_A],
             domains=[]
         )
 
@@ -793,8 +805,8 @@ class TestCustomerTags:
     def test_customer_tags_from_direct_customers(self, client, mock_db):
         """Test tag aggregation from directly assigned customers (lines 252-281)."""
         mock_db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "customers": ["CUST-001", "CUST-002"],
+            "_id": ObjectId(OID_9011),
+            "customers": [STR_CUST_001, STR_CUST_002],
             "groups": []
         })
 
@@ -812,15 +824,15 @@ class TestCustomerTags:
     def test_customer_tags_from_group_customers(self, client, mock_db):
         """Test tag aggregation including group-assigned customers (lines 256-265)."""
         mock_db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "customers": ["CUST-001"],
-            "groups": ["group-a"]
+            "_id": ObjectId(OID_9011),
+            "customers": [STR_CUST_001],
+            "groups": [STR_GROUP_A]
         })
 
         async def group_cursor():
             yield {
-                "groupId": "group-a", "type": "customers",
-                "status": "active", "customers": ["CUST-002"]
+                STR_GROUPID: STR_GROUP_A, "type": "customers",
+                "status": "active", "customers": [STR_CUST_002]
             }
 
         mock_db.groups.find.return_value = group_cursor()
@@ -840,7 +852,7 @@ class TestCustomerTags:
     def test_customer_tags_no_customers(self, client, mock_db):
         """Test tag aggregation when user has no customers (line 268)."""
         mock_db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
+            "_id": ObjectId(OID_9011),
             "customers": [],
             "groups": []
         })
@@ -853,15 +865,15 @@ class TestCustomerTags:
     def test_customer_tags_dedup_group_customers(self, client, mock_db):
         """Test that duplicate customerIds from groups are deduplicated (line 264)."""
         mock_db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "customers": ["CUST-001"],
-            "groups": ["group-a"]
+            "_id": ObjectId(OID_9011),
+            "customers": [STR_CUST_001],
+            "groups": [STR_GROUP_A]
         })
 
         async def group_cursor():
             yield {
-                "groupId": "group-a", "type": "customers",
-                "status": "active", "customers": ["CUST-001", "CUST-002"]
+                STR_GROUPID: STR_GROUP_A, "type": "customers",
+                "status": "active", "customers": [STR_CUST_001, STR_CUST_002]
             }
 
         mock_db.groups.find.return_value = group_cursor()
@@ -876,11 +888,11 @@ class TestCustomerTags:
         # Verify the pipeline was called with deduplicated customer list
         mock_db.customers.aggregate.assert_called_once()
         pipeline = mock_db.customers.aggregate.call_args[0][0]
-        customer_ids_in_query = pipeline[0]["$match"]["customerId"]["$in"]
+        customer_ids_in_query = pipeline[0]["$match"][STR_CUSTOMERID]["$in"]
         # CUST-001 should not be duplicated
         assert len(customer_ids_in_query) == 2
-        assert "CUST-001" in customer_ids_in_query
-        assert "CUST-002" in customer_ids_in_query
+        assert STR_CUST_001 in customer_ids_in_query
+        assert STR_CUST_002 in customer_ids_in_query
 
 
 class TestSendPasswordResetEmailExtended:
@@ -889,9 +901,9 @@ class TestSendPasswordResetEmailExtended:
     @pytest.fixture
     def mock_super_admin(self):
         return CurrentUser(
-            user_id="507f1f77bcf86cd799439011",
+            user_id=OID_9011,
             email=MOCK_EMAIL_ADMIN,
-            roles=["super-administrator"],
+            roles=[STR_SUPER_ADMINISTRATOR],
             groups=[],
             domains=[]
         )
@@ -954,7 +966,7 @@ class TestSendPasswordResetEmailExtended:
     def test_send_password_reset_email_failure(self, client, mock_db, mock_email_service):
         """Test password reset when email sending fails (lines 545-546)."""
         mock_db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
+            "_id": ObjectId(OID_9011),
             "email": MOCK_EMAIL,
             "full_name": EXPECTED_TEST_USER
         })
@@ -970,7 +982,7 @@ class TestSendPasswordResetEmailExtended:
     def test_send_password_reset_no_email_service(self, client, mock_db, app):
         """Test password reset when email service is None."""
         mock_db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
+            "_id": ObjectId(OID_9011),
             "email": MOCK_EMAIL,
             "full_name": EXPECTED_TEST_USER
         })
@@ -989,9 +1001,9 @@ class TestAdminResetPasswordExtended:
     @pytest.fixture
     def mock_super_admin(self):
         return CurrentUser(
-            user_id="507f1f77bcf86cd799439011",
+            user_id=OID_9011,
             email=MOCK_EMAIL_ADMIN,
-            roles=["super-administrator"],
+            roles=[STR_SUPER_ADMINISTRATOR],
             groups=[],
             domains=[]
         )
@@ -1035,7 +1047,7 @@ class TestAdminResetPasswordExtended:
     def test_admin_reset_password_email_failure(self, client, mock_db, mock_email_service):
         """Test admin reset password when email delivery fails (lines 589-591)."""
         mock_db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
+            "_id": ObjectId(OID_9011),
             "email": MOCK_EMAIL,
             "full_name": EXPECTED_TEST_USER
         })
@@ -1051,7 +1063,7 @@ class TestAdminResetPasswordExtended:
     def test_admin_reset_password_no_email_service(self, client, mock_db, app):
         """Test admin reset password when email service is None (lines 592-593)."""
         mock_db.users.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
+            "_id": ObjectId(OID_9011),
             "email": MOCK_EMAIL,
             "full_name": EXPECTED_TEST_USER
         })
@@ -1087,16 +1099,16 @@ class TestUpdateUserPrivilegeEscalation:
             user_id="507f1f77bcf86cd799439012",
             email=MOCK_EMAIL_GROUPADMIN,
             roles=["group-administrator"],
-            groups=["group-a"],
+            groups=[STR_GROUP_A],
             domains=[]
         )
 
     @pytest.fixture
     def mock_super_admin(self):
         return CurrentUser(
-            user_id="507f1f77bcf86cd799439011",
+            user_id=OID_9011,
             email=MOCK_EMAIL_ADMIN,
-            roles=["super-administrator"],
+            roles=[STR_SUPER_ADMINISTRATOR],
             groups=[],
             domains=[]
         )
@@ -1134,7 +1146,7 @@ class TestUpdateUserPrivilegeEscalation:
     def test_group_admin_cannot_assign_admin_role(self, mock_group_admin, mock_db, mock_activity_log):
         """Non-super-admin cannot assign administrator role (lines 399-408)."""
         existing_user = {
-            "_id": ObjectId("507f1f77bcf86cd799439013"),
+            "_id": ObjectId(OID_9013),
             "email": MOCK_EMAIL_TARGET,
             "username": "target",
             "full_name": EXPECTED_TARGET_USER,
@@ -1160,7 +1172,7 @@ class TestUpdateUserPrivilegeEscalation:
     def test_group_admin_cannot_assign_super_admin_role(self, mock_group_admin, mock_db, mock_activity_log):
         """Non-super-admin cannot assign super-administrator role (lines 401-405)."""
         existing_user = {
-            "_id": ObjectId("507f1f77bcf86cd799439013"),
+            "_id": ObjectId(OID_9013),
             "email": MOCK_EMAIL_TARGET,
             "username": "target",
             "full_name": EXPECTED_TARGET_USER,
@@ -1177,7 +1189,7 @@ class TestUpdateUserPrivilegeEscalation:
         client = TestClient(app)
 
         response = client.put(PATH_USERS_ID_1, json={
-            "roles": ["super-administrator"]
+            "roles": [STR_SUPER_ADMINISTRATOR]
         })
 
         assert response.status_code == 403
@@ -1185,7 +1197,7 @@ class TestUpdateUserPrivilegeEscalation:
     def test_super_admin_can_assign_admin_role(self, mock_super_admin, mock_db, mock_activity_log):
         """Super-admin CAN assign administrator role (line 402 guard passes)."""
         existing_user = {
-            "_id": ObjectId("507f1f77bcf86cd799439013"),
+            "_id": ObjectId(OID_9013),
             "email": MOCK_EMAIL_TARGET,
             "username": "target",
             "full_name": EXPECTED_TARGET_USER,
@@ -1213,7 +1225,7 @@ class TestUpdateUserPrivilegeEscalation:
     def test_update_user_with_groups_resolves(self, mock_super_admin, mock_db, mock_activity_log):
         """Test that updating user groups triggers resolve_groups (line 410)."""
         existing_user = {
-            "_id": ObjectId("507f1f77bcf86cd799439013"),
+            "_id": ObjectId(OID_9013),
             "email": MOCK_EMAIL_TARGET,
             "username": "target",
             "full_name": EXPECTED_TARGET_USER,
@@ -1224,16 +1236,16 @@ class TestUpdateUserPrivilegeEscalation:
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
-        updated_user = {**existing_user, "groups": ["team-a"]}
+        updated_user = {**existing_user, "groups": [STR_TEAM_A]}
         mock_db.users.find_one = AsyncMock(side_effect=[existing_user, updated_user])
         # resolve_groups will try to look up groups by groupId key
-        mock_db.groups.find_one = AsyncMock(return_value={"groupId": "team-a"})
+        mock_db.groups.find_one = AsyncMock(return_value={STR_GROUPID: STR_TEAM_A})
 
         app = self._make_app(mock_super_admin, mock_db, mock_activity_log)
         client = TestClient(app)
 
         response = client.put(PATH_USERS_ID_1, json={
-            "groups": ["team-a"]
+            "groups": [STR_TEAM_A]
         })
 
         assert response.status_code == 200
@@ -1246,9 +1258,9 @@ class TestListUsersExtended:
     @pytest.fixture
     def mock_super_admin(self):
         return CurrentUser(
-            user_id="507f1f77bcf86cd799439011",
+            user_id=OID_9011,
             email=MOCK_EMAIL_ADMIN,
-            roles=["super-administrator"],
+            roles=[STR_SUPER_ADMINISTRATOR],
             groups=[],
             domains=[]
         )
@@ -1324,7 +1336,7 @@ class TestListUsersExtended:
         now = datetime.utcnow()
         users = [
             {
-                "_id": ObjectId("507f1f77bcf86cd799439011"),
+                "_id": ObjectId(OID_9011),
                 "email": MOCK_EMAIL_ALICE,
                 "username": "alice",
                 "full_name": "Alice",
@@ -1343,7 +1355,7 @@ class TestListUsersExtended:
                 "full_name": "Bob",
                 "is_active": True,
                 "roles": ["editor"],
-                "groups": ["team-a"],
+                "groups": [STR_TEAM_A],
                 "customers": [],
                 "password_hash": MOCK_PASSWORD_HASH,
                 "created_at": now,
@@ -1390,9 +1402,9 @@ class TestCreateUserExtended:
     @pytest.fixture
     def mock_super_admin(self):
         return CurrentUser(
-            user_id="507f1f77bcf86cd799439011",
+            user_id=OID_9011,
             email=MOCK_EMAIL_ADMIN,
-            roles=["super-administrator"],
+            roles=[STR_SUPER_ADMINISTRATOR],
             groups=[],
             domains=[]
         )
@@ -1443,7 +1455,7 @@ class TestCreateUserExtended:
 
     def test_create_user_with_groups_resolves(self, client, mock_db, mock_activity_log):
         """Test creating user with groups triggers resolve_groups (line 339)."""
-        mock_db.groups.find_one = AsyncMock(return_value={"groupId": "team-a"})
+        mock_db.groups.find_one = AsyncMock(return_value={STR_GROUPID: STR_TEAM_A})
 
         response = client.post(PATH_USERS, json={
             "email": MOCK_EMAIL_NEWUSER,
@@ -1452,7 +1464,7 @@ class TestCreateUserExtended:
             "full_name": EXPECTED_NEW_USER,
             "is_active": True,
             "roles": [],
-            "groups": ["team-a"],
+            "groups": [STR_TEAM_A],
             "customers": [],
             "send_password_email": False
         })

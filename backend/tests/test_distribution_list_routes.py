@@ -20,6 +20,13 @@ from easylifeauth.security.access_control import (
 
 EXPECTED_UPDATED_NAME = "Updated Name"
 PATH_DISTRIBUTION_LISTS = "/distribution-lists"
+METHOD_DELETE = "DELETE"
+STR_UPDATED = "Updated"
+SUBPATH_DISTRIBUTION_LISTS = "/distribution-lists/"
+SUBPATH_EMAILS = "/emails"
+SUBPATH_TOGGLE_STATUS = "/toggle-status"
+
+
 
 
 
@@ -282,7 +289,7 @@ class TestDistributionListRoutesSuperAdmin:
 
         response = client.put(
             f"/distribution-lists/{ObjectId()}",
-            json={"name": "Updated"},
+            json={"name": STR_UPDATED},
         )
         assert response.status_code == 404
 
@@ -336,7 +343,7 @@ class TestDistributionListRoutesSuperAdmin:
         mock_service.remove_email = AsyncMock(return_value=updated)
 
         response = client.request(
-            "DELETE",
+            METHOD_DELETE,
             f"/distribution-lists/{list_id}/emails",
             json={"email": MOCK_EMAIL_USER2_TEST},
         )
@@ -348,7 +355,7 @@ class TestDistributionListRoutesSuperAdmin:
         mock_service.remove_email = AsyncMock(return_value=None)
 
         response = client.request(
-            "DELETE",
+            METHOD_DELETE,
             f"/distribution-lists/{ObjectId()}/emails",
             json={"email": MOCK_EMAIL_USER_TEST},
         )
@@ -590,7 +597,7 @@ class TestDistributionListRoutesGroupAdmin:
         """Test that updating a list requires super admin."""
         response = client.put(
             f"/distribution-lists/{ObjectId()}",
-            json={"name": "Updated"},
+            json={"name": STR_UPDATED},
         )
         assert response.status_code == 403
 
@@ -610,7 +617,7 @@ class TestDistributionListRoutesGroupAdmin:
     def test_remove_email_requires_super_admin(self, client):
         """Test that removing an email requires super admin."""
         response = client.request(
-            "DELETE",
+            METHOD_DELETE,
             f"/distribution-lists/{ObjectId()}/emails",
             json={"email": MOCK_EMAIL_USER_TEST},
         )
@@ -707,7 +714,7 @@ class TestDistributionListRoutesAuthEnforcement:
         """Test that update requires super admin."""
         response = client.put(
             f"/distribution-lists/{ObjectId()}",
-            json={"name": "Updated"},
+            json={"name": STR_UPDATED},
         )
         assert response.status_code == 403
 

@@ -18,6 +18,11 @@ PATH_ROOT = "/"
 PATH_AUTH_LOGIN = "/api/auth/login"
 PATH_DATA = "/api/data"
 PATH_HEALTH = "/health"
+METHOD_POST = "POST"
+PATCH_ASYNCIO_CREATE_TASK = "asyncio.create_task"
+STR_CONTENT_SECURITY_POLICY = "Content-Security-Policy"
+
+
 
 
 
@@ -132,7 +137,7 @@ class TestCSRFProtectMiddleware:
             secret_key="test_secret"
         )
         request = MagicMock()
-        request.method = "POST"
+        request.method = METHOD_POST
         request.url.path = PATH_HEALTH
         assert middleware._is_exempt(request) is True
 
@@ -143,7 +148,7 @@ class TestCSRFProtectMiddleware:
             secret_key="test_secret"
         )
         request = MagicMock()
-        request.method = "POST"
+        request.method = METHOD_POST
         request.url.path = "/docs"
         assert middleware._is_exempt(request) is True
 
@@ -155,7 +160,7 @@ class TestCSRFProtectMiddleware:
             exempt_paths={"/api/exempt"}
         )
         request = MagicMock()
-        request.method = "POST"
+        request.method = METHOD_POST
         request.url.path = "/api/exempt"
         assert middleware._is_exempt(request) is True
 
@@ -167,7 +172,7 @@ class TestCSRFProtectMiddleware:
             exempt_paths={"/api/auth/*"}
         )
         request = MagicMock()
-        request.method = "POST"
+        request.method = METHOD_POST
         request.url.path = PATH_AUTH_LOGIN
         assert middleware._is_exempt(request) is True
 
@@ -178,7 +183,7 @@ class TestCSRFProtectMiddleware:
             secret_key="test_secret"
         )
         request = MagicMock()
-        request.method = "POST"
+        request.method = METHOD_POST
         request.url.path = PATH_DATA
         assert middleware._is_exempt(request) is False
 
@@ -391,7 +396,7 @@ class TestRateLimitMiddleware:
     def test_start_cleanup_task(self):
         """Test starting cleanup task"""
         middleware = RateLimitMiddleware(app=MagicMock(), enabled=True)
-        with patch('asyncio.create_task') as mock_create_task:
+        with patch(PATCH_ASYNCIO_CREATE_TASK) as mock_create_task:
             middleware.start_cleanup_task()
             mock_create_task.assert_called_once()
 
@@ -449,7 +454,7 @@ class TestRateLimitMiddleware:
         middleware = RateLimitMiddleware(app=MagicMock(), enabled=True)
         mock_task = MagicMock()
 
-        with patch('asyncio.create_task', return_value=mock_task) as mock_create:
+        with patch(PATCH_ASYNCIO_CREATE_TASK, return_value=mock_task) as mock_create:
             # First call should create task
             middleware.start_cleanup_task()
             mock_create.assert_called_once()
@@ -462,7 +467,7 @@ class TestRateLimitMiddleware:
         """Test cleanup task is not started when disabled"""
         middleware = RateLimitMiddleware(app=MagicMock(), enabled=False)
 
-        with patch('asyncio.create_task') as mock_create:
+        with patch(PATCH_ASYNCIO_CREATE_TASK) as mock_create:
             middleware.start_cleanup_task()
             mock_create.assert_not_called()
 
@@ -516,8 +521,8 @@ class TestSecurityHeadersMiddleware:
         """Test Content-Security-Policy header is set"""
         client = TestClient(app_with_security)
         response = client.get(PATH_ROOT)
-        assert "Content-Security-Policy" in response.headers
-        assert "default-src 'self'" in response.headers.get("Content-Security-Policy")
+        assert STR_CONTENT_SECURITY_POLICY in response.headers
+        assert "default-src 'self'" in response.headers.get(STR_CONTENT_SECURITY_POLICY)
 
     def test_referrer_policy_header(self, app_with_security):
         """Test Referrer-Policy header is set"""
@@ -546,7 +551,7 @@ class TestSecurityHeadersMiddleware:
 
         client = TestClient(app)
         response = client.get(PATH_ROOT)
-        assert "Content-Security-Policy" not in response.headers
+        assert STR_CONTENT_SECURITY_POLICY not in response.headers
 
     def test_custom_csp_directives(self):
         """Test custom CSP directives"""
@@ -563,7 +568,7 @@ class TestSecurityHeadersMiddleware:
 
         client = TestClient(app)
         response = client.get(PATH_ROOT)
-        assert response.headers.get("Content-Security-Policy") == "default-src 'none';"
+        assert response.headers.get(STR_CONTENT_SECURITY_POLICY) == "default-src 'none';"
 
 
 class TestRequestValidationMiddleware:

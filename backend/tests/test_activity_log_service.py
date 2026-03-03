@@ -12,6 +12,9 @@ from easylifeauth.services.activity_log_service import (
     log_activity,
     _activity_log_service
 )
+NUM_123 = "123"
+OID_9011 = "507f1f77bcf86cd799439011"
+
 
 
 class TestActivityLogService:
@@ -38,7 +41,7 @@ class TestActivityLogService:
         result = await activity_service.log(
             action="create",
             entity_type="user",
-            entity_id="507f1f77bcf86cd799439011",
+            entity_id=OID_9011,
             user_email=MOCK_EMAIL_ADMIN,
             details={"ip": MOCK_IP_LOCALHOST}
         )
@@ -52,7 +55,7 @@ class TestActivityLogService:
         result = await activity_service.log(
             action="update",
             entity_type="user",
-            entity_id="507f1f77bcf86cd799439011",
+            entity_id=OID_9011,
             user_email=MOCK_EMAIL_ADMIN,
             old_values={"name": "Old Name"}
         )
@@ -67,7 +70,7 @@ class TestActivityLogService:
         result = await activity_service.log(
             action="update",
             entity_type="user",
-            entity_id="507f1f77bcf86cd799439011",
+            entity_id=OID_9011,
             user_email=MOCK_EMAIL_ADMIN,
             new_values={"name": "New Name"}
         )
@@ -82,7 +85,7 @@ class TestActivityLogService:
         result = await activity_service.log(
             action="update",
             entity_type="user",
-            entity_id="507f1f77bcf86cd799439011",
+            entity_id=OID_9011,
             user_email=MOCK_EMAIL_ADMIN,
             old_values={"name": "Old Name"},
             new_values={"name": "New Name"}
@@ -104,7 +107,7 @@ class TestActivityLogService:
         result = await service.log(
             action="create",
             entity_type="user",
-            entity_id="123",
+            entity_id=NUM_123,
             user_email=MOCK_EMAIL
         )
 
@@ -120,7 +123,7 @@ class TestActivityLogService:
         result = await service.log(
             action="create",
             entity_type="user",
-            entity_id="123",
+            entity_id=NUM_123,
             user_email=MOCK_EMAIL
         )
 
@@ -137,7 +140,7 @@ class TestActivityLogService:
         result = await service.log(
             action="create",
             entity_type="user",
-            entity_id="123",
+            entity_id=NUM_123,
             user_email=MOCK_EMAIL
         )
 
@@ -197,7 +200,7 @@ class TestModuleFunctions:
         result = await log_activity(
             action="test",
             entity_type="test",
-            entity_id="123",
+            entity_id=NUM_123,
             user_email=MOCK_EMAIL
         )
 

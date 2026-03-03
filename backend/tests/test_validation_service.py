@@ -8,6 +8,16 @@ from easylifeauth.services.validation_service import (
     validate_domain_data,
     validate_scenario_data
 )
+STR_DOMAIN = "Domain"
+STR_DOMAINKEY = "domainKey"
+STR_DOMAIN_KEY = "domain-key"
+STR_GROUP = "Group"
+STR_GROUPID = "groupId"
+STR_GROUP_ID = "group-id"
+STR_ROLE = "Role"
+STR_ROLEID = "roleId"
+STR_ROLE_ID = "role-id"
+
 
 
 class TestValidationError:
@@ -326,7 +336,7 @@ class TestValidateRoleData:
     def test_validate_role_data_valid(self):
         """Test valid role data passes"""
         errors = ValidationService.validate_role_data({
-            "roleId": "admin",
+            STR_ROLEID: "admin",
             "name": "Administrator",
             "description": "Admin role",
             "status": "active",
@@ -337,22 +347,22 @@ class TestValidateRoleData:
     def test_validate_role_data_missing_roleId(self):
         """Test missing roleId fails"""
         errors = ValidationService.validate_role_data({
-            "name": "Role"
+            "name": STR_ROLE
         })
-        assert any("roleId" in e for e in errors)
+        assert any(STR_ROLEID in e for e in errors)
 
     def test_validate_role_data_missing_name(self):
         """Test missing name fails"""
         errors = ValidationService.validate_role_data({
-            "roleId": "role-id"
+            STR_ROLEID: STR_ROLE_ID
         })
         assert any("name" in e for e in errors)
 
     def test_validate_role_data_invalid_status(self):
         """Test invalid status fails"""
         errors = ValidationService.validate_role_data({
-            "roleId": "role-id",
-            "name": "Role",
+            STR_ROLEID: STR_ROLE_ID,
+            "name": STR_ROLE,
             "status": "unknown"
         })
         assert any("status" in e for e in errors)
@@ -360,8 +370,8 @@ class TestValidateRoleData:
     def test_validate_role_data_invalid_priority(self):
         """Test invalid priority fails"""
         errors = ValidationService.validate_role_data({
-            "roleId": "role-id",
-            "name": "Role",
+            STR_ROLEID: STR_ROLE_ID,
+            "name": STR_ROLE,
             "priority": -1
         })
         assert any("priority" in e for e in errors)
@@ -369,8 +379,8 @@ class TestValidateRoleData:
     def test_validate_role_data_long_description(self):
         """Test too long description fails"""
         errors = ValidationService.validate_role_data({
-            "roleId": "role-id",
-            "name": "Role",
+            STR_ROLEID: STR_ROLE_ID,
+            "name": STR_ROLE,
             "description": "a" * 600
         })
         assert any("description" in e for e in errors)
@@ -382,7 +392,7 @@ class TestValidateGroupData:
     def test_validate_group_data_valid(self):
         """Test valid group data passes"""
         errors = ValidationService.validate_group_data({
-            "groupId": "viewers",
+            STR_GROUPID: "viewers",
             "name": "Viewers Group",
             "description": "Can view content",
             "status": "active"
@@ -392,22 +402,22 @@ class TestValidateGroupData:
     def test_validate_group_data_missing_groupId(self):
         """Test missing groupId fails"""
         errors = ValidationService.validate_group_data({
-            "name": "Group"
+            "name": STR_GROUP
         })
-        assert any("groupId" in e for e in errors)
+        assert any(STR_GROUPID in e for e in errors)
 
     def test_validate_group_data_missing_name(self):
         """Test missing name fails"""
         errors = ValidationService.validate_group_data({
-            "groupId": "group-id"
+            STR_GROUPID: STR_GROUP_ID
         })
         assert any("name" in e for e in errors)
 
     def test_validate_group_data_invalid_status(self):
         """Test invalid status fails"""
         errors = ValidationService.validate_group_data({
-            "groupId": "group-id",
-            "name": "Group",
+            STR_GROUPID: STR_GROUP_ID,
+            "name": STR_GROUP,
             "status": "pending"
         })
         assert any("status" in e for e in errors)
@@ -415,8 +425,8 @@ class TestValidateGroupData:
     def test_validate_group_data_long_description(self):
         """Test too long description fails"""
         errors = ValidationService.validate_group_data({
-            "groupId": "group-id",
-            "name": "Group",
+            STR_GROUPID: STR_GROUP_ID,
+            "name": STR_GROUP,
             "description": "a" * 600
         })
         assert any("description" in e for e in errors)
@@ -428,7 +438,7 @@ class TestValidateDomainData:
     def test_validate_domain_data_valid(self):
         """Test valid domain data passes"""
         errors = ValidationService.validate_domain_data({
-            "key": "domain-key",
+            "key": STR_DOMAIN_KEY,
             "name": "Domain Name",
             "status": "active",
             "order": 1
@@ -438,22 +448,22 @@ class TestValidateDomainData:
     def test_validate_domain_data_missing_key(self):
         """Test missing key fails"""
         errors = ValidationService.validate_domain_data({
-            "name": "Domain"
+            "name": STR_DOMAIN
         })
         assert any("key" in e for e in errors)
 
     def test_validate_domain_data_missing_name(self):
         """Test missing name fails"""
         errors = ValidationService.validate_domain_data({
-            "key": "domain-key"
+            "key": STR_DOMAIN_KEY
         })
         assert any("name" in e for e in errors)
 
     def test_validate_domain_data_invalid_status(self):
         """Test invalid status fails"""
         errors = ValidationService.validate_domain_data({
-            "key": "domain-key",
-            "name": "Domain",
+            "key": STR_DOMAIN_KEY,
+            "name": STR_DOMAIN,
             "status": "unknown"
         })
         assert any("status" in e for e in errors)
@@ -461,8 +471,8 @@ class TestValidateDomainData:
     def test_validate_domain_data_invalid_order(self):
         """Test invalid order fails"""
         errors = ValidationService.validate_domain_data({
-            "key": "domain-key",
-            "name": "Domain",
+            "key": STR_DOMAIN_KEY,
+            "name": STR_DOMAIN,
             "order": -5
         })
         assert any("order" in e for e in errors)
@@ -476,7 +486,7 @@ class TestValidateScenarioData:
         errors = ValidationService.validate_scenario_data({
             "key": "scenario-key",
             "name": "Scenario Name",
-            "domainKey": "domain-key"
+            STR_DOMAINKEY: STR_DOMAIN_KEY
         })
         assert len(errors) == 0
 
@@ -486,7 +496,7 @@ class TestValidateScenarioData:
             "key": "scenario-key",
             "name": "Scenario"
         })
-        assert any("domainKey" in e for e in errors)
+        assert any(STR_DOMAINKEY in e for e in errors)
 
 
 class TestHelperFunctions:
@@ -505,6 +515,6 @@ class TestHelperFunctions:
         errors = validate_scenario_data({
             "key": "test",
             "name": "Test",
-            "domainKey": "domain"
+            STR_DOMAINKEY: "domain"
         })
         assert len(errors) == 0

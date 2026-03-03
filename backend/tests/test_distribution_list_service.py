@@ -17,6 +17,10 @@ VALID_OID_2 = "507f1f77bcf86cd799439012"
 VALID_OID_3 = "507f1f77bcf86cd799439013"
 INVALID_OID = "not-a-valid-objectid"
 USER_ID = "507f1f77bcf86cd799439099"
+STR_ARCHIVED_LIST = "archived-list"
+STR_DEV_TEAM = "dev-team"
+STR_TEST = "Test"
+
 
 
 class TestDistributionListService:
@@ -39,7 +43,7 @@ class TestDistributionListService:
         """Sample distribution list document"""
         return {
             "_id": ObjectId(VALID_OID),
-            "key": "dev-team",
+            "key": STR_DEV_TEAM,
             "name": EXPECTED_DEV_TEAM,
             "description": "Development team distribution list",
             "type": "team",
@@ -73,7 +77,7 @@ class TestDistributionListService:
         """Inactive distribution list document"""
         return {
             "_id": ObjectId(VALID_OID_3),
-            "key": "archived-list",
+            "key": STR_ARCHIVED_LIST,
             "name": "Archived List",
             "description": "An archived list",
             "type": "custom",
@@ -101,7 +105,7 @@ class TestDistributionListService:
 
         mock_db.distribution_lists.find.assert_called_once_with({"is_active": True})
         assert len(result) == 1
-        assert result[0]["key"] == "dev-team"
+        assert result[0]["key"] == STR_DEV_TEAM
         # _id should be converted to string
         assert isinstance(result[0]["_id"], str)
 
@@ -175,7 +179,7 @@ class TestDistributionListService:
         result = await service.get_by_id(VALID_OID)
 
         assert result is not None
-        assert result["key"] == "dev-team"
+        assert result["key"] == STR_DEV_TEAM
         assert isinstance(result["_id"], str)
         mock_db.distribution_lists.find_one.assert_called_once_with(
             {"_id": ObjectId(VALID_OID)}
@@ -214,13 +218,13 @@ class TestDistributionListService:
         """Test get_by_key with an existing active key"""
         mock_db.distribution_lists.find_one = AsyncMock(return_value=sample_dist_list)
 
-        result = await service.get_by_key("dev-team")
+        result = await service.get_by_key(STR_DEV_TEAM)
 
         assert result is not None
-        assert result["key"] == "dev-team"
+        assert result["key"] == STR_DEV_TEAM
         assert isinstance(result["_id"], str)
         mock_db.distribution_lists.find_one.assert_called_once_with(
-            {"key": "dev-team", "is_active": True}
+            {"key": STR_DEV_TEAM, "is_active": True}
         )
 
     @pytest.mark.asyncio
@@ -237,11 +241,11 @@ class TestDistributionListService:
         """Test get_by_key filters by is_active=True"""
         mock_db.distribution_lists.find_one = AsyncMock(return_value=None)
 
-        result = await service.get_by_key("archived-list")
+        result = await service.get_by_key(STR_ARCHIVED_LIST)
 
         assert result is None
         mock_db.distribution_lists.find_one.assert_called_once_with(
-            {"key": "archived-list", "is_active": True}
+            {"key": STR_ARCHIVED_LIST, "is_active": True}
         )
 
     # ------------------------------------------------------------------ #
@@ -312,7 +316,7 @@ class TestDistributionListService:
         """Test get_emails_by_key returns emails for an existing key"""
         mock_db.distribution_lists.find_one = AsyncMock(return_value=sample_dist_list)
 
-        result = await service.get_emails_by_key("dev-team")
+        result = await service.get_emails_by_key(STR_DEV_TEAM)
 
         assert result == [MOCK_EMAIL_ALICE, MOCK_EMAIL_BOB]
 
@@ -433,7 +437,7 @@ class TestDistributionListService:
         )
 
         data = {
-            "key": "dev-team",
+            "key": STR_DEV_TEAM,
             "name": EXPECTED_DEV_TEAM,
             "description": "Development team",
             "type": "team",
@@ -444,7 +448,7 @@ class TestDistributionListService:
         assert result is not None
         mock_db.distribution_lists.insert_one.assert_called_once()
         insert_arg = mock_db.distribution_lists.insert_one.call_args[0][0]
-        assert insert_arg["key"] == "dev-team"
+        assert insert_arg["key"] == STR_DEV_TEAM
         assert insert_arg["name"] == EXPECTED_DEV_TEAM
         assert insert_arg["type"] == "team"
         assert insert_arg["emails"] == [MOCK_EMAIL_ALICE, MOCK_EMAIL_BOB]
@@ -558,7 +562,7 @@ class TestDistributionListService:
     @pytest.mark.asyncio
     async def test_update_invalid_objectid(self, service, mock_db):
         """Test update with invalid ObjectId returns None"""
-        result = await service.update(INVALID_OID, {"name": "Test"})
+        result = await service.update(INVALID_OID, {"name": STR_TEST})
 
         assert result is None
 
@@ -570,7 +574,7 @@ class TestDistributionListService:
             return_value=MagicMock(matched_count=0)
         )
 
-        result = await service.update(VALID_OID, {"name": "Test"}, user_id=USER_ID)
+        result = await service.update(VALID_OID, {"name": STR_TEST}, user_id=USER_ID)
 
         assert result is None
 
@@ -603,7 +607,7 @@ class TestDistributionListService:
         )
 
         result = await service.update(
-            VALID_OID, {"key": "dev-team"}, user_id=USER_ID
+            VALID_OID, {"key": STR_DEV_TEAM}, user_id=USER_ID
         )
 
         assert result is not None
@@ -636,7 +640,7 @@ class TestDistributionListService:
         )
 
         before = datetime.now(timezone.utc)
-        await service.update(VALID_OID, {"name": "Test"}, user_id=USER_ID)
+        await service.update(VALID_OID, {"name": STR_TEST}, user_id=USER_ID)
         after = datetime.now(timezone.utc)
 
         set_fields = mock_db.distribution_lists.update_one.call_args[0][1][MONGO_SET]
@@ -961,7 +965,7 @@ class TestDistributionListService:
         """Test get_by_key properly converts ObjectId _id to string"""
         mock_db.distribution_lists.find_one = AsyncMock(return_value=sample_dist_list)
 
-        result = await service.get_by_key("dev-team")
+        result = await service.get_by_key(STR_DEV_TEAM)
 
         assert isinstance(result["_id"], str)
 
@@ -980,7 +984,7 @@ class TestDistributionListService:
         )
 
         result = await service.create(
-            {"key": "test", "name": "Test"}, user_id=USER_ID
+            {"key": "test", "name": STR_TEST}, user_id=USER_ID
         )
 
         assert result["_id"] == str(inserted_id)
@@ -997,7 +1001,7 @@ class TestDistributionListService:
 
         result = await service.update(VALID_OID, {"name": "Updated"}, user_id=USER_ID)
 
-        assert result["key"] == "dev-team"
+        assert result["key"] == STR_DEV_TEAM
 
     @pytest.mark.asyncio
     async def test_add_email_returns_get_by_id_result(
@@ -1011,7 +1015,7 @@ class TestDistributionListService:
 
         result = await service.add_email(VALID_OID, MOCK_EMAIL_NEW, user_id=USER_ID)
 
-        assert result["key"] == "dev-team"
+        assert result["key"] == STR_DEV_TEAM
 
     @pytest.mark.asyncio
     async def test_remove_email_returns_get_by_id_result(
@@ -1027,4 +1031,4 @@ class TestDistributionListService:
             VALID_OID, MOCK_EMAIL_BOB, user_id=USER_ID
         )
 
-        assert result["key"] == "dev-team"
+        assert result["key"] == STR_DEV_TEAM

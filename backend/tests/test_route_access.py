@@ -26,6 +26,15 @@ from easylifeauth.api import dependencies
 PATH_DOMAINS = "/domains"
 PATH_GROUPS = "/groups"
 PATH_PLAYBOARDS = "/playboards"
+STR_D1 = "d1"
+STR_DATADOMAIN = "dataDomain"
+STR_FORBIDDEN = "Forbidden"
+STR_GROUP_ADMINISTRATOR = "group-administrator"
+STR_GROUP_EDITOR = "group-editor"
+STR_SC1 = "sc1"
+STR_SUPER_ADMINISTRATOR = "super-administrator"
+STR_TEST = "Test"
+
 
 
 
@@ -43,10 +52,10 @@ def _user(role: str, domains=None) -> CurrentUser:
     )
 
 
-SUPER_ADMIN = _user("super-administrator", ["all"])
+SUPER_ADMIN = _user(STR_SUPER_ADMINISTRATOR, ["all"])
 ADMIN = _user("administrator", ["all"])
-GROUP_ADMIN = _user("group-administrator")
-GROUP_EDITOR = _user("group-editor")
+GROUP_ADMIN = _user(STR_GROUP_ADMINISTRATOR)
+GROUP_EDITOR = _user(STR_GROUP_EDITOR)
 EDITOR = _user("editor")
 REGULAR_USER = _user("user")
 VIEWER = _user("viewer")
@@ -157,7 +166,7 @@ class TestDomainRouteAccess:
             return_value=MagicMock(inserted_id=ObjectId())
         )
         resp = client.post(PATH_DOMAINS, json={
-            "key": "test-domain", "name": "Test", "order": 1,
+            "key": "test-domain", "name": STR_TEST, "order": 1,
         })
         assert resp.status_code == 201
 
@@ -172,7 +181,7 @@ class TestDomainRouteAccess:
         app.dependency_overrides[dependencies.get_db] = lambda: _mock_db()
         # require_super_admin will call get_current_user -> REGULAR_USER -> 403
         app.dependency_overrides[require_super_admin] = lambda: (_ for _ in ()).throw(
-            __import__("fastapi").HTTPException(status_code=403, detail="Forbidden")
+            __import__("fastapi").HTTPException(status_code=403, detail=STR_FORBIDDEN)
         )
 
         client = TestClient(app, raise_server_exceptions=False)
@@ -285,7 +294,7 @@ class TestScenarioRouteAccess:
             else:
                 from fastapi import HTTPException
                 def _reject():
-                    raise HTTPException(status_code=403, detail="Forbidden")
+                    raise HTTPException(status_code=403, detail=STR_FORBIDDEN)
                 app.dependency_overrides[require_admin_or_editor] = _reject
 
             app.dependency_overrides[dependencies.get_db] = lambda: db
@@ -308,20 +317,20 @@ class TestScenarioRouteAccess:
     def test_create_scenario_editor_ok(self, _app_for):
         client, _, svc = _app_for(EDITOR)
         svc.save = AsyncMock(return_value={
-            "key": "sc1", "name": "Test", "dataDomain": "d1",
+            "key": STR_SC1, "name": STR_TEST, STR_DATADOMAIN: STR_D1,
             "description": "desc", "status": "A",
         })
         resp = client.post("/scenarios", json={
-            "key": "sc1", "name": "Test",
-            "dataDomain": "d1", "description": "desc",
+            "key": STR_SC1, "name": STR_TEST,
+            STR_DATADOMAIN: STR_D1, "description": "desc",
         })
         assert resp.status_code == 201
 
     def test_create_scenario_regular_user_rejected(self, _app_for):
         client, _, _ = _app_for(REGULAR_USER, allow_editor=False)
         resp = client.post("/scenarios", json={
-            "key": "sc1", "name": "Test",
-            "dataDomain": "d1", "description": "desc",
+            "key": STR_SC1, "name": STR_TEST,
+            STR_DATADOMAIN: STR_D1, "description": "desc",
         })
         assert resp.status_code == 403
 
@@ -355,7 +364,7 @@ class TestPlayboardRouteAccess:
             else:
                 from fastapi import HTTPException
                 def _reject():
-                    raise HTTPException(status_code=403, detail="Forbidden")
+                    raise HTTPException(status_code=403, detail=STR_FORBIDDEN)
                 app.dependency_overrides[require_super_admin] = _reject
 
             app.dependency_overrides[dependencies.get_db] = lambda: db
@@ -376,14 +385,14 @@ class TestPlayboardRouteAccess:
         client, db = _app_for(SUPER_ADMIN)
         db.playboards.find_one = AsyncMock(return_value=None)
         db.domain_scenarios.find_one = AsyncMock(return_value={
-            "key": "sc1", "domainKey": "d1",
+            "key": STR_SC1, "domainKey": STR_D1,
         })
         db.playboards.insert_one = AsyncMock(
             return_value=MagicMock(inserted_id=ObjectId())
         )
         resp = client.post(PATH_PLAYBOARDS, json={
             "key": "pb1", "name": "Playboard 1",
-            "scenarioKey": "sc1",
+            "scenarioKey": STR_SC1,
         })
         assert resp.status_code == 201
 
@@ -391,7 +400,7 @@ class TestPlayboardRouteAccess:
         client, _ = _app_for(REGULAR_USER, allow_super=False)
         resp = client.post(PATH_PLAYBOARDS, json={
             "key": "pb1", "name": "Playboard 1",
-            "scenarioKey": "sc1",
+            "scenarioKey": STR_SC1,
         })
         assert resp.status_code == 403
 
@@ -419,32 +428,32 @@ class TestCrossRoleMatrix:
 
     @pytest.mark.parametrize("role,fn,expected", [
         # require_admin
-        ("super-administrator", require_admin, True),
+        (STR_SUPER_ADMINISTRATOR, require_admin, True),
         ("administrator", require_admin, True),
-        ("group-administrator", require_admin, False),
-        ("group-editor", require_admin, False),
+        (STR_GROUP_ADMINISTRATOR, require_admin, False),
+        (STR_GROUP_EDITOR, require_admin, False),
         ("editor", require_admin, False),
         ("user", require_admin, False),
         ("viewer", require_admin, False),
         # require_super_admin
-        ("super-administrator", require_super_admin, True),
+        (STR_SUPER_ADMINISTRATOR, require_super_admin, True),
         ("administrator", require_super_admin, False),
-        ("group-administrator", require_super_admin, False),
+        (STR_GROUP_ADMINISTRATOR, require_super_admin, False),
         ("editor", require_super_admin, False),
         ("user", require_super_admin, False),
         # require_group_admin
-        ("super-administrator", require_group_admin, True),
+        (STR_SUPER_ADMINISTRATOR, require_group_admin, True),
         ("administrator", require_group_admin, True),
-        ("group-administrator", require_group_admin, True),
-        ("group-editor", require_group_admin, True),
+        (STR_GROUP_ADMINISTRATOR, require_group_admin, True),
+        (STR_GROUP_EDITOR, require_group_admin, True),
         ("editor", require_group_admin, False),
         ("user", require_group_admin, False),
         ("viewer", require_group_admin, False),
         # require_admin_or_editor
-        ("super-administrator", require_admin_or_editor, True),
+        (STR_SUPER_ADMINISTRATOR, require_admin_or_editor, True),
         ("administrator", require_admin_or_editor, True),
-        ("group-administrator", require_admin_or_editor, True),
-        ("group-editor", require_admin_or_editor, True),
+        (STR_GROUP_ADMINISTRATOR, require_admin_or_editor, True),
+        (STR_GROUP_EDITOR, require_admin_or_editor, True),
         ("editor", require_admin_or_editor, True),
         ("user", require_admin_or_editor, False),
         ("viewer", require_admin_or_editor, False),

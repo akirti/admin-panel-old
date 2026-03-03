@@ -19,6 +19,15 @@ EXPECTED_UPDATED_NAME = "Updated Name"
 PATH_API_CONFIGS = "/api-configs"
 PATH_API_CONFIGS_GCS_STATUS = "/api-configs/gcs/status"
 PATH_API_CONFIGS_TEST = "/api-configs/test"
+FILE_CERT_PEM = "cert.pem"
+METHOD_GET = "GET"
+MIME_APPLICATION_X_PEM_FILE = "application/x-pem-file"
+STR_USER_123 = "user_123"
+SUBPATH_API_CONFIGS = "/api-configs/"
+SUBPATH_TOGGLE_STATUS = "/toggle-status"
+SUBPATH_UPLOAD_CERT = "/upload-cert"
+
+
 
 
 
@@ -32,7 +41,7 @@ def make_config_dict(**overrides):
         "name": "Test API",
         "description": "A test API configuration",
         "endpoint": MOCK_URL_API_V1,
-        "method": "GET",
+        "method": METHOD_GET,
         "headers": {"Authorization": "Bearer token"},
         "params": None,
         "body": None,
@@ -50,7 +59,7 @@ def make_config_dict(**overrides):
         "use_proxy": False,
         "proxy_url": None,
         "ping_endpoint": None,
-        "ping_method": "GET",
+        "ping_method": METHOD_GET,
         "ping_expected_status": 200,
         "ping_timeout": 5,
         "cache_enabled": False,
@@ -343,7 +352,7 @@ class TestApiConfigRoutesSuperAdmin:
         mock_service.get_config_by_id = AsyncMock(return_value=config)
         mock_service.upload_certificate = AsyncMock(return_value={
             "gcs_path": MOCK_GCS_CERT_PEM,
-            "file_name": "cert.pem",
+            "file_name": FILE_CERT_PEM,
             "cert_type": "cert",
             "uploaded_at": datetime.utcnow().isoformat(),
         })
@@ -352,7 +361,7 @@ class TestApiConfigRoutesSuperAdmin:
         response = client.post(
             f"/api-configs/{config_id}/upload-cert",
             data={"cert_type": "cert"},
-            files={"file": ("cert.pem", b"CERT CONTENT", "application/x-pem-file")},
+            files={"file": (FILE_CERT_PEM, b"CERT CONTENT", MIME_APPLICATION_X_PEM_FILE)},
         )
         assert response.status_code == 200
         data = response.json()
@@ -375,7 +384,7 @@ class TestApiConfigRoutesSuperAdmin:
         response = client.post(
             f"/api-configs/{config_id}/upload-cert",
             data={"cert_type": "key"},
-            files={"file": ("key.pem", b"KEY CONTENT", "application/x-pem-file")},
+            files={"file": ("key.pem", b"KEY CONTENT", MIME_APPLICATION_X_PEM_FILE)},
         )
         assert response.status_code == 200
         assert response.json()["cert_type"] == "key"
@@ -396,7 +405,7 @@ class TestApiConfigRoutesSuperAdmin:
         response = client.post(
             f"/api-configs/{config_id}/upload-cert",
             data={"cert_type": "ca"},
-            files={"file": ("ca.pem", b"CA CONTENT", "application/x-pem-file")},
+            files={"file": ("ca.pem", b"CA CONTENT", MIME_APPLICATION_X_PEM_FILE)},
         )
         assert response.status_code == 200
         assert response.json()["cert_type"] == "ca"
@@ -408,7 +417,7 @@ class TestApiConfigRoutesSuperAdmin:
         response = client.post(
             f"/api-configs/{ObjectId()}/upload-cert",
             data={"cert_type": "cert"},
-            files={"file": ("cert.pem", b"CONTENT", "application/x-pem-file")},
+            files={"file": (FILE_CERT_PEM, b"CONTENT", MIME_APPLICATION_X_PEM_FILE)},
         )
         assert response.status_code == 404
 
@@ -424,7 +433,7 @@ class TestApiConfigRoutesSuperAdmin:
         response = client.post(
             f"/api-configs/{config_id}/upload-cert",
             data={"cert_type": "cert"},
-            files={"file": ("bad.pem", b"BAD CONTENT", "application/x-pem-file")},
+            files={"file": ("bad.pem", b"BAD CONTENT", MIME_APPLICATION_X_PEM_FILE)},
         )
         assert response.status_code == 400
         assert "Invalid certificate format" in response.json()["detail"]
@@ -450,7 +459,7 @@ class TestApiConfigRoutesTestEndpoints:
         """Create a mock regular user."""
         user = MagicMock()
         user.email = MOCK_EMAIL_USER_TEST
-        user.user_id = "user_123"
+        user.user_id = STR_USER_123
         user.roles = ["user"]
         return user
 
@@ -505,7 +514,7 @@ class TestApiConfigRoutesTestEndpoints:
                 "key": "inline-test",
                 "name": "Inline Test",
                 "endpoint": MOCK_URL_HTTPBIN,
-                "method": "GET",
+                "method": METHOD_GET,
             },
         })
         assert response.status_code == 200
@@ -594,7 +603,7 @@ class TestApiConfigRoutesGCSStatus:
         """Create a mock user."""
         user = MagicMock()
         user.email = MOCK_EMAIL_USER_TEST
-        user.user_id = "user_123"
+        user.user_id = STR_USER_123
         user.roles = ["user"]
         return user
 
@@ -677,7 +686,7 @@ class TestApiConfigRoutesAuthEnforcement:
         """Create a mock regular user (not super admin)."""
         user = MagicMock()
         user.email = MOCK_EMAIL_USER_TEST
-        user.user_id = "user_123"
+        user.user_id = STR_USER_123
         user.roles = ["user"]
         return user
 
@@ -736,7 +745,7 @@ class TestApiConfigRoutesAuthEnforcement:
         response = unauthenticated_client.post(
             f"/api-configs/{ObjectId()}/upload-cert",
             data={"cert_type": "cert"},
-            files={"file": ("cert.pem", b"CONTENT", "application/x-pem-file")},
+            files={"file": (FILE_CERT_PEM, b"CONTENT", MIME_APPLICATION_X_PEM_FILE)},
         )
         assert response.status_code == 403
 
@@ -759,7 +768,7 @@ class TestApiConfigRoutesAuthEnforcement:
                 "key": "test-key",
                 "name": "Test",
                 "endpoint": MOCK_URL_EXAMPLE_HTTPS,
-                "method": "GET",
+                "method": METHOD_GET,
             },
         })
         assert response.status_code == 200

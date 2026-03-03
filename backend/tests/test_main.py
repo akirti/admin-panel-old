@@ -17,6 +17,16 @@ from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX, LOCAL_FILE_STORAGE
 from mock_data import MOCK_EMAIL_BOT, MOCK_IP_BIND_ALL, MOCK_PATH_UPLOADS, MOCK_URL_EXAMPLE, MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV, MOCK_URL_JIRA_EXAMPLE, MOCK_URL_JIRA_TEST
 
 ENV_PREFIX = f"{ENVIRONEMNT_VARIABLE_PREFIX}_"
+CFG_ENVIRONMENT_CORS_ORIGINS = "environment.cors.origins"
+CFG_ENVIRONMENT_JIRA = "environment.jira"
+CFG_ENVIRONMENT_STORAGE = "environment.storage"
+CFG_GLOBALS_DATABASES_DEFAULT = "globals.databases.default"
+STR_CONFIGURATIONLOADER = "ConfigurationLoader"
+STR_CONFIG_PATH = "CONFIG_PATH"
+STR_DEFAULT_ASSIGNEE_NAME = "default_assignee_name"
+STR_MAXPOOLSIZE = "maxPoolSize"
+STR_MY_BUCKET = "my-bucket"
+
 
 
 # ---------------------------------------------------------------------------
@@ -96,7 +106,7 @@ def _run_main(env_overrides=None, config_values=None, name_override=None):
     env_overrides = env_overrides or {}
 
     # Build a clean copy of os.environ without variables main.py reads
-    prefixes_to_strip = ("CONFIG_PATH", ENV_PREFIX)
+    prefixes_to_strip = (STR_CONFIG_PATH, ENV_PREFIX)
     clean_env = {
         k: v for k, v in os.environ.items()
         if not any(k.startswith(p) for p in prefixes_to_strip)
@@ -107,7 +117,7 @@ def _run_main(env_overrides=None, config_values=None, name_override=None):
     mock_create_app = MagicMock(name="create_app")
 
     # -- Mock ConfigurationLoader ----------------------------------------------
-    mock_config_loader_cls = MagicMock(name="ConfigurationLoader")
+    mock_config_loader_cls = MagicMock(name=STR_CONFIGURATIONLOADER)
     instance = _make_config_instance(config_values)
     mock_config_loader_cls.return_value = instance
 
@@ -145,7 +155,7 @@ def _run_main(env_overrides=None, config_values=None, name_override=None):
         "ENVIRONEMNT_VARIABLE_PREFIX": ENVIRONEMNT_VARIABLE_PREFIX,
         "LOCAL_FILE_STORAGE": LOCAL_FILE_STORAGE,
         "create_app": mock_create_app,
-        "ConfigurationLoader": mock_config_loader_cls,
+        STR_CONFIGURATIONLOADER: mock_config_loader_cls,
     }
 
     with patch.dict(os.environ, clean_env, clear=True):
@@ -175,7 +185,7 @@ class TestConfigurationLoaderConstruction:
 
     def test_custom_config_path(self):
         """CONFIG_PATH env var should override the config path."""
-        _, _, mock_cl = _run_main(env_overrides={"CONFIG_PATH": "/custom/config"})
+        _, _, mock_cl = _run_main(env_overrides={STR_CONFIG_PATH: "/custom/config"})
         kwargs = mock_cl.call_args[1]
         assert kwargs["config_path"] == "/custom/config"
 
@@ -190,7 +200,7 @@ class TestConfigurationLoaderConstruction:
     def test_both_custom_env_vars(self):
         """Both CONFIG_PATH and {prefix}_ENVIRONMENT should be forwarded."""
         _, _, mock_cl = _run_main(env_overrides={
-            "CONFIG_PATH": "/etc/myapp",
+            STR_CONFIG_PATH: "/etc/myapp",
             f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT": "test",
         })
         kwargs = mock_cl.call_args[1]
@@ -206,7 +216,7 @@ class TestDBConfig:
         fake_db = {"host": "dbhost", "database": "mydb"}
         _, mock_app, _ = _run_main(config_values={
             "db_config": fake_db,
-            "globals.databases.default": {"max_pool_size": 100},
+            CFG_GLOBALS_DATABASES_DEFAULT: {"max_pool_size": 100},
         })
         db = mock_app.call_args[1]["db_config"]
         assert db["host"] == "dbhost"
@@ -227,10 +237,10 @@ class TestDBConfig:
         }
         _, mock_app, _ = _run_main(config_values={
             "db_config": fake_db,
-            "globals.databases.default": fake_pool,
+            CFG_GLOBALS_DATABASES_DEFAULT: fake_pool,
         })
         db = mock_app.call_args[1]["db_config"]
-        assert db["maxPoolSize"] == 100
+        assert db[STR_MAXPOOLSIZE] == 100
         assert db["minPoolSize"] == 10
         assert db["maxIdleTimeMS"] == 600000
         assert db["serverSelectionTimeoutMS"] == 5000
@@ -244,10 +254,10 @@ class TestDBConfig:
         fake_db = {"host": "dbhost"}
         _, mock_app, _ = _run_main(config_values={
             "db_config": fake_db,
-            "globals.databases.default": {"max_pool_size": 100},
+            CFG_GLOBALS_DATABASES_DEFAULT: {"max_pool_size": 100},
         })
         db = mock_app.call_args[1]["db_config"]
-        assert db["maxPoolSize"] == 100
+        assert db[STR_MAXPOOLSIZE] == 100
         assert db["minPoolSize"] == 5  # default
         assert db["maxIdleTimeMS"] == 300000  # default
         assert db["serverSelectionTimeoutMS"] == 30000  # default
@@ -261,7 +271,7 @@ class TestDBConfig:
         """Pool settings should not be injected when db_config is None."""
         _, mock_app, _ = _run_main(config_values={
             "db_config": None,
-            "globals.databases.default": {"max_pool_size": 100},
+            CFG_GLOBALS_DATABASES_DEFAULT: {"max_pool_size": 100},
         })
         assert mock_app.call_args[1]["db_config"] is None
 
@@ -270,20 +280,20 @@ class TestDBConfig:
         fake_db = {"host": "dbhost"}
         _, mock_app, _ = _run_main(config_values={
             "db_config": fake_db,
-            "globals.databases.default": None,
+            CFG_GLOBALS_DATABASES_DEFAULT: None,
         })
         db = mock_app.call_args[1]["db_config"]
-        assert "maxPoolSize" not in db
+        assert STR_MAXPOOLSIZE not in db
 
     def test_pool_not_injected_when_globals_empty_dict(self):
         """Empty dict is falsy — pool settings should not be injected."""
         fake_db = {"host": "dbhost"}
         _, mock_app, _ = _run_main(config_values={
             "db_config": fake_db,
-            "globals.databases.default": {},
+            CFG_GLOBALS_DATABASES_DEFAULT: {},
         })
         db = mock_app.call_args[1]["db_config"]
-        assert "maxPoolSize" not in db
+        assert STR_MAXPOOLSIZE not in db
 
 
 class TestTokenSecret:
@@ -325,14 +335,14 @@ class TestCORSOrigins:
     def test_cors_origins_from_config(self):
         """CORS origins from config should be used."""
         _, mock_app, _ = _run_main(config_values={
-            "environment.cors.origins": [MOCK_URL_EXAMPLE],
+            CFG_ENVIRONMENT_CORS_ORIGINS: [MOCK_URL_EXAMPLE],
         })
         assert mock_app.call_args[1]["cors_origins"] == [MOCK_URL_EXAMPLE]
 
     def test_cors_origins_fallback_when_none(self):
         """When cors.origins is None, should fallback to default localhost list."""
         _, mock_app, _ = _run_main(config_values={
-            "environment.cors.origins": None,
+            CFG_ENVIRONMENT_CORS_ORIGINS: None,
         })
         assert mock_app.call_args[1]["cors_origins"] == [
             MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV
@@ -348,7 +358,7 @@ class TestCORSOrigins:
     def test_cors_empty_list_triggers_fallback(self):
         """Empty list is falsy — should trigger fallback to defaults."""
         _, mock_app, _ = _run_main(config_values={
-            "environment.cors.origins": [],
+            CFG_ENVIRONMENT_CORS_ORIGINS: [],
         })
         assert mock_app.call_args[1]["cors_origins"] == [
             MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV
@@ -372,7 +382,7 @@ class TestStorageConfig:
             "type": "gcs",
             "gcs": {
                 "credentials_json": {"type": "service_account", "project_id": "test"},
-                "bucket_name": "my-bucket",
+                "bucket_name": STR_MY_BUCKET,
                 "upload_folder": "uploads",
                 "config_folder": "config",
                 "project_id": "test-proj",
@@ -380,11 +390,11 @@ class TestStorageConfig:
                 "credentials_path": "path/to/creds",
             },
         }
-        _, mock_app, _ = _run_main(config_values={"environment.storage": storage})
+        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_STORAGE: storage})
 
         fsc = mock_app.call_args[1]["file_storage_config"]
         assert fsc["type"] == "gcs"
-        assert fsc["bucket_name"] == "my-bucket"
+        assert fsc["bucket_name"] == STR_MY_BUCKET
         assert fsc["base_path"] == MOCK_PATH_UPLOADS
 
         gcs = mock_app.call_args[1]["gcs_config"]
@@ -392,7 +402,7 @@ class TestStorageConfig:
         assert json.loads(gcs["credentials_json"]) == {
             "type": "service_account", "project_id": "test"
         }
-        assert gcs["bucket_name"] == "my-bucket"
+        assert gcs["bucket_name"] == STR_MY_BUCKET
         assert gcs["upload_folder"] == "uploads"
         assert gcs["config_folder"] == "config"
         assert gcs["project_id"] == "test-proj"
@@ -408,7 +418,7 @@ class TestStorageConfig:
                 "bucket_name": "bucket",
             },
         }
-        _, mock_app, _ = _run_main(config_values={"environment.storage": storage})
+        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_STORAGE: storage})
 
         gcs = mock_app.call_args[1]["gcs_config"]
         assert gcs["credentials_json"] == '{"type":"service_account"}'
@@ -416,7 +426,7 @@ class TestStorageConfig:
     def test_gcs_without_credentials_stays_local(self):
         """GCS type but no credentials -> stays local."""
         storage = {"type": "gcs", "gcs": {}}
-        _, mock_app, _ = _run_main(config_values={"environment.storage": storage})
+        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_STORAGE: storage})
         fsc = mock_app.call_args[1]["file_storage_config"]
         assert fsc["type"] == "local"
         assert mock_app.call_args[1]["gcs_config"] is None
@@ -424,14 +434,14 @@ class TestStorageConfig:
     def test_storage_type_defaults_to_local(self):
         """Storage without explicit type defaults to 'local'."""
         storage = {"gcs": {}}
-        _, mock_app, _ = _run_main(config_values={"environment.storage": storage})
+        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_STORAGE: storage})
         fsc = mock_app.call_args[1]["file_storage_config"]
         assert fsc["type"] == "local"
 
     def test_storage_with_no_gcp_key(self):
         """Storage config without 'gcp' key should use empty dict default."""
         storage = {"type": "gcs"}
-        _, mock_app, _ = _run_main(config_values={"environment.storage": storage})
+        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_STORAGE: storage})
         fsc = mock_app.call_args[1]["file_storage_config"]
         assert fsc["type"] == "local"
         assert mock_app.call_args[1]["gcs_config"] is None
@@ -451,7 +461,7 @@ class TestJiraConfig:
             "components": ["web"],
             "default_team": "Alpha",
             "default_assignee": "user1",
-            "default_assignee_name": "Jane",
+            STR_DEFAULT_ASSIGNEE_NAME: "Jane",
             "default_priority": "High",
             "default_epic": "EPIC-1",
             "default_watchers": ["watcher1"],
@@ -460,7 +470,7 @@ class TestJiraConfig:
             "default_target_days": 14,
             "ssl": {"enabled": True},
         }
-        _, mock_app, _ = _run_main(config_values={"environment.jira": jira_raw})
+        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_JIRA: jira_raw})
 
         jira = mock_app.call_args[1]["jira_config"]
         assert jira is not None
@@ -472,7 +482,7 @@ class TestJiraConfig:
         assert jira["components"] == ["web"]
         assert jira["default_team"] == "Alpha"
         assert jira["default_assignee"] == "user1"
-        assert jira["default_assignee_name"] == "Jane"
+        assert jira[STR_DEFAULT_ASSIGNEE_NAME] == "Jane"
         assert jira["default_priority"] == "High"
         assert jira["default_epic"] == "EPIC-1"
         assert jira["default_watchers"] == ["watcher1"]
@@ -488,7 +498,7 @@ class TestJiraConfig:
             "email": MOCK_EMAIL_BOT,
             "api_token": "tok",
         }
-        _, mock_app, _ = _run_main(config_values={"environment.jira": jira_raw})
+        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_JIRA: jira_raw})
 
         jira = mock_app.call_args[1]["jira_config"]
         assert jira["project_key"] == "SCEN"
@@ -499,18 +509,18 @@ class TestJiraConfig:
         assert jira["default_watchers"] == []
         assert jira["default_team"] is None
         assert jira["default_assignee"] is None
-        assert jira["default_assignee_name"] is None
+        assert jira[STR_DEFAULT_ASSIGNEE_NAME] is None
 
     def test_jira_config_none_when_no_base_url(self):
         """Jira config should be None when base_url is missing."""
         jira_raw = {"email": MOCK_EMAIL_BOT, "api_token": "tok"}
-        _, mock_app, _ = _run_main(config_values={"environment.jira": jira_raw})
+        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_JIRA: jira_raw})
         assert mock_app.call_args[1]["jira_config"] is None
 
     def test_jira_config_none_when_base_url_empty(self):
         """Empty base_url should result in None jira_config."""
         jira_raw = {"base_url": "", "email": "e", "api_token": "t"}
-        _, mock_app, _ = _run_main(config_values={"environment.jira": jira_raw})
+        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_JIRA: jira_raw})
         assert mock_app.call_args[1]["jira_config"] is None
 
     def test_jira_config_none_when_not_configured(self):
@@ -520,13 +530,13 @@ class TestJiraConfig:
 
     def test_jira_config_none_when_jira_raw_is_none(self):
         """Jira config should be None when jira returns None."""
-        _, mock_app, _ = _run_main(config_values={"environment.jira": None})
+        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_JIRA: None})
         assert mock_app.call_args[1]["jira_config"] is None
 
     def test_jira_target_days_string_conversion(self):
         """target_days should be converted to int even if string."""
         jira_raw = {"base_url": MOCK_URL_JIRA_TEST, "default_target_days": "21"}
-        _, mock_app, _ = _run_main(config_values={"environment.jira": jira_raw})
+        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_JIRA: jira_raw})
         jira = mock_app.call_args[1]["jira_config"]
         assert jira["target_days"] == 21
 
@@ -598,13 +608,13 @@ class TestMainBlock:
             "ENVIRONEMNT_VARIABLE_PREFIX": ENVIRONEMNT_VARIABLE_PREFIX,
             "LOCAL_FILE_STORAGE": LOCAL_FILE_STORAGE,
             "create_app": MagicMock(),
-            "ConfigurationLoader": MagicMock(),
+            STR_CONFIGURATIONLOADER: MagicMock(),
             "uvicorn": mock_uvicorn,
         }
 
         clean_env = {
             k: v for k, v in os.environ.items()
-            if not any(k.startswith(p) for p in ("CONFIG_PATH", ENV_PREFIX))
+            if not any(k.startswith(p) for p in (STR_CONFIG_PATH, ENV_PREFIX))
         }
 
         with patch.dict(os.environ, clean_env, clear=True):

@@ -6,6 +6,10 @@ from bson import ObjectId
 
 from easylifeauth.services.scenario_service import ScenarioService
 from easylifeauth.errors.scenario_error import ScenarioNotFoundError, ScenarioBadError
+OID_9014 = "507f1f77bcf86cd799439014"
+OID_9099 = "507f1f77bcf86cd799439099"
+STR_TEST_SCENARIO = "test-scenario"
+
 
 
 class TestScenarioService:
@@ -27,7 +31,7 @@ class TestScenarioService:
         result = await scenario_service.get_all()
 
         assert len(result) == 1
-        assert result[0]["key"] == "test-scenario"
+        assert result[0]["key"] == STR_TEST_SCENARIO
 
     @pytest.mark.asyncio
     async def test_get_all_by_domain_key(self, scenario_service, mock_db, sample_scenario_data):
@@ -46,18 +50,18 @@ class TestScenarioService:
         """Test getting scenario by ObjectId"""
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=sample_scenario_data)
 
-        result = await scenario_service.get("507f1f77bcf86cd799439014")
+        result = await scenario_service.get(OID_9014)
 
-        assert result["key"] == "test-scenario"
+        assert result["key"] == STR_TEST_SCENARIO
 
     @pytest.mark.asyncio
     async def test_get_by_key_string(self, scenario_service, mock_db, sample_scenario_data):
         """Test getting scenario by key string"""
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=sample_scenario_data)
 
-        result = await scenario_service.get("test-scenario")
+        result = await scenario_service.get(STR_TEST_SCENARIO)
 
-        assert result["key"] == "test-scenario"
+        assert result["key"] == STR_TEST_SCENARIO
 
     @pytest.mark.asyncio
     async def test_get_not_found(self, scenario_service, mock_db):
@@ -66,14 +70,14 @@ class TestScenarioService:
 
         with pytest.raises(ScenarioNotFoundError):
             # Use valid ObjectId format for test
-            await scenario_service.get("507f1f77bcf86cd799439099")
+            await scenario_service.get(OID_9099)
 
     @pytest.mark.asyncio
     async def test_get_scenario_by_id(self, scenario_service, mock_db, sample_scenario_data):
         """Test get_scenario method"""
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=sample_scenario_data)
 
-        result = await scenario_service.get_scenario("507f1f77bcf86cd799439014")
+        result = await scenario_service.get_scenario(OID_9014)
 
         assert result is not None
 
@@ -84,7 +88,7 @@ class TestScenarioService:
 
         with pytest.raises(ScenarioNotFoundError):
             # Use valid ObjectId format for test
-            await scenario_service.get_scenario("507f1f77bcf86cd799439099")
+            await scenario_service.get_scenario(OID_9099)
 
     @pytest.mark.asyncio
     async def test_save_success(self, scenario_service, mock_db, sample_scenario_data):
@@ -122,7 +126,7 @@ class TestScenarioService:
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=sample_scenario_data)
 
         result = await scenario_service.update(
-            {"_id": "507f1f77bcf86cd799439014", "name": "Updated Scenario"},
+            {"_id": OID_9014, "name": "Updated Scenario"},
             user_id="507f1f77bcf86cd799439011"
         )
 
@@ -137,7 +141,7 @@ class TestScenarioService:
 
         with pytest.raises(ScenarioNotFoundError):
             await scenario_service.update(
-                {"_id": "507f1f77bcf86cd799439099", "name": "Updated"},
+                {"_id": OID_9099, "name": "Updated"},
                 user_id="test"
             )
 
@@ -149,7 +153,7 @@ class TestScenarioService:
         )
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=sample_scenario_data)
 
-        result = await scenario_service.update_status("507f1f77bcf86cd799439014", "I")
+        result = await scenario_service.update_status(OID_9014, "I")
 
         assert result is not None
 
@@ -168,7 +172,7 @@ class TestScenarioService:
 
         with pytest.raises(ScenarioBadError):
             # Use valid ObjectId format for test
-            await scenario_service.update_status("507f1f77bcf86cd799439099", "A")
+            await scenario_service.update_status(OID_9099, "A")
 
     @pytest.mark.asyncio
     async def test_delete_success(self, scenario_service, mock_db):
@@ -177,7 +181,7 @@ class TestScenarioService:
             return_value=MagicMock(matched_count=1)
         )
 
-        result = await scenario_service.delete("507f1f77bcf86cd799439014")
+        result = await scenario_service.delete(OID_9014)
 
         assert result["message"] == "Scenario deleted successfully"
 
@@ -190,4 +194,4 @@ class TestScenarioService:
 
         with pytest.raises(ScenarioNotFoundError):
             # Use valid ObjectId format for test
-            await scenario_service.delete("507f1f77bcf86cd799439099")
+            await scenario_service.delete(OID_9099)

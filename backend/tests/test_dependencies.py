@@ -2,6 +2,20 @@ from mock_data import MOCK_EMAIL, MOCK_URL_JIRA_BASE
 """Tests for API Dependencies"""
 import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
+PATCH_BULK_UPLOAD_ROUTES_INIT_BULK_SERVICES = "easylifeauth.api.bulk_upload_routes.init_bulk_services"
+PATCH_CONFIGURATIONS_ROUTES_INIT_GCS_SERVICE = "easylifeauth.api.configurations_routes.init_gcs_service"
+PATCH_DEPENDENCIES_ADMINSERVICE = "easylifeauth.api.dependencies.AdminService"
+PATCH_DEPENDENCIES_DATADOMAINSERVICE = "easylifeauth.api.dependencies.DataDomainService"
+PATCH_DEPENDENCIES_FEEDBACKSERVICE = "easylifeauth.api.dependencies.FeedbackService"
+PATCH_DEPENDENCIES_FILESTORAGESERVICE = "easylifeauth.api.dependencies.FileStorageService"
+PATCH_DEPENDENCIES_INIT_ACTIVITY_LOG_SERVICE = "easylifeauth.api.dependencies.init_activity_log_service"
+PATCH_DEPENDENCIES_NEWSCENARIOSERVICE = "easylifeauth.api.dependencies.NewScenarioService"
+PATCH_DEPENDENCIES_PASSWORDRESETSERVICE = "easylifeauth.api.dependencies.PasswordResetService"
+PATCH_DEPENDENCIES_PLAYBOARDSERVICE = "easylifeauth.api.dependencies.PlayboardService"
+PATCH_DEPENDENCIES_SCENARIOSERVICE = "easylifeauth.api.dependencies.ScenarioService"
+PATCH_DEPENDENCIES_SET_TOKEN_MANAGER = "easylifeauth.api.dependencies.set_token_manager"
+PATCH_DEPENDENCIES_USERSERVICE = "easylifeauth.api.dependencies.UserService"
+
 
 
 class TestDependencyGetters:
@@ -343,19 +357,19 @@ class TestDependencyGetters:
 class TestInitDependencies:
     """Tests for init_dependencies function"""
 
-    @patch('easylifeauth.api.dependencies.init_activity_log_service')
-    @patch('easylifeauth.api.dependencies.set_token_manager')
-    @patch('easylifeauth.api.dependencies.UserService')
-    @patch('easylifeauth.api.dependencies.AdminService')
-    @patch('easylifeauth.api.dependencies.PasswordResetService')
-    @patch('easylifeauth.api.dependencies.DataDomainService')
-    @patch('easylifeauth.api.dependencies.ScenarioService')
-    @patch('easylifeauth.api.dependencies.PlayboardService')
-    @patch('easylifeauth.api.dependencies.FeedbackService')
-    @patch('easylifeauth.api.dependencies.NewScenarioService')
-    @patch('easylifeauth.api.dependencies.FileStorageService')
-    @patch('easylifeauth.api.bulk_upload_routes.init_bulk_services')
-    @patch('easylifeauth.api.configurations_routes.init_gcs_service')
+    @patch(PATCH_DEPENDENCIES_INIT_ACTIVITY_LOG_SERVICE)
+    @patch(PATCH_DEPENDENCIES_SET_TOKEN_MANAGER)
+    @patch(PATCH_DEPENDENCIES_USERSERVICE)
+    @patch(PATCH_DEPENDENCIES_ADMINSERVICE)
+    @patch(PATCH_DEPENDENCIES_PASSWORDRESETSERVICE)
+    @patch(PATCH_DEPENDENCIES_DATADOMAINSERVICE)
+    @patch(PATCH_DEPENDENCIES_SCENARIOSERVICE)
+    @patch(PATCH_DEPENDENCIES_PLAYBOARDSERVICE)
+    @patch(PATCH_DEPENDENCIES_FEEDBACKSERVICE)
+    @patch(PATCH_DEPENDENCIES_NEWSCENARIOSERVICE)
+    @patch(PATCH_DEPENDENCIES_FILESTORAGESERVICE)
+    @patch(PATCH_BULK_UPLOAD_ROUTES_INIT_BULK_SERVICES)
+    @patch(PATCH_CONFIGURATIONS_ROUTES_INIT_GCS_SERVICE)
     def test_init_dependencies_minimal(
         self, mock_init_gcs, mock_init_bulk, mock_file_storage,
         mock_new_scenario, mock_feedback, mock_playboard, mock_scenario,
@@ -380,20 +394,20 @@ class TestInitDependencies:
         mock_init_bulk.assert_called_once()
         mock_init_gcs.assert_called_once()
 
-    @patch('easylifeauth.api.dependencies.init_activity_log_service')
-    @patch('easylifeauth.api.dependencies.set_token_manager')
-    @patch('easylifeauth.api.dependencies.UserService')
-    @patch('easylifeauth.api.dependencies.AdminService')
-    @patch('easylifeauth.api.dependencies.PasswordResetService')
-    @patch('easylifeauth.api.dependencies.DataDomainService')
-    @patch('easylifeauth.api.dependencies.ScenarioService')
-    @patch('easylifeauth.api.dependencies.PlayboardService')
-    @patch('easylifeauth.api.dependencies.FeedbackService')
-    @patch('easylifeauth.api.dependencies.NewScenarioService')
+    @patch(PATCH_DEPENDENCIES_INIT_ACTIVITY_LOG_SERVICE)
+    @patch(PATCH_DEPENDENCIES_SET_TOKEN_MANAGER)
+    @patch(PATCH_DEPENDENCIES_USERSERVICE)
+    @patch(PATCH_DEPENDENCIES_ADMINSERVICE)
+    @patch(PATCH_DEPENDENCIES_PASSWORDRESETSERVICE)
+    @patch(PATCH_DEPENDENCIES_DATADOMAINSERVICE)
+    @patch(PATCH_DEPENDENCIES_SCENARIOSERVICE)
+    @patch(PATCH_DEPENDENCIES_PLAYBOARDSERVICE)
+    @patch(PATCH_DEPENDENCIES_FEEDBACKSERVICE)
+    @patch(PATCH_DEPENDENCIES_NEWSCENARIOSERVICE)
     @patch('easylifeauth.api.dependencies.JiraService')
-    @patch('easylifeauth.api.dependencies.FileStorageService')
-    @patch('easylifeauth.api.bulk_upload_routes.init_bulk_services')
-    @patch('easylifeauth.api.configurations_routes.init_gcs_service')
+    @patch(PATCH_DEPENDENCIES_FILESTORAGESERVICE)
+    @patch(PATCH_BULK_UPLOAD_ROUTES_INIT_BULK_SERVICES)
+    @patch(PATCH_CONFIGURATIONS_ROUTES_INIT_GCS_SERVICE)
     def test_init_dependencies_with_jira(self, *mocks):
         """Test init_dependencies with Jira config"""
         from easylifeauth.api.dependencies import init_dependencies
@@ -418,19 +432,19 @@ class TestInitDependencies:
 
         mock_jira.assert_called_once_with(jira_config)
 
-    @patch('easylifeauth.api.dependencies.init_activity_log_service')
-    @patch('easylifeauth.api.dependencies.set_token_manager')
-    @patch('easylifeauth.api.dependencies.UserService')
-    @patch('easylifeauth.api.dependencies.AdminService')
-    @patch('easylifeauth.api.dependencies.PasswordResetService')
-    @patch('easylifeauth.api.dependencies.DataDomainService')
-    @patch('easylifeauth.api.dependencies.ScenarioService')
-    @patch('easylifeauth.api.dependencies.PlayboardService')
-    @patch('easylifeauth.api.dependencies.FeedbackService')
-    @patch('easylifeauth.api.dependencies.NewScenarioService')
-    @patch('easylifeauth.api.dependencies.FileStorageService')
-    @patch('easylifeauth.api.bulk_upload_routes.init_bulk_services')
-    @patch('easylifeauth.api.configurations_routes.init_gcs_service')
+    @patch(PATCH_DEPENDENCIES_INIT_ACTIVITY_LOG_SERVICE)
+    @patch(PATCH_DEPENDENCIES_SET_TOKEN_MANAGER)
+    @patch(PATCH_DEPENDENCIES_USERSERVICE)
+    @patch(PATCH_DEPENDENCIES_ADMINSERVICE)
+    @patch(PATCH_DEPENDENCIES_PASSWORDRESETSERVICE)
+    @patch(PATCH_DEPENDENCIES_DATADOMAINSERVICE)
+    @patch(PATCH_DEPENDENCIES_SCENARIOSERVICE)
+    @patch(PATCH_DEPENDENCIES_PLAYBOARDSERVICE)
+    @patch(PATCH_DEPENDENCIES_FEEDBACKSERVICE)
+    @patch(PATCH_DEPENDENCIES_NEWSCENARIOSERVICE)
+    @patch(PATCH_DEPENDENCIES_FILESTORAGESERVICE)
+    @patch(PATCH_BULK_UPLOAD_ROUTES_INIT_BULK_SERVICES)
+    @patch(PATCH_CONFIGURATIONS_ROUTES_INIT_GCS_SERVICE)
     def test_init_dependencies_with_file_storage(
         self, mock_init_gcs, mock_init_bulk, mock_file_storage,
         mock_new_scenario, mock_feedback, mock_playboard, mock_scenario,
@@ -452,19 +466,19 @@ class TestInitDependencies:
 
         mock_file_storage.assert_called_once_with(file_config)
 
-    @patch('easylifeauth.api.dependencies.init_activity_log_service')
-    @patch('easylifeauth.api.dependencies.set_token_manager')
-    @patch('easylifeauth.api.dependencies.UserService')
-    @patch('easylifeauth.api.dependencies.AdminService')
-    @patch('easylifeauth.api.dependencies.PasswordResetService')
-    @patch('easylifeauth.api.dependencies.DataDomainService')
-    @patch('easylifeauth.api.dependencies.ScenarioService')
-    @patch('easylifeauth.api.dependencies.PlayboardService')
-    @patch('easylifeauth.api.dependencies.FeedbackService')
-    @patch('easylifeauth.api.dependencies.NewScenarioService')
-    @patch('easylifeauth.api.dependencies.FileStorageService')
-    @patch('easylifeauth.api.bulk_upload_routes.init_bulk_services')
-    @patch('easylifeauth.api.configurations_routes.init_gcs_service')
+    @patch(PATCH_DEPENDENCIES_INIT_ACTIVITY_LOG_SERVICE)
+    @patch(PATCH_DEPENDENCIES_SET_TOKEN_MANAGER)
+    @patch(PATCH_DEPENDENCIES_USERSERVICE)
+    @patch(PATCH_DEPENDENCIES_ADMINSERVICE)
+    @patch(PATCH_DEPENDENCIES_PASSWORDRESETSERVICE)
+    @patch(PATCH_DEPENDENCIES_DATADOMAINSERVICE)
+    @patch(PATCH_DEPENDENCIES_SCENARIOSERVICE)
+    @patch(PATCH_DEPENDENCIES_PLAYBOARDSERVICE)
+    @patch(PATCH_DEPENDENCIES_FEEDBACKSERVICE)
+    @patch(PATCH_DEPENDENCIES_NEWSCENARIOSERVICE)
+    @patch(PATCH_DEPENDENCIES_FILESTORAGESERVICE)
+    @patch(PATCH_BULK_UPLOAD_ROUTES_INIT_BULK_SERVICES)
+    @patch(PATCH_CONFIGURATIONS_ROUTES_INIT_GCS_SERVICE)
     def test_init_dependencies_with_gcs(
         self, mock_init_gcs, mock_init_bulk, mock_file_storage,
         mock_new_scenario, mock_feedback, mock_playboard, mock_scenario,
@@ -486,19 +500,19 @@ class TestInitDependencies:
         mock_init_bulk.assert_called_once_with(mock_db, gcs_config)
         mock_init_gcs.assert_called_once_with(gcs_config)
 
-    @patch('easylifeauth.api.dependencies.init_activity_log_service')
-    @patch('easylifeauth.api.dependencies.set_token_manager')
-    @patch('easylifeauth.api.dependencies.UserService')
-    @patch('easylifeauth.api.dependencies.AdminService')
-    @patch('easylifeauth.api.dependencies.PasswordResetService')
-    @patch('easylifeauth.api.dependencies.DataDomainService')
-    @patch('easylifeauth.api.dependencies.ScenarioService')
-    @patch('easylifeauth.api.dependencies.PlayboardService')
-    @patch('easylifeauth.api.dependencies.FeedbackService')
-    @patch('easylifeauth.api.dependencies.NewScenarioService')
-    @patch('easylifeauth.api.dependencies.FileStorageService')
-    @patch('easylifeauth.api.bulk_upload_routes.init_bulk_services')
-    @patch('easylifeauth.api.configurations_routes.init_gcs_service')
+    @patch(PATCH_DEPENDENCIES_INIT_ACTIVITY_LOG_SERVICE)
+    @patch(PATCH_DEPENDENCIES_SET_TOKEN_MANAGER)
+    @patch(PATCH_DEPENDENCIES_USERSERVICE)
+    @patch(PATCH_DEPENDENCIES_ADMINSERVICE)
+    @patch(PATCH_DEPENDENCIES_PASSWORDRESETSERVICE)
+    @patch(PATCH_DEPENDENCIES_DATADOMAINSERVICE)
+    @patch(PATCH_DEPENDENCIES_SCENARIOSERVICE)
+    @patch(PATCH_DEPENDENCIES_PLAYBOARDSERVICE)
+    @patch(PATCH_DEPENDENCIES_FEEDBACKSERVICE)
+    @patch(PATCH_DEPENDENCIES_NEWSCENARIOSERVICE)
+    @patch(PATCH_DEPENDENCIES_FILESTORAGESERVICE)
+    @patch(PATCH_BULK_UPLOAD_ROUTES_INIT_BULK_SERVICES)
+    @patch(PATCH_CONFIGURATIONS_ROUTES_INIT_GCS_SERVICE)
     def test_init_dependencies_with_email_service(
         self, mock_init_gcs, mock_init_bulk, mock_file_storage,
         mock_new_scenario, mock_feedback, mock_playboard, mock_scenario,

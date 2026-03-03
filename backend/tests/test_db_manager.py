@@ -6,6 +6,11 @@ from bson.errors import InvalidId
 
 from easylifeauth.db.db_manager import DatabaseManager, is_valid_objectid, distribute_limit
 from mock_data import MOCK_DB_PASSWORD
+PATCH_DB_DB_MANAGER_ASYNCIOMOTORCLIENT = "easylifeauth.db.db_manager.AsyncIOMotorClient"
+STR_CONNECTIONSCHEME = "connectionScheme"
+STR_LOCALHOST_27017 = "localhost:27017"
+
+
 
 
 class TestDistributeLimit:
@@ -110,7 +115,7 @@ class TestDatabaseManager:
         """Test initialization with missing parameters"""
         with pytest.raises(ValueError):
             DatabaseManager(config={
-                "connectionScheme": "mongodb",
+                STR_CONNECTIONSCHEME: "mongodb",
                 "host": "localhost"
                 # Missing username and password
             })
@@ -123,10 +128,10 @@ class TestDatabaseManager:
         mock_db.__getitem__ = MagicMock(return_value=MagicMock())
 
         config = {
-            "connectionScheme": "mongodb",
+            STR_CONNECTIONSCHEME: "mongodb",
             "username": "user",
             "password": MOCK_DB_PASSWORD,
-            "host": "localhost:27017",
+            "host": STR_LOCALHOST_27017,
             "database": "testdb",
             "collections": ["users", "tokens"]
         }
@@ -142,10 +147,10 @@ class TestDatabaseManager:
         mock_db.__getitem__ = MagicMock(return_value=MagicMock())
 
         config = {
-            "connectionScheme": "mongodb",
+            STR_CONNECTIONSCHEME: "mongodb",
             "username": "user",
             "password": MOCK_DB_PASSWORD,
-            "host": "localhost:27017",
+            "host": STR_LOCALHOST_27017,
             "database": "testdb",
             "collections": [
                 "users", "tokens", "reset_tokens", "sessions",
@@ -167,7 +172,7 @@ class TestDatabaseManager:
         assert db.client is None
         assert db.db is None
 
-    @patch('easylifeauth.db.db_manager.AsyncIOMotorClient')
+    @patch(PATCH_DB_DB_MANAGER_ASYNCIOMOTORCLIENT)
     @pytest.mark.asyncio
     async def test_ping_success(self, mock_client):
         """Test successful ping"""
@@ -180,10 +185,10 @@ class TestDatabaseManager:
         mock_client.return_value = mock_client_instance
 
         config = {
-            "connectionScheme": "mongodb",
+            STR_CONNECTIONSCHEME: "mongodb",
             "username": "user",
             "password": MOCK_DB_PASSWORD,
-            "host": "localhost:27017",
+            "host": STR_LOCALHOST_27017,
             "database": "testdb",
             "collections": []
         }
@@ -192,7 +197,7 @@ class TestDatabaseManager:
         result = await db.ping()
         assert result is True
 
-    @patch('easylifeauth.db.db_manager.AsyncIOMotorClient')
+    @patch(PATCH_DB_DB_MANAGER_ASYNCIOMOTORCLIENT)
     @pytest.mark.asyncio
     async def test_ping_failure(self, mock_client):
         """Test failed ping"""
@@ -205,10 +210,10 @@ class TestDatabaseManager:
         mock_client.return_value = mock_client_instance
 
         config = {
-            "connectionScheme": "mongodb",
+            STR_CONNECTIONSCHEME: "mongodb",
             "username": "user",
             "password": MOCK_DB_PASSWORD,
-            "host": "localhost:27017",
+            "host": STR_LOCALHOST_27017,
             "database": "testdb",
             "collections": []
         }
@@ -217,7 +222,7 @@ class TestDatabaseManager:
         result = await db.ping()
         assert result is False
 
-    @patch('easylifeauth.db.db_manager.AsyncIOMotorClient')
+    @patch(PATCH_DB_DB_MANAGER_ASYNCIOMOTORCLIENT)
     def test_close(self, mock_client):
         """Test closing database connection"""
         mock_client_instance = MagicMock()
@@ -225,10 +230,10 @@ class TestDatabaseManager:
         mock_client.return_value = mock_client_instance
 
         config = {
-            "connectionScheme": "mongodb",
+            STR_CONNECTIONSCHEME: "mongodb",
             "username": "user",
             "password": MOCK_DB_PASSWORD,
-            "host": "localhost:27017",
+            "host": STR_LOCALHOST_27017,
             "database": "testdb",
             "collections": []
         }

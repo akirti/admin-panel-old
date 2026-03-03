@@ -16,6 +16,11 @@ PATH_ROLES_ID = "/roles/507f1f77bcf86cd799439011"
 PATH_ROLES_NONEXISTENT = "/roles/nonexistent"
 
 EXPECTED_ADMIN_ROLE = "Admin role"
+OID_9011 = "507f1f77bcf86cd799439011"
+STR_ADMINISTRATOR = "Administrator"
+STR_EDITOR = "Editor"
+STR_ROLEID = "roleId"
+
 
 
 
@@ -80,7 +85,7 @@ class TestRolesRoutes:
     def mock_super_admin_user(self):
         """Create mock super admin user"""
         return CurrentUser(
-            user_id="507f1f77bcf86cd799439011",
+            user_id=OID_9011,
             email=MOCK_EMAIL_ADMIN,
             roles=["super-administrator"],
             groups=[],
@@ -181,9 +186,9 @@ class TestRolesRoutes:
     def test_get_role_success(self, client, mock_db):
         """Test getting a specific role"""
         role_data = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "roleId": "admin",
-            "name": "Administrator",
+            "_id": ObjectId(OID_9011),
+            STR_ROLEID: "admin",
+            "name": STR_ADMINISTRATOR,
             "description": EXPECTED_ADMIN_ROLE,
             "permissions": ["read", "write"],
             "status": "active",
@@ -196,14 +201,14 @@ class TestRolesRoutes:
         response = client.get(PATH_ROLES_ID)
         assert response.status_code == 200
         data = response.json()
-        assert data["roleId"] == "admin"
+        assert data[STR_ROLEID] == "admin"
 
     def test_get_role_by_role_id(self, client, mock_db):
         """Test getting role by roleId"""
         role_data = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "roleId": "admin",
-            "name": "Administrator",
+            "_id": ObjectId(OID_9011),
+            STR_ROLEID: "admin",
+            "name": STR_ADMINISTRATOR,
             "description": EXPECTED_ADMIN_ROLE,
             "permissions": ["read", "write"],
             "status": "active",
@@ -229,12 +234,12 @@ class TestRolesRoutes:
         """Test creating a new role"""
         mock_db.roles.find_one.return_value = None
         mock_db.roles.insert_one.return_value = MagicMock(
-            inserted_id=ObjectId("507f1f77bcf86cd799439011")
+            inserted_id=ObjectId(OID_9011)
         )
 
         response = client.post(PATH_ROLES, json={
-            "roleId": "editor",
-            "name": "Editor",
+            STR_ROLEID: "editor",
+            "name": STR_EDITOR,
             "description": "Editor role",
             "permissions": ["read", "write"],
             "status": "active",
@@ -243,15 +248,15 @@ class TestRolesRoutes:
 
         assert response.status_code == 201
         data = response.json()
-        assert data["roleId"] == "editor"
+        assert data[STR_ROLEID] == "editor"
 
     def test_create_role_duplicate(self, client, mock_db):
         """Test creating role with existing roleId"""
-        mock_db.roles.find_one.return_value = {"roleId": "admin"}
+        mock_db.roles.find_one.return_value = {STR_ROLEID: "admin"}
 
         response = client.post(PATH_ROLES, json={
-            "roleId": "admin",
-            "name": "Administrator",
+            STR_ROLEID: "admin",
+            "name": STR_ADMINISTRATOR,
             "description": EXPECTED_ADMIN_ROLE,
             "permissions": ["read", "write"],
             "status": "active",
@@ -264,9 +269,9 @@ class TestRolesRoutes:
     def test_update_role_success(self, client, mock_db, mock_email_service):
         """Test updating a role"""
         existing_role = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "roleId": "editor",
-            "name": "Editor",
+            "_id": ObjectId(OID_9011),
+            STR_ROLEID: "editor",
+            "name": STR_EDITOR,
             "description": "Old description",
             "permissions": ["read"],
             "status": "active",
@@ -293,9 +298,9 @@ class TestRolesRoutes:
     def test_update_role_permissions_notifies_users(self, client, mock_db, mock_email_service):
         """Test updating role permissions notifies users"""
         existing_role = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "roleId": "editor",
-            "name": "Editor",
+            "_id": ObjectId(OID_9011),
+            STR_ROLEID: "editor",
+            "name": STR_EDITOR,
             "description": "Editor role",
             "permissions": ["read"],
             "status": "active",
@@ -345,8 +350,8 @@ class TestRolesRoutes:
         # When deleting by roleId "editor", ObjectId("editor") throws exception
         # Then find_one is called, followed by delete_one with the found _id
         mock_db.roles.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "roleId": "editor"
+            "_id": ObjectId(OID_9011),
+            STR_ROLEID: "editor"
         })
         mock_db.roles.delete_one = AsyncMock(return_value=MagicMock(deleted_count=1))
 
@@ -363,8 +368,8 @@ class TestRolesRoutes:
     def test_toggle_role_status(self, client, mock_db, mock_email_service):
         """Test toggling role status"""
         mock_db.roles.find_one.return_value = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "roleId": "editor",
+            "_id": ObjectId(OID_9011),
+            STR_ROLEID: "editor",
             "status": "active"
         }
 
@@ -383,8 +388,8 @@ class TestRolesRoutes:
     def test_toggle_role_status_inactive_to_active(self, client, mock_db, mock_email_service):
         """Test toggling role from inactive to active"""
         mock_db.roles.find_one.return_value = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "roleId": "editor",
+            "_id": ObjectId(OID_9011),
+            STR_ROLEID: "editor",
             "status": "inactive"
         }
 
@@ -409,8 +414,8 @@ class TestRolesRoutes:
     def test_get_role_users(self, client, mock_db):
         """Test getting users with a specific role"""
         mock_db.roles.find_one.return_value = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "roleId": "editor"
+            "_id": ObjectId(OID_9011),
+            STR_ROLEID: "editor"
         }
 
         async def user_cursor():

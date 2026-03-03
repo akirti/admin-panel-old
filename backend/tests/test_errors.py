@@ -20,6 +20,9 @@ EXPECTED_BAD_REQUEST = "Bad request"
 EXPECTED_KEY_ERROR = "Key error"
 EXPECTED_NOT_FOUND = "Not found"
 EXPECTED_TEST_ERROR = "Test error"
+STR_FORBIDDEN = "Forbidden"
+STR_UNAUTHENTICATED = "Unauthenticated"
+
 
 
 
@@ -60,12 +63,12 @@ class TestDomainErrors:
 
     def test_domain_not_authorize_error(self):
         """Test DomainNotAuthorizeError"""
-        error = DomainNotAuthorizeError("Forbidden")
+        error = DomainNotAuthorizeError(STR_FORBIDDEN)
         assert error.status_code == 403
 
     def test_domain_not_authenticated_error(self):
         """Test DomainNotAuthenitcatedError"""
-        error = DomainNotAuthenitcatedError("Unauthenticated")
+        error = DomainNotAuthenitcatedError(STR_UNAUTHENTICATED)
         assert error.status_code == 401
 
     def test_domain_bad_error(self):
@@ -95,12 +98,12 @@ class TestScenarioErrors:
 
     def test_scenario_not_authorize_error(self):
         """Test ScenarioNotAuthorizeError"""
-        error = ScenarioNotAuthorizeError("Forbidden")
+        error = ScenarioNotAuthorizeError(STR_FORBIDDEN)
         assert error.status_code == 403
 
     def test_scenario_not_authenticated_error(self):
         """Test ScenarioNotAuthenitcatedError"""
-        error = ScenarioNotAuthenitcatedError("Unauthenticated")
+        error = ScenarioNotAuthenitcatedError(STR_UNAUTHENTICATED)
         assert error.status_code == 401
 
     def test_scenario_bad_error(self):
@@ -130,12 +133,12 @@ class TestPlayboardErrors:
 
     def test_playboard_not_authorize_error(self):
         """Test PlayboardNotAuthorizeError"""
-        error = PlayboardNotAuthorizeError("Forbidden")
+        error = PlayboardNotAuthorizeError(STR_FORBIDDEN)
         assert error.status_code == 403
 
     def test_playboard_not_authenticated_error(self):
         """Test PlayboardNotAuthenitcatedError"""
-        error = PlayboardNotAuthenitcatedError("Unauthenticated")
+        error = PlayboardNotAuthenitcatedError(STR_UNAUTHENTICATED)
         assert error.status_code == 401
 
     def test_playboard_bad_error(self):

@@ -7,6 +7,12 @@ from bson import ObjectId
 from easylifeauth.services.user_service import UserService
 from easylifeauth.errors.auth_error import AuthError
 from mock_data import MOCK_EMAIL, MOCK_EMAIL_NEW, MOCK_EMAIL_NOTFOUND, MOCK_PASSWORD, MOCK_PASSWORD_ALT, MOCK_PASSWORD_WRONG,MOCK_USER_SHORT_PASSWORD
+OID_9011 = "507f1f77bcf86cd799439011"
+STR_ROLEID = "roleId"
+STR_TEAM_A = "team-a"
+STR_UTF_8 = "utf-8"
+
+
 
 
 class TestUserService:
@@ -139,7 +145,7 @@ class TestUserService:
         sample_user_data["_id"] = ObjectId(sample_user_data["_id"])
         mock_db.users.find_one = AsyncMock(return_value=sample_user_data)
         
-        result = await user_service.get_user_by_id("507f1f77bcf86cd799439011")
+        result = await user_service.get_user_by_id(OID_9011)
         
         assert result["email"] == MOCK_EMAIL
         assert "password_hash" not in result
@@ -157,7 +163,7 @@ class TestUserService:
         """Test getting user with exception"""
         mock_db.users.find_one = AsyncMock(side_effect=Exception("DB Error"))
         
-        result = await user_service.get_user_by_id("507f1f77bcf86cd799439011")
+        result = await user_service.get_user_by_id(OID_9011)
         assert result is None
 
     @pytest.mark.asyncio
@@ -168,7 +174,7 @@ class TestUserService:
         mock_db.users.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
         
         result = await user_service.update_user_data(
-            "507f1f77bcf86cd799439011",
+            OID_9011,
             {"full_name": "Updated Name"}
         )
         
@@ -179,7 +185,7 @@ class TestUserService:
         """Test updating user with no valid fields"""
         with pytest.raises(AuthError) as exc_info:
             await user_service.update_user_data(
-                "507f1f77bcf86cd799439011",
+                OID_9011,
                 {"invalid_field": "value"}
             )
         assert exc_info.value.status_code == 400
@@ -191,7 +197,7 @@ class TestUserService:
         
         with pytest.raises(AuthError) as exc_info:
             await user_service.update_user_data(
-                "507f1f77bcf86cd799439011",
+                OID_9011,
                 {"username": "taken"}
             )
         assert exc_info.value.status_code == 409
@@ -204,7 +210,7 @@ class TestUserService:
         
         with pytest.raises(AuthError) as exc_info:
             await user_service.update_user_data(
-                "507f1f77bcf86cd799439011",
+                OID_9011,
                 {"full_name": "New Name"}
             )
         assert exc_info.value.status_code == 404
@@ -215,7 +221,7 @@ class TestUserService:
         mock_db.tokens.delete_one = AsyncMock(return_value=MagicMock(deleted_count=1))
         
         result = await user_service.logout_user(
-            "507f1f77bcf86cd799439011",
+            OID_9011,
             MOCK_EMAIL
         )
         
@@ -227,7 +233,7 @@ class TestUserService:
         mock_db.tokens.delete_many = AsyncMock(return_value=MagicMock(deleted_count=0))
 
         result = await user_service.logout_user(
-            "507f1f77bcf86cd799439011",
+            OID_9011,
             MOCK_EMAIL
         )
 
@@ -241,8 +247,8 @@ class TestUserService:
         """Test resolving domains from user roles"""
         # Create async iterator for roles
         async def roles_cursor_iter():
-            yield {"roleId": "editor", "domains": ["domain1", "domain2"], "status": "active"}
-            yield {"roleId": "viewer", "domains": ["domain3"], "status": "active"}
+            yield {STR_ROLEID: "editor", "domains": ["domain1", "domain2"], "status": "active"}
+            yield {STR_ROLEID: "viewer", "domains": ["domain3"], "status": "active"}
 
         mock_cursor = MagicMock()
         mock_cursor.__aiter__ = lambda self: roles_cursor_iter()
@@ -267,7 +273,7 @@ class TestUserService:
         """Test resolving domains from user groups"""
         # Create async iterator for groups
         async def groups_cursor_iter():
-            yield {"groupId": "team-a", "domains": ["team_domain"], "status": "active"}
+            yield {"groupId": STR_TEAM_A, "domains": ["team_domain"], "status": "active"}
 
         mock_db.roles.find = MagicMock(return_value=MagicMock(__aiter__=lambda self: iter(())))
         mock_cursor = MagicMock()
@@ -277,7 +283,7 @@ class TestUserService:
         user = {
             "domains": ["user_domain"],
             "roles": [],
-            "groups": ["team-a"]
+            "groups": [STR_TEAM_A]
         }
 
         result = await user_service.resolve_user_domains(user)
@@ -289,7 +295,7 @@ class TestUserService:
     async def test_resolve_user_permissions_with_roles(self, user_service, mock_db):
         """Test resolving permissions from user roles"""
         async def roles_cursor_iter():
-            yield {"roleId": "editor", "permissions": ["read", "write"], "status": "active"}
+            yield {STR_ROLEID: "editor", "permissions": ["read", "write"], "status": "active"}
 
         mock_cursor = MagicMock()
         mock_cursor.__aiter__ = lambda self: roles_cursor_iter()
@@ -310,7 +316,7 @@ class TestUserService:
     async def test_resolve_user_permissions_with_groups(self, user_service, mock_db):
         """Test resolving permissions from user groups"""
         async def groups_cursor_iter():
-            yield {"groupId": "team-a", "permissions": ["view", "edit"], "status": "active"}
+            yield {"groupId": STR_TEAM_A, "permissions": ["view", "edit"], "status": "active"}
 
         mock_db.roles.find = MagicMock(return_value=MagicMock(__aiter__=lambda self: iter(())))
         mock_cursor = MagicMock()
@@ -319,7 +325,7 @@ class TestUserService:
 
         user = {
             "roles": [],
-            "groups": ["team-a"]
+            "groups": [STR_TEAM_A]
         }
 
         result = await user_service.resolve_user_permissions(user)
@@ -367,7 +373,7 @@ class TestUserService:
 
         with pytest.raises(AuthError) as exc_info:
             await user_service.update_user_data(
-                "507f1f77bcf86cd799439011",
+                OID_9011,
                 {"full_name": "New Name"}
             )
         assert exc_info.value.status_code == 404
@@ -389,8 +395,8 @@ class TestPasswordVerification:
         maxmem = 128 * n * r * p + 1024 * 1024
 
         derived_key = hashlib.scrypt(
-            password.encode('utf-8'),
-            salt=salt.encode('utf-8'),
+            password.encode(STR_UTF_8),
+            salt=salt.encode(STR_UTF_8),
             n=n, r=r, p=p,
             dklen=dklen,
             maxmem=maxmem
@@ -482,8 +488,8 @@ class TestPasswordVerification:
         maxmem = 128 * n * r * p + 1024 * 1024
 
         derived_key = hashlib.scrypt(
-            password.encode('utf-8'),
-            salt=salt.encode('utf-8'),
+            password.encode(STR_UTF_8),
+            salt=salt.encode(STR_UTF_8),
             n=n, r=r, p=p,
             dklen=dklen,
             maxmem=maxmem

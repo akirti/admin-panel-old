@@ -9,6 +9,10 @@ from easylifeauth.app import create_app
 from easylifeauth.api.admin_routes import router
 from easylifeauth.errors.auth_error import AuthError
 from easylifeauth import API_BASE_ROUTE
+STR_FORBIDDEN = "Forbidden"
+SUBPATH_ADMIN_MANAGEMENT_USERS = "/admin/management/users/"
+
+
 
 
 @pytest.fixture
@@ -115,7 +119,7 @@ class TestGetAllUsers:
 
     def test_get_all_users_auth_error(self, client, mock_admin_service):
         """Test get all users with auth error"""
-        mock_admin_service.get_all_users = AsyncMock(side_effect=AuthError("Forbidden", 403))
+        mock_admin_service.get_all_users = AsyncMock(side_effect=AuthError(STR_FORBIDDEN, 403))
 
         response = client.get(f"{API_BASE_ROUTE}/admin/management/users")
         assert response.status_code == 403
@@ -154,7 +158,7 @@ class TestGetUser:
     def test_get_user_auth_error(self, client, mock_admin_service):
         """Test get user with auth error"""
         user_id = str(ObjectId())
-        mock_admin_service.get_user_by_id = AsyncMock(side_effect=AuthError("Forbidden", 403))
+        mock_admin_service.get_user_by_id = AsyncMock(side_effect=AuthError(STR_FORBIDDEN, 403))
 
         response = client.get(f"{API_BASE_ROUTE}/admin/management/users/{user_id}")
         assert response.status_code == 403
@@ -210,7 +214,7 @@ class TestUpdateUserRoles:
         """Test roles update with auth error"""
         user_id = str(ObjectId())
         mock_admin_service.update_user_role = AsyncMock(
-            side_effect=AuthError("Forbidden", 403)
+            side_effect=AuthError(STR_FORBIDDEN, 403)
         )
 
         response = client.put(
@@ -239,7 +243,7 @@ class TestUpdateUserGroups:
         """Test groups update with auth error"""
         user_id = str(ObjectId())
         mock_admin_service.update_user_groups = AsyncMock(
-            side_effect=AuthError("Forbidden", 403)
+            side_effect=AuthError(STR_FORBIDDEN, 403)
         )
 
         response = client.put(
@@ -268,7 +272,7 @@ class TestUpdateUserDomains:
         """Test domains update with auth error"""
         user_id = str(ObjectId())
         mock_admin_service.update_user_domains = AsyncMock(
-            side_effect=AuthError("Forbidden", 403)
+            side_effect=AuthError(STR_FORBIDDEN, 403)
         )
 
         response = client.put(

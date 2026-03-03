@@ -6,6 +6,10 @@ from bson import ObjectId
 
 from easylifeauth.services.domain_service import DataDomainService
 from easylifeauth.errors.domain_error import DomainNotFoundError, DomainBadError
+OID_9013 = "507f1f77bcf86cd799439013"
+OID_9099 = "507f1f77bcf86cd799439099"
+STR_TEST_DOMAIN = "test-domain"
+
 
 
 class TestDomainService:
@@ -27,16 +31,16 @@ class TestDomainService:
         result = await domain_service.get_all()
 
         assert len(result) == 1
-        assert result[0]["key"] == "test-domain"
+        assert result[0]["key"] == STR_TEST_DOMAIN
 
     @pytest.mark.asyncio
     async def test_get_domain_by_key_success(self, domain_service, mock_db, sample_domain_data):
         """Test getting domain by key"""
         mock_db.domains.find_one = AsyncMock(return_value=sample_domain_data)
 
-        result = await domain_service.get_domain_by_key("test-domain")
+        result = await domain_service.get_domain_by_key(STR_TEST_DOMAIN)
 
-        assert result["key"] == "test-domain"
+        assert result["key"] == STR_TEST_DOMAIN
 
     @pytest.mark.asyncio
     async def test_get_domain_by_key_not_found(self, domain_service, mock_db):
@@ -52,18 +56,18 @@ class TestDomainService:
         """Test getting domain by ObjectId"""
         mock_db.domains.find_one = AsyncMock(return_value=sample_domain_data)
 
-        result = await domain_service.get("507f1f77bcf86cd799439013")
+        result = await domain_service.get(OID_9013)
 
-        assert result["key"] == "test-domain"
+        assert result["key"] == STR_TEST_DOMAIN
 
     @pytest.mark.asyncio
     async def test_get_by_key_string(self, domain_service, mock_db, sample_domain_data):
         """Test getting domain by key string"""
         mock_db.domains.find_one = AsyncMock(return_value=sample_domain_data)
 
-        result = await domain_service.get("test-domain")
+        result = await domain_service.get(STR_TEST_DOMAIN)
 
-        assert result["key"] == "test-domain"
+        assert result["key"] == STR_TEST_DOMAIN
 
     @pytest.mark.asyncio
     async def test_get_not_found(self, domain_service, mock_db):
@@ -71,7 +75,7 @@ class TestDomainService:
         mock_db.domains.find_one = AsyncMock(return_value=None)
 
         # Use valid ObjectId format
-        result = await domain_service.get("507f1f77bcf86cd799439099")
+        result = await domain_service.get(OID_9099)
 
         assert result is None
 
@@ -111,7 +115,7 @@ class TestDomainService:
         mock_db.domains.find_one = AsyncMock(return_value=sample_domain_data)
 
         result = await domain_service.update(
-            {"_id": "507f1f77bcf86cd799439013", "name": "Updated Domain"},
+            {"_id": OID_9013, "name": "Updated Domain"},
             user_id="507f1f77bcf86cd799439011"
         )
 
@@ -126,7 +130,7 @@ class TestDomainService:
 
         with pytest.raises(DomainNotFoundError):
             await domain_service.update(
-                {"_id": "507f1f77bcf86cd799439099", "name": "Updated"},
+                {"_id": OID_9099, "name": "Updated"},
                 user_id="test"
             )
 
@@ -138,7 +142,7 @@ class TestDomainService:
         )
         mock_db.domains.find_one = AsyncMock(return_value=sample_domain_data)
 
-        result = await domain_service.update_status("507f1f77bcf86cd799439013", "I")
+        result = await domain_service.update_status(OID_9013, "I")
 
         assert result is not None
 
@@ -157,7 +161,7 @@ class TestDomainService:
 
         with pytest.raises(DomainNotFoundError):
             # Use valid ObjectId format
-            await domain_service.update_status("507f1f77bcf86cd799439099", "A")
+            await domain_service.update_status(OID_9099, "A")
 
     @pytest.mark.asyncio
     async def test_delete_success(self, domain_service, mock_db, sample_domain_data):
@@ -166,7 +170,7 @@ class TestDomainService:
             return_value=MagicMock(matched_count=1)
         )
 
-        result = await domain_service.delete("507f1f77bcf86cd799439013")
+        result = await domain_service.delete(OID_9013)
 
         assert result["message"] == "Domain deleted successfully"
 
@@ -179,4 +183,4 @@ class TestDomainService:
 
         with pytest.raises(DomainNotFoundError):
             # Use valid ObjectId format
-            await domain_service.delete("507f1f77bcf86cd799439099")
+            await domain_service.delete(OID_9099)

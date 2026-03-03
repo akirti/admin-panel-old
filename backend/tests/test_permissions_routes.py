@@ -15,6 +15,10 @@ PATH_PERMISSIONS = "/permissions"
 PATH_PERMISSIONS_NONEXISTENT = "/permissions/nonexistent"
 
 EXPECTED_TEST_PERMISSION = "Test Permission"
+STR_TEST_PERM = "test-perm"
+SUBPATH_PERMISSIONS = "/permissions/"
+
+
 
 
 
@@ -89,7 +93,7 @@ class TestPermissionsRoutes:
         """Test list permissions endpoint"""
         perm = {
             "_id": ObjectId(),
-            "key": "test-perm",
+            "key": STR_TEST_PERM,
             "name": EXPECTED_TEST_PERMISSION,
             "module": "users",
             "description": "Test description",
@@ -183,7 +187,7 @@ class TestPermissionsRoutes:
         obj_id = ObjectId()
         perm = {
             "_id": obj_id,
-            "key": "test-perm",
+            "key": STR_TEST_PERM,
             "name": EXPECTED_TEST_PERMISSION,
             "module": "users",
             "description": "Test description",
@@ -196,7 +200,7 @@ class TestPermissionsRoutes:
         response = client.get(f"/permissions/{obj_id}")
         assert response.status_code == 200
         data = response.json()
-        assert data["key"] == "test-perm"
+        assert data["key"] == STR_TEST_PERM
 
     @pytest.mark.skip(reason="Side effect exception mocking requires complex setup")
     def test_get_permission_by_key(self, client, mock_db):
@@ -246,7 +250,7 @@ class TestPermissionsRoutes:
         obj_id = ObjectId()
         existing = {
             "_id": obj_id,
-            "key": "test-perm",
+            "key": STR_TEST_PERM,
             "name": EXPECTED_TEST_PERMISSION,
             "module": "users",
             "description": "Test",
@@ -278,7 +282,7 @@ class TestPermissionsRoutes:
         """Test delete permission endpoint"""
         perm = {
             "_id": ObjectId(),
-            "key": "test-perm"
+            "key": STR_TEST_PERM
         }
 
         mock_db.permissions.find_one = AsyncMock(return_value=perm.copy())
@@ -302,13 +306,13 @@ class TestPermissionsRoutes:
         obj_id = ObjectId()
         perm = {
             "_id": obj_id,
-            "key": "test-perm"
+            "key": STR_TEST_PERM
         }
         role = {
             "_id": ObjectId(),
             "key": "admin",
             "name": "Admin",
-            "permissions": ["test-perm"]
+            "permissions": [STR_TEST_PERM]
         }
 
         mock_db.permissions.find_one = AsyncMock(return_value=perm.copy())
@@ -338,13 +342,13 @@ class TestPermissionsRoutes:
         obj_id = ObjectId()
         perm = {
             "_id": obj_id,
-            "key": "test-perm"
+            "key": STR_TEST_PERM
         }
         group = {
             "_id": ObjectId(),
             "key": "dev-team",
             "name": "Dev Team",
-            "permissions": ["test-perm"]
+            "permissions": [STR_TEST_PERM]
         }
 
         mock_db.permissions.find_one = AsyncMock(return_value=perm.copy())
@@ -374,7 +378,7 @@ class TestPermissionsRoutes:
         obj_id = ObjectId()
         perm = {
             "_id": obj_id,
-            "key": "test-perm"
+            "key": STR_TEST_PERM
         }
 
         mock_db.permissions.find_one = AsyncMock(return_value=perm.copy())
@@ -396,7 +400,7 @@ class TestPermissionsRoutes:
         obj_id = ObjectId()
         perm = {
             "_id": obj_id,
-            "key": "test-perm"
+            "key": STR_TEST_PERM
         }
 
         mock_db.permissions.find_one = AsyncMock(return_value=perm.copy())

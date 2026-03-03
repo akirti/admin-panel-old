@@ -16,6 +16,12 @@ from easylifeauth.utils.args_util import (
     clean_parse_url_args
 )
 
+CFG_A_B_C = "a.b.c"
+JSON_KEY_VALUE = '{"key": "value"}'
+NUM_25 = "25"
+NUM_42 = "42"
+STR_CUSTOM_TEST_KEY = "CUSTOM_TEST_KEY"
+
 
 class TestDictUtilError:
     """Tests for DictUtilError"""
@@ -37,13 +43,13 @@ class TestDictUtil:
     def test_deep_get_success(self, dict_util):
         """Test getting deep nested value"""
         d = {"a": {"b": {"c": "value"}}}
-        result = dict_util.deep_get(d, "a.b.c")
+        result = dict_util.deep_get(d, CFG_A_B_C)
         assert result == "value"
 
     def test_deep_get_default(self, dict_util):
         """Test getting with default"""
         d = {"a": {"b": {}}}
-        result = dict_util.deep_get(d, "a.b.c", default="default")
+        result = dict_util.deep_get(d, CFG_A_B_C, default="default")
         assert result == "default"
 
     def test_get_deep_nested_value_success(self, dict_util):
@@ -124,7 +130,7 @@ class TestArgsUtil:
 
     def test_convert_str_int(self):
         """Test converting string to int"""
-        assert convert_str("42") == 42
+        assert convert_str(NUM_42) == 42
         assert convert_str("-10") == -10
 
     def test_convert_str_float(self):
@@ -148,7 +154,7 @@ class TestArgsUtil:
 
     def test_is_stringified_json_dict(self):
         """Test detecting stringified JSON dict"""
-        assert is_stringified_json('{"key": "value"}') is True
+        assert is_stringified_json(JSON_KEY_VALUE) is True
 
     def test_is_stringified_json_list(self):
         """Test detecting stringified JSON list"""
@@ -164,16 +170,16 @@ class TestArgsUtil:
 
     def test_is_stringified_json_primitive(self):
         """Test JSON primitive (number)"""
-        assert is_stringified_json("42") is False
+        assert is_stringified_json(NUM_42) is False
 
     def test_get_stringified_json_to_dict_json(self):
         """Test converting stringified JSON"""
-        result = get_stringified_json_to_dict('{"key": "value"}')
+        result = get_stringified_json_to_dict(JSON_KEY_VALUE)
         assert result == {"key": "value"}
 
     def test_get_stringified_json_to_dict_non_json(self):
         """Test converting non-JSON string"""
-        result = get_stringified_json_to_dict("42")
+        result = get_stringified_json_to_dict(NUM_42)
         assert result == 42
 
     def test_get_stringified_json_to_dict_non_string(self):
@@ -241,10 +247,10 @@ class TestArgsUtil:
 
     def test_parse_url_args(self):
         """Test parsing URL args"""
-        flat = {"pagination[page]": "0", "pagination[limit]": "25"}
+        flat = {"pagination[page]": "0", "pagination[limit]": NUM_25}
         result = parse_url_args(flat)
         # parse_url_args doesn't convert strings to ints for non-JSON values
-        assert result == {"pagination": {"page": "0", "limit": "25"}}
+        assert result == {"pagination": {"page": "0", "limit": NUM_25}}
 
     def test_parse_url_args_with_json(self):
         """Test parsing URL args with JSON values"""
@@ -254,7 +260,7 @@ class TestArgsUtil:
 
     def test_clean_parse_url_args_single_value(self):
         """Test clean_parse_url_args with single values"""
-        params = {"page": ["1"], "limit": ["25"]}
+        params = {"page": ["1"], "limit": [NUM_25]}
         result = clean_parse_url_args(params)
         assert result == {"page": 1, "limit": 25}
 
@@ -292,13 +298,13 @@ class TestConfigurationLoader:
     def test_convert_value_json(self):
         """Test converting JSON value"""
         loader = ConfigurationLoader()
-        result = loader._convert_value('{"key": "value"}')
+        result = loader._convert_value(JSON_KEY_VALUE)
         assert result == {"key": "value"}
 
     def test_convert_value_int(self):
         """Test converting int value"""
         loader = ConfigurationLoader()
-        result = loader._convert_value("42")
+        result = loader._convert_value(NUM_42)
         assert result == 42
 
     def test_convert_value_float(self):
@@ -323,14 +329,14 @@ class TestConfigurationLoader:
         """Test setting nested value"""
         loader = ConfigurationLoader()
         loader.configuration = {}
-        loader._set_nested_value("a.b.c", "value")
+        loader._set_nested_value(CFG_A_B_C, "value")
         assert loader.configuration == {"a": {"b": {"c": "value"}}}
 
     def test_set_nested_value_overwrite(self):
         """Test setting nested value with overwrite"""
         loader = ConfigurationLoader()
         loader.configuration = {"a": "string"}  # Not a dict
-        loader._set_nested_value("a.b.c", "value")
+        loader._set_nested_value(CFG_A_B_C, "value")
         assert loader.configuration == {"a": {"b": {"c": "value"}}}
 
     def test_get_config_by_path(self):
@@ -513,14 +519,14 @@ class TestConfigValueSimulator:
         """Test setting environment variables with custom prefix"""
         from easylifeauth.utils.config import ConfigValueSimulator
 
-        os.environ.pop("CUSTOM_TEST_KEY", None)
+        os.environ.pop(STR_CUSTOM_TEST_KEY, None)
         try:
             ConfigValueSimulator.set_os_environment(
                 {"test_key": "custom_value"},
                 prefix="CUSTOM"
             )
 
-            assert "CUSTOM_TEST_KEY" in os.environ
-            assert os.environ["CUSTOM_TEST_KEY"] == "custom_value"
+            assert STR_CUSTOM_TEST_KEY in os.environ
+            assert os.environ[STR_CUSTOM_TEST_KEY] == "custom_value"
         finally:
-            os.environ.pop("CUSTOM_TEST_KEY", None)
+            os.environ.pop(STR_CUSTOM_TEST_KEY, None)

@@ -25,6 +25,13 @@ from easylifeauth.security.access_control import (
     get_token_manager,
 )
 from easylifeauth.errors.auth_error import AuthError
+STR_D1 = "d1"
+STR_G1 = "g1"
+STR_GROUP_ADMINISTRATOR = "group-administrator"
+STR_GROUP_EDITOR = "group-editor"
+STR_SUPER_ADMINISTRATOR = "super-administrator"
+TEST_EMAIL_A = "a@b.com"
+
 
 
 # ---------------------------------------------------------------------------
@@ -35,16 +42,16 @@ ALL_ROLES = [
     "viewer",
     "user",
     "editor",
-    "group-editor",
-    "group-administrator",
+    STR_GROUP_EDITOR,
+    STR_GROUP_ADMINISTRATOR,
     "administrator",
-    "super-administrator",
+    STR_SUPER_ADMINISTRATOR,
 ]
 
-ADMIN_ONLY = {"administrator", "super-administrator"}
-SUPER_ONLY = {"super-administrator"}
-GROUP_ADMIN_ALLOWED = {"group-administrator", "group-editor", "administrator", "super-administrator"}
-EDITOR_ALLOWED = {"administrator", "super-administrator", "editor", "group-administrator", "group-editor"}
+ADMIN_ONLY = {"administrator", STR_SUPER_ADMINISTRATOR}
+SUPER_ONLY = {STR_SUPER_ADMINISTRATOR}
+GROUP_ADMIN_ALLOWED = {STR_GROUP_ADMINISTRATOR, STR_GROUP_EDITOR, "administrator", STR_SUPER_ADMINISTRATOR}
+EDITOR_ALLOWED = {"administrator", STR_SUPER_ADMINISTRATOR, "editor", STR_GROUP_ADMINISTRATOR, STR_GROUP_EDITOR}
 
 
 def _make_user(role: str) -> CurrentUser:
@@ -149,7 +156,7 @@ class TestRequireGroupAdmin:
             assert "Group Administrator access required" in exc_info.value.detail
 
     def test_group_editor_allowed(self):
-        user = _make_user("group-editor")
+        user = _make_user(STR_GROUP_EDITOR)
         assert require_group_admin(user) == user
 
 
@@ -241,8 +248,8 @@ class TestAccessControlGetCurrentUser:
     @pytest.mark.asyncio
     async def test_valid_token_from_header(self, mock_token_manager):
         mock_token_manager.verify_token = AsyncMock(return_value={
-            "user_id": "u1", "email": "a@b.com",
-            "roles": ["user", "editor"], "groups": ["g1"], "domains": ["d1"],
+            "user_id": "u1", "email": TEST_EMAIL_A,
+            "roles": ["user", "editor"], "groups": [STR_G1], "domains": [STR_D1],
         })
         ac = AccessControl(mock_token_manager)
         request = _make_mock_request()
@@ -250,10 +257,10 @@ class TestAccessControlGetCurrentUser:
 
         result = await ac.get_current_user(request, creds)
         assert result.user_id == "u1"
-        assert result.email == "a@b.com"
+        assert result.email == TEST_EMAIL_A
         assert "editor" in result.roles
-        assert "g1" in result.groups
-        assert "d1" in result.domains
+        assert STR_G1 in result.groups
+        assert STR_D1 in result.domains
 
     @pytest.mark.asyncio
     async def test_valid_token_from_cookie(self, mock_token_manager):
@@ -420,7 +427,7 @@ class TestTokenManagerHelpers:
 class TestCurrentUserModel:
 
     def test_basic_creation(self):
-        u = CurrentUser(user_id="1", email="a@b.com", roles=["viewer"])
+        u = CurrentUser(user_id="1", email=TEST_EMAIL_A, roles=["viewer"])
         assert u.user_id == "1"
         assert u.groups == []
         assert u.domains == []
@@ -429,8 +436,8 @@ class TestCurrentUserModel:
         u = CurrentUser(
             user_id="2", email="b@c.com",
             roles=["admin", "editor"],
-            groups=["g1", "g2"],
-            domains=["d1", "d2"],
+            groups=[STR_G1, "g2"],
+            domains=[STR_D1, "d2"],
         )
         assert len(u.roles) == 2
         assert len(u.groups) == 2

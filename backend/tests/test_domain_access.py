@@ -30,6 +30,16 @@ from easylifeauth.api.playboard_routes import (
 from mock_data import MOCK_EMAIL_USER
 
 PATH_DOMAINS_ALL = "/domains/all"
+STR_DATADOMAIN = "dataDomain"
+STR_DOMAINKEY = "domainKey"
+STR_FINANCE = "Finance"
+STR_GROUPID = "groupId"
+STR_SC1 = "sc1"
+STR_SUPER_ADMINISTRATOR = "super-administrator"
+SUBPATH_DOMAINS = "/domains/"
+SUBPATH_FINANCE = "/finance"
+
+
 
 
 
@@ -103,8 +113,8 @@ class TestCheckDomainAccess:
         assert check_domain_access(["finance"], "hr") is False
 
     def test_case_sensitive(self):
-        assert check_domain_access(["Finance"], "finance") is False
-        assert check_domain_access(["finance"], "Finance") is False
+        assert check_domain_access([STR_FINANCE], "finance") is False
+        assert check_domain_access(["finance"], STR_FINANCE) is False
 
 
 # ===========================================================================
@@ -115,7 +125,7 @@ class TestGetUserAccessibleDomains:
 
     @pytest.mark.asyncio
     async def test_super_admin_gets_all(self):
-        user = _user("super-administrator")
+        user = _user(STR_SUPER_ADMINISTRATOR)
         db = _mock_db()
         svc = _mock_user_service()
         result = await get_user_accessible_domains(user, db, svc)
@@ -182,13 +192,13 @@ class TestDomainAllRoute:
         return factory
 
     def test_super_admin_sees_all_active(self, _app):
-        user = _user("super-administrator")
+        user = _user(STR_SUPER_ADMINISTRATOR)
         db = _mock_db()
 
         async def cursor_gen():
             yield {
-                "_id": ObjectId(), "key": "finance", "name": "Finance",
-                "path": "/finance", "status": "active", "order": 1,
+                "_id": ObjectId(), "key": "finance", "name": STR_FINANCE,
+                "path": SUBPATH_FINANCE, "status": "active", "order": 1,
             }
             yield {
                 "_id": ObjectId(), "key": "hr", "name": "HR",
@@ -215,8 +225,8 @@ class TestDomainAllRoute:
 
         async def cursor_gen():
             yield {
-                "_id": ObjectId(), "key": "finance", "name": "Finance",
-                "path": "/finance", "status": "active", "order": 1,
+                "_id": ObjectId(), "key": "finance", "name": STR_FINANCE,
+                "path": SUBPATH_FINANCE, "status": "active", "order": 1,
             }
 
         mock_cursor = MagicMock()
@@ -289,8 +299,8 @@ class TestDomainGetByIdAccess:
         db = _mock_db()
         oid = ObjectId()
         db.domains.find_one = AsyncMock(return_value={
-            "_id": oid, "key": "finance", "name": "Finance",
-            "path": "/finance", "status": "active", "order": 1,
+            "_id": oid, "key": "finance", "name": STR_FINANCE,
+            "path": SUBPATH_FINANCE, "status": "active", "order": 1,
         })
         db.users.find_one = AsyncMock(return_value={
             "_id": ObjectId(), "email": MOCK_EMAIL_USER,
@@ -319,7 +329,7 @@ class TestDomainGetByIdAccess:
         assert resp.status_code == 403
 
     def test_super_admin_allowed_any_domain(self, _app):
-        user = _user("super-administrator")
+        user = _user(STR_SUPER_ADMINISTRATOR)
         db = _mock_db()
         oid = ObjectId()
         db.domains.find_one = AsyncMock(return_value={
@@ -350,7 +360,7 @@ class TestScenarioDomainAccess:
 
     @pytest.mark.asyncio
     async def test_scenario_get_user_accessible_domains_super(self):
-        user = _user("super-administrator")
+        user = _user(STR_SUPER_ADMINISTRATOR)
         result = await scenario_get_user_accessible_domains(user, _mock_db(), _mock_user_service())
         assert result == ["all"]
 
@@ -401,7 +411,7 @@ class TestScenarioDomainAccess:
         mock_cursor = MagicMock()
         mock_cursor.sort.return_value = MagicMock()
         mock_cursor.sort.return_value.to_list = AsyncMock(return_value=[
-            {"key": "sc1", "dataDomain": "finance", "status": "A"},
+            {"key": STR_SC1, STR_DATADOMAIN: "finance", "status": "A"},
         ])
         db.domain_scenarios.find.return_value = mock_cursor
 
@@ -435,7 +445,7 @@ class TestScenarioDomainAccess:
         mock_cursor = MagicMock()
         mock_cursor.sort.return_value = MagicMock()
         mock_cursor.sort.return_value.to_list = AsyncMock(return_value=[
-            {"key": "sc1", "dataDomain": "finance", "status": "A"},
+            {"key": STR_SC1, STR_DATADOMAIN: "finance", "status": "A"},
         ])
         db.domain_scenarios.find.return_value = mock_cursor
 
@@ -470,9 +480,9 @@ class TestPlayboardDomainAccess:
     async def test_get_scenario_domain_key_found(self):
         db = _mock_db()
         db.domain_scenarios.find_one = AsyncMock(return_value={
-            "key": "sc1", "domainKey": "finance",
+            "key": STR_SC1, STR_DOMAINKEY: "finance",
         })
-        result = await get_scenario_domain_key(db, "sc1")
+        result = await get_scenario_domain_key(db, STR_SC1)
         assert result == "finance"
 
     @pytest.mark.asyncio
@@ -513,7 +523,7 @@ class TestPlayboardDomainAccess:
             "scenarioKey": "sc-hr", "status": "active",
         })
         db.domain_scenarios.find_one = AsyncMock(return_value={
-            "key": "sc-hr", "domainKey": "hr",
+            "key": "sc-hr", STR_DOMAINKEY: "hr",
         })
 
         resp = client.get(f"/playboards/{oid}")
@@ -526,10 +536,10 @@ class TestPlayboardDomainAccess:
         oid = ObjectId()
         db.playboards.find_one = AsyncMock(return_value={
             "_id": oid, "key": "pb1", "name": "PB1", "scenarioKey": "sc-fin",
-            "status": "active", "dataDomain": "finance",
+            "status": "active", STR_DATADOMAIN: "finance",
         })
         db.domain_scenarios.find_one = AsyncMock(return_value={
-            "key": "sc-fin", "domainKey": "finance",
+            "key": "sc-fin", STR_DOMAINKEY: "finance",
         })
 
         resp = client.get(f"/playboards/{oid}")
@@ -545,12 +555,12 @@ class TestPlayboardDomainAccess:
         assert data["data"] == []
 
     def test_list_playboards_with_all_domain(self, _app):
-        user = _user("super-administrator")
+        user = _user(STR_SUPER_ADMINISTRATOR)
         client, db = _app(user, user_domains=["all"])
 
         # Mock scenario keys lookup
         async def sc_cursor():
-            yield {"key": "sc1"}
+            yield {"key": STR_SC1}
         db.domain_scenarios.find.return_value = sc_cursor()
         db.playboards.count_documents = AsyncMock(return_value=0)
 
@@ -614,7 +624,7 @@ class TestResolveUserDomains:
         db.roles.find.return_value = _empty_cursor()
 
         async def groups_cursor():
-            yield {"groupId": "team-a", "domains": ["hr", "legal"], "status": "active"}
+            yield {STR_GROUPID: "team-a", "domains": ["hr", "legal"], "status": "active"}
 
         db.groups.find.return_value = groups_cursor()
 
@@ -635,7 +645,7 @@ class TestResolveUserDomains:
             yield {"roleId": "r1", "domains": ["finance", "hr"], "status": "active"}
 
         async def groups_cursor():
-            yield {"groupId": "g1", "domains": ["hr", "legal"], "status": "active"}
+            yield {STR_GROUPID: "g1", "domains": ["hr", "legal"], "status": "active"}
 
         db.roles.find.return_value = roles_cursor()
         db.groups.find.return_value = groups_cursor()
@@ -670,7 +680,7 @@ class TestResolveUserDomains:
         db = _mock_db()
 
         async def groups_cursor():
-            yield {"groupId": "all-access", "domains": ["all"], "status": "active"}
+            yield {STR_GROUPID: "all-access", "domains": ["all"], "status": "active"}
 
         db.roles.find.return_value = _empty_cursor()
         db.groups.find.return_value = groups_cursor()

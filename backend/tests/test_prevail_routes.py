@@ -12,6 +12,9 @@ from mock_data import MOCK_URL_PREVAIL, MOCK_URL_PREVAIL_API, MOCK_URL_PREVAIL_S
 PATH_PREVAIL_SCENARIO_X = "/prevail/scenario-x"
 
 EXPECTED_PREVAIL_SERVICE_ERROR = "Prevail service error"
+METHOD_POST = "POST"
+STR_AUTHORIZATION = "Authorization"
+
 
 
 
@@ -65,7 +68,7 @@ class TestExecutePrevailQuery:
             "name": "Prevail API",
             "endpoint": MOCK_URL_PREVAIL,
             "status": "active",
-            "method": "POST",
+            "method": METHOD_POST,
             "auth_type": "bearer",
             "auth_config": {"token": "service-token-xyz"},
             "timeout": 120,
@@ -122,7 +125,7 @@ class TestExecutePrevailQuery:
         client.post(
             "/prevail/my-scenario",
             json=payload,
-            headers={"Authorization": "Bearer user-jwt-token-123"},
+            headers={STR_AUTHORIZATION: "Bearer user-jwt-token-123"},
         )
 
         mock_service.test_api.assert_called_once()
@@ -130,7 +133,7 @@ class TestExecutePrevailQuery:
 
         # Verify the target URL is built correctly
         assert call_config["endpoint"] == MOCK_URL_PREVAIL_SCENARIO
-        assert call_config["method"] == "POST"
+        assert call_config["method"] == METHOD_POST
         assert call_config["body"] == payload
         assert call_config["ping_endpoint"] is None
         assert call_config["timeout"] == 120
@@ -226,7 +229,7 @@ class TestExecutePrevailQuery:
         client.post(
             "/prevail/scenario-header",
             json={"q": "test"},
-            headers={"Authorization": "Bearer header-jwt-token-xyz"},
+            headers={STR_AUTHORIZATION: "Bearer header-jwt-token-xyz"},
         )
 
         call_config = mock_service.test_api.call_args[0][0]
@@ -249,7 +252,7 @@ class TestExecutePrevailQuery:
             "/prevail/scenario-both",
             json={"q": "test"},
             cookies={"access_token": "cookie-token"},
-            headers={"Authorization": "Bearer header-token"},
+            headers={STR_AUTHORIZATION: "Bearer header-token"},
         )
 
         call_config = mock_service.test_api.call_args[0][0]
@@ -647,7 +650,7 @@ class TestExecutePrevailQuery:
         client.post(
             PATH_PREVAIL_SCENARIO_X,
             json={"q": "test"},
-            headers={"Authorization": "Bearer my-token"},
+            headers={STR_AUTHORIZATION: "Bearer my-token"},
         )
 
         call_config = mock_service.test_api.call_args[0][0]
@@ -740,7 +743,7 @@ class TestExecutePrevailQueryEdgeCases:
             "name": "Prevail API",
             "endpoint": MOCK_URL_PREVAIL_API,
             "status": "active",
-            "method": "POST",
+            "method": METHOD_POST,
             "auth_type": "none",
             "auth_config": {},
             "timeout": 30,

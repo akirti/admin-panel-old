@@ -19,6 +19,19 @@ PATH_ASK_SCENARIOS_REQ_123_FILES = "/ask_scenarios/req_123/files"
 
 EXPECTED_NEW_REQUEST = "New Request"
 EXPECTED_TEST_COMMENT = "Test comment"
+FILE_OUTPUT_JSON = "output.json"
+FILE_TEST_CSV = "test.csv"
+MIME_TEXT_CSV = "text/csv"
+STR_ADMIN_123 = "admin_123"
+STR_DOMAIN_A = "domain-a"
+STR_FORBIDDEN = "Forbidden"
+STR_REQ_123 = "req_123"
+STR_REQ_456 = "req_456"
+STR_UNAUTHORIZED = "Unauthorized"
+STR_USER_123 = "user_123"
+STR_USER_456 = "user_456"
+STR_VIEWER_789 = "viewer_789"
+
 
 
 
@@ -39,9 +52,9 @@ class TestScenarioRequestRoutes:
         service = MagicMock()
         # Default get returns matching user for ownership checks on edit/upload
         service.get = AsyncMock(return_value={
-            "user_id": "user_123",
+            "user_id": STR_USER_123,
             "email": MOCK_EMAIL_USER_TEST,
-            "request_id": "req_123"
+            "request_id": STR_REQ_123
         })
         return service
 
@@ -50,11 +63,11 @@ class TestScenarioRequestRoutes:
         """Create mock user"""
         user = MagicMock()
         user.email = MOCK_EMAIL_USER_TEST
-        user.user_id = "user_123"
+        user.user_id = STR_USER_123
         user.roles = ["user"]
         user.model_dump = MagicMock(return_value={
             "email": MOCK_EMAIL_USER_TEST,
-            "user_id": "user_123",
+            "user_id": STR_USER_123,
             "roles": ["user"]
         })
         return user
@@ -64,11 +77,11 @@ class TestScenarioRequestRoutes:
         """Create mock admin user"""
         user = MagicMock()
         user.email = MOCK_EMAIL_ADMIN_TEST
-        user.user_id = "admin_123"
+        user.user_id = STR_ADMIN_123
         user.roles = ["administrator"]
         user.model_dump = MagicMock(return_value={
             "email": MOCK_EMAIL_ADMIN_TEST,
-            "user_id": "admin_123",
+            "user_id": STR_ADMIN_123,
             "roles": ["administrator"]
         })
         return user
@@ -110,7 +123,7 @@ class TestScenarioRequestRoutes:
     def test_get_domain_options(self, client, mock_scenario_request_service):
         """Test get domain options endpoint"""
         domains = [
-            {"value": "domain-a", "label": "Domain A"},
+            {"value": STR_DOMAIN_A, "label": "Domain A"},
             {"value": "domain-b", "label": "Domain B"}
         ]
         mock_scenario_request_service.get_domains = AsyncMock(return_value=domains)
@@ -179,7 +192,7 @@ class TestScenarioRequestRoutes:
     def test_get_all_scenario_requests_error(self, client, mock_scenario_request_service):
         """Test get all scenario requests with error"""
         # AuthError defaults to status_code=400
-        mock_scenario_request_service.get_all = AsyncMock(side_effect=AuthError("Unauthorized"))
+        mock_scenario_request_service.get_all = AsyncMock(side_effect=AuthError(STR_UNAUTHORIZED))
 
         response = client.get(PATH_ASK_SCENARIOS_ALL)
         assert response.status_code == 400  # AuthError default status_code
@@ -187,7 +200,7 @@ class TestScenarioRequestRoutes:
     def test_create_scenario_request(self, client, mock_scenario_request_service, mock_user):
         """Test create scenario request endpoint"""
         result = {
-            "request_id": "req_123",
+            "request_id": STR_REQ_123,
             "name": EXPECTED_NEW_REQUEST,
             "status": "new"
         }
@@ -197,7 +210,7 @@ class TestScenarioRequestRoutes:
         request_data = {
             "name": EXPECTED_NEW_REQUEST,
             "requestType": "scenario",
-            "dataDomain": "domain-a",
+            "dataDomain": STR_DOMAIN_A,
             "description": "Test description for the new request"
         }
 
@@ -206,12 +219,12 @@ class TestScenarioRequestRoutes:
 
     def test_create_scenario_request_error(self, client, mock_scenario_request_service):
         """Test create scenario request with error"""
-        mock_scenario_request_service.save = AsyncMock(side_effect=AuthError("Unauthorized"))
+        mock_scenario_request_service.save = AsyncMock(side_effect=AuthError(STR_UNAUTHORIZED))
 
         request_data = {
             "name": EXPECTED_NEW_REQUEST,
             "requestType": "scenario",
-            "dataDomain": "domain-a",
+            "dataDomain": STR_DOMAIN_A,
             "description": "Test description"
         }
 
@@ -220,7 +233,7 @@ class TestScenarioRequestRoutes:
 
     def test_update_scenario_request(self, client, mock_scenario_request_service):
         """Test update scenario request endpoint (creator can update own)"""
-        result = {"request_id": "req_123", "title": "Updated Request"}
+        result = {"request_id": STR_REQ_123, "title": "Updated Request"}
         mock_scenario_request_service.update = AsyncMock(return_value=result)
 
         response = client.put(PATH_ASK_SCENARIOS_REQ_123, json={"title": "Updated Request"})
@@ -232,17 +245,17 @@ class TestScenarioRequestRoutes:
         mock_scenario_request_service.get = AsyncMock(return_value={
             "user_id": "other_user_456",
             "email": MOCK_EMAIL_OTHER_TEST,
-            "request_id": "req_123"
+            "request_id": STR_REQ_123
         })
         mock_scenario_request_service.update = AsyncMock(return_value={})
 
         other_user = MagicMock()
         other_user.email = MOCK_EMAIL_VIEWER_TEST
-        other_user.user_id = "viewer_789"
+        other_user.user_id = STR_VIEWER_789
         other_user.roles = ["user"]
         other_user.model_dump = MagicMock(return_value={
             "email": MOCK_EMAIL_VIEWER_TEST,
-            "user_id": "viewer_789",
+            "user_id": STR_VIEWER_789,
             "roles": ["user"]
         })
 
@@ -255,7 +268,7 @@ class TestScenarioRequestRoutes:
 
     def test_update_scenario_request_error(self, client, mock_scenario_request_service):
         """Test update scenario request with error"""
-        mock_scenario_request_service.update = AsyncMock(side_effect=AuthError("Unauthorized"))
+        mock_scenario_request_service.update = AsyncMock(side_effect=AuthError(STR_UNAUTHORIZED))
 
         response = client.put(PATH_ASK_SCENARIOS_REQ_123, json={"title": "Updated"})
         assert response.status_code == 400  # AuthError default status_code
@@ -263,10 +276,10 @@ class TestScenarioRequestRoutes:
     def test_get_scenario_request(self, client, mock_scenario_request_service):
         """Test get scenario request by ID - any logged-in user can view"""
         result = {
-            "request_id": "req_123",
+            "request_id": STR_REQ_123,
             "title": "Test Request",
             "status": "new",
-            "user_id": "user_123",
+            "user_id": STR_USER_123,
             "email": MOCK_EMAIL_USER_TEST
         }
         mock_scenario_request_service.get = AsyncMock(return_value=result)
@@ -274,13 +287,13 @@ class TestScenarioRequestRoutes:
         response = client.get(PATH_ASK_SCENARIOS_REQ_123)
         assert response.status_code == 200
         data = response.json()
-        assert data["request_id"] == "req_123"
+        assert data["request_id"] == STR_REQ_123
 
     def test_get_scenario_request_another_users_request(self, app, mock_scenario_request_service):
         """Test that any logged-in user can view another user's request"""
         # Request owned by a different user
         mock_scenario_request_service.get = AsyncMock(return_value={
-            "request_id": "req_456",
+            "request_id": STR_REQ_456,
             "title": "Someone Else's Request",
             "user_id": "other_user_999",
             "email": MOCK_EMAIL_OTHER_TEST
@@ -303,7 +316,7 @@ class TestScenarioRequestRoutes:
         response = client.get("/ask_scenarios/req_456")
         assert response.status_code == 200
         data = response.json()
-        assert data["request_id"] == "req_456"
+        assert data["request_id"] == STR_REQ_456
 
     def test_get_scenario_request_error(self, client, mock_scenario_request_service):
         """Test get scenario request with error"""
@@ -315,7 +328,7 @@ class TestScenarioRequestRoutes:
     def test_upload_user_file(self, client, mock_scenario_request_service):
         """Test upload user file endpoint (creator can upload to own request)"""
         result = {
-            "file_name": "test.csv",
+            "file_name": FILE_TEST_CSV,
             "file_path": "files/test.csv",
             "size": 100
         }
@@ -323,27 +336,27 @@ class TestScenarioRequestRoutes:
 
         response = client.post(
             PATH_ASK_SCENARIOS_REQ_123_FILES,
-            files={"file": ("test.csv", b"test content", "text/csv")}
+            files={"file": (FILE_TEST_CSV, b"test content", MIME_TEXT_CSV)}
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["file_name"] == "test.csv"
+        assert data["file_name"] == FILE_TEST_CSV
 
     def test_upload_user_file_forbidden_for_non_creator(self, app, mock_scenario_request_service):
         """Test that non-creator regular user cannot upload to another user's request"""
         mock_scenario_request_service.get = AsyncMock(return_value={
             "user_id": "other_user_456",
             "email": MOCK_EMAIL_OTHER_TEST,
-            "request_id": "req_123"
+            "request_id": STR_REQ_123
         })
 
         other_user = MagicMock()
         other_user.email = MOCK_EMAIL_VIEWER_TEST
-        other_user.user_id = "viewer_789"
+        other_user.user_id = STR_VIEWER_789
         other_user.roles = ["user"]
         other_user.model_dump = MagicMock(return_value={
             "email": MOCK_EMAIL_VIEWER_TEST,
-            "user_id": "viewer_789",
+            "user_id": STR_VIEWER_789,
             "roles": ["user"]
         })
 
@@ -353,24 +366,24 @@ class TestScenarioRequestRoutes:
 
         response = client.post(
             PATH_ASK_SCENARIOS_REQ_123_FILES,
-            files={"file": ("test.csv", b"test content", "text/csv")}
+            files={"file": (FILE_TEST_CSV, b"test content", MIME_TEXT_CSV)}
         )
         assert response.status_code == 403
 
     def test_upload_user_file_error(self, client, mock_scenario_request_service):
         """Test upload user file with error"""
-        mock_scenario_request_service.upload_file = AsyncMock(side_effect=AuthError("Forbidden"))
+        mock_scenario_request_service.upload_file = AsyncMock(side_effect=AuthError(STR_FORBIDDEN))
 
         response = client.post(
             PATH_ASK_SCENARIOS_REQ_123_FILES,
-            files={"file": ("test.csv", b"test content", "text/csv")}
+            files={"file": (FILE_TEST_CSV, b"test content", MIME_TEXT_CSV)}
         )
         assert response.status_code == 400  # AuthError default status_code
 
     def test_upload_bucket_file(self, client, mock_scenario_request_service):
         """Test upload bucket file endpoint (admin)"""
         result = {
-            "file_name": "output.json",
+            "file_name": FILE_OUTPUT_JSON,
             "file_path": "buckets/output.json",
             "size": 500
         }
@@ -378,18 +391,18 @@ class TestScenarioRequestRoutes:
 
         response = client.post(
             "/ask_scenarios/req_123/buckets",
-            files={"file": ("output.json", b"json content", "application/json")},
+            files={"file": (FILE_OUTPUT_JSON, b"json content", "application/json")},
             data={"comment": "Output file"}
         )
         assert response.status_code == 200
 
     def test_upload_bucket_file_error(self, client, mock_scenario_request_service):
         """Test upload bucket file with error"""
-        mock_scenario_request_service.upload_file = AsyncMock(side_effect=AuthError("Forbidden"))
+        mock_scenario_request_service.upload_file = AsyncMock(side_effect=AuthError(STR_FORBIDDEN))
 
         response = client.post(
             "/ask_scenarios/req_123/buckets",
-            files={"file": ("output.json", b"json content", "application/json")}
+            files={"file": (FILE_OUTPUT_JSON, b"json content", "application/json")}
         )
         assert response.status_code == 400  # AuthError default status_code
 
@@ -407,7 +420,7 @@ class TestScenarioRequestRoutes:
 
     def test_preview_file_error(self, client, mock_scenario_request_service):
         """Test file preview with error"""
-        mock_scenario_request_service.get_file_preview = AsyncMock(side_effect=AuthError("Forbidden"))
+        mock_scenario_request_service.get_file_preview = AsyncMock(side_effect=AuthError(STR_FORBIDDEN))
 
         response = client.get("/ask_scenarios/req_123/files/test.csv/preview")
         assert response.status_code == 400  # AuthError default status_code
@@ -415,12 +428,12 @@ class TestScenarioRequestRoutes:
     def test_download_file(self, client, mock_scenario_request_service):
         """Test file download endpoint - any logged-in user can download"""
         mock_scenario_request_service.download_file = AsyncMock(
-            return_value=(b"file content", "test.csv")
+            return_value=(b"file content", FILE_TEST_CSV)
         )
 
         response = client.get("/ask_scenarios/req_123/files/test.csv/download")
         assert response.status_code == 200
-        assert response.headers["content-disposition"] == 'attachment; filename="test.csv"'
+        assert response.headers["content-disposition"] == f'attachment; filename="{FILE_TEST_CSV}"'
 
     def test_download_file_not_found(self, client, mock_scenario_request_service):
         """Test file download when file not found"""
@@ -431,14 +444,14 @@ class TestScenarioRequestRoutes:
 
     def test_download_file_error(self, client, mock_scenario_request_service):
         """Test file download with error"""
-        mock_scenario_request_service.download_file = AsyncMock(side_effect=AuthError("Forbidden"))
+        mock_scenario_request_service.download_file = AsyncMock(side_effect=AuthError(STR_FORBIDDEN))
 
         response = client.get("/ask_scenarios/req_123/files/test.csv/download")
         assert response.status_code == 400  # AuthError default status_code
 
     def test_add_comment(self, client, mock_scenario_request_service):
         """Test add comment endpoint"""
-        result = {"request_id": "req_123", "comments": [{"comment": EXPECTED_TEST_COMMENT}]}
+        result = {"request_id": STR_REQ_123, "comments": [{"comment": EXPECTED_TEST_COMMENT}]}
         mock_scenario_request_service.update = AsyncMock(return_value=result)
 
         response = client.post(
@@ -449,7 +462,7 @@ class TestScenarioRequestRoutes:
 
     def test_add_comment_by_non_creator(self, app, mock_scenario_request_service):
         """Test that any logged-in user can comment on another user's request"""
-        result = {"request_id": "req_123", "comments": [{"comment": "Nice work!"}]}
+        result = {"request_id": STR_REQ_123, "comments": [{"comment": "Nice work!"}]}
         mock_scenario_request_service.update = AsyncMock(return_value=result)
 
         other_user = MagicMock()
@@ -474,7 +487,7 @@ class TestScenarioRequestRoutes:
 
     def test_add_comment_error(self, client, mock_scenario_request_service):
         """Test add comment with error"""
-        mock_scenario_request_service.update = AsyncMock(side_effect=AuthError("Forbidden"))
+        mock_scenario_request_service.update = AsyncMock(side_effect=AuthError(STR_FORBIDDEN))
 
         response = client.post(
             PATH_ASK_SCENARIOS_REQ_123_COMMENT,
@@ -484,13 +497,13 @@ class TestScenarioRequestRoutes:
 
     def test_add_workflow(self, client, mock_scenario_request_service):
         """Test add workflow endpoint (admin)"""
-        result = {"request_id": "req_123", "status": "in_progress"}
+        result = {"request_id": STR_REQ_123, "status": "in_progress"}
         mock_scenario_request_service.update = AsyncMock(return_value=result)
 
         response = client.post(
             "/ask_scenarios/req_123/workflow",
             data={
-                "assigned_to": "user_456",
+                "assigned_to": STR_USER_456,
                 "to_status": "in_progress",
                 "comment": "Assigned to John"
             }
@@ -499,7 +512,7 @@ class TestScenarioRequestRoutes:
 
     def test_add_workflow_error(self, client, mock_scenario_request_service):
         """Test add workflow with error"""
-        mock_scenario_request_service.update = AsyncMock(side_effect=AuthError("Forbidden"))
+        mock_scenario_request_service.update = AsyncMock(side_effect=AuthError(STR_FORBIDDEN))
 
         response = client.post(
             "/ask_scenarios/req_123/workflow",
@@ -509,7 +522,7 @@ class TestScenarioRequestRoutes:
 
     def test_update_status(self, client, mock_scenario_request_service):
         """Test update status endpoint (admin)"""
-        result = {"request_id": "req_123", "status": "completed"}
+        result = {"request_id": STR_REQ_123, "status": "completed"}
         mock_scenario_request_service.update = AsyncMock(return_value=result)
 
         response = client.put(
@@ -523,7 +536,7 @@ class TestScenarioRequestRoutes:
 
     def test_update_status_error(self, client, mock_scenario_request_service):
         """Test update status with error"""
-        mock_scenario_request_service.update = AsyncMock(side_effect=AuthError("Forbidden"))
+        mock_scenario_request_service.update = AsyncMock(side_effect=AuthError(STR_FORBIDDEN))
 
         response = client.put(
             "/ask_scenarios/req_123/status",
@@ -587,10 +600,10 @@ class TestScenarioRequestRoutesEditorUser:
         mock_scenario_request_service.get = AsyncMock(return_value={
             "user_id": "other_user_999",
             "email": MOCK_EMAIL_OTHER_TEST,
-            "request_id": "req_456"
+            "request_id": STR_REQ_456
         })
         mock_scenario_request_service.update = AsyncMock(return_value={
-            "request_id": "req_456", "title": "Updated by editor"
+            "request_id": STR_REQ_456, "title": "Updated by editor"
         })
 
         response = client.put("/ask_scenarios/req_456", json={"title": "Updated by editor"})
@@ -617,11 +630,11 @@ class TestScenarioRequestRoutesAdminEndpoints:
         """Create mock admin user"""
         user = MagicMock()
         user.email = MOCK_EMAIL_ADMIN_TEST
-        user.user_id = "admin_123"
+        user.user_id = STR_ADMIN_123
         user.roles = ["administrator"]
         user.model_dump = MagicMock(return_value={
             "email": MOCK_EMAIL_ADMIN_TEST,
-            "user_id": "admin_123",
+            "user_id": STR_ADMIN_123,
             "roles": ["administrator"]
         })
         return user
@@ -636,7 +649,7 @@ class TestScenarioRequestRoutesAdminEndpoints:
 
     def test_admin_update_scenario_request(self, client, mock_scenario_request_service):
         """Test admin update scenario request endpoint"""
-        result = {"request_id": "req_123", "status": "accepted"}
+        result = {"request_id": STR_REQ_123, "status": "accepted"}
         mock_scenario_request_service.update = AsyncMock(return_value=result)
 
         # Use valid ScenarioRequestStatusTypes value
@@ -645,8 +658,8 @@ class TestScenarioRequestRoutesAdminEndpoints:
 
     def test_admin_update_with_assigned_to(self, client, mock_scenario_request_service):
         """Test admin update with assigned_to field"""
-        result = {"request_id": "req_123", "assigned_to": "user_456"}
+        result = {"request_id": STR_REQ_123, "assigned_to": STR_USER_456}
         mock_scenario_request_service.update = AsyncMock(return_value=result)
 
-        response = client.put("/ask_scenarios/req_123/admin", json={"assigned_to": "user_456"})
+        response = client.put("/ask_scenarios/req_123/admin", json={"assigned_to": STR_USER_456})
         assert response.status_code == 200

@@ -24,6 +24,21 @@ PATH_PLAYBOARDS_INVALID_ID = "/playboards/invalid-id"
 
 EXPECTED_INVALID_OBJECTID = "Invalid ObjectId"
 EXPECTED_NEW_NAME = "New Name"
+FILE_TEST_JSON = "test.json"
+MIME_APPLICATION_JSON = "application/json"
+STR_DOMAIN1 = "domain1"
+STR_DOMAIN2 = "domain2"
+STR_DOMAINKEY = "domainKey"
+STR_SCENARIO1 = "scenario1"
+STR_SCENARIOKEY = "scenarioKey"
+STR_TEST = "Test"
+STR_TEST_PLAYBOARD = "test-playboard"
+SUBPATH_DOWNLOAD = "/download"
+SUBPATH_PLAYBOARDS = "/playboards/"
+SUBPATH_TOGGLE_STATUS = "/toggle-status"
+SUBPATH_UPLOAD = "/upload"
+
+
 
 
 
@@ -33,12 +48,12 @@ class TestHelperFunctions:
 
     def test_check_domain_access_no_domain_key(self):
         """Test check_domain_access with no domain key"""
-        result = check_domain_access(["domain1", "domain2"], None)
+        result = check_domain_access([STR_DOMAIN1, STR_DOMAIN2], None)
         assert result is False
 
     def test_check_domain_access_empty_domain_key(self):
         """Test check_domain_access with empty domain key"""
-        result = check_domain_access(["domain1", "domain2"], "")
+        result = check_domain_access([STR_DOMAIN1, STR_DOMAIN2], "")
         assert result is False
 
     def test_check_domain_access_all_domains(self):
@@ -48,12 +63,12 @@ class TestHelperFunctions:
 
     def test_check_domain_access_matching_domain(self):
         """Test check_domain_access with matching domain"""
-        result = check_domain_access(["domain1", "domain2"], "domain1")
+        result = check_domain_access([STR_DOMAIN1, STR_DOMAIN2], STR_DOMAIN1)
         assert result is True
 
     def test_check_domain_access_no_match(self):
         """Test check_domain_access with no matching domain"""
-        result = check_domain_access(["domain1", "domain2"], "domain3")
+        result = check_domain_access([STR_DOMAIN1, STR_DOMAIN2], "domain3")
         assert result is False
 
     def test_create_pagination_meta(self):
@@ -99,13 +114,13 @@ class TestHelperFunctions:
 
         db = MagicMock()
         db.users = MagicMock()
-        db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST, "domains": ["domain1"]})
+        db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST, "domains": [STR_DOMAIN1]})
 
         user_service = MagicMock()
-        user_service.resolve_user_domains = AsyncMock(return_value=["domain1", "domain2"])
+        user_service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN1, STR_DOMAIN2])
 
         result = await get_user_accessible_domains(current_user, db, user_service)
-        assert result == ["domain1", "domain2"]
+        assert result == [STR_DOMAIN1, STR_DOMAIN2]
 
     @pytest.mark.asyncio
     async def test_get_user_accessible_domains_user_not_found(self):
@@ -128,10 +143,10 @@ class TestHelperFunctions:
         """Test get_scenario_domain_key when scenario exists"""
         db = MagicMock()
         db.domain_scenarios = MagicMock()
-        db.domain_scenarios.find_one = AsyncMock(return_value={"key": "scenario1", "domainKey": "domain1"})
+        db.domain_scenarios.find_one = AsyncMock(return_value={"key": STR_SCENARIO1, STR_DOMAINKEY: STR_DOMAIN1})
 
-        result = await get_scenario_domain_key(db, "scenario1")
-        assert result == "domain1"
+        result = await get_scenario_domain_key(db, STR_SCENARIO1)
+        assert result == STR_DOMAIN1
 
     @pytest.mark.asyncio
     async def test_get_scenario_domain_key_not_found(self):
@@ -167,7 +182,7 @@ class TestPlayboardRoutes:
     def mock_user_service(self):
         """Create mock user service"""
         service = MagicMock()
-        service.resolve_user_domains = AsyncMock(return_value=["domain1"])
+        service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN1])
         return service
 
     @pytest.fixture
@@ -200,9 +215,9 @@ class TestPlayboardRoutes:
         playboard_id = ObjectId()
         mock_playboard = {
             "_id": playboard_id,
-            "key": "test-playboard",
+            "key": STR_TEST_PLAYBOARD,
             "name": EXPECTED_TEST_PLAYBOARD,
-            "scenarioKey": "scenario1",
+            STR_SCENARIOKEY: STR_SCENARIO1,
             "status": "active",
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
@@ -241,7 +256,7 @@ class TestPlayboardRoutes:
     def test_list_playboards_with_scenario_filter(self, client, mock_db):
         """Test list playboards with scenario filter"""
         mock_db.playboards.count_documents = AsyncMock(return_value=0)
-        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": "scenario1", "domainKey": "domain1"})
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": STR_SCENARIO1, STR_DOMAINKEY: STR_DOMAIN1})
 
         mock_cursor = MagicMock()
         mock_cursor.skip = MagicMock(return_value=mock_cursor)
@@ -279,7 +294,7 @@ class TestPlayboardRoutes:
     def test_count_playboards_with_filters(self, client, mock_db):
         """Test count playboards with filters"""
         mock_db.playboards.count_documents = AsyncMock(return_value=3)
-        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": "scenario1", "domainKey": "domain1"})
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": STR_SCENARIO1, STR_DOMAINKEY: STR_DOMAIN1})
 
         response = client.get("/playboards/count?status=active&scenario_key=scenario1")
         assert response.status_code == 200
@@ -289,9 +304,9 @@ class TestPlayboardRoutes:
         playboard_id = ObjectId()
         mock_playboard = {
             "_id": playboard_id,
-            "key": "test-playboard",
+            "key": STR_TEST_PLAYBOARD,
             "name": EXPECTED_TEST_PLAYBOARD,
-            "scenarioKey": "scenario1",
+            STR_SCENARIOKEY: STR_SCENARIO1,
             "status": "active",
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
@@ -299,7 +314,7 @@ class TestPlayboardRoutes:
         }
 
         mock_db.playboards.find_one = AsyncMock(return_value=mock_playboard.copy())
-        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": "scenario1", "domainKey": "domain1"})
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": STR_SCENARIO1, STR_DOMAINKEY: STR_DOMAIN1})
         mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_ADMIN_TEST})
 
         response = client.get(f"/playboards/{playboard_id}")
@@ -336,12 +351,12 @@ class TestPlayboardRoutes:
 
     def test_upload_playboard_json_success(self, client, mock_db):
         """Test upload playboard JSON file"""
-        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": "scenario1"})
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": STR_SCENARIO1})
         mock_db.playboards.find_one = AsyncMock(return_value=None)
         mock_db.playboards.insert_one = AsyncMock(return_value=MagicMock(inserted_id=ObjectId()))
 
         json_content = json.dumps({"test": "data"})
-        files = {"file": ("test.json", io.BytesIO(json_content.encode()), "application/json")}
+        files = {"file": (FILE_TEST_JSON, io.BytesIO(json_content.encode()), MIME_APPLICATION_JSON)}
 
         response = client.post(
             "/playboards/upload?name=Test%20Playboard&scenario_key=scenario1",
@@ -351,7 +366,7 @@ class TestPlayboardRoutes:
 
     def test_upload_playboard_invalid_file_type(self, client, mock_db):
         """Test upload playboard with invalid file type"""
-        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": "scenario1"})
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": STR_SCENARIO1})
 
         files = {"file": ("test.txt", io.BytesIO(b"not json"), "text/plain")}
 
@@ -364,9 +379,9 @@ class TestPlayboardRoutes:
 
     def test_upload_playboard_invalid_json(self, client, mock_db):
         """Test upload playboard with invalid JSON"""
-        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": "scenario1"})
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": STR_SCENARIO1})
 
-        files = {"file": ("test.json", io.BytesIO(b"not valid json {"), "application/json")}
+        files = {"file": (FILE_TEST_JSON, io.BytesIO(b"not valid json {"), MIME_APPLICATION_JSON)}
 
         response = client.post(
             "/playboards/upload?name=Test&scenario_key=scenario1",
@@ -381,7 +396,7 @@ class TestPlayboardRoutes:
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=None)
 
         json_content = json.dumps({"test": "data"})
-        files = {"file": ("test.json", io.BytesIO(json_content.encode()), "application/json")}
+        files = {"file": (FILE_TEST_JSON, io.BytesIO(json_content.encode()), MIME_APPLICATION_JSON)}
 
         response = client.post(
             "/playboards/upload?name=Test&scenario_key=nonexistent",
@@ -395,9 +410,9 @@ class TestPlayboardRoutes:
         playboard_id = ObjectId()
         existing = {
             "_id": playboard_id,
-            "key": "test-playboard",
+            "key": STR_TEST_PLAYBOARD,
             "name": "Old Name",
-            "scenarioKey": "scenario1",
+            STR_SCENARIOKEY: STR_SCENARIO1,
             "status": "active",
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
@@ -434,9 +449,9 @@ class TestPlayboardRoutes:
         playboard_id = ObjectId()
         existing = {
             "_id": playboard_id,
-            "key": "test-playboard",
-            "name": "Test",
-            "scenarioKey": "scenario1",
+            "key": STR_TEST_PLAYBOARD,
+            "name": STR_TEST,
+            STR_SCENARIOKEY: STR_SCENARIO1,
             "status": "active",
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
@@ -447,7 +462,7 @@ class TestPlayboardRoutes:
         mock_db.playboards.update_one = AsyncMock()
         mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": "scenario2"})
 
-        response = client.put(f"/playboards/{playboard_id}", json={"scenarioKey": "scenario2"})
+        response = client.put(f"/playboards/{playboard_id}", json={STR_SCENARIOKEY: "scenario2"})
         assert response.status_code == 200
 
     @pytest.mark.skip(reason="Field mismatch between PlayboardUpdate model (scenerioKey) and route code (scenarioKey)")
@@ -460,9 +475,9 @@ class TestPlayboardRoutes:
         playboard_id = ObjectId()
         existing = {
             "_id": playboard_id,
-            "key": "test-playboard",
-            "name": "Test",
-            "scenarioKey": "scenario1",
+            "key": STR_TEST_PLAYBOARD,
+            "name": STR_TEST,
+            STR_SCENARIOKEY: STR_SCENARIO1,
             "status": "active",
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
@@ -473,7 +488,7 @@ class TestPlayboardRoutes:
         mock_db.playboards.update_one = AsyncMock()
 
         json_content = json.dumps({"new": "data"})
-        files = {"file": ("update.json", io.BytesIO(json_content.encode()), "application/json")}
+        files = {"file": ("update.json", io.BytesIO(json_content.encode()), MIME_APPLICATION_JSON)}
 
         response = client.put(f"/playboards/{playboard_id}/upload", files=files)
         assert response.status_code == 200
@@ -482,7 +497,7 @@ class TestPlayboardRoutes:
         """Test update playboard JSON with invalid ID"""
         mock_db.playboards.find_one = AsyncMock(side_effect=Exception(EXPECTED_INVALID_OBJECTID))
 
-        files = {"file": ("test.json", io.BytesIO(b'{"test": true}'), "application/json")}
+        files = {"file": (FILE_TEST_JSON, io.BytesIO(b'{"test": true}'), MIME_APPLICATION_JSON)}
         response = client.put("/playboards/invalid-id/upload", files=files)
         assert response.status_code == 400
 
@@ -491,7 +506,7 @@ class TestPlayboardRoutes:
         mock_db.playboards.find_one = AsyncMock(return_value=None)
 
         playboard_id = ObjectId()
-        files = {"file": ("test.json", io.BytesIO(b'{"test": true}'), "application/json")}
+        files = {"file": (FILE_TEST_JSON, io.BytesIO(b'{"test": true}'), MIME_APPLICATION_JSON)}
         response = client.put(f"/playboards/{playboard_id}/upload", files=files)
         assert response.status_code == 404
 
@@ -500,9 +515,9 @@ class TestPlayboardRoutes:
         playboard_id = ObjectId()
         existing = {
             "_id": playboard_id,
-            "key": "test-playboard",
-            "name": "Test",
-            "scenarioKey": "scenario1",
+            "key": STR_TEST_PLAYBOARD,
+            "name": STR_TEST,
+            STR_SCENARIOKEY: STR_SCENARIO1,
             "status": "active",
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
@@ -521,9 +536,9 @@ class TestPlayboardRoutes:
         playboard_id = ObjectId()
         existing = {
             "_id": playboard_id,
-            "key": "test-playboard",
-            "name": "Test",
-            "scenarioKey": "scenario1",
+            "key": STR_TEST_PLAYBOARD,
+            "name": STR_TEST,
+            STR_SCENARIOKEY: STR_SCENARIO1,
             "status": "active",
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
@@ -532,7 +547,7 @@ class TestPlayboardRoutes:
 
         mock_db.playboards.find_one = AsyncMock(return_value=existing)
 
-        files = {"file": ("test.json", io.BytesIO(b"invalid {json"), "application/json")}
+        files = {"file": (FILE_TEST_JSON, io.BytesIO(b"invalid {json"), MIME_APPLICATION_JSON)}
         response = client.put(f"/playboards/{playboard_id}/upload", files=files)
         assert response.status_code == 400
         assert "Invalid JSON file" in response.json()["detail"]
@@ -566,8 +581,8 @@ class TestPlayboardRoutes:
         playboard_id = ObjectId()
         playboard = {
             "_id": playboard_id,
-            "key": "test-playboard",
-            "name": "Test",
+            "key": STR_TEST_PLAYBOARD,
+            "name": STR_TEST,
             "status": "active"
         }
 
@@ -583,8 +598,8 @@ class TestPlayboardRoutes:
         playboard_id = ObjectId()
         playboard = {
             "_id": playboard_id,
-            "key": "test-playboard",
-            "name": "Test",
+            "key": STR_TEST_PLAYBOARD,
+            "name": STR_TEST,
             "status": "inactive"
         }
 
@@ -615,14 +630,14 @@ class TestPlayboardRoutes:
         playboard_id = ObjectId()
         playboard = {
             "_id": playboard_id,
-            "key": "test-playboard",
-            "name": "Test",
-            "scenarioKey": "scenario1",
+            "key": STR_TEST_PLAYBOARD,
+            "name": STR_TEST,
+            STR_SCENARIOKEY: STR_SCENARIO1,
             "data": {"key": "value"}
         }
 
         mock_db.playboards.find_one = AsyncMock(return_value=playboard)
-        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": "scenario1", "domainKey": "domain1"})
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": STR_SCENARIO1, STR_DOMAINKEY: STR_DOMAIN1})
         mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_ADMIN_TEST})
 
         response = client.get(f"/playboards/{playboard_id}/download")
@@ -669,7 +684,7 @@ class TestPlayboardRoutesRegularUser:
     def mock_user_service(self):
         """Create mock user service"""
         service = MagicMock()
-        service.resolve_user_domains = AsyncMock(return_value=["domain1"])
+        service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN1])
         return service
 
     @pytest.fixture
@@ -700,7 +715,7 @@ class TestPlayboardRoutesRegularUser:
     def test_list_playboards_no_accessible_scenarios(self, client, mock_db, mock_user_service):
         """Test list playboards when no accessible scenarios"""
         mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
-        mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain1"])
+        mock_user_service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN1])
 
         # Empty scenario cursor
         mock_cursor = MagicMock()
@@ -716,13 +731,13 @@ class TestPlayboardRoutesRegularUser:
     def test_list_playboards_scenario_filter_no_access(self, client, mock_db, mock_user_service):
         """Test list playboards with scenario filter but no access"""
         mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
-        mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain1"])
-        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": "scenario1", "domainKey": "domain2"})
+        mock_user_service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN1])
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": STR_SCENARIO1, STR_DOMAINKEY: STR_DOMAIN2})
 
         # Scenario cursor
         mock_cursor = MagicMock()
         mock_cursor.__aiter__ = lambda self: self
-        mock_cursor.__anext__ = AsyncMock(side_effect=[{"key": "scenario1"}, StopAsyncIteration])
+        mock_cursor.__anext__ = AsyncMock(side_effect=[{"key": STR_SCENARIO1}, StopAsyncIteration])
         mock_db.domain_scenarios.find = MagicMock(return_value=mock_cursor)
 
         response = client.get("/playboards?scenario_key=scenario1")
@@ -741,13 +756,13 @@ class TestPlayboardRoutesRegularUser:
     def test_count_playboards_scenario_filter_no_access(self, client, mock_db, mock_user_service):
         """Test count playboards with scenario filter but no access"""
         mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
-        mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain1"])
-        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": "scenario1", "domainKey": "domain2"})
+        mock_user_service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN1])
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": STR_SCENARIO1, STR_DOMAINKEY: STR_DOMAIN2})
 
         # Scenario cursor
         mock_cursor = MagicMock()
         mock_cursor.__aiter__ = lambda self: self
-        mock_cursor.__anext__ = AsyncMock(side_effect=[{"key": "scenario1"}, StopAsyncIteration])
+        mock_cursor.__anext__ = AsyncMock(side_effect=[{"key": STR_SCENARIO1}, StopAsyncIteration])
         mock_db.domain_scenarios.find = MagicMock(return_value=mock_cursor)
 
         response = client.get("/playboards/count?scenario_key=scenario1")
@@ -759,9 +774,9 @@ class TestPlayboardRoutesRegularUser:
         playboard_id = ObjectId()
         playboard = {
             "_id": playboard_id,
-            "key": "test-playboard",
-            "name": "Test",
-            "scenarioKey": "scenario1",
+            "key": STR_TEST_PLAYBOARD,
+            "name": STR_TEST,
+            STR_SCENARIOKEY: STR_SCENARIO1,
             "status": "active",
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
@@ -769,9 +784,9 @@ class TestPlayboardRoutesRegularUser:
         }
 
         mock_db.playboards.find_one = AsyncMock(return_value=playboard)
-        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": "scenario1", "domainKey": "domain2"})
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": STR_SCENARIO1, STR_DOMAINKEY: STR_DOMAIN2})
         mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
-        mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain1"])
+        mock_user_service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN1])
 
         response = client.get(f"/playboards/{playboard_id}")
         assert response.status_code == 403
@@ -782,16 +797,16 @@ class TestPlayboardRoutesRegularUser:
         playboard_id = ObjectId()
         playboard = {
             "_id": playboard_id,
-            "key": "test-playboard",
-            "name": "Test",
-            "scenarioKey": "scenario1",
+            "key": STR_TEST_PLAYBOARD,
+            "name": STR_TEST,
+            STR_SCENARIOKEY: STR_SCENARIO1,
             "data": {"key": "value"}
         }
 
         mock_db.playboards.find_one = AsyncMock(return_value=playboard)
-        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": "scenario1", "domainKey": "domain2"})
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": STR_SCENARIO1, STR_DOMAINKEY: STR_DOMAIN2})
         mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
-        mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain1"])
+        mock_user_service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN1])
 
         response = client.get(f"/playboards/{playboard_id}/download")
         assert response.status_code == 403

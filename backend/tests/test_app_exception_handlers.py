@@ -24,6 +24,8 @@ PATH_TEST_PYDANTIC_VALIDATION = "/test-pydantic-validation"
 
 EXPECTED_INTERNAL_SERVER_ERROR = "Internal server error"
 EXPECTED_VALIDATION_ERROR = "Validation error"
+PATCH_DEPENDENCIES_GET_ERROR_LOG_SERVICE = "easylifeauth.api.dependencies.get_error_log_service"
+
 
 
 
@@ -136,7 +138,7 @@ class TestRequestValidationErrorHandler:
         mock_error_log_service.return_value = mock_service
 
         with patch(
-            "easylifeauth.api.dependencies.get_error_log_service",
+            PATCH_DEPENDENCIES_GET_ERROR_LOG_SERVICE,
             return_value=mock_service,
         ):
             client = TestClient(app, raise_server_exceptions=False)
@@ -151,7 +153,7 @@ class TestRequestValidationErrorHandler:
         )
 
         with patch(
-            "easylifeauth.api.dependencies.get_error_log_service",
+            PATCH_DEPENDENCIES_GET_ERROR_LOG_SERVICE,
             return_value=mock_service,
         ):
             client = TestClient(app, raise_server_exceptions=False)
@@ -201,7 +203,7 @@ class TestPydanticValidationErrorHandler:
         mock_error_log_service.return_value = mock_service
 
         with patch(
-            "easylifeauth.api.dependencies.get_error_log_service",
+            PATCH_DEPENDENCIES_GET_ERROR_LOG_SERVICE,
             return_value=mock_service,
         ):
             client = TestClient(app, raise_server_exceptions=False)
@@ -216,7 +218,7 @@ class TestPydanticValidationErrorHandler:
         )
 
         with patch(
-            "easylifeauth.api.dependencies.get_error_log_service",
+            PATCH_DEPENDENCIES_GET_ERROR_LOG_SERVICE,
             return_value=mock_service,
         ):
             client = TestClient(app, raise_server_exceptions=False)
@@ -255,7 +257,7 @@ class TestGeneralExceptionHandler:
         mock_service.log_error = AsyncMock()
 
         with patch(
-            "easylifeauth.api.dependencies.get_error_log_service",
+            PATCH_DEPENDENCIES_GET_ERROR_LOG_SERVICE,
             return_value=mock_service,
         ):
             client = TestClient(app, raise_server_exceptions=False)
@@ -271,7 +273,7 @@ class TestGeneralExceptionHandler:
         )
 
         with patch(
-            "easylifeauth.api.dependencies.get_error_log_service",
+            PATCH_DEPENDENCIES_GET_ERROR_LOG_SERVICE,
             return_value=mock_service,
         ):
             client = TestClient(app, raise_server_exceptions=False)
@@ -282,7 +284,7 @@ class TestGeneralExceptionHandler:
     def test_general_exception_when_error_log_service_is_none(self, app):
         """When get_error_log_service returns None, handler still returns 500."""
         with patch(
-            "easylifeauth.api.dependencies.get_error_log_service",
+            PATCH_DEPENDENCIES_GET_ERROR_LOG_SERVICE,
             return_value=None,
         ):
             client = TestClient(app, raise_server_exceptions=False)

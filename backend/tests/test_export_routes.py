@@ -19,6 +19,10 @@ from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_USER1_TEST, MOCK_EMAIL_U
 
 EXPECTED_TEST = "Test"
 PATH_EXPORT_USERS_CSV = "/export/users/csv"
+FILE_TEST_CSV = "test.csv"
+FILE_TEST_JSON = "test.json"
+STR_SCENARIO_1 = "scenario-1"
+
 
 
 
@@ -95,14 +99,14 @@ class TestHelperFunctions:
             {"name": "Test1", "value": 1},
             {"name": "Test2", "value": 2}
         ]
-        response = create_csv_response(documents, "test.csv")
+        response = create_csv_response(documents, FILE_TEST_CSV)
         assert response.media_type == "text/csv"
-        assert "test.csv" in response.headers["content-disposition"]
+        assert FILE_TEST_CSV in response.headers["content-disposition"]
 
     def test_create_csv_response_empty(self):
         """Test create_csv_response with empty list"""
         with pytest.raises(Exception):  # HTTPException
-            create_csv_response([], "test.csv")
+            create_csv_response([], FILE_TEST_CSV)
 
     def test_create_json_response(self):
         """Test create_json_response"""
@@ -110,14 +114,14 @@ class TestHelperFunctions:
             {"name": "Test1", "value": 1},
             {"name": "Test2", "value": 2}
         ]
-        response = create_json_response(documents, "test.json")
+        response = create_json_response(documents, FILE_TEST_JSON)
         assert response.media_type == "application/json"
-        assert "test.json" in response.headers["content-disposition"]
+        assert FILE_TEST_JSON in response.headers["content-disposition"]
 
     def test_create_json_response_empty(self):
         """Test create_json_response with empty list"""
         with pytest.raises(Exception):  # HTTPException
-            create_json_response([], "test.json")
+            create_json_response([], FILE_TEST_JSON)
 
 
 class TestExportRoutes:
@@ -271,7 +275,7 @@ class TestExportRoutes:
 
     def test_export_scenarios_csv(self, client, mock_db):
         """Test export scenarios to CSV"""
-        scenarios = [{"_id": ObjectId(), "key": "scenario-1", "name": "Test Scenario"}]
+        scenarios = [{"_id": ObjectId(), "key": STR_SCENARIO_1, "name": "Test Scenario"}]
 
         mock_collection = MagicMock()
         mock_collection.find = MagicMock(return_value=self._create_mock_cursor(scenarios))
@@ -282,7 +286,7 @@ class TestExportRoutes:
 
     def test_export_scenarios_json(self, client, mock_db):
         """Test export scenarios to JSON"""
-        scenarios = [{"_id": ObjectId(), "key": "scenario-1", "name": "Test Scenario"}]
+        scenarios = [{"_id": ObjectId(), "key": STR_SCENARIO_1, "name": "Test Scenario"}]
 
         mock_collection = MagicMock()
         mock_collection.find = MagicMock(return_value=self._create_mock_cursor(scenarios))
@@ -293,7 +297,7 @@ class TestExportRoutes:
 
     def test_export_scenarios_with_filters(self, client, mock_db):
         """Test export scenarios with filters"""
-        scenarios = [{"_id": ObjectId(), "key": "scenario-1", "domainKey": "sales"}]
+        scenarios = [{"_id": ObjectId(), "key": STR_SCENARIO_1, "domainKey": "sales"}]
 
         mock_collection = MagicMock()
         mock_collection.find = MagicMock(return_value=self._create_mock_cursor(scenarios))

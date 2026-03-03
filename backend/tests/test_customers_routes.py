@@ -22,6 +22,18 @@ PATH_CUSTOMERS_FILTERS = "/customers/filters"
 
 EXPECTED_CUSTOMER_NOT_FOUND = "Customer not found"
 
+OID_d0e1 = "65a1b2c3d4e5f6a7b8c9d0e1"
+STR_BERLIN = "Berlin"
+STR_CUSTOMERID = "customerId"
+STR_CUST_001 = "CUST-001"
+STR_SALES = "Sales"
+SUBPATH_ASSIGN_USERS = "/assign-users"
+SUBPATH_CUSTOMERS = "/customers/"
+SUBPATH_REMOVE_USERS = "/remove-users"
+SUBPATH_TOGGLE_STATUS = "/toggle-status"
+SUBPATH_USERS = "/users"
+
+
 
 
 
@@ -151,7 +163,7 @@ class TestCustomersRoutes:
     @staticmethod
     def _sample_customer_doc(
         _id=None,
-        customer_id="CUST-001",
+        customer_id=STR_CUST_001,
         name="Acme Corp",
         description="A test customer",
         customer_status="active",
@@ -159,8 +171,8 @@ class TestCustomersRoutes:
     ):
         """Return a sample customer document as it would appear in MongoDB."""
         return {
-            "_id": _id or ObjectId("65a1b2c3d4e5f6a7b8c9d0e1"),
-            "customerId": customer_id,
+            "_id": _id or ObjectId(OID_d0e1),
+            STR_CUSTOMERID: customer_id,
             "name": name,
             "description": description,
             "status": customer_status,
@@ -210,7 +222,7 @@ class TestCustomersRoutes:
         assert response.status_code == 200
         data = response.json()
         assert len(data["data"]) == 1
-        assert data["data"][0]["customerId"] == "CUST-001"
+        assert data["data"][0][STR_CUSTOMERID] == STR_CUST_001
         assert data["data"][0]["_id"] == str(doc["_id"])
         assert data["pagination"]["total"] == 1
 
@@ -397,8 +409,8 @@ class TestCustomersRoutes:
         mock_db.customers.aggregate.return_value = agg_cursor
         mock_db.customers.distinct = AsyncMock(
             side_effect=[
-                ["Berlin", "Munich", "Hamburg"],  # locations
-                ["Engineering", "Sales"],           # units
+                [STR_BERLIN, "Munich", "Hamburg"],  # locations
+                ["Engineering", STR_SALES],           # units
             ]
         )
 
@@ -407,8 +419,8 @@ class TestCustomersRoutes:
         assert response.status_code == 200
         data = response.json()
         assert data["tags"] == ["premium", "enterprise", "trial"]
-        assert data["locations"] == ["Berlin", "Hamburg", "Munich"]
-        assert data["units"] == ["Engineering", "Sales"]
+        assert data["locations"] == [STR_BERLIN, "Hamburg", "Munich"]
+        assert data["units"] == ["Engineering", STR_SALES]
 
     def test_get_customer_filters_strips_none_values(self, client, mock_db):
         """Test that None and empty values are excluded from filters."""
@@ -419,8 +431,8 @@ class TestCustomersRoutes:
         mock_db.customers.aggregate.return_value = agg_cursor
         mock_db.customers.distinct = AsyncMock(
             side_effect=[
-                [None, "Berlin", ""],   # locations
-                ["", None, "Sales"],     # units
+                [None, STR_BERLIN, ""],   # locations
+                ["", None, STR_SALES],     # units
             ]
         )
 
@@ -440,7 +452,7 @@ class TestCustomersRoutes:
 
     def test_get_customer_by_objectid(self, client, mock_db):
         """Test getting a customer by valid ObjectId string."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         doc = self._sample_customer_doc(_id=oid)
         mock_db.customers.find_one = AsyncMock(return_value=doc)
 
@@ -448,7 +460,7 @@ class TestCustomersRoutes:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["customerId"] == "CUST-001"
+        assert data[STR_CUSTOMERID] == STR_CUST_001
         assert data["name"] == "Acme Corp"
 
     def test_get_customer_by_custom_id(self, client, mock_db):
@@ -456,7 +468,7 @@ class TestCustomersRoutes:
 
         When the path parameter is not a valid 24-hex ObjectId, bson raises
         InvalidId *before* find_one is called.  The bare ``except`` catches it
-        and the code falls back to ``find_one({"customerId": ...})``.  So the
+        and the code falls back to ``find_one({STR_CUSTOMERID: ...})``.  So the
         mock only receives the single fallback call.
         """
         doc = self._sample_customer_doc()
@@ -465,7 +477,7 @@ class TestCustomersRoutes:
         response = client.get(PATH_CUSTOMERS_CUST_001)
 
         assert response.status_code == 200
-        assert response.json()["customerId"] == "CUST-001"
+        assert response.json()[STR_CUSTOMERID] == STR_CUST_001
 
     def test_get_customer_not_found(self, client, mock_db):
         """Test getting a non-existent customer returns 404."""
@@ -497,7 +509,7 @@ class TestCustomersRoutes:
         )
 
         payload = {
-            "customerId": "CUST-NEW",
+            STR_CUSTOMERID: "CUST-NEW",
             "name": "New Customer",
             "description": "Freshly created",
             "status": "active",
@@ -507,7 +519,7 @@ class TestCustomersRoutes:
 
         assert response.status_code == 201
         data = response.json()
-        assert data["customerId"] == "CUST-NEW"
+        assert data[STR_CUSTOMERID] == "CUST-NEW"
         assert data["name"] == "New Customer"
         assert data["description"] == "Freshly created"
         assert data["status"] == "active"
@@ -521,7 +533,7 @@ class TestCustomersRoutes:
             return_value=MagicMock(inserted_id=inserted_id)
         )
 
-        payload = {"customerId": "CUST-DEF", "name": "Defaults Test"}
+        payload = {STR_CUSTOMERID: "CUST-DEF", "name": "Defaults Test"}
         response = client.post(PATH_CUSTOMERS, json=payload)
 
         assert response.status_code == 201
@@ -531,10 +543,10 @@ class TestCustomersRoutes:
     def test_create_customer_duplicate_id(self, client, mock_db):
         """Test creating a customer with an existing customerId returns 400."""
         mock_db.customers.find_one = AsyncMock(
-            return_value={"customerId": "CUST-DUP", "name": "Existing"}
+            return_value={STR_CUSTOMERID: "CUST-DUP", "name": "Existing"}
         )
 
-        payload = {"customerId": "CUST-DUP", "name": "Duplicate"}
+        payload = {STR_CUSTOMERID: "CUST-DUP", "name": "Duplicate"}
         response = client.post(PATH_CUSTOMERS, json=payload)
 
         assert response.status_code == 400
@@ -549,21 +561,21 @@ class TestCustomersRoutes:
 
     def test_create_customer_missing_name(self, client, mock_db):
         """Test creating a customer without name returns 422."""
-        payload = {"customerId": "CUST-X"}
+        payload = {STR_CUSTOMERID: "CUST-X"}
         response = client.post(PATH_CUSTOMERS, json=payload)
 
         assert response.status_code == 422
 
     def test_create_customer_empty_customer_id(self, client, mock_db):
         """Test creating a customer with empty customerId fails validation."""
-        payload = {"customerId": "", "name": "Empty ID"}
+        payload = {STR_CUSTOMERID: "", "name": "Empty ID"}
         response = client.post(PATH_CUSTOMERS, json=payload)
 
         assert response.status_code == 422
 
     def test_create_customer_empty_name(self, client, mock_db):
         """Test creating a customer with empty name fails validation."""
-        payload = {"customerId": "CUST-X", "name": ""}
+        payload = {STR_CUSTOMERID: "CUST-X", "name": ""}
         response = client.post(PATH_CUSTOMERS, json=payload)
 
         assert response.status_code == 422
@@ -576,7 +588,7 @@ class TestCustomersRoutes:
             return_value=MagicMock(inserted_id=inserted_id)
         )
 
-        payload = {"customerId": "CUST-TS", "name": "Timestamp Test"}
+        payload = {STR_CUSTOMERID: "CUST-TS", "name": "Timestamp Test"}
         response = client.post(PATH_CUSTOMERS, json=payload)
 
         assert response.status_code == 201
@@ -592,7 +604,7 @@ class TestCustomersRoutes:
 
     def test_update_customer_success(self, client, mock_db):
         """Test updating an existing customer."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         existing = self._sample_customer_doc(_id=oid)
         updated = {**existing, "name": EXPECTED_UPDATED_NAME, "updated_at": datetime.utcnow()}
 
@@ -608,7 +620,7 @@ class TestCustomersRoutes:
 
     def test_update_customer_partial(self, client, mock_db):
         """Test partial update with only description."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         existing = self._sample_customer_doc(_id=oid)
         updated = {**existing, "description": "New desc"}
 
@@ -632,7 +644,7 @@ class TestCustomersRoutes:
         existing = self._sample_customer_doc()
         updated = {**existing, "name": EXPECTED_FALLBACK_UPDATED}
 
-        # ObjectId("CUST-001") raises before find_one is called in the try block,
+        # ObjectId(STR_CUST_001) raises before find_one is called in the try block,
         # so find_one is only called in the except block (customerId lookup) and
         # then again to fetch the updated doc.
         mock_db.customers.find_one = AsyncMock(
@@ -657,7 +669,7 @@ class TestCustomersRoutes:
 
     def test_update_customer_sets_updated_at(self, client, mock_db):
         """Test that updated_at is always refreshed on update."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         existing = self._sample_customer_doc(_id=oid)
         mock_db.customers.find_one = AsyncMock(side_effect=[existing, existing])
 
@@ -676,7 +688,7 @@ class TestCustomersRoutes:
 
     def test_delete_customer_success_by_objectid(self, client, mock_db):
         """Test deleting a customer by valid ObjectId."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         mock_db.customers.delete_one = AsyncMock(
             return_value=MagicMock(deleted_count=1)
         )
@@ -688,7 +700,7 @@ class TestCustomersRoutes:
 
     def test_delete_customer_removes_from_users(self, client, mock_db):
         """Test that deleting a customer also removes it from users."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         mock_db.customers.delete_one = AsyncMock(
             return_value=MagicMock(deleted_count=1)
         )
@@ -700,7 +712,7 @@ class TestCustomersRoutes:
 
     def test_delete_customer_removes_from_groups(self, client, mock_db):
         """Test that deleting a customer also removes it from groups."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         mock_db.customers.delete_one = AsyncMock(
             return_value=MagicMock(deleted_count=1)
         )
@@ -713,7 +725,7 @@ class TestCustomersRoutes:
     def test_delete_customer_by_custom_id_fallback(self, client, mock_db):
         """Test deleting a customer found by customerId when ObjectId is invalid."""
         doc = self._sample_customer_doc()
-        # ObjectId("CUST-001") raises before delete_one is called in the try block,
+        # ObjectId(STR_CUST_001) raises before delete_one is called in the try block,
         # so delete_one is only called once in the except block.
         mock_db.customers.delete_one = AsyncMock(
             return_value=MagicMock(deleted_count=1)
@@ -753,7 +765,7 @@ class TestCustomersRoutes:
 
     def test_toggle_status_active_to_inactive(self, client, mock_db):
         """Test toggling an active customer to inactive."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         doc = self._sample_customer_doc(_id=oid, customer_status="active")
         mock_db.customers.find_one = AsyncMock(return_value=doc)
 
@@ -766,7 +778,7 @@ class TestCustomersRoutes:
 
     def test_toggle_status_inactive_to_active(self, client, mock_db):
         """Test toggling an inactive customer to active."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         doc = self._sample_customer_doc(_id=oid, customer_status="inactive")
         mock_db.customers.find_one = AsyncMock(return_value=doc)
 
@@ -779,7 +791,7 @@ class TestCustomersRoutes:
 
     def test_toggle_status_calls_update(self, client, mock_db):
         """Test that toggle-status performs an update_one with correct fields."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         doc = self._sample_customer_doc(_id=oid, customer_status="active")
         mock_db.customers.find_one = AsyncMock(return_value=doc)
 
@@ -795,7 +807,7 @@ class TestCustomersRoutes:
     def test_toggle_status_by_custom_id(self, client, mock_db):
         """Test toggling status using customerId fallback."""
         doc = self._sample_customer_doc(customer_status="active")
-        # ObjectId("CUST-001") raises before find_one, so only one find_one call
+        # ObjectId(STR_CUST_001) raises before find_one, so only one find_one call
         mock_db.customers.find_one = AsyncMock(return_value=doc)
 
         response = client.post("/customers/CUST-001/toggle-status")
@@ -814,10 +826,10 @@ class TestCustomersRoutes:
 
     def test_toggle_status_missing_status_field(self, client, mock_db):
         """Test toggling when customer doc has no status field defaults to active."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         doc = {
             "_id": oid,
-            "customerId": "CUST-001",
+            STR_CUSTOMERID: STR_CUST_001,
             "name": "No Status",
         }
         mock_db.customers.find_one = AsyncMock(return_value=doc)
@@ -834,7 +846,7 @@ class TestCustomersRoutes:
 
     def test_get_customer_users_success(self, client, mock_db):
         """Test getting users assigned to a customer."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         customer_doc = self._sample_customer_doc(_id=oid)
         mock_db.customers.find_one = AsyncMock(return_value=customer_doc)
 
@@ -862,7 +874,7 @@ class TestCustomersRoutes:
 
     def test_get_customer_users_empty(self, client, mock_db):
         """Test getting users when none are assigned."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         customer_doc = self._sample_customer_doc(_id=oid)
         mock_db.customers.find_one = AsyncMock(return_value=customer_doc)
 
@@ -887,7 +899,7 @@ class TestCustomersRoutes:
     def test_get_customer_users_by_custom_id(self, client, mock_db):
         """Test getting users via customerId fallback lookup."""
         doc = self._sample_customer_doc()
-        # ObjectId("CUST-001") raises before find_one, so only one find_one call
+        # ObjectId(STR_CUST_001) raises before find_one, so only one find_one call
         mock_db.customers.find_one = AsyncMock(return_value=doc)
 
         users_cursor = MagicMock()
@@ -900,7 +912,7 @@ class TestCustomersRoutes:
 
     def test_get_customer_users_returns_correct_fields(self, client, mock_db):
         """Test that only the expected user fields are returned."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         customer_doc = self._sample_customer_doc(_id=oid)
         mock_db.customers.find_one = AsyncMock(return_value=customer_doc)
 
@@ -932,7 +944,7 @@ class TestCustomersRoutes:
 
     def test_assign_users_success(self, client, mock_db):
         """Test assigning users to a customer."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         customer_doc = self._sample_customer_doc(_id=oid)
         mock_db.customers.find_one = AsyncMock(return_value=customer_doc)
 
@@ -953,7 +965,7 @@ class TestCustomersRoutes:
 
     def test_assign_users_multiple(self, client, mock_db):
         """Test assigning multiple users at once."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         customer_doc = self._sample_customer_doc(_id=oid)
         mock_db.customers.find_one = AsyncMock(return_value=customer_doc)
 
@@ -972,7 +984,7 @@ class TestCustomersRoutes:
 
     def test_assign_users_some_already_assigned(self, client, mock_db):
         """Test assigning when some users are already assigned (modified_count=0)."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         customer_doc = self._sample_customer_doc(_id=oid)
         mock_db.customers.find_one = AsyncMock(return_value=customer_doc)
 
@@ -995,7 +1007,7 @@ class TestCustomersRoutes:
 
     def test_assign_users_by_email(self, client, mock_db):
         """Test assigning users using email addresses (non-ObjectId strings)."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         customer_doc = self._sample_customer_doc(_id=oid)
         mock_db.customers.find_one = AsyncMock(return_value=customer_doc)
 
@@ -1029,7 +1041,7 @@ class TestCustomersRoutes:
 
     def test_assign_users_empty_list(self, client, mock_db):
         """Test assigning an empty list of users."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         customer_doc = self._sample_customer_doc(_id=oid)
         mock_db.customers.find_one = AsyncMock(return_value=customer_doc)
 
@@ -1047,7 +1059,7 @@ class TestCustomersRoutes:
 
     def test_remove_users_success(self, client, mock_db):
         """Test removing users from a customer."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         customer_doc = self._sample_customer_doc(_id=oid)
         mock_db.customers.find_one = AsyncMock(return_value=customer_doc)
 
@@ -1068,7 +1080,7 @@ class TestCustomersRoutes:
 
     def test_remove_users_multiple(self, client, mock_db):
         """Test removing multiple users at once."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         customer_doc = self._sample_customer_doc(_id=oid)
         mock_db.customers.find_one = AsyncMock(return_value=customer_doc)
 
@@ -1087,7 +1099,7 @@ class TestCustomersRoutes:
 
     def test_remove_users_some_not_assigned(self, client, mock_db):
         """Test removing when some users were not assigned (modified_count=0)."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         customer_doc = self._sample_customer_doc(_id=oid)
         mock_db.customers.find_one = AsyncMock(return_value=customer_doc)
 
@@ -1109,7 +1121,7 @@ class TestCustomersRoutes:
 
     def test_remove_users_by_email(self, client, mock_db):
         """Test removing users using email addresses."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         customer_doc = self._sample_customer_doc(_id=oid)
         mock_db.customers.find_one = AsyncMock(return_value=customer_doc)
 
@@ -1142,7 +1154,7 @@ class TestCustomersRoutes:
 
     def test_remove_users_empty_list(self, client, mock_db):
         """Test removing an empty list of users."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         customer_doc = self._sample_customer_doc(_id=oid)
         mock_db.customers.find_one = AsyncMock(return_value=customer_doc)
 
@@ -1156,7 +1168,7 @@ class TestCustomersRoutes:
 
     def test_remove_users_uses_pull_operator(self, client, mock_db):
         """Test that remove-users uses $pull to remove customer from user."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         customer_doc = self._sample_customer_doc(_id=oid)
         mock_db.customers.find_one = AsyncMock(return_value=customer_doc)
 
@@ -1191,7 +1203,7 @@ class TestCustomersRoutes:
         call_args = mock_db.customers.count_documents.call_args
         query = call_args[0][0]
         # The $or search values should contain escaped regex
-        search_regex = query[MONGO_OR][0]["customerId"][MONGO_REGEX]
+        search_regex = query[MONGO_OR][0][STR_CUSTOMERID][MONGO_REGEX]
         assert "\\." in search_regex or "test" in search_regex
 
     def test_list_customers_sort_by_created_at_desc(self, client, mock_db):
@@ -1207,7 +1219,7 @@ class TestCustomersRoutes:
 
     def test_assign_users_uses_addtoset(self, client, mock_db):
         """Test that assign-users uses $addToSet to avoid duplicates."""
-        oid = ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+        oid = ObjectId(OID_d0e1)
         customer_doc = self._sample_customer_doc(_id=oid)
         mock_db.customers.find_one = AsyncMock(return_value=customer_doc)
 

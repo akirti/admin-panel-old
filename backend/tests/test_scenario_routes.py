@@ -29,6 +29,13 @@ PATH_SCENARIOS_TEST_SCENARIO = "/scenarios/test-scenario"
 EXPECTED_NEW_SCENARIO = "New Scenario"
 EXPECTED_NOT_FOUND = "Not found"
 EXPECTED_TEST_SCENARIO = "Test Scenario"
+STR_DATADOMAIN = "dataDomain"
+STR_DOMAIN_A = "domain-a"
+STR_DOMAIN_B = "domain-b"
+STR_NEW_SCENARIO = "new-scenario"
+STR_SCENARIO_1 = "scenario-1"
+STR_TEST_SCENARIO = "test-scenario"
+
 
 
 
@@ -42,8 +49,8 @@ class TestHelperFunctions:
 
     def test_check_domain_access_specific(self):
         """Test check_domain_access with specific domain"""
-        assert check_domain_access(["domain-a", "domain-b"], "domain-a") is True
-        assert check_domain_access(["domain-a", "domain-b"], "domain-c") is False
+        assert check_domain_access([STR_DOMAIN_A, STR_DOMAIN_B], STR_DOMAIN_A) is True
+        assert check_domain_access([STR_DOMAIN_A, STR_DOMAIN_B], "domain-c") is False
 
     def test_check_domain_access_empty(self):
         """Test check_domain_access with empty list"""
@@ -77,10 +84,10 @@ class TestGetUserAccessibleDomains:
         mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
 
         mock_user_service = MagicMock()
-        mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain-a", "domain-b"])
+        mock_user_service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN_A, STR_DOMAIN_B])
 
         result = await get_user_accessible_domains(mock_user, mock_db, mock_user_service)
-        assert result == ["domain-a", "domain-b"]
+        assert result == [STR_DOMAIN_A, STR_DOMAIN_B]
 
     @pytest.mark.asyncio
     async def test_user_not_found_returns_empty(self):
@@ -166,8 +173,8 @@ class TestScenarioRoutes:
     def test_get_all_scenarios_super_admin(self, client, mock_db):
         """Test get all scenarios as super admin"""
         scenarios = [
-            {"key": "scenario-1", "dataDomain": "domain-a", "status": "A"},
-            {"key": "scenario-2", "dataDomain": "domain-b", "status": "active"}
+            {"key": STR_SCENARIO_1, STR_DATADOMAIN: STR_DOMAIN_A, "status": "A"},
+            {"key": "scenario-2", STR_DATADOMAIN: STR_DOMAIN_B, "status": "active"}
         ]
 
         mock_cursor = MagicMock()
@@ -189,9 +196,9 @@ class TestScenarioRoutes:
 
         # User is found and has domain access
         mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
-        mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain-a"])
+        mock_user_service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN_A])
 
-        scenarios = [{"key": "scenario-1", "dataDomain": "domain-a", "status": "A"}]
+        scenarios = [{"key": STR_SCENARIO_1, STR_DATADOMAIN: STR_DOMAIN_A, "status": "A"}]
         mock_cursor = MagicMock()
         mock_cursor.sort = MagicMock(return_value=mock_cursor)
         mock_cursor.to_list = AsyncMock(return_value=scenarios)
@@ -218,7 +225,7 @@ class TestScenarioRoutes:
 
     def test_get_scenarios_by_domain(self, client, mock_db):
         """Test get scenarios by domain"""
-        scenarios = [{"key": "scenario-1", "dataDomain": "domain-a", "status": "A"}]
+        scenarios = [{"key": STR_SCENARIO_1, STR_DATADOMAIN: STR_DOMAIN_A, "status": "A"}]
 
         mock_cursor = MagicMock()
         mock_cursor.sort = MagicMock(return_value=mock_cursor)
@@ -236,7 +243,7 @@ class TestScenarioRoutes:
         app.dependency_overrides[get_current_user] = lambda: mock_regular_user
 
         mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
-        mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain-b"])  # Has access to domain-b
+        mock_user_service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN_B])  # Has access to domain-b
 
         client = TestClient(app)
         response = client.get(PATH_SCENARIOS_ALL_DOMAIN_A)  # Requesting domain-a
@@ -259,18 +266,18 @@ class TestScenarioRoutes:
     def test_create_scenario(self, client, mock_scenario_service):
         """Test create scenario endpoint"""
         result = {
-            "key": "new-scenario",
+            "key": STR_NEW_SCENARIO,
             "name": EXPECTED_NEW_SCENARIO,
-            "dataDomain": "domain-a",
+            STR_DATADOMAIN: STR_DOMAIN_A,
             "status": "A"
         }
         mock_scenario_service.save = AsyncMock(return_value=result)
 
         # ScenarioCreate requires: key, name, dataDomain
         scenario_data = {
-            "key": "new-scenario",
+            "key": STR_NEW_SCENARIO,
             "name": EXPECTED_NEW_SCENARIO,
-            "dataDomain": "domain-a"
+            STR_DATADOMAIN: STR_DOMAIN_A
         }
 
         response = client.post(PATH_SCENARIOS, json=scenario_data)
@@ -281,9 +288,9 @@ class TestScenarioRoutes:
         mock_scenario_service.save = AsyncMock(side_effect=ScenarioError("Test error"))
 
         scenario_data = {
-            "key": "new-scenario",
+            "key": STR_NEW_SCENARIO,
             "name": EXPECTED_NEW_SCENARIO,
-            "dataDomain": "domain-a"
+            STR_DATADOMAIN: STR_DOMAIN_A
         }
 
         response = client.post(PATH_SCENARIOS, json=scenario_data)
@@ -294,9 +301,9 @@ class TestScenarioRoutes:
         mock_scenario_service.save = AsyncMock(side_effect=ScenarioBadError("Bad request"))
 
         scenario_data = {
-            "key": "new-scenario",
+            "key": STR_NEW_SCENARIO,
             "name": EXPECTED_NEW_SCENARIO,
-            "dataDomain": "domain-a"
+            STR_DATADOMAIN: STR_DOMAIN_A
         }
 
         response = client.post(PATH_SCENARIOS, json=scenario_data)
@@ -305,9 +312,9 @@ class TestScenarioRoutes:
     def test_update_scenario(self, client, mock_scenario_service):
         """Test update scenario endpoint"""
         result = {
-            "key": "test-scenario",
+            "key": STR_TEST_SCENARIO,
             "name": EXPECTED_TEST_SCENARIO,
-            "dataDomain": "domain-a",
+            STR_DATADOMAIN: STR_DOMAIN_A,
             "status": "A"
         }
         mock_scenario_service.update = AsyncMock(return_value=result)
@@ -338,9 +345,9 @@ class TestScenarioRoutes:
     def test_get_scenario_by_key(self, client, mock_scenario_service, mock_db, mock_user_service):
         """Test get scenario by key"""
         result = {
-            "key": "test-scenario",
+            "key": STR_TEST_SCENARIO,
             "name": EXPECTED_TEST_SCENARIO,
-            "dataDomain": "domain-a",
+            STR_DATADOMAIN: STR_DOMAIN_A,
             "status": "A"
         }
         mock_scenario_service.get = AsyncMock(return_value=result)
@@ -363,15 +370,15 @@ class TestScenarioRoutes:
         app.dependency_overrides[get_current_user] = lambda: mock_regular_user
 
         result = {
-            "key": "test-scenario",
+            "key": STR_TEST_SCENARIO,
             "name": EXPECTED_TEST_SCENARIO,
-            "dataDomain": "domain-a",
+            STR_DATADOMAIN: STR_DOMAIN_A,
             "status": "A"
         }
         mock_scenario_service.get = AsyncMock(return_value=result)
 
         mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_USER_TEST})
-        mock_user_service.resolve_user_domains = AsyncMock(return_value=["domain-b"])
+        mock_user_service.resolve_user_domains = AsyncMock(return_value=[STR_DOMAIN_B])
 
         client = TestClient(app)
         response = client.get(PATH_SCENARIOS_TEST_SCENARIO)

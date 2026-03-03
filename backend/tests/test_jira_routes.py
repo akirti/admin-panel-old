@@ -18,6 +18,16 @@ PATH_JIRA_TASKS_CREATE = "/api/v1/jira/tasks/create"
 PATH_JIRA_TASKS_TRANSITION = "/api/v1/jira/tasks/transition"
 
 EXPECTED_IN_PROGRESS = "In Progress"
+DATE_2024_01_01T00_00_00Z = "2024-01-01T00:00:00Z"
+FILE_TEST_TXT = "test.txt"
+OID_9011 = "507f1f77bcf86cd799439011"
+STR_REQUESTID = "requestId"
+STR_REQ_SCR_0001 = "REQ-SCR-0001"
+STR_TEST = "TEST"
+STR_TEST_1 = "TEST-1"
+STR_TEST_2 = "TEST-2"
+STR_TEST_EXISTING = "TEST-EXISTING"
+
 
 
 
@@ -26,7 +36,7 @@ EXPECTED_IN_PROGRESS = "In Progress"
 def mock_current_user():
     """Create mock current user"""
     return CurrentUser(
-        user_id="507f1f77bcf86cd799439011",
+        user_id=OID_9011,
         email=MOCK_EMAIL,
         roles=["administrator"],
         groups=[],
@@ -45,15 +55,15 @@ def mock_jira_service():
         "email": "jira@example.com"
     })
     mock.get_projects = AsyncMock(return_value=[
-        {"id": "1", "key": "TEST", "name": "Test Project", "project_type": "software"}
+        {"id": "1", "key": STR_TEST, "name": "Test Project", "project_type": "software"}
     ])
     mock.get_latest_project = AsyncMock(return_value={
-        "id": "1", "key": "TEST", "name": "Test Project", "project_type": "software"
+        "id": "1", "key": STR_TEST, "name": "Test Project", "project_type": "software"
     })
     mock.get_user_tasks = AsyncMock(return_value=[
         {
             "id": "10001",
-            "key": "TEST-1",
+            "key": STR_TEST_1,
             "summary": "Test Task",
             "status": EXPECTED_OPEN,
             "issue_type": EXPECTED_TASK,
@@ -68,7 +78,7 @@ def mock_jira_service():
     mock.get_tasks_by_request_id = AsyncMock(return_value=[
         {
             "id": "10001",
-            "key": "TEST-1",
+            "key": STR_TEST_1,
             "summary": "[REQ-001] Test",
             "status": EXPECTED_OPEN,
             "issue_type": EXPECTED_TASK,
@@ -82,21 +92,21 @@ def mock_jira_service():
     ])
     mock.create_ticket = AsyncMock(return_value={
         "ticket_id": "12345",
-        "ticket_key": "TEST-2",
+        "ticket_key": STR_TEST_2,
         "ticket_url": MOCK_URL_JIRA_BROWSE_2,
-        "project_key": "TEST",
-        "created_at": "2024-01-01T00:00:00Z",
-        "last_synced": "2024-01-01T00:00:00Z",
+        "project_key": STR_TEST,
+        "created_at": DATE_2024_01_01T00_00_00Z,
+        "last_synced": DATE_2024_01_01T00_00_00Z,
         "sync_status": "synced"
     })
     mock.transition_ticket = AsyncMock(return_value={
         "sync_status": "synced",
-        "last_synced": "2024-01-01T00:00:00Z"
+        "last_synced": DATE_2024_01_01T00_00_00Z
     })
     mock.add_attachment_from_url = AsyncMock(return_value={
         "attachment_id": "att-123",
-        "filename": "test.txt",
-        "uploaded_at": "2024-01-01T00:00:00Z"
+        "filename": FILE_TEST_TXT,
+        "uploaded_at": DATE_2024_01_01T00_00_00Z
     })
     mock.get_issue_types = AsyncMock(return_value=[
         {"id": "1", "name": EXPECTED_TASK, "description": "A task"}
@@ -106,7 +116,7 @@ def mock_jira_service():
     ])
     mock.update_ticket = AsyncMock(return_value={
         "sync_status": "synced",
-        "last_synced": "2024-01-01T00:00:00Z"
+        "last_synced": DATE_2024_01_01T00_00_00Z
     })
     return mock
 
@@ -116,8 +126,8 @@ def mock_db():
     """Create mock database manager"""
     mock = MagicMock()
     mock.db.scenario_requests.find_one = AsyncMock(return_value={
-        "_id": ObjectId("507f1f77bcf86cd799439011"),
-        "requestId": "REQ-SCR-0001",
+        "_id": ObjectId(OID_9011),
+        STR_REQUESTID: STR_REQ_SCR_0001,
         "name": "Test Request",
         "description": "Test Description",
         "dataDomain": "test",
@@ -187,7 +197,7 @@ class TestJiraProjectsRoute:
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
-        assert data[0]["key"] == "TEST"
+        assert data[0]["key"] == STR_TEST
 
     def test_get_projects_disabled(self, app_with_routes, mock_jira_service):
         """Test get projects when Jira disabled"""
@@ -206,7 +216,7 @@ class TestJiraLatestProjectRoute:
         response = client.get(PATH_JIRA_PROJECTS_LATEST)
         assert response.status_code == 200
         data = response.json()
-        assert data["key"] == "TEST"
+        assert data["key"] == STR_TEST
 
     def test_get_latest_project_none(self, app_with_routes, mock_jira_service):
         """Test get latest project when no projects"""
@@ -234,7 +244,7 @@ class TestJiraMyTasksRoute:
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
-        assert data[0]["key"] == "TEST-1"
+        assert data[0]["key"] == STR_TEST_1
 
     def test_get_my_tasks_with_filters(self, app_with_routes):
         """Test get my tasks with filters"""
@@ -283,29 +293,29 @@ class TestJiraCreateTaskRoute:
         client = TestClient(app_with_routes)
         response = client.post(
             PATH_JIRA_TASKS_CREATE,
-            json={"scenario_request_id": "507f1f77bcf86cd799439011"}
+            json={"scenario_request_id": OID_9011}
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["ticket_key"] == "TEST-2"
+        assert data["ticket_key"] == STR_TEST_2
         assert data["sync_status"] == "synced"
 
     def test_create_task_already_exists(self, app_with_routes, mock_db):
         """Test create task when already exists"""
         mock_db.db.scenario_requests.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "requestId": "REQ-SCR-0001",
+            "_id": ObjectId(OID_9011),
+            STR_REQUESTID: STR_REQ_SCR_0001,
             "jira_integration": {
                 "ticket_id": "existing-123",
-                "ticket_key": "TEST-EXISTING",
+                "ticket_key": STR_TEST_EXISTING,
                 "ticket_url": MOCK_URL_JIRA_BROWSE_EXISTING,
-                "project_key": "TEST"
+                "project_key": STR_TEST
             }
         })
         client = TestClient(app_with_routes)
         response = client.post(
             PATH_JIRA_TASKS_CREATE,
-            json={"scenario_request_id": "507f1f77bcf86cd799439011"}
+            json={"scenario_request_id": OID_9011}
         )
         assert response.status_code == 200
         data = response.json()
@@ -317,7 +327,7 @@ class TestJiraCreateTaskRoute:
         client = TestClient(app_with_routes)
         response = client.post(
             PATH_JIRA_TASKS_CREATE,
-            json={"scenario_request_id": "507f1f77bcf86cd799439011"}
+            json={"scenario_request_id": OID_9011}
         )
         assert response.status_code == 404
 
@@ -327,7 +337,7 @@ class TestJiraCreateTaskRoute:
         client = TestClient(app_with_routes)
         response = client.post(
             PATH_JIRA_TASKS_CREATE,
-            json={"scenario_request_id": "507f1f77bcf86cd799439011"}
+            json={"scenario_request_id": OID_9011}
         )
         assert response.status_code == 500
 
@@ -340,7 +350,7 @@ class TestJiraCreateTaskRoute:
         client = TestClient(app_with_routes)
         response = client.post(
             PATH_JIRA_TASKS_CREATE,
-            json={"scenario_request_id": "507f1f77bcf86cd799439011"}
+            json={"scenario_request_id": OID_9011}
         )
         assert response.status_code == 200
         data = response.json()
@@ -352,7 +362,7 @@ class TestJiraCreateTaskRoute:
         client = TestClient(app_with_routes)
         response = client.post(
             PATH_JIRA_TASKS_CREATE,
-            json={"scenario_request_id": "507f1f77bcf86cd799439011"}
+            json={"scenario_request_id": OID_9011}
         )
         assert response.status_code == 503
 
@@ -365,7 +375,7 @@ class TestJiraCreateTaskRoute:
         client = TestClient(app_with_routes)
         response = client.post(
             PATH_JIRA_TASKS_CREATE,
-            json={"scenario_request_id": "507f1f77bcf86cd799439011"}
+            json={"scenario_request_id": OID_9011}
         )
         assert response.status_code == 200
 
@@ -378,7 +388,7 @@ class TestJiraTransitionRoute:
         client = TestClient(app_with_routes)
         response = client.post(
             PATH_JIRA_TASKS_TRANSITION,
-            json={"ticket_key": "TEST-1", "status": EXPECTED_IN_PROGRESS}
+            json={"ticket_key": STR_TEST_1, "status": EXPECTED_IN_PROGRESS}
         )
         assert response.status_code == 200
         assert "transitioned" in response.json()["message"]
@@ -389,7 +399,7 @@ class TestJiraTransitionRoute:
         client = TestClient(app_with_routes)
         response = client.post(
             PATH_JIRA_TASKS_TRANSITION,
-            json={"ticket_key": "TEST-1", "status": EXPECTED_IN_PROGRESS}
+            json={"ticket_key": STR_TEST_1, "status": EXPECTED_IN_PROGRESS}
         )
         assert response.status_code == 404
 
@@ -402,7 +412,7 @@ class TestJiraTransitionRoute:
         client = TestClient(app_with_routes)
         response = client.post(
             PATH_JIRA_TASKS_TRANSITION,
-            json={"ticket_key": "TEST-1", "status": "Invalid"}
+            json={"ticket_key": STR_TEST_1, "status": "Invalid"}
         )
         assert response.status_code == 400
 
@@ -412,7 +422,7 @@ class TestJiraTransitionRoute:
         client = TestClient(app_with_routes)
         response = client.post(
             PATH_JIRA_TASKS_TRANSITION,
-            json={"ticket_key": "TEST-1", "status": EXPECTED_IN_PROGRESS}
+            json={"ticket_key": STR_TEST_1, "status": EXPECTED_IN_PROGRESS}
         )
         assert response.status_code == 503
 
@@ -426,9 +436,9 @@ class TestJiraAttachmentRoute:
         response = client.post(
             PATH_JIRA_ATTACHMENTS_ADD,
             json={
-                "ticket_key": "TEST-1",
+                "ticket_key": STR_TEST_1,
                 "file_url": MOCK_URL_FILE_HTTPS,
-                "file_name": "test.txt"
+                "file_name": FILE_TEST_TXT
             }
         )
         assert response.status_code == 200
@@ -442,9 +452,9 @@ class TestJiraAttachmentRoute:
         response = client.post(
             PATH_JIRA_ATTACHMENTS_ADD,
             json={
-                "ticket_key": "TEST-1",
+                "ticket_key": STR_TEST_1,
                 "file_url": MOCK_URL_FILE_HTTPS,
-                "file_name": "test.txt"
+                "file_name": FILE_TEST_TXT
             }
         )
         assert response.status_code == 500
@@ -456,9 +466,9 @@ class TestJiraAttachmentRoute:
         response = client.post(
             PATH_JIRA_ATTACHMENTS_ADD,
             json={
-                "ticket_key": "TEST-1",
+                "ticket_key": STR_TEST_1,
                 "file_url": MOCK_URL_FILE_HTTPS,
-                "file_name": "test.txt"
+                "file_name": FILE_TEST_TXT
             }
         )
         assert response.status_code == 503
@@ -513,25 +523,25 @@ class TestJiraSyncRequestRoute:
         response = client.post(PATH_JIRA_SYNC_REQUEST_ID)
         assert response.status_code == 200
         data = response.json()
-        assert data["ticket_key"] == "TEST-2"
+        assert data["ticket_key"] == STR_TEST_2
 
     def test_sync_update_existing(self, app_with_routes, mock_db):
         """Test sync updates existing ticket"""
         mock_db.db.scenario_requests.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "requestId": "REQ-SCR-0001",
+            "_id": ObjectId(OID_9011),
+            STR_REQUESTID: STR_REQ_SCR_0001,
             "jira_integration": {
                 "ticket_id": "existing-123",
-                "ticket_key": "TEST-EXISTING",
+                "ticket_key": STR_TEST_EXISTING,
                 "ticket_url": MOCK_URL_JIRA_BROWSE_EXISTING,
-                "project_key": "TEST"
+                "project_key": STR_TEST
             }
         })
         client = TestClient(app_with_routes)
         response = client.post(PATH_JIRA_SYNC_REQUEST_ID)
         assert response.status_code == 200
         data = response.json()
-        assert data["ticket_key"] == "TEST-EXISTING"
+        assert data["ticket_key"] == STR_TEST_EXISTING
 
     def test_sync_not_found(self, app_with_routes, mock_db):
         """Test sync when request not found"""
@@ -554,8 +564,8 @@ class TestJiraSyncRequestRoute:
             if "_id" in query:
                 raise ValueError("Invalid ObjectId")
             return {
-                "_id": ObjectId("507f1f77bcf86cd799439011"),
-                "requestId": "REQ-SCR-0001",
+                "_id": ObjectId(OID_9011),
+                STR_REQUESTID: STR_REQ_SCR_0001,
                 "jira_integration": None
             }
         mock_db.db.scenario_requests.find_one = AsyncMock(side_effect=find_one_side_effect)

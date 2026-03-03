@@ -16,6 +16,10 @@ PATH_GROUPS_ID = "/groups/507f1f77bcf86cd799439011"
 PATH_GROUPS_NONEXISTENT = "/groups/nonexistent"
 
 EXPECTED_ADMIN_GROUP = "Admin group"
+OID_9011 = "507f1f77bcf86cd799439011"
+STR_ADMINISTRATORS = "Administrators"
+STR_GROUPID = "groupId"
+
 
 
 
@@ -92,7 +96,7 @@ class TestGroupsRoutes:
     def mock_super_admin_user(self):
         """Create mock super admin user"""
         return CurrentUser(
-            user_id="507f1f77bcf86cd799439011",
+            user_id=OID_9011,
             email=MOCK_EMAIL_ADMIN,
             roles=["super-administrator"],
             groups=[],
@@ -193,9 +197,9 @@ class TestGroupsRoutes:
     def test_get_group_success(self, client, mock_db):
         """Test getting a specific group"""
         group_data = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "groupId": "admins",
-            "name": "Administrators",
+            "_id": ObjectId(OID_9011),
+            STR_GROUPID: "admins",
+            "name": STR_ADMINISTRATORS,
             "description": EXPECTED_ADMIN_GROUP,
             "permissions": ["read", "write"],
             "status": "active",
@@ -208,14 +212,14 @@ class TestGroupsRoutes:
         response = client.get(PATH_GROUPS_ID)
         assert response.status_code == 200
         data = response.json()
-        assert data["groupId"] == "admins"
+        assert data[STR_GROUPID] == "admins"
 
     def test_get_group_by_group_id(self, client, mock_db):
         """Test getting group by groupId"""
         group_data = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "groupId": "admins",
-            "name": "Administrators",
+            "_id": ObjectId(OID_9011),
+            STR_GROUPID: "admins",
+            "name": STR_ADMINISTRATORS,
             "description": EXPECTED_ADMIN_GROUP,
             "permissions": ["read", "write"],
             "status": "active",
@@ -239,11 +243,11 @@ class TestGroupsRoutes:
         """Test creating a new group"""
         mock_db.groups.find_one = AsyncMock(return_value=None)
         mock_db.groups.insert_one = AsyncMock(
-            return_value=MagicMock(inserted_id=ObjectId("507f1f77bcf86cd799439011"))
+            return_value=MagicMock(inserted_id=ObjectId(OID_9011))
         )
 
         response = client.post(PATH_GROUPS, json={
-            "groupId": "editors",
+            STR_GROUPID: "editors",
             "name": "Editors",
             "description": "Editor group",
             "permissions": ["read", "write"],
@@ -253,15 +257,15 @@ class TestGroupsRoutes:
 
         assert response.status_code == 201
         data = response.json()
-        assert data["groupId"] == "editors"
+        assert data[STR_GROUPID] == "editors"
 
     def test_create_group_duplicate(self, client, mock_db):
         """Test creating group with existing groupId"""
-        mock_db.groups.find_one = AsyncMock(return_value={"groupId": "admins"})
+        mock_db.groups.find_one = AsyncMock(return_value={STR_GROUPID: "admins"})
 
         response = client.post(PATH_GROUPS, json={
-            "groupId": "admins",
-            "name": "Administrators",
+            STR_GROUPID: "admins",
+            "name": STR_ADMINISTRATORS,
             "description": EXPECTED_ADMIN_GROUP,
             "permissions": ["read", "write"],
             "status": "active",
@@ -274,8 +278,8 @@ class TestGroupsRoutes:
     def test_update_group_success(self, client, mock_db, mock_email_service):
         """Test updating a group"""
         existing_group = {
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "groupId": "editors",
+            "_id": ObjectId(OID_9011),
+            STR_GROUPID: "editors",
             "name": "Editors",
             "description": "Old description",
             "permissions": ["read"],
@@ -322,8 +326,8 @@ class TestGroupsRoutes:
     def test_delete_group_by_group_id(self, client, mock_db):
         """Test deleting group by groupId"""
         mock_db.groups.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "groupId": "editors"
+            "_id": ObjectId(OID_9011),
+            STR_GROUPID: "editors"
         })
         mock_db.groups.delete_one = AsyncMock(return_value=MagicMock(deleted_count=1))
 
@@ -340,8 +344,8 @@ class TestGroupsRoutes:
     def test_toggle_group_status(self, client, mock_db, mock_email_service):
         """Test toggling group status"""
         mock_db.groups.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "groupId": "editors",
+            "_id": ObjectId(OID_9011),
+            STR_GROUPID: "editors",
             "status": "active"
         })
 
@@ -360,8 +364,8 @@ class TestGroupsRoutes:
     def test_toggle_group_status_inactive_to_active(self, client, mock_db, mock_email_service):
         """Test toggling group from inactive to active"""
         mock_db.groups.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "groupId": "editors",
+            "_id": ObjectId(OID_9011),
+            STR_GROUPID: "editors",
             "status": "inactive"
         })
 
@@ -386,8 +390,8 @@ class TestGroupsRoutes:
     def test_get_group_users(self, client, mock_db):
         """Test getting users with a specific group"""
         mock_db.groups.find_one = AsyncMock(return_value={
-            "_id": ObjectId("507f1f77bcf86cd799439011"),
-            "groupId": "editors"
+            "_id": ObjectId(OID_9011),
+            STR_GROUPID: "editors"
         })
 
         async def user_cursor():
