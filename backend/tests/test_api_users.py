@@ -9,7 +9,7 @@ from bson import ObjectId
 from easylifeauth.api.users_routes import router, create_pagination_meta
 from easylifeauth.api import dependencies
 from easylifeauth.security.access_control import CurrentUser, require_super_admin, require_admin, require_group_admin, get_current_user
-from mock_data import MOCK_EMAIL, MOCK_EMAIL_ADMIN, MOCK_EMAIL_ALICE, MOCK_EMAIL_BOB, MOCK_EMAIL_EXISTING, MOCK_EMAIL_GROUPADMIN, MOCK_EMAIL_NEW, MOCK_EMAIL_NEWUSER, MOCK_EMAIL_TARGET, MOCK_EMAIL_USER, MOCK_PASSWORD, MOCK_PASSWORD_HASH
+from mock_data import MOCK_EMAIL, MOCK_EMAIL_ADMIN, MOCK_EMAIL_ALICE, MOCK_EMAIL_BOB, MOCK_EMAIL_EXISTING, MOCK_EMAIL_GROUPADMIN, MOCK_EMAIL_NEW, MOCK_EMAIL_NEWUSER, MOCK_EMAIL_TARGET, MOCK_EMAIL_USER, MOCK_PASSWORD, MOCK_PASSWORD_HASH, empty_async_gen
 
 PATH_USERS = "/users"
 PATH_USERS_ID = "/users/507f1f77bcf86cd799439011"
@@ -149,9 +149,7 @@ class TestUsersRoutes:
         """Test listing users when empty"""
         mock_db.users.count_documents = AsyncMock(return_value=0)
 
-        async def empty_cursor():
-            if False:
-                yield
+        empty_cursor = empty_async_gen
 
         # Create a proper chain mock where each method returns an object that has the next method
         mock_cursor = MagicMock()
@@ -170,9 +168,7 @@ class TestUsersRoutes:
         """Test listing users with filters"""
         mock_db.users.count_documents = AsyncMock(return_value=0)
 
-        async def empty_cursor():
-            if False:
-                yield
+        empty_cursor = empty_async_gen
 
         mock_cursor = MagicMock()
         mock_cursor.skip.return_value = mock_cursor

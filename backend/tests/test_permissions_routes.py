@@ -9,7 +9,7 @@ from datetime import datetime
 from easylifeauth.api.permissions_routes import router, create_pagination_meta
 from easylifeauth.api.dependencies import get_db
 from easylifeauth.security.access_control import require_super_admin
-from mock_data import MOCK_EMAIL_ADMIN_TEST
+from mock_data import MOCK_EMAIL_ADMIN_TEST, empty_async_gen
 
 PATH_PERMISSIONS = "/permissions"
 PATH_PERMISSIONS_NONEXISTENT = "/permissions/nonexistent"
@@ -124,9 +124,7 @@ class TestPermissionsRoutes:
         """Test list permissions with module filter"""
         mock_db.permissions.count_documents = AsyncMock(return_value=0)
 
-        async def async_iter():
-            if False:
-                yield
+        async_iter = empty_async_gen
 
         mock_cursor = MagicMock()
         mock_cursor.skip = MagicMock(return_value=mock_cursor)
@@ -142,9 +140,7 @@ class TestPermissionsRoutes:
         """Test list permissions with search"""
         mock_db.permissions.count_documents = AsyncMock(return_value=0)
 
-        async def async_iter():
-            if False:
-                yield
+        async_iter = empty_async_gen
 
         mock_cursor = MagicMock()
         mock_cursor.skip = MagicMock(return_value=mock_cursor)
@@ -383,9 +379,7 @@ class TestPermissionsRoutes:
 
         mock_db.permissions.find_one = AsyncMock(return_value=perm.copy())
 
-        async def async_iter():
-            if False:
-                yield
+        async_iter = empty_async_gen
 
         mock_cursor = MagicMock()
         mock_cursor.__aiter__ = lambda self: async_iter()
@@ -405,9 +399,7 @@ class TestPermissionsRoutes:
 
         mock_db.permissions.find_one = AsyncMock(return_value=perm.copy())
 
-        async def async_iter():
-            if False:
-                yield
+        async_iter = empty_async_gen
 
         mock_cursor = MagicMock()
         mock_cursor.__aiter__ = lambda self: async_iter()

@@ -161,8 +161,8 @@ MOCK_GCS_BUCKET_NAME_FILE = _test_data["MOCK_GCS_BUCKET_NAME_FILE"]
 async def empty_async_gen():
     """Async generator that yields nothing.
 
-    Use in place of the ``return; yield`` idiom which SonarQube flags
-    as unreachable code.
+    Use in place of the ``if False: yield`` idiom which SonarQube flags
+    as a constant condition.
     """
-    if False:
+    for _ in []:
         yield

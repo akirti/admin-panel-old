@@ -11,7 +11,7 @@ from easylifeauth.api.domain_routes import (
 )
 from easylifeauth.api import dependencies
 from easylifeauth.security.access_control import CurrentUser, require_super_admin, get_current_user
-from mock_data import MOCK_EMAIL_ADMIN, MOCK_EMAIL_USER
+from mock_data import MOCK_EMAIL_ADMIN, MOCK_EMAIL_USER, empty_async_gen
 
 PATH_DOMAINS = "/domains"
 PATH_DOMAINS_ID = "/domains/507f1f77bcf86cd799439011"
@@ -214,9 +214,7 @@ class TestDomainsRoutes:
         """Test listing domains with pagination"""
         mock_db.domains.count_documents = AsyncMock(return_value=0)
 
-        async def empty_cursor():
-            if False:
-                yield
+        empty_cursor = empty_async_gen
 
         mock_cursor = MagicMock()
         mock_cursor.skip.return_value = mock_cursor

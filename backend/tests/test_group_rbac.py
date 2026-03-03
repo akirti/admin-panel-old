@@ -25,6 +25,7 @@ from easylifeauth.api import dependencies
 from easylifeauth.security.access_control import (
     CurrentUser, require_super_admin, require_group_admin,
 )
+from mock_data import empty_async_gen
 
 PATH_GROUPS = "/groups"
 STR_CAN_READ = "can-read"
@@ -66,10 +67,7 @@ def _mock_db():
 
 
 def _empty_cursor():
-    async def gen():
-        if False:
-            yield
-    return gen()
+    return empty_async_gen()
 
 
 def _user(role=STR_SUPER_ADMINISTRATOR) -> CurrentUser:

@@ -9,7 +9,7 @@ from bson import ObjectId
 from easylifeauth.api.roles_routes import router, create_pagination_meta, notify_users_of_role_change
 from easylifeauth.api import dependencies
 from easylifeauth.security.access_control import CurrentUser, require_super_admin, require_group_admin
-from mock_data import MOCK_EMAIL_ADMIN, MOCK_EMAIL_USER, MOCK_EMAIL_USER1, MOCK_EMAIL_USER2
+from mock_data import MOCK_EMAIL_ADMIN, MOCK_EMAIL_USER, MOCK_EMAIL_USER1, MOCK_EMAIL_USER2, empty_async_gen
 
 PATH_ROLES = "/roles"
 PATH_ROLES_ID = "/roles/507f1f77bcf86cd799439011"
@@ -141,9 +141,7 @@ class TestRolesRoutes:
         """Test listing roles when empty"""
         mock_db.roles.count_documents = AsyncMock(return_value=0)
 
-        async def empty_cursor():
-            if False:
-                yield
+        empty_cursor = empty_async_gen
 
         mock_cursor = MagicMock()
         mock_cursor.skip.return_value = mock_cursor
@@ -161,9 +159,7 @@ class TestRolesRoutes:
         """Test listing roles with filters"""
         mock_db.roles.count_documents = AsyncMock(return_value=0)
 
-        async def empty_cursor():
-            if False:
-                yield
+        empty_cursor = empty_async_gen
 
         mock_cursor = MagicMock()
         mock_cursor.skip.return_value = mock_cursor
@@ -282,9 +278,7 @@ class TestRolesRoutes:
         mock_db.roles.find_one.return_value = existing_role
 
         # Mock user notification
-        async def empty_cursor():
-            if False:
-                yield
+        empty_cursor = empty_async_gen
 
         mock_db.users.find.return_value = empty_cursor()
 
@@ -374,9 +368,7 @@ class TestRolesRoutes:
         }
 
         # Mock user notification
-        async def empty_cursor():
-            if False:
-                yield
+        empty_cursor = empty_async_gen
 
         mock_db.users.find.return_value = empty_cursor()
 
@@ -393,9 +385,7 @@ class TestRolesRoutes:
             "status": "inactive"
         }
 
-        async def empty_cursor():
-            if False:
-                yield
+        empty_cursor = empty_async_gen
 
         mock_db.users.find.return_value = empty_cursor()
 

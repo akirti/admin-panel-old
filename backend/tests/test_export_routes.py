@@ -15,7 +15,7 @@ from easylifeauth.api.export_routes import (
 )
 from easylifeauth.api.dependencies import get_db
 from easylifeauth.security.access_control import require_super_admin
-from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_USER1_TEST, MOCK_EMAIL_USER2_TEST
+from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_USER1_TEST, MOCK_EMAIL_USER2_TEST, empty_async_gen
 
 EXPECTED_TEST = "Test"
 PATH_EXPORT_USERS_CSV = "/export/users/csv"
@@ -385,9 +385,7 @@ class TestExportRoutesEmptyData:
 
     def _create_empty_cursor(self):
         """Helper to create empty async cursor mock"""
-        async def async_iter():
-            if False:
-                yield
+        async_iter = empty_async_gen
 
         mock_cursor = MagicMock()
         mock_cursor.__aiter__ = lambda self: async_iter()

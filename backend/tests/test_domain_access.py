@@ -27,7 +27,7 @@ from easylifeauth.api.playboard_routes import (
     check_domain_access as playboard_check_domain_access,
     get_scenario_domain_key,
 )
-from mock_data import MOCK_EMAIL_USER
+from mock_data import MOCK_EMAIL_USER, empty_async_gen
 
 PATH_DOMAINS_ALL = "/domains/all"
 STR_DATADOMAIN = "dataDomain"
@@ -80,10 +80,7 @@ def _mock_user_service(resolved_domains=None):
 
 
 def _empty_cursor():
-    async def gen():
-        if False:
-            yield
-    return gen()
+    return empty_async_gen()
 
 
 # ===========================================================================

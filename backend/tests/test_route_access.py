@@ -22,6 +22,7 @@ from easylifeauth.security.access_control import (
     get_current_user,
 )
 from easylifeauth.api import dependencies
+from mock_data import empty_async_gen
 
 PATH_DOMAINS = "/domains"
 PATH_GROUPS = "/groups"
@@ -104,10 +105,7 @@ def _mock_email_service():
 
 
 def _empty_cursor():
-    async def gen():
-        if False:
-            yield
-    return gen()
+    return empty_async_gen()
 
 
 # ===========================================================================

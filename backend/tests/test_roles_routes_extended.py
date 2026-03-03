@@ -26,7 +26,7 @@ from easylifeauth.api.roles_routes import (
 )
 from easylifeauth.api import dependencies
 from easylifeauth.security.access_control import CurrentUser, require_group_admin
-from mock_data import MOCK_EMAIL_ADMIN, MOCK_EMAIL_NOFULLNAME
+from mock_data import MOCK_EMAIL_ADMIN, MOCK_EMAIL_NOFULLNAME, empty_async_gen
 
 PATH_ROLES = "/roles"
 CFG_DOMAIN_FINANCE = "domain.finance"
@@ -80,10 +80,7 @@ def _make_role(
     }
 
 
-async def _empty_async_gen():
-    """Async generator that yields nothing."""
-    if False:
-        yield
+_empty_async_gen = empty_async_gen
 
 
 # ---------------------------------------------------------------------------
