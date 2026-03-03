@@ -394,14 +394,13 @@ class TestInitDependencies:
     @patch('easylifeauth.api.dependencies.FileStorageService')
     @patch('easylifeauth.api.bulk_upload_routes.init_bulk_services')
     @patch('easylifeauth.api.configurations_routes.init_gcs_service')
-    def test_init_dependencies_with_jira(
-        self, mock_init_gcs, mock_init_bulk, mock_file_storage, mock_jira,
-        mock_new_scenario, mock_feedback, mock_playboard, mock_scenario,
-        mock_domain, mock_password, mock_admin, mock_user,
-        mock_set_token, mock_init_activity
-    ):
+    def test_init_dependencies_with_jira(self, *mocks):
         """Test init_dependencies with Jira config"""
         from easylifeauth.api.dependencies import init_dependencies
+
+        # Patches are passed in reverse decorator order
+        mock_init_gcs, mock_init_bulk, mock_file_storage, mock_jira = mocks[:4]
+        mock_init_activity = mocks[-1]
 
         mock_db = MagicMock()
         mock_token_manager = MagicMock()

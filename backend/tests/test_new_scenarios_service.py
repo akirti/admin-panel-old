@@ -288,7 +288,7 @@ class TestNewScenarioService:
 
         result = await scenario_service.search_users("test")
 
-        assert len(result) >= 0
+        assert len(result) == 1
 
     @pytest.mark.asyncio
     async def test_get_domains(self, scenario_service, mock_db):

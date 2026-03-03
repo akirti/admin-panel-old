@@ -540,7 +540,7 @@ class TestJiraSyncRequestRoute:
         # First call raises exception (invalid ObjectId), second with requestId succeeds
         async def find_one_side_effect(query):
             if "_id" in query:
-                raise Exception("Invalid ObjectId")
+                raise ValueError("Invalid ObjectId")
             return {
                 "_id": ObjectId("507f1f77bcf86cd799439011"),
                 "requestId": "REQ-SCR-0001",

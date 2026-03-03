@@ -210,7 +210,7 @@ class TestCustomersRoutes:
         response = client.get("/customers?page=2&limit=10")
 
         assert response.status_code == 200
-        cursor.skip.assert_called_once_with(20)  # page * limit = 2 * 10
+        cursor.skip.assert_called_once_with(20) 
         cursor.limit.assert_called_once_with(10)
 
     def test_list_customers_with_search_filter(self, client, mock_db):
