@@ -31,6 +31,7 @@ STR_UNAUTHORIZED = "Unauthorized"
 STR_USER_123 = "user_123"
 STR_USER_456 = "user_456"
 STR_VIEWER_789 = "viewer_789"
+FAKE_TEST_CONTENT = b"test content"
 
 
 
@@ -336,7 +337,7 @@ class TestScenarioRequestRoutes:
 
         response = client.post(
             PATH_ASK_SCENARIOS_REQ_123_FILES,
-            files={"file": (FILE_TEST_CSV, b"test content", MIME_TEXT_CSV)}
+            files={"file": (FILE_TEST_CSV, FAKE_TEST_CONTENT, MIME_TEXT_CSV)}
         )
         assert response.status_code == 200
         data = response.json()
@@ -366,7 +367,7 @@ class TestScenarioRequestRoutes:
 
         response = client.post(
             PATH_ASK_SCENARIOS_REQ_123_FILES,
-            files={"file": (FILE_TEST_CSV, b"test content", MIME_TEXT_CSV)}
+            files={"file": (FILE_TEST_CSV, FAKE_TEST_CONTENT, MIME_TEXT_CSV)}
         )
         assert response.status_code == 403
 
@@ -376,7 +377,7 @@ class TestScenarioRequestRoutes:
 
         response = client.post(
             PATH_ASK_SCENARIOS_REQ_123_FILES,
-            files={"file": (FILE_TEST_CSV, b"test content", MIME_TEXT_CSV)}
+            files={"file": (FILE_TEST_CSV, FAKE_TEST_CONTENT, MIME_TEXT_CSV)}
         )
         assert response.status_code == 400  # AuthError default status_code
 

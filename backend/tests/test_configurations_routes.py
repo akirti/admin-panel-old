@@ -58,6 +58,7 @@ STR_UTF_8 = "utf-8"
 STR_VERSIONED_CONFIG = "versioned-config"
 STR_XLSX_CONFIG = "xlsx-config"
 SUBPATH_CONFIGURATIONS = "/configurations/"
+FAKE_XLSX_CONTENT = b"PK\x03\x04fake xlsx content"
 
 
 
@@ -1443,7 +1444,7 @@ class TestConfigurationUpload:
         """Test uploading XLSX file without GCS configured returns 400"""
         mock_db.configurations.find_one = AsyncMock(return_value=None)
 
-        xlsx_content = b"PK\x03\x04fake xlsx content"
+        xlsx_content = FAKE_XLSX_CONTENT
 
         with patch(PATCH_CONFIGURATIONS_ROUTES_GCS_SERVICE, None):
             with patch(PATCH_FILE_VALIDATION_VALIDATE_UPLOAD):
@@ -1461,7 +1462,7 @@ class TestConfigurationUpload:
         mock_db.configurations.find_one = AsyncMock(return_value=None)
         mock_db.configurations.insert_one = AsyncMock(return_value=MagicMock(inserted_id=ObjectId()))
 
-        xlsx_content = b"PK\x03\x04fake xlsx content"
+        xlsx_content = FAKE_XLSX_CONTENT
 
         mock_gcs = MagicMock()
         mock_gcs.is_configured.return_value = True
@@ -1501,7 +1502,7 @@ class TestConfigurationUpload:
         mock_db.configurations.find_one = AsyncMock(return_value=existing.copy())
         mock_db.configurations.update_one = AsyncMock()
 
-        xlsx_content = b"PK\x03\x04fake xlsx content"
+        xlsx_content = FAKE_XLSX_CONTENT
 
         mock_gcs = MagicMock()
         mock_gcs.is_configured.return_value = True
@@ -1524,7 +1525,7 @@ class TestConfigurationUpload:
         """Test uploading XLSX file when GCS upload fails returns 500"""
         mock_db.configurations.find_one = AsyncMock(return_value=None)
 
-        xlsx_content = b"PK\x03\x04fake xlsx content"
+        xlsx_content = FAKE_XLSX_CONTENT
 
         mock_gcs = MagicMock()
         mock_gcs.is_configured.return_value = True

@@ -1449,7 +1449,7 @@ class TestForceArchive:
             service = ErrorLogService(mock_db, gcs_service=gcs)
 
         log_file = tmp_path / FILE_TEST_JSONL
-        log_file.write_text('{"message":"test"}\n')
+        log_file.write_text(JSON_MESSAGE_TEST)
         service.current_log_path = log_file
 
         archive_result = {"archive_id": "forced123"}
@@ -1469,7 +1469,7 @@ class TestForceArchive:
             service = ErrorLogService(mock_db, gcs_service=gcs)
 
         log_file = tmp_path / FILE_TEST_JSONL
-        log_file.write_text('{"message":"test"}\n')
+        log_file.write_text(JSON_MESSAGE_TEST)
         service.current_log_path = log_file
 
         service._check_and_archive = AsyncMock(return_value=None)
@@ -1631,7 +1631,7 @@ class TestCheckAndArchive:
             service = ErrorLogService(mock_db, gcs_service=mock_gcs)
 
         log_file = tmp_path / FILE_TEST_JSONL
-        log_file.write_text('{"message":"test"}\n')
+        log_file.write_text(JSON_MESSAGE_TEST)
         service.current_log_path = log_file
 
         # First call returns above threshold, second (inside lock) returns below

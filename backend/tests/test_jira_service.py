@@ -26,6 +26,7 @@ STR_REQ_001 = "REQ-001"
 STR_TEST = "TEST"
 STR_TEST_1 = "TEST-1"
 STR_USER2 = "user2"
+FAKE_FILE_CONTENT = b"file content"
 
 
 
@@ -392,7 +393,7 @@ class TestJiraServiceAddAttachment:
             "api_token": "test_token"
         })
 
-        result = await service.add_attachment(STR_TEST_1, b"file content", FILE_TEST_TXT)
+        result = await service.add_attachment(STR_TEST_1, FAKE_FILE_CONTENT, FILE_TEST_TXT)
 
         assert result is not None
         assert result["attachment_id"] == STR_ATT_123
@@ -1332,7 +1333,7 @@ class TestJiraServiceAddAttachmentFromUrl:
 
         mock_gcs_client = MagicMock()
         mock_blob = MagicMock()
-        mock_blob.download_as_bytes.return_value = b"file content"
+        mock_blob.download_as_bytes.return_value = FAKE_FILE_CONTENT
         mock_bucket = MagicMock()
         mock_bucket.blob.return_value = mock_blob
         mock_gcs_client.bucket.return_value = mock_bucket
@@ -1442,7 +1443,7 @@ class TestJiraServiceCreateTicketAdvanced:
         mock_jira.return_value.add_attachment.return_value = MagicMock(id=STR_ATT_123)
 
         mock_file_storage = MagicMock()
-        mock_file_storage.download_file = AsyncMock(return_value=(b"file content", FILE_TEST_TXT))
+        mock_file_storage.download_file = AsyncMock(return_value=(FAKE_FILE_CONTENT, FILE_TEST_TXT))
 
         service = JiraService({
             "base_url": MOCK_URL_JIRA_BASE,
