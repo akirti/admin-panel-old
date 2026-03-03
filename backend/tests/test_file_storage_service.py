@@ -1,4 +1,4 @@
-from mock_data import MOCK_EMAIL, MOCK_PATH_STORAGE
+from mock_data import MOCK_EMAIL, MOCK_GCS_PATH_FILE, MOCK_GCS_PATH_TO_FILE, MOCK_GCS_TEST_BUCKET_PREFIX, MOCK_PATH_STORAGE
 """Tests for File Storage Service"""
 import pytest
 import os
@@ -397,7 +397,7 @@ class TestFileStorageServiceGCS:
         )
 
         assert result is not None
-        assert result["gcs_path"].startswith("gs://test-bucket/")
+        assert result["gcs_path"].startswith(MOCK_GCS_TEST_BUCKET_PREFIX)
         mock_blob.upload_from_string.assert_called_once()
 
     @pytest.mark.asyncio
@@ -415,7 +415,7 @@ class TestFileStorageServiceGCS:
         service.storage_type = "gcs"
         service.gcs_client = mock_client
 
-        result = await service.download_file("gs://test-bucket/path/to/file.txt")
+        result = await service.download_file(MOCK_GCS_PATH_TO_FILE)
 
         assert result is not None
         content, filename = result
@@ -436,7 +436,7 @@ class TestFileStorageServiceGCS:
         service.storage_type = "gcs"
         service.gcs_client = mock_client
 
-        result = await service.delete_file("gs://test-bucket/path/file.txt")
+        result = await service.delete_file(MOCK_GCS_PATH_FILE)
 
         assert result is True
         mock_blob.delete.assert_called_once()
@@ -448,7 +448,7 @@ class TestFileStorageServiceGCS:
         service.enabled = True
         service.gcs_client = None
 
-        result = await service.download_file("gs://test-bucket/path/file.txt")
+        result = await service.download_file(MOCK_GCS_PATH_FILE)
         assert result is None
 
     @pytest.mark.asyncio
@@ -458,7 +458,7 @@ class TestFileStorageServiceGCS:
         service.enabled = True
         service.gcs_client = None
 
-        result = await service.delete_file("gs://test-bucket/path/file.txt")
+        result = await service.delete_file(MOCK_GCS_PATH_FILE)
         assert result is False
 
     @pytest.mark.asyncio
@@ -526,7 +526,7 @@ class TestFileStorageServiceGCS:
         service.storage_type = "gcs"
         service.gcs_client = mock_client
 
-        result = await service.download_file("gs://test-bucket/path/to/file.txt")
+        result = await service.download_file(MOCK_GCS_PATH_TO_FILE)
 
         assert result is None
 
@@ -545,7 +545,7 @@ class TestFileStorageServiceGCS:
         service.storage_type = "gcs"
         service.gcs_client = mock_client
 
-        result = await service.delete_file("gs://test-bucket/path/file.txt")
+        result = await service.delete_file(MOCK_GCS_PATH_FILE)
 
         assert result is False
 

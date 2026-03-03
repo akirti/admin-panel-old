@@ -1,4 +1,4 @@
-from mock_data import MOCK_EMAIL_USER, MOCK_IP_INTERNAL, MOCK_IP_LOCALHOST, MOCK_URL_SIGNED
+from mock_data import MOCK_EMAIL_USER, MOCK_GCS_ERROR_LOG, MOCK_IP_INTERNAL, MOCK_IP_LOCALHOST, MOCK_URL_SIGNED
 """Tests for Error Log Service"""
 import json
 import gzip
@@ -1477,7 +1477,7 @@ class TestCheckAndArchive:
         gcs = MagicMock()
         gcs.is_configured.return_value = True
         gcs.bucket_name = "test-bucket"
-        gcs.upload_file = AsyncMock(return_value="gs://test-bucket/error_logs/test.gz")
+        gcs.upload_file = AsyncMock(return_value=MOCK_GCS_ERROR_LOG)
         return gcs
 
     @pytest.mark.asyncio

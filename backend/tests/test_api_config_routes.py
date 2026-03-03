@@ -1,4 +1,4 @@
-from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_SUPERADMIN, MOCK_EMAIL_USER_TEST, MOCK_URL_API_V1, MOCK_URL_API_V2, MOCK_URL_EXAMPLE_HTTPS, MOCK_URL_HTTPBIN
+from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_SUPERADMIN, MOCK_EMAIL_USER_TEST, MOCK_GCS_CA_PEM, MOCK_GCS_CERT_PEM, MOCK_GCS_KEY_PEM, MOCK_URL_API_V1, MOCK_URL_API_V2, MOCK_URL_EXAMPLE_HTTPS, MOCK_URL_HTTPBIN
 """Tests for API Config Routes"""
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -336,7 +336,7 @@ class TestApiConfigRoutesSuperAdmin:
         config = make_config_dict(_id=config_id, key="cert-api")
         mock_service.get_config_by_id = AsyncMock(return_value=config)
         mock_service.upload_certificate = AsyncMock(return_value={
-            "gcs_path": "gs://bucket/certs/cert.pem",
+            "gcs_path": MOCK_GCS_CERT_PEM,
             "file_name": "cert.pem",
             "cert_type": "cert",
             "uploaded_at": datetime.utcnow().isoformat(),
@@ -350,7 +350,7 @@ class TestApiConfigRoutesSuperAdmin:
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["gcs_path"] == "gs://bucket/certs/cert.pem"
+        assert data["gcs_path"] == MOCK_GCS_CERT_PEM
         assert data["cert_type"] == "cert"
 
     def test_upload_certificate_key_type(self, client, mock_service, mock_super_admin):
@@ -359,7 +359,7 @@ class TestApiConfigRoutesSuperAdmin:
         config = make_config_dict(_id=config_id, key="key-api")
         mock_service.get_config_by_id = AsyncMock(return_value=config)
         mock_service.upload_certificate = AsyncMock(return_value={
-            "gcs_path": "gs://bucket/certs/key.pem",
+            "gcs_path": MOCK_GCS_KEY_PEM,
             "file_name": "key.pem",
             "cert_type": "key",
             "uploaded_at": datetime.utcnow().isoformat(),
@@ -380,7 +380,7 @@ class TestApiConfigRoutesSuperAdmin:
         config = make_config_dict(_id=config_id, key="ca-api")
         mock_service.get_config_by_id = AsyncMock(return_value=config)
         mock_service.upload_certificate = AsyncMock(return_value={
-            "gcs_path": "gs://bucket/certs/ca.pem",
+            "gcs_path": MOCK_GCS_CA_PEM,
             "file_name": "ca.pem",
             "cert_type": "ca",
             "uploaded_at": datetime.utcnow().isoformat(),

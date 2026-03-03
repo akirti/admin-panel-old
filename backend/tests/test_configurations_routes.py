@@ -1,4 +1,4 @@
-from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_URL_GCS, MOCK_URL_GCS_TEST
+from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_GCS_FILE, MOCK_GCS_FILE_JSON, MOCK_URL_GCS, MOCK_URL_GCS_TEST
 """Tests for Configurations Routes"""
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -272,7 +272,7 @@ class TestConfigurationsRoutes:
             "config_id": "config_123",
             "key": "test-config",
             "type": "gcs-data",
-            "gcs": {"path": "gs://bucket/file.json"}
+            "gcs": {"path": MOCK_GCS_FILE_JSON}
         }
 
         mock_db.configurations.find_one = AsyncMock(return_value=config.copy())
@@ -556,7 +556,7 @@ class TestConfigurationsRoutes:
             "config_id": "config_gcs",
             "key": "gcs-config",
             "type": "gcs-data",
-            "gcs": {"path": "gs://bucket/file"},
+            "gcs": {"path": MOCK_GCS_FILE},
         }
 
         mock_db.configurations.find_one = AsyncMock(return_value=config.copy())

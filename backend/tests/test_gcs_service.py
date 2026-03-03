@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch, AsyncMock
 import asyncio
 
 from easylifeauth.services.gcs_service import GCSService
-from mock_data import MOCK_URL_SIGNED, MOCK_URL_SIGNED_SHORT
+from mock_data import MOCK_GCS_PATH_FILE, MOCK_URL_SIGNED, MOCK_URL_SIGNED_SHORT
 
 
 class TestGCSServiceInit:
@@ -124,7 +124,7 @@ class TestGCSServiceConfiguredOperations:
         result = mock_service._sync_upload_file(
             b"content", "path/file.txt", "text/plain", "test-bucket"
         )
-        assert result == "gs://test-bucket/path/file.txt"
+        assert result == MOCK_GCS_PATH_FILE
         mock_blob.upload_from_string.assert_called_once()
 
     def test_sync_upload_file_exception(self, mock_service):

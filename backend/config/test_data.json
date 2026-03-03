@@ -122,5 +122,16 @@
   "MOCK_PATH_STORAGE": "/tmp/test_storage",
   "MOCK_PATH_CERT_CACHE": "/tmp/cached.pem",
   "MOCK_PATH_CONFIG": "/tmp/fake",
-  "MOCK_PATH_ERROR_LOG": "/app/logs/errors_current.jsonl"
+  "MOCK_PATH_ERROR_LOG": "/app/logs/errors_current.jsonl",
+
+  "MOCK_GCS_CERT_PEM": "gs://bucket/certs/cert.pem",
+  "MOCK_GCS_KEY_PEM": "gs://bucket/certs/key.pem",
+  "MOCK_GCS_CA_PEM": "gs://bucket/certs/ca.pem",
+  "MOCK_GCS_PATH_FILE": "gs://test-bucket/path/file.txt",
+  "MOCK_GCS_PATH_TO_FILE": "gs://test-bucket/path/to/file.txt",
+  "MOCK_GCS_ERROR_LOG": "gs://test-bucket/error_logs/test.gz",
+  "MOCK_GCS_TEST_BUCKET_PREFIX": "gs://test-bucket/",
+  "MOCK_GCS_FILE_JSON": "gs://bucket/file.json",
+  "MOCK_GCS_FILE": "gs://bucket/file",
+  "MOCK_GCS_BUCKET_NAME_FILE": "gs://bucket-name/path/to/file.txt"
 }

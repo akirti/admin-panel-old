@@ -145,6 +145,18 @@ MOCK_PATH_CERT_CACHE = _test_data["MOCK_PATH_CERT_CACHE"]
 MOCK_PATH_CONFIG = _test_data["MOCK_PATH_CONFIG"]
 MOCK_PATH_ERROR_LOG = _test_data["MOCK_PATH_ERROR_LOG"]
 
+# ── Mock GCS (gs://) URLs ────────────────────────────────────────────────────
+MOCK_GCS_CERT_PEM = _test_data["MOCK_GCS_CERT_PEM"]
+MOCK_GCS_KEY_PEM = _test_data["MOCK_GCS_KEY_PEM"]
+MOCK_GCS_CA_PEM = _test_data["MOCK_GCS_CA_PEM"]
+MOCK_GCS_PATH_FILE = _test_data["MOCK_GCS_PATH_FILE"]
+MOCK_GCS_PATH_TO_FILE = _test_data["MOCK_GCS_PATH_TO_FILE"]
+MOCK_GCS_ERROR_LOG = _test_data["MOCK_GCS_ERROR_LOG"]
+MOCK_GCS_TEST_BUCKET_PREFIX = _test_data["MOCK_GCS_TEST_BUCKET_PREFIX"]
+MOCK_GCS_FILE_JSON = _test_data["MOCK_GCS_FILE_JSON"]
+MOCK_GCS_FILE = _test_data["MOCK_GCS_FILE"]
+MOCK_GCS_BUCKET_NAME_FILE = _test_data["MOCK_GCS_BUCKET_NAME_FILE"]
+
 
 async def empty_async_gen():
     """Async generator that yields nothing.
