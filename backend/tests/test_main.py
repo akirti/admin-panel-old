@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX, LOCAL_FILE_STORAGE
+from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX, OS_PROPERTY_SEPRATOR, LOCAL_FILE_STORAGE
 from mock_data import MOCK_EMAIL_BOT, MOCK_IP_BIND_ALL, MOCK_PATH_UPLOADS, MOCK_URL_EXAMPLE, MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV, MOCK_URL_JIRA_EXAMPLE, MOCK_URL_JIRA_TEST
 
 ENV_PREFIX = f"{ENVIRONEMNT_VARIABLE_PREFIX}_"
@@ -135,8 +135,8 @@ def _run_main(env_overrides=None, config_values=None, name_override=None):
     ).replace(
         "from pathlib import Path\n", "pass  # Path injected\n",
     ).replace(
-        "from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX , LOCAL_FILE_STORAGE",
-        "pass  # ENVIRONEMNT_VARIABLE_PREFIX, LOCAL_FILE_STORAGE injected",
+        "from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX,OS_PROPERTY_SEPRATOR , LOCAL_FILE_STORAGE",
+        "pass  # ENVIRONEMNT_VARIABLE_PREFIX, OS_PROPERTY_SEPRATOR, LOCAL_FILE_STORAGE injected",
     ).replace(
         "from easylifeauth.app import create_app",
         "pass  # create_app injected",
@@ -153,6 +153,7 @@ def _run_main(env_overrides=None, config_values=None, name_override=None):
         "json": json,
         "Path": Path,
         "ENVIRONEMNT_VARIABLE_PREFIX": ENVIRONEMNT_VARIABLE_PREFIX,
+        "OS_PROPERTY_SEPRATOR": OS_PROPERTY_SEPRATOR,
         "LOCAL_FILE_STORAGE": LOCAL_FILE_STORAGE,
         "create_app": mock_create_app,
         STR_CONFIGURATIONLOADER: mock_config_loader_cls,
@@ -206,6 +207,63 @@ class TestConfigurationLoaderConstruction:
         kwargs = mock_cl.call_args[1]
         assert kwargs["config_path"] == "/etc/myapp"
         assert kwargs["environment"] == "test"
+
+    def test_environment_fallback_dot_separator(self):
+        """When {prefix}_ENVIRONMENT is not set, should try {prefix}.ENVIRONMENT."""
+        env_key = f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT"
+        _, _, mock_cl = _run_main(env_overrides={env_key: "dot-env"})
+        kwargs = mock_cl.call_args[1]
+        assert kwargs["environment"] == "dot-env"
+
+    def test_environment_fallback_underscore_space(self):
+        """When first two are not set, should try {prefix}_ENVIRONMENT.SPACE."""
+        env_key = f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT.SPACE"
+        _, _, mock_cl = _run_main(env_overrides={env_key: "space-env"})
+        kwargs = mock_cl.call_args[1]
+        assert kwargs["environment"] == "space-env"
+
+    def test_environment_fallback_dot_separator_space(self):
+        """When first three are not set, should try {prefix}.ENVIRONMENT.SPACE."""
+        env_key = f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT.SPACE"
+        _, _, mock_cl = _run_main(env_overrides={env_key: "dot-space-env"})
+        kwargs = mock_cl.call_args[1]
+        assert kwargs["environment"] == "dot-space-env"
+
+    def test_environment_underscore_takes_priority_over_dot(self):
+        """The {prefix}_ENVIRONMENT should take priority over all fallbacks."""
+        _, _, mock_cl = _run_main(env_overrides={
+            f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT": "primary",
+            f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT": "secondary",
+            f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT.SPACE": "tertiary",
+            f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT.SPACE": "quaternary",
+        })
+        kwargs = mock_cl.call_args[1]
+        assert kwargs["environment"] == "primary"
+
+    def test_environment_dot_separator_takes_priority_over_space_variants(self):
+        """{prefix}.ENVIRONMENT should take priority over .SPACE variants."""
+        _, _, mock_cl = _run_main(env_overrides={
+            f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT": "dot-env",
+            f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT.SPACE": "space-env",
+            f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT.SPACE": "dot-space-env",
+        })
+        kwargs = mock_cl.call_args[1]
+        assert kwargs["environment"] == "dot-env"
+
+    def test_environment_underscore_space_takes_priority_over_dot_space(self):
+        """{prefix}_ENVIRONMENT.SPACE should take priority over {prefix}.ENVIRONMENT.SPACE."""
+        _, _, mock_cl = _run_main(env_overrides={
+            f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT.SPACE": "space-env",
+            f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT.SPACE": "dot-space-env",
+        })
+        kwargs = mock_cl.call_args[1]
+        assert kwargs["environment"] == "space-env"
+
+    def test_environment_none_when_no_env_vars_set(self):
+        """When no environment variables are set, environment should be None."""
+        _, _, mock_cl = _run_main()
+        kwargs = mock_cl.call_args[1]
+        assert kwargs["environment"] is None
 
 
 class TestDBConfig:
@@ -585,8 +643,8 @@ class TestMainBlock:
         ).replace(
             "from pathlib import Path\n", "pass  # Path injected\n",
         ).replace(
-            "from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX , LOCAL_FILE_STORAGE",
-            "pass  # ENVIRONEMNT_VARIABLE_PREFIX, LOCAL_FILE_STORAGE injected",
+            "from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX,OS_PROPERTY_SEPRATOR , LOCAL_FILE_STORAGE",
+            "pass  # ENVIRONEMNT_VARIABLE_PREFIX, OS_PROPERTY_SEPRATOR, LOCAL_FILE_STORAGE injected",
         ).replace(
             "from easylifeauth.app import create_app",
             "pass  # create_app injected",
@@ -606,6 +664,7 @@ class TestMainBlock:
             "json": json,
             "Path": Path,
             "ENVIRONEMNT_VARIABLE_PREFIX": ENVIRONEMNT_VARIABLE_PREFIX,
+            "OS_PROPERTY_SEPRATOR": OS_PROPERTY_SEPRATOR,
             "LOCAL_FILE_STORAGE": LOCAL_FILE_STORAGE,
             "create_app": MagicMock(),
             STR_CONFIGURATIONLOADER: MagicMock(),
