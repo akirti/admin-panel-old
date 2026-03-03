@@ -6,7 +6,7 @@ from bson import ObjectId
 
 from easylifeauth.services.user_service import UserService
 from easylifeauth.errors.auth_error import AuthError
-from mock_data import MOCK_EMAIL, MOCK_EMAIL_NEW, MOCK_EMAIL_NOTFOUND, MOCK_PASSWORD, MOCK_PASSWORD_ALT, MOCK_PASSWORD_WRONG
+from mock_data import MOCK_EMAIL, MOCK_EMAIL_NEW, MOCK_EMAIL_NOTFOUND, MOCK_PASSWORD, MOCK_PASSWORD_ALT, MOCK_PASSWORD_WRONG,MOCK_USER_SHORT_PASSWORD
 
 
 class TestUserService:
@@ -52,7 +52,7 @@ class TestUserService:
             await user_service.register_user(
                 email=MOCK_EMAIL,
                 username="testuser",
-                password="short"
+                password=MOCK_USER_SHORT_PASSWORD
             )
         assert exc_info.value.status_code == 400
 

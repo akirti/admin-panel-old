@@ -8,6 +8,7 @@ from unittest.mock import patch, MagicMock
 
 from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX, OS_PROPERTY_SEPRATOR
 from easylifeauth.utils.config import ConfigurationLoader, ConfigValueSimulator
+from mock_data import MOCK_PATH_CONFIG, MOCK_URL_HTTP_A, MOCK_URL_HTTP_B, MOCK_URL_MONGODB_MYDB, MOCK_URL_MONGODB_SIM
 
 ENV_PREFIX = f"{ENVIRONEMNT_VARIABLE_PREFIX}_"
 
@@ -134,9 +135,9 @@ class TestResolvePlaceholders:
     def test_exact_match_list(self):
         """Test exact placeholder replaced with list (typed)"""
         config = "{allowed.origins}"
-        lookup = {"allowed.origins": ["http://a", "http://b"]}
+        lookup = {"allowed.origins": [MOCK_URL_HTTP_A, MOCK_URL_HTTP_B]}
         result = ConfigurationLoader._resolve_placeholders(config, lookup)
-        assert result == ["http://a", "http://b"]
+        assert result == [MOCK_URL_HTTP_A, MOCK_URL_HTTP_B]
 
     def test_exact_match_dict(self):
         """Test exact placeholder replaced with dict (typed)"""
@@ -158,7 +159,7 @@ class TestResolvePlaceholders:
         config = "mongodb://{db.host}:{db.port}/mydb"
         lookup = {"db.host": "localhost", "db.port": 27017}
         result = ConfigurationLoader._resolve_placeholders(config, lookup)
-        assert result == "mongodb://localhost:27017/mydb"
+        assert result == MOCK_URL_MONGODB_MYDB
 
     def test_embedded_placeholder_with_dict_value(self):
         """Test embedded placeholder with dict value serializes to JSON"""
@@ -361,7 +362,7 @@ class TestConfigurationLoaderInit:
         """Test that omitting environment= calls _load_config + _apply_env_vars"""
         with patch.object(ConfigurationLoader, '_load_config') as mock_load, \
              patch.object(ConfigurationLoader, '_apply_env_vars') as mock_apply:
-            loader = ConfigurationLoader(config_path="/tmp/fake")
+            loader = ConfigurationLoader(config_path=MOCK_PATH_CONFIG)
             mock_load.assert_called_once_with("config.json")
             mock_apply.assert_called_once()
 
@@ -371,7 +372,7 @@ class TestConfigurationLoaderInit:
              patch.object(ConfigurationLoader, '_load_config') as mock_load, \
              patch.object(ConfigurationLoader, '_apply_env_vars') as mock_apply:
             loader = ConfigurationLoader(
-                config_path="/tmp/fake",
+                config_path=MOCK_PATH_CONFIG,
                 environment="staging",
             )
             mock_env.assert_called_once()
@@ -408,7 +409,7 @@ class TestLoadEnvironmentPipeline:
                 config_path=str(tmp_path),
                 environment=env,
             )
-        assert loader.configuration["db_url"] == "mongodb://simhost:5432/app"
+        assert loader.configuration["db_url"] == MOCK_URL_MONGODB_SIM
         assert loader.configuration["db_host"] == "simhost"
 
     def test_missing_files_graceful(self, tmp_path):

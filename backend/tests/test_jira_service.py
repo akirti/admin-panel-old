@@ -1,4 +1,4 @@
-from mock_data import MOCK_EMAIL, MOCK_EMAIL_USER, MOCK_EMAIL_USER_TEST, MOCK_URL_FILE_HTTP, MOCK_URL_JIRA_BASE
+from mock_data import MOCK_EMAIL, MOCK_EMAIL_USER, MOCK_EMAIL_USER_TEST, MOCK_URL_FILE_HTTP, MOCK_URL_FTP_INVALID, MOCK_URL_JIRA_BASE
 """Tests for Jira Service"""
 import pytest
 from datetime import datetime, timezone
@@ -1341,7 +1341,7 @@ class TestJiraServiceAddAttachmentFromUrl:
 
         result = await service.add_attachment_from_url(
             "TEST-1",
-            "ftp://invalid.url/file.txt",
+            MOCK_URL_FTP_INVALID,
             "file.txt"
         )
 

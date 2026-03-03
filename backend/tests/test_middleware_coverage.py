@@ -20,13 +20,14 @@ from starlette.datastructures import Headers
 
 from easylifeauth.middleware.rate_limit import RateLimitMiddleware
 from easylifeauth.middleware.db_health import DatabaseHealthMiddleware
+from mock_data import MOCK_IP_FORWARDED_TEST, MOCK_IP_LOCALHOST, MOCK_IP_PUBLIC_1, MOCK_IP_PUBLIC_2, MOCK_IP_PUBLIC_3, MOCK_IP_RANDOM, MOCK_IP_TEST_1, MOCK_IP_TEST_3, MOCK_IP_TEST_4
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_request(path="/api/data", client_host="127.0.0.1", headers=None):
+def _make_request(path="/api/data", client_host=MOCK_IP_LOCALHOST, headers=None):
     """Create a mock Starlette Request."""
     scope = {
         "type": "http",
@@ -222,14 +223,14 @@ class TestRateLimitOverflowGuard:
         assert len(middleware.request_log) == 10_001
 
         # Make a request from a new IP
-        req = _make_request("/api/data", client_host="99.99.99.99")
+        req = _make_request("/api/data", client_host=MOCK_IP_RANDOM)
         resp = await middleware.dispatch(req, _ok_call_next)
 
         assert resp.status_code == 200
         # The oldest IP should have been evicted
         assert first_ip not in middleware.request_log
         # New IP should be present
-        assert "99.99.99.99" in middleware.request_log
+        assert MOCK_IP_RANDOM in middleware.request_log
 
 
 # ===================================================================
@@ -248,14 +249,14 @@ class TestRateLimitCleanup:
         old_time = datetime.utcnow() - timedelta(hours=3)
         recent_time = datetime.utcnow()
 
-        middleware.request_log["1.1.1.1"] = [
+        middleware.request_log[MOCK_IP_PUBLIC_1] = [
             (old_time, "/api/old"),
             (recent_time, "/api/recent"),
         ]
-        middleware.request_log["2.2.2.2"] = [
+        middleware.request_log[MOCK_IP_PUBLIC_2] = [
             (old_time, "/api/old"),
         ]
-        middleware.request_log["3.3.3.3"] = [
+        middleware.request_log[MOCK_IP_PUBLIC_3] = [
             (recent_time, "/api/recent"),
         ]
 
@@ -271,15 +272,15 @@ class TestRateLimitCleanup:
             with pytest.raises(asyncio.CancelledError):
                 await middleware.cleanup_old_entries()
 
-        # "1.1.1.1" should still exist but only with the recent entry
-        assert "1.1.1.1" in middleware.request_log
-        assert len(middleware.request_log["1.1.1.1"]) == 1
+        # MOCK_IP_PUBLIC_1 should still exist but only with the recent entry
+        assert MOCK_IP_PUBLIC_1 in middleware.request_log
+        assert len(middleware.request_log[MOCK_IP_PUBLIC_1]) == 1
 
-        # "2.2.2.2" had only old entries so should be deleted
-        assert "2.2.2.2" not in middleware.request_log
+        # MOCK_IP_PUBLIC_2 had only old entries so should be deleted
+        assert MOCK_IP_PUBLIC_2 not in middleware.request_log
 
-        # "3.3.3.3" had only recent entries so should remain
-        assert "3.3.3.3" in middleware.request_log
+        # MOCK_IP_PUBLIC_3 had only recent entries so should remain
+        assert MOCK_IP_PUBLIC_3 in middleware.request_log
 
     @pytest.mark.asyncio
     async def test_cleanup_handles_empty_request_log(self):
@@ -310,18 +311,18 @@ class TestRateLimitClientIP:
 
     def test_x_forwarded_for(self):
         middleware = RateLimitMiddleware(app=MagicMock())
-        req = _make_request(headers={"X-Forwarded-For": "1.2.3.4, 5.6.7.8"})
-        assert middleware._get_client_ip(req) == "1.2.3.4"
+        req = _make_request(headers={"X-Forwarded-For": MOCK_IP_FORWARDED_TEST})
+        assert middleware._get_client_ip(req) == MOCK_IP_TEST_1
 
     def test_x_real_ip(self):
         middleware = RateLimitMiddleware(app=MagicMock())
-        req = _make_request(headers={"X-Real-IP": "9.8.7.6"})
-        assert middleware._get_client_ip(req) == "9.8.7.6"
+        req = _make_request(headers={"X-Real-IP": MOCK_IP_TEST_3})
+        assert middleware._get_client_ip(req) == MOCK_IP_TEST_3
 
     def test_client_host(self):
         middleware = RateLimitMiddleware(app=MagicMock())
-        req = _make_request(client_host="11.22.33.44")
-        assert middleware._get_client_ip(req) == "11.22.33.44"
+        req = _make_request(client_host=MOCK_IP_TEST_4)
+        assert middleware._get_client_ip(req) == MOCK_IP_TEST_4
 
     def test_unknown_when_no_client(self):
         middleware = RateLimitMiddleware(app=MagicMock())
@@ -350,7 +351,7 @@ class TestRateLimitRemaining:
             requests_per_minute=100,
             auth_requests_per_minute=5,
         )
-        remaining = await middleware._get_remaining_requests("1.1.1.1", "/api/auth/login")
+        remaining = await middleware._get_remaining_requests(MOCK_IP_PUBLIC_1, "/api/auth/login")
         assert remaining == 5
 
     @pytest.mark.asyncio
@@ -359,7 +360,7 @@ class TestRateLimitRemaining:
             app=MagicMock(),
             requests_per_minute=100,
         )
-        remaining = await middleware._get_remaining_requests("1.1.1.1", "/api/data")
+        remaining = await middleware._get_remaining_requests(MOCK_IP_PUBLIC_1, "/api/data")
         assert remaining == 100
 
 

@@ -65,7 +65,7 @@ class TestCustomersPaginationMeta:
     def test_create_pagination_meta_partial_last_page(self):
         """Test pagination rounds up for partial last page."""
         meta = create_pagination_meta(total=11, page=0, limit=5)
-        assert meta.pages == 3  # ceil(11/5) = 3
+        assert meta.pages == 3 
 
 
 # ---------------------------------------------------------------------------

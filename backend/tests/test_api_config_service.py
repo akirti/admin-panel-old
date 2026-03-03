@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
 from bson import ObjectId
 
 from easylifeauth.services.api_config_service import ApiConfigService
-from mock_data import MOCK_CLIENT_SECRET, MOCK_DB_PASSWORD, MOCK_EMAIL_ADMIN, MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_CREATOR, MOCK_EMAIL_EDITOR, MOCK_EMAIL_USER, MOCK_PASSWORD, MOCK_PASSWORD_WRONG, MOCK_SECRET, MOCK_URL_API, MOCK_URL_API_DATA, MOCK_URL_API_HEALTH, MOCK_URL_AUTH_LOGIN, MOCK_URL_AUTH_OAUTH, MOCK_URL_AUTH_TOKEN, MOCK_URL_PROXY, MOCK_URL_RESOURCE
+from mock_data import MOCK_CLIENT_SECRET, MOCK_DB_PASSWORD, MOCK_EMAIL_ADMIN, MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_CREATOR, MOCK_EMAIL_EDITOR, MOCK_EMAIL_USER, MOCK_PASSWORD, MOCK_PASSWORD_WRONG, MOCK_PATH_CERT_CACHE, MOCK_SECRET, MOCK_URL_API, MOCK_URL_API_DATA, MOCK_URL_API_HEALTH, MOCK_URL_AUTH_LOGIN, MOCK_URL_AUTH_OAUTH, MOCK_URL_AUTH_TOKEN, MOCK_URL_PROXY, MOCK_URL_RESOURCE
 
 
 class TestApiConfigServiceInit:
@@ -153,7 +153,7 @@ class TestListConfigs:
         await service.list_configs(page=2, limit=10)
 
         cursor.sort.assert_called_once_with("created_at", -1)
-        cursor.skip.assert_called_once_with(20)  # page * limit = 2 * 10
+        cursor.skip.assert_called_once_with(20) 
         cursor.limit.assert_called_once_with(10)
         cursor.to_list.assert_called_once_with(length=10)
 
@@ -970,11 +970,11 @@ class TestDownloadCertToTemp:
     async def test_download_cert_to_temp_uses_cache(self, service, mock_gcs):
         """Test that subsequent calls use cached temp file path."""
         gcs_path = "api_configs/certs/cached.pem"
-        service._temp_cert_cache[gcs_path] = "/tmp/cached.pem"
+        service._temp_cert_cache[gcs_path] = MOCK_PATH_CERT_CACHE
 
         result = await service._download_cert_to_temp(gcs_path)
 
-        assert result == "/tmp/cached.pem"
+        assert result == MOCK_PATH_CERT_CACHE
         mock_gcs.download_file.assert_not_called()
 
     @pytest.mark.asyncio

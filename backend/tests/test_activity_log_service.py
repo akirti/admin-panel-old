@@ -1,4 +1,4 @@
-from mock_data import MOCK_EMAIL, MOCK_EMAIL_ADMIN, MOCK_EMAIL_USER
+from mock_data import MOCK_EMAIL, MOCK_EMAIL_ADMIN, MOCK_EMAIL_USER, MOCK_IP_LOCALHOST, MOCK_IP_PRIVATE_1
 """Tests for Activity Log Service"""
 import pytest
 from datetime import datetime
@@ -40,7 +40,7 @@ class TestActivityLogService:
             entity_type="user",
             entity_id="507f1f77bcf86cd799439011",
             user_email=MOCK_EMAIL_ADMIN,
-            details={"ip": "127.0.0.1"}
+            details={"ip": MOCK_IP_LOCALHOST}
         )
 
         assert result is not None
@@ -182,7 +182,7 @@ class TestModuleFunctions:
             entity_type="session",
             entity_id="session_123",
             user_email=MOCK_EMAIL_USER,
-            details={"ip": "192.168.1.1"}
+            details={"ip": MOCK_IP_PRIVATE_1}
         )
 
         assert result is not None

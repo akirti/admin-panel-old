@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from easylifeauth.api.error_log_routes import router, create_pagination_meta
 from easylifeauth.api.dependencies import get_error_log_service
 from easylifeauth.security.access_control import require_super_admin
-from mock_data import MOCK_EMAIL_ADMIN_TEST
+from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_PATH_ERROR_LOG, MOCK_URL_EXAMPLE_SIGNED, MOCK_URL_GCS_ARCHIVE
 
 
 class TestCreatePaginationMeta:
@@ -398,7 +398,7 @@ class TestErrorLogRoutes:
                 {"level": "ERROR", "message": "Something failed", "timestamp": "2026-01-15T10:00:00"}
             ],
             "file_size_mb": 1.2,
-            "file_path": "/app/logs/errors_current.jsonl",
+            "file_path": MOCK_PATH_ERROR_LOG,
             "max_size_mb": 5
         }
 
@@ -418,7 +418,7 @@ class TestErrorLogRoutes:
         mock_service.get_current_file_content.return_value = {
             "entries": [],
             "file_size_mb": 0.0,
-            "file_path": "/app/logs/errors_current.jsonl",
+            "file_path": MOCK_PATH_ERROR_LOG,
             "max_size_mb": 5
         }
 
@@ -506,7 +506,7 @@ class TestErrorLogRoutes:
     def test_get_archive_download_url_success(self, client, mock_service):
         """Test getting a signed download URL for an archive."""
         mock_service.get_archive_download_url.return_value = (
-            "https://storage.googleapis.com/bucket/error_logs/errors_2026-01-10.jsonl.gz?signed=abc"
+            MOCK_URL_GCS_ARCHIVE
         )
 
         response = client.get("/error-logs/archives/aabbccdd/download")
@@ -524,7 +524,7 @@ class TestErrorLogRoutes:
 
     def test_get_archive_download_url_custom_expiration(self, client, mock_service):
         """Test getting a download URL with custom expiration."""
-        mock_service.get_archive_download_url.return_value = "https://example.com/signed"
+        mock_service.get_archive_download_url.return_value = MOCK_URL_EXAMPLE_SIGNED
 
         response = client.get("/error-logs/archives/aabbccdd/download?expiration_minutes=120")
         assert response.status_code == 200
@@ -867,7 +867,7 @@ class TestErrorLogRoutes:
         mock_service.get_current_file_content.return_value = {
             "entries": entries,
             "file_size_mb": 0.3,
-            "file_path": "/app/logs/errors_current.jsonl",
+            "file_path": MOCK_PATH_ERROR_LOG,
             "max_size_mb": 5
         }
 

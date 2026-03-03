@@ -1,4 +1,4 @@
-from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_SUPERADMIN, MOCK_EMAIL_USER_TEST
+from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_SUPERADMIN, MOCK_EMAIL_USER_TEST, MOCK_URL_API_V1, MOCK_URL_API_V2, MOCK_URL_EXAMPLE_HTTPS, MOCK_URL_HTTPBIN
 """Tests for API Config Routes"""
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -25,7 +25,7 @@ def make_config_dict(**overrides):
         "key": "test-api",
         "name": "Test API",
         "description": "A test API configuration",
-        "endpoint": "https://api.example.com/v1",
+        "endpoint": MOCK_URL_API_V1,
         "method": "GET",
         "headers": {"Authorization": "Bearer token"},
         "params": None,
@@ -65,7 +65,7 @@ def make_create_payload(**overrides):
     base = {
         "key": "new-api",
         "name": "New API",
-        "endpoint": "https://api.example.com/v2",
+        "endpoint": MOCK_URL_API_V2,
         "method": "POST",
         "status": "active",
         "tags": ["new"],
@@ -498,7 +498,7 @@ class TestApiConfigRoutesTestEndpoints:
             "config": {
                 "key": "inline-test",
                 "name": "Inline Test",
-                "endpoint": "https://httpbin.org/get",
+                "endpoint": MOCK_URL_HTTPBIN,
                 "method": "GET",
             },
         })
@@ -752,7 +752,7 @@ class TestApiConfigRoutesAuthEnforcement:
             "config": {
                 "key": "test-key",
                 "name": "Test",
-                "endpoint": "https://example.com",
+                "endpoint": MOCK_URL_EXAMPLE_HTTPS,
                 "method": "GET",
             },
         })

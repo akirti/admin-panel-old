@@ -520,8 +520,7 @@ class TestFeedbackService:
 
         result = await feedback_service.get_stats()
 
-        # Only ratings 5 and 4 should be counted
-        assert result["avg_rating"] == 4.5  # (5+4)/2 = 4.5
+        assert result["avg_rating"] == 4.5  
         assert result["rating_distribution"]["5"] == 1
         assert result["rating_distribution"]["4"] == 1
         assert result["rating_distribution"]["1"] == 0

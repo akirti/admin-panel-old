@@ -12,6 +12,7 @@ from easylifeauth.middleware.security import (
     SecurityHeadersMiddleware,
     RequestValidationMiddleware
 )
+from mock_data import MOCK_IP_FORWARDED, MOCK_IP_PRIVATE_1, MOCK_IP_PRIVATE_2, MOCK_IP_PRIVATE_3, MOCK_URL_TEST_BASE
 
 
 class TestCSRFProtectMiddleware:
@@ -196,7 +197,7 @@ class TestCSRFProtectMiddleware:
         async def get_data():
             return {"message": "data"}
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url=MOCK_URL_TEST_BASE) as client:
             response = await client.get("/api/data")
             assert response.status_code == 200
             # CSRF cookie should be set on GET request
@@ -256,23 +257,23 @@ class TestRateLimitMiddleware:
         """Test getting IP from X-Forwarded-For header"""
         middleware = RateLimitMiddleware(app=MagicMock(), enabled=True)
         request = MagicMock()
-        request.headers = {"X-Forwarded-For": "192.168.1.1, 10.0.0.1"}
-        assert middleware._get_client_ip(request) == "192.168.1.1"
+        request.headers = {"X-Forwarded-For": MOCK_IP_FORWARDED}
+        assert middleware._get_client_ip(request) == MOCK_IP_PRIVATE_1
 
     def test_get_client_ip_real_ip(self):
         """Test getting IP from X-Real-IP header"""
         middleware = RateLimitMiddleware(app=MagicMock(), enabled=True)
         request = MagicMock()
-        request.headers = {"X-Real-IP": "192.168.1.2"}
-        assert middleware._get_client_ip(request) == "192.168.1.2"
+        request.headers = {"X-Real-IP": MOCK_IP_PRIVATE_2}
+        assert middleware._get_client_ip(request) == MOCK_IP_PRIVATE_2
 
     def test_get_client_ip_direct(self):
         """Test getting IP from client directly"""
         middleware = RateLimitMiddleware(app=MagicMock(), enabled=True)
         request = MagicMock()
         request.headers = {}
-        request.client.host = "192.168.1.3"
-        assert middleware._get_client_ip(request) == "192.168.1.3"
+        request.client.host = MOCK_IP_PRIVATE_3
+        assert middleware._get_client_ip(request) == MOCK_IP_PRIVATE_3
 
     def test_get_client_ip_unknown(self):
         """Test getting IP when no client info available"""
@@ -307,14 +308,14 @@ class TestRateLimitMiddleware:
         )
 
         # First two requests should pass
-        await middleware._check_rate_limit("192.168.1.1", "/api/data")
-        middleware.request_log["192.168.1.1"].append((datetime.utcnow(), "/api/data"))
-        await middleware._check_rate_limit("192.168.1.1", "/api/data")
-        middleware.request_log["192.168.1.1"].append((datetime.utcnow(), "/api/data"))
+        await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, "/api/data")
+        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), "/api/data"))
+        await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, "/api/data")
+        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), "/api/data"))
 
         # Third should fail
         with pytest.raises(HTTPException) as exc_info:
-            await middleware._check_rate_limit("192.168.1.1", "/api/data")
+            await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, "/api/data")
         assert exc_info.value.status_code == 429
 
     @pytest.mark.asyncio
@@ -328,12 +329,12 @@ class TestRateLimitMiddleware:
         )
 
         # First auth request should pass
-        await middleware._check_rate_limit("192.168.1.1", "/api/auth/login")
-        middleware.request_log["192.168.1.1"].append((datetime.utcnow(), "/api/auth/login"))
+        await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, "/api/auth/login")
+        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), "/api/auth/login"))
 
         # Second should fail due to stricter auth limit
         with pytest.raises(HTTPException) as exc_info:
-            await middleware._check_rate_limit("192.168.1.1", "/api/auth/login")
+            await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, "/api/auth/login")
         assert exc_info.value.status_code == 429
 
     @pytest.mark.asyncio
@@ -347,12 +348,12 @@ class TestRateLimitMiddleware:
         )
 
         # Fill up hour limit
-        middleware.request_log["192.168.1.1"].append((datetime.utcnow(), "/api/data"))
-        middleware.request_log["192.168.1.1"].append((datetime.utcnow(), "/api/data"))
+        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), "/api/data"))
+        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), "/api/data"))
 
         # Should fail hour limit
         with pytest.raises(HTTPException) as exc_info:
-            await middleware._check_rate_limit("192.168.1.1", "/api/data")
+            await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, "/api/data")
         assert exc_info.value.status_code == 429
         assert "per hour" in exc_info.value.detail
 
@@ -374,11 +375,11 @@ class TestRateLimitMiddleware:
         )
 
         # No requests yet - should return full limit
-        remaining = await middleware._get_remaining_requests("192.168.1.1", "/api/data")
+        remaining = await middleware._get_remaining_requests(MOCK_IP_PRIVATE_1, "/api/data")
         assert remaining == 10
 
         # For auth endpoint
-        remaining = await middleware._get_remaining_requests("192.168.1.1", "/api/auth/login")
+        remaining = await middleware._get_remaining_requests(MOCK_IP_PRIVATE_1, "/api/auth/login")
         assert remaining == 5
 
     def test_start_cleanup_task(self):
@@ -409,11 +410,11 @@ class TestRateLimitMiddleware:
         old_time = datetime.utcnow() - timedelta(hours=3)
         recent_time = datetime.utcnow()
 
-        middleware.request_log["192.168.1.1"] = [
+        middleware.request_log[MOCK_IP_PRIVATE_1] = [
             (old_time, "/api/data"),
             (recent_time, "/api/data")
         ]
-        middleware.request_log["192.168.1.2"] = [
+        middleware.request_log[MOCK_IP_PRIVATE_2] = [
             (old_time, "/api/data")  # Only old entries
         ]
 
@@ -432,10 +433,10 @@ class TestRateLimitMiddleware:
                     del middleware.request_log[ip]
 
         # Old entries should be removed
-        assert "192.168.1.1" in middleware.request_log
-        assert len(middleware.request_log["192.168.1.1"]) == 1
+        assert MOCK_IP_PRIVATE_1 in middleware.request_log
+        assert len(middleware.request_log[MOCK_IP_PRIVATE_1]) == 1
         # IP with only old entries should be removed
-        assert "192.168.1.2" not in middleware.request_log
+        assert MOCK_IP_PRIVATE_2 not in middleware.request_log
 
     def test_start_cleanup_task_only_starts_once(self):
         """Test cleanup task is not started multiple times"""

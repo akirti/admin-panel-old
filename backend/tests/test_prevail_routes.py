@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from easylifeauth.api.prevail_routes import router, get_api_config_service
 from easylifeauth.api.dependencies import get_db, get_gcs_service
 from easylifeauth.security.access_control import get_current_user
-from mock_data import MOCK_URL_PREVAIL
+from mock_data import MOCK_URL_PREVAIL, MOCK_URL_PREVAIL_API, MOCK_URL_PREVAIL_SCENARIO, MOCK_URL_PREVAIL_SCENARIO_X, MOCK_URL_PREVAIL_TRAILING, MOCK_URL_PROXY_SHORT
 
 
 class TestExecutePrevailQuery:
@@ -123,7 +123,7 @@ class TestExecutePrevailQuery:
         call_config = mock_service.test_api.call_args[0][0]
 
         # Verify the target URL is built correctly
-        assert call_config["endpoint"] == "https://prevail.example.com/api/query/my-scenario"
+        assert call_config["endpoint"] == MOCK_URL_PREVAIL_SCENARIO
         assert call_config["method"] == "POST"
         assert call_config["body"] == payload
         assert call_config["ping_endpoint"] is None
@@ -133,7 +133,7 @@ class TestExecutePrevailQuery:
         self, client, mock_service, active_prevail_config
     ):
         """Test that trailing slash on the configured endpoint is stripped"""
-        active_prevail_config["endpoint"] = "https://prevail.example.com/api/query/"
+        active_prevail_config["endpoint"] = MOCK_URL_PREVAIL_TRAILING
         mock_service.get_config_by_key.return_value = active_prevail_config
         mock_service.test_api.return_value = {
             "success": True,
@@ -145,7 +145,7 @@ class TestExecutePrevailQuery:
         client.post("/prevail/scenario-x", json={"q": "test"})
 
         call_config = mock_service.test_api.call_args[0][0]
-        assert call_config["endpoint"] == "https://prevail.example.com/api/query/scenario-x"
+        assert call_config["endpoint"] == MOCK_URL_PREVAIL_SCENARIO_X
 
     def test_successful_proxy_post_returns_list_response(
         self, client, mock_service, active_prevail_config
@@ -629,7 +629,7 @@ class TestExecutePrevailQuery:
         """Test that the original config fields are spread into call_config"""
         active_prevail_config["ssl_verify"] = False
         active_prevail_config["use_proxy"] = True
-        active_prevail_config["proxy_url"] = "http://proxy:8080"
+        active_prevail_config["proxy_url"] = MOCK_URL_PROXY_SHORT
         mock_service.get_config_by_key.return_value = active_prevail_config
         mock_service.test_api.return_value = {
             "success": True,
@@ -647,7 +647,7 @@ class TestExecutePrevailQuery:
         call_config = mock_service.test_api.call_args[0][0]
         assert call_config["ssl_verify"] is False
         assert call_config["use_proxy"] is True
-        assert call_config["proxy_url"] == "http://proxy:8080"
+        assert call_config["proxy_url"] == MOCK_URL_PROXY_SHORT
         assert call_config["key"] == "prevail"
 
 
@@ -732,7 +732,7 @@ class TestExecutePrevailQueryEdgeCases:
             "_id": "config_edge",
             "key": "prevail",
             "name": "Prevail API",
-            "endpoint": "https://prevail.example.com/api",
+            "endpoint": MOCK_URL_PREVAIL_API,
             "status": "active",
             "method": "POST",
             "auth_type": "none",

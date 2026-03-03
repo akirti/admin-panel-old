@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX
-from mock_data import MOCK_EMAIL_BOT, MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV, MOCK_URL_JIRA_EXAMPLE, MOCK_URL_JIRA_TEST
+from mock_data import MOCK_EMAIL_BOT, MOCK_IP_BIND_ALL, MOCK_PATH_UPLOADS, MOCK_URL_EXAMPLE, MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV, MOCK_URL_JIRA_EXAMPLE, MOCK_URL_JIRA_TEST
 
 ENV_PREFIX = f"{ENVIRONEMNT_VARIABLE_PREFIX}_"
 
@@ -324,9 +324,9 @@ class TestCORSOrigins:
     def test_cors_origins_from_config(self):
         """CORS origins from config should be used."""
         _, mock_app, _ = _run_main(config_values={
-            "environment.cors.origins": ["http://example.com"],
+            "environment.cors.origins": [MOCK_URL_EXAMPLE],
         })
-        assert mock_app.call_args[1]["cors_origins"] == ["http://example.com"]
+        assert mock_app.call_args[1]["cors_origins"] == [MOCK_URL_EXAMPLE]
 
     def test_cors_origins_fallback_when_none(self):
         """When cors.origins is None, should fallback to default localhost list."""
@@ -362,7 +362,7 @@ class TestStorageConfig:
         _, mock_app, _ = _run_main()
         fsc = mock_app.call_args[1]["file_storage_config"]
         assert fsc["type"] == "local"
-        assert fsc["base_path"] == "/tmp/easylife_uploads"
+        assert fsc["base_path"] == MOCK_PATH_UPLOADS
         assert mock_app.call_args[1]["gcs_config"] is None
 
     def test_gcs_storage_with_credentials_dict(self):
@@ -384,7 +384,7 @@ class TestStorageConfig:
         fsc = mock_app.call_args[1]["file_storage_config"]
         assert fsc["type"] == "gcs"
         assert fsc["bucket_name"] == "my-bucket"
-        assert fsc["base_path"] == "/tmp/easylife_uploads"
+        assert fsc["base_path"] == MOCK_PATH_UPLOADS
 
         gcs = mock_app.call_args[1]["gcs_config"]
         assert gcs is not None
@@ -609,7 +609,7 @@ class TestMainBlock:
             exec(compile(patched_source, str(_MAIN_PY), "exec"), ns)
 
         mock_uvicorn.run.assert_called_once_with(
-            "src.main:app", host="0.0.0.0", port=8000, reload=True,
+            "src.main:app", host=MOCK_IP_BIND_ALL, port=8000, reload=True,
         )
 
     def test_uvicorn_not_called_when_imported(self):
@@ -636,4 +636,4 @@ class TestEdgeCases:
             MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV
         ]
         assert kwargs["file_storage_config"]["type"] == "local"
-        assert kwargs["file_storage_config"]["base_path"] == "/tmp/easylife_uploads"
+        assert kwargs["file_storage_config"]["base_path"] == MOCK_PATH_UPLOADS

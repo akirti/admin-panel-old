@@ -1,4 +1,4 @@
-from mock_data import MOCK_EMAIL, MOCK_URL_FILE_HTTPS, MOCK_URL_JIRA_BROWSE_1, MOCK_URL_JIRA_BROWSE_EXISTING
+from mock_data import MOCK_EMAIL, MOCK_URL_FILE_HTTPS, MOCK_URL_JIRA_BROWSE_1, MOCK_URL_JIRA_BROWSE_2, MOCK_URL_JIRA_BROWSE_EXISTING
 """Tests for Jira API Routes"""
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -71,7 +71,7 @@ def mock_jira_service():
     mock.create_ticket = AsyncMock(return_value={
         "ticket_id": "12345",
         "ticket_key": "TEST-2",
-        "ticket_url": "https://jira.example.com/browse/TEST-2",
+        "ticket_url": MOCK_URL_JIRA_BROWSE_2,
         "project_key": "TEST",
         "created_at": "2024-01-01T00:00:00Z",
         "last_synced": "2024-01-01T00:00:00Z",

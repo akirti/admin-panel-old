@@ -1,4 +1,4 @@
-from mock_data import MOCK_EMAIL_USER, MOCK_URL_SIGNED
+from mock_data import MOCK_EMAIL_USER, MOCK_IP_INTERNAL, MOCK_IP_LOCALHOST, MOCK_URL_SIGNED
 """Tests for Error Log Service"""
 import json
 import gzip
@@ -467,7 +467,7 @@ class TestLogError:
         mock_request.method = "POST"
         mock_request.url.path = "/api/test"
         mock_request.url.query = "foo=bar"
-        mock_request.client.host = "127.0.0.1"
+        mock_request.client.host = MOCK_IP_LOCALHOST
         mock_request.headers.get.return_value = "TestAgent/1.0"
         mock_request.state.user_email = MOCK_EMAIL_USER
         mock_request.state.user_id = "uid123"
@@ -478,7 +478,7 @@ class TestLogError:
         call_args = mock_db.error_logs.insert_one.call_args[0][0]
         assert call_args["request_context"]["method"] == "POST"
         assert call_args["request_context"]["path"] == "/api/test"
-        assert call_args["request_context"]["ip_address"] == "127.0.0.1"
+        assert call_args["request_context"]["ip_address"] == MOCK_IP_LOCALHOST
         assert call_args["request_context"]["user_email"] == MOCK_EMAIL_USER
         assert call_args["request_context"]["user_id"] == "uid123"
 
@@ -489,7 +489,7 @@ class TestLogError:
         mock_request.method = "GET"
         mock_request.url.path = "/api/health"
         mock_request.url.query = ""
-        mock_request.client.host = "10.0.0.1"
+        mock_request.client.host = MOCK_IP_INTERNAL
         mock_request.headers.get.return_value = None
         # No user state attributes
         del mock_request.state.user_email
@@ -525,7 +525,7 @@ class TestLogError:
         mock_request.method = "GET"
         mock_request.url.path = "/api/test"
         mock_request.url.query = ""
-        mock_request.client.host = "127.0.0.1"
+        mock_request.client.host = MOCK_IP_LOCALHOST
         mock_request.headers.get.return_value = None
         # Remove state entirely
         del mock_request.state
@@ -1912,7 +1912,7 @@ class TestModuleFunctions:
         mock_request.method = "GET"
         mock_request.url.path = "/api/test"
         mock_request.url.query = ""
-        mock_request.client.host = "127.0.0.1"
+        mock_request.client.host = MOCK_IP_LOCALHOST
         mock_request.headers.get.return_value = None
         del mock_request.state.user_email
         del mock_request.state.user_id

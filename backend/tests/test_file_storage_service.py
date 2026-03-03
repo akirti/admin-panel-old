@@ -1,4 +1,4 @@
-from mock_data import MOCK_EMAIL
+from mock_data import MOCK_EMAIL, MOCK_PATH_STORAGE
 """Tests for File Storage Service"""
 import pytest
 import os
@@ -684,7 +684,7 @@ class TestFileStorageServiceLocalStorageExceptions:
         """Test local file deletion with exception"""
         service = FileStorageService({
             "type": "local",
-            "base_path": "/tmp/test_storage"
+            "base_path": MOCK_PATH_STORAGE
         })
 
         # Try to delete a file that doesn't exist
@@ -698,7 +698,7 @@ class TestFileStorageServiceLocalStorageExceptions:
         # Instead, test the exception path by mocking
         service = FileStorageService({
             "type": "local",
-            "base_path": "/tmp/test_storage"
+            "base_path": MOCK_PATH_STORAGE
         })
 
         with patch('builtins.open', side_effect=PermissionError("Permission denied")):

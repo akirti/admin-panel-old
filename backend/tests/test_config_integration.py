@@ -20,7 +20,7 @@ from tests.test_config_values import (
     EXPECTED_SECRET_KEY, EXPECTED_SMTP_SERVER, EXPECTED_SMTP_PORT,
     EXPECTED_CORS_ORIGINS, EXPECTED_JIRA_BASE_URL,
 )
-from mock_data import MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV
+from mock_data import MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV, MOCK_URL_MONGODB_MYHOST
 
 
 # ---------------------------------------------------------------------------
@@ -112,7 +112,7 @@ class TestPlaceholderResolution:
             f"localenv-{environment}.json": {},
         })
         loader = ConfigurationLoader(config_path=config_path, environment=environment)
-        assert loader.get_config_by_path("connection_string") == "mongodb://myhost:27017/mydb"
+        assert loader.get_config_by_path("connection_string") == MOCK_URL_MONGODB_MYHOST
 
     def test_unresolved_placeholders_kept(self, tmp_path, environment="production"):
         """Placeholders with no matching value should be kept as-is."""
