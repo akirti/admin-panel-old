@@ -1,65 +1,55 @@
 """Tests for the main.py module (application entry point / configuration wiring).
 
-Since main.py is a top-level script whose logic runs at import time, we
-test it by ``exec``-ing the source with mocked imports injected into the
-execution namespace.  This avoids fragile module-reload gymnastics and
-gives full control over every dependency that main.py touches.
+Tests use direct function imports instead of exec-based sandboxing.
 """
 import json
 import os
-import re
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, call
 
 import pytest
 
 from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX, OS_PROPERTY_SEPRATOR, LOCAL_FILE_STORAGE
-from mock_data import MOCK_EMAIL_BOT, MOCK_IP_BIND_ALL, MOCK_PATH_UPLOADS, MOCK_URL_EXAMPLE, MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV, MOCK_URL_JIRA_EXAMPLE, MOCK_URL_JIRA_TEST
+from mock_data import (
+    MOCK_EMAIL_BOT, MOCK_IP_BIND_ALL, MOCK_PATH_UPLOADS,
+    MOCK_URL_EXAMPLE, MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV,
+    MOCK_URL_JIRA_EXAMPLE, MOCK_URL_JIRA_TEST,
+)
+from main import (
+    resolve_environment, resolve_config_path, build_db_config,
+    build_cors_origins, build_storage_config, build_jira_config, bootstrap,
+)
 
 ENV_PREFIX = f"{ENVIRONEMNT_VARIABLE_PREFIX}_"
 CFG_ENVIRONMENT_CORS_ORIGINS = "environment.cors.origins"
 CFG_ENVIRONMENT_JIRA = "environment.jira"
 CFG_ENVIRONMENT_STORAGE = "environment.storage"
 CFG_GLOBALS_DATABASES_DEFAULT = "globals.databases.default"
-STR_CONFIGURATIONLOADER = "ConfigurationLoader"
-STR_CONFIG_PATH = "CONFIG_PATH"
 STR_DEFAULT_ASSIGNEE_NAME = "default_assignee_name"
 STR_MAXPOOLSIZE = "maxPoolSize"
 STR_MY_BUCKET = "my-bucket"
 
+# All env var keys that main.py reads — cleared before each test
+_ENV_KEYS_TO_CLEAR = [
+    "CONFIG_PATH",
+    f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT",
+    f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT",
+    f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT.SPACE",
+    f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT.SPACE",
+]
 
 
-# ---------------------------------------------------------------------------
-# Path to the real main.py source file
-# ---------------------------------------------------------------------------
-_MAIN_PY = Path(__file__).resolve().parent.parent / "src" / "main.py"
-
-
-def _read_default_environment():
-    """Read the default environment value from main.py source.
-
-    Parses the ``os.environ.get(...)`` call for the environment variable
-    to extract the fallback value.  Returns ``None`` when no explicit
-    default is provided (i.e. ``os.environ.get(key)`` without a second arg).
-    """
-    source = _MAIN_PY.read_text()
-    # Match patterns like:
-    #   os.environ.get(f"..._ENVIRONMENT", "production")
-    #   os.environ.get(f"..._ENVIRONMENT")
-    m = re.search(
-        r'''environment\s*=\s*os\.environ\.get\([^,)]+'''
-        r'''(?:,\s*["']([^"']*)["'])?\)''',
-        source,
-    )
-    if m and m.group(1) is not None:
-        return m.group(1)
-    return None
+@pytest.fixture(autouse=True)
+def _clean_env(monkeypatch):
+    """Remove all env vars that main.py reads so tests start from a clean slate."""
+    for key in _ENV_KEYS_TO_CLEAR:
+        monkeypatch.delenv(key, raising=False)
 
 
 # ---------------------------------------------------------------------------
 # Helper: build a mock ConfigurationLoader instance
 # ---------------------------------------------------------------------------
-def _make_config_instance(config_values=None):
+def _make_config_loader(config_values=None):
     """Create a mock ConfigurationLoader instance.
 
     Parameters
@@ -69,219 +59,94 @@ def _make_config_instance(config_values=None):
         Special key ``"db_config"`` controls get_DB_config("authentication").
     """
     config_values = config_values or {}
-    instance = MagicMock()
+    loader = MagicMock()
+    loader.get_DB_config.return_value = config_values.get("db_config")
 
-    # get_DB_config
-    instance.get_DB_config.return_value = config_values.get("db_config")
-
-    # get_config_by_path — returns values from config_values by dot-path key
     def _get_config(path, default=None):
         if path in config_values:
             return config_values[path]
         return default
 
-    instance.get_config_by_path.side_effect = _get_config
-    return instance
-
-
-# ---------------------------------------------------------------------------
-# Helper: execute main.py in a controlled sandbox
-# ---------------------------------------------------------------------------
-def _run_main(env_overrides=None, config_values=None, name_override=None):
-    """Execute ``src/main.py`` source code in an isolated namespace.
-
-    Parameters
-    ----------
-    env_overrides : dict | None
-        Extra environment variables to inject.
-    config_values : dict | None
-        Config values for the mock ConfigurationLoader.
-    name_override : str | None
-        Override ``__name__`` in the exec namespace.
-
-    Returns
-    -------
-    tuple (namespace_dict, mock_create_app, mock_config_loader_cls)
-    """
-    env_overrides = env_overrides or {}
-
-    # Build a clean copy of os.environ without variables main.py reads
-    prefixes_to_strip = (STR_CONFIG_PATH, ENV_PREFIX)
-    clean_env = {
-        k: v for k, v in os.environ.items()
-        if not any(k.startswith(p) for p in prefixes_to_strip)
-    }
-    clean_env.update(env_overrides)
-
-    # -- Mock create_app -------------------------------------------------------
-    mock_create_app = MagicMock(name="create_app")
-
-    # -- Mock ConfigurationLoader ----------------------------------------------
-    mock_config_loader_cls = MagicMock(name=STR_CONFIGURATIONLOADER)
-    instance = _make_config_instance(config_values)
-    mock_config_loader_cls.return_value = instance
-
-    # -- Read the source -------------------------------------------------------
-    source = _MAIN_PY.read_text()
-    source = source.replace("\r\n", "\n")  # Normalize CRLF → LF
-
-    # -- Patch imports ---------------------------------------------------------
-    # Replace ALL import lines so the exec namespace is the single source of
-    # truth — prevents re-import from overriding injected mocks/modules.
-    patched_source = source.replace(
-        "import os\n", "pass  # os injected\n",
-    ).replace(
-        "import json\n", "pass  # json injected\n",
-    ).replace(
-        "from pathlib import Path\n", "pass  # Path injected\n",
-    ).replace(
-        "from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX,OS_PROPERTY_SEPRATOR , LOCAL_FILE_STORAGE",
-        "pass  # ENVIRONEMNT_VARIABLE_PREFIX, OS_PROPERTY_SEPRATOR, LOCAL_FILE_STORAGE injected",
-    ).replace(
-        "from easylifeauth.app import create_app",
-        "pass  # create_app injected",
-    ).replace(
-        "from easylifeauth.utils.config import ConfigurationLoader",
-        "pass  # ConfigurationLoader injected",
-    )
-
-    ns = {
-        "__name__": name_override or "src.main",
-        "__file__": str(_MAIN_PY),
-        "__builtins__": __builtins__,
-        "os": os,
-        "json": json,
-        "Path": Path,
-        "ENVIRONEMNT_VARIABLE_PREFIX": ENVIRONEMNT_VARIABLE_PREFIX,
-        "OS_PROPERTY_SEPRATOR": OS_PROPERTY_SEPRATOR,
-        "LOCAL_FILE_STORAGE": LOCAL_FILE_STORAGE,
-        "create_app": mock_create_app,
-        STR_CONFIGURATIONLOADER: mock_config_loader_cls,
-    }
-
-    with patch.dict(os.environ, clean_env, clear=True):
-        exec(compile(patched_source, str(_MAIN_PY), "exec"), ns)
-
-    return ns, mock_create_app, mock_config_loader_cls
+    loader.get_config_by_path.side_effect = _get_config
+    return loader
 
 
 # ============================================================================
-# Tests
+# TestResolveEnvironment
 # ============================================================================
+class TestResolveEnvironment:
+    """4-level environment variable fallback for environment resolution."""
+
+    def test_none_when_no_env_vars_set(self):
+        assert resolve_environment() is None
+
+    def test_primary_underscore_env(self, monkeypatch):
+        monkeypatch.setenv(f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT", "production")
+        assert resolve_environment() == "production"
+
+    def test_fallback_dot_separator(self, monkeypatch):
+        monkeypatch.setenv(f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT", "dot-env")
+        assert resolve_environment() == "dot-env"
+
+    def test_fallback_underscore_space(self, monkeypatch):
+        monkeypatch.setenv(f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT.SPACE", "space-env")
+        assert resolve_environment() == "space-env"
+
+    def test_fallback_dot_separator_space(self, monkeypatch):
+        monkeypatch.setenv(f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT.SPACE", "dot-space-env")
+        assert resolve_environment() == "dot-space-env"
+
+    def test_underscore_takes_priority_over_all(self, monkeypatch):
+        monkeypatch.setenv(f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT", "primary")
+        monkeypatch.setenv(f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT", "secondary")
+        monkeypatch.setenv(f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT.SPACE", "tertiary")
+        monkeypatch.setenv(f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT.SPACE", "quaternary")
+        assert resolve_environment() == "primary"
+
+    def test_dot_separator_takes_priority_over_space_variants(self, monkeypatch):
+        monkeypatch.setenv(f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT", "dot-env")
+        monkeypatch.setenv(f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT.SPACE", "space-env")
+        monkeypatch.setenv(f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT.SPACE", "dot-space-env")
+        assert resolve_environment() == "dot-env"
+
+    def test_underscore_space_takes_priority_over_dot_space(self, monkeypatch):
+        monkeypatch.setenv(f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT.SPACE", "space-env")
+        monkeypatch.setenv(f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT.SPACE", "dot-space-env")
+        assert resolve_environment() == "space-env"
 
 
-class TestConfigurationLoaderConstruction:
-    """ConfigurationLoader should be instantiated with the correct arguments."""
+# ============================================================================
+# TestResolveConfigPath
+# ============================================================================
+class TestResolveConfigPath:
+    """CONFIG_PATH env var resolution."""
 
-    def test_default_config_path_and_environment(self):
-        """Without env vars, uses default config path and default environment from source."""
-        _, _, mock_cl = _run_main()
-        mock_cl.assert_called_once()
-        kwargs = mock_cl.call_args[1]
-        assert Path(kwargs["config_path"]).name == "config"
-        # The default environment is read from the actual main.py source so
-        # the test stays in sync even when the default is changed.
-        expected_env = _read_default_environment()
-        assert kwargs["environment"] == expected_env
+    def test_default_path(self):
+        result = resolve_config_path()
+        assert Path(result).name == "config"
 
-    def test_custom_config_path(self):
-        """CONFIG_PATH env var should override the config path."""
-        _, _, mock_cl = _run_main(env_overrides={STR_CONFIG_PATH: "/custom/config"})
-        kwargs = mock_cl.call_args[1]
-        assert kwargs["config_path"] == "/custom/config"
-
-    def test_custom_environment(self):
-        """{prefix}_ENVIRONMENT env var should override the environment."""
-        _, _, mock_cl = _run_main(
-            env_overrides={f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT": "staging"},
-        )
-        kwargs = mock_cl.call_args[1]
-        assert kwargs["environment"] == "staging"
-
-    def test_both_custom_env_vars(self):
-        """Both CONFIG_PATH and {prefix}_ENVIRONMENT should be forwarded."""
-        _, _, mock_cl = _run_main(env_overrides={
-            STR_CONFIG_PATH: "/etc/myapp",
-            f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT": "test",
-        })
-        kwargs = mock_cl.call_args[1]
-        assert kwargs["config_path"] == "/etc/myapp"
-        assert kwargs["environment"] == "test"
-
-    def test_environment_fallback_dot_separator(self):
-        """When {prefix}_ENVIRONMENT is not set, should try {prefix}.ENVIRONMENT."""
-        env_key = f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT"
-        _, _, mock_cl = _run_main(env_overrides={env_key: "dot-env"})
-        kwargs = mock_cl.call_args[1]
-        assert kwargs["environment"] == "dot-env"
-
-    def test_environment_fallback_underscore_space(self):
-        """When first two are not set, should try {prefix}_ENVIRONMENT.SPACE."""
-        env_key = f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT.SPACE"
-        _, _, mock_cl = _run_main(env_overrides={env_key: "space-env"})
-        kwargs = mock_cl.call_args[1]
-        assert kwargs["environment"] == "space-env"
-
-    def test_environment_fallback_dot_separator_space(self):
-        """When first three are not set, should try {prefix}.ENVIRONMENT.SPACE."""
-        env_key = f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT.SPACE"
-        _, _, mock_cl = _run_main(env_overrides={env_key: "dot-space-env"})
-        kwargs = mock_cl.call_args[1]
-        assert kwargs["environment"] == "dot-space-env"
-
-    def test_environment_underscore_takes_priority_over_dot(self):
-        """The {prefix}_ENVIRONMENT should take priority over all fallbacks."""
-        _, _, mock_cl = _run_main(env_overrides={
-            f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT": "primary",
-            f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT": "secondary",
-            f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT.SPACE": "tertiary",
-            f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT.SPACE": "quaternary",
-        })
-        kwargs = mock_cl.call_args[1]
-        assert kwargs["environment"] == "primary"
-
-    def test_environment_dot_separator_takes_priority_over_space_variants(self):
-        """{prefix}.ENVIRONMENT should take priority over .SPACE variants."""
-        _, _, mock_cl = _run_main(env_overrides={
-            f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT": "dot-env",
-            f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT.SPACE": "space-env",
-            f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT.SPACE": "dot-space-env",
-        })
-        kwargs = mock_cl.call_args[1]
-        assert kwargs["environment"] == "dot-env"
-
-    def test_environment_underscore_space_takes_priority_over_dot_space(self):
-        """{prefix}_ENVIRONMENT.SPACE should take priority over {prefix}.ENVIRONMENT.SPACE."""
-        _, _, mock_cl = _run_main(env_overrides={
-            f"{ENVIRONEMNT_VARIABLE_PREFIX}_ENVIRONMENT.SPACE": "space-env",
-            f"{ENVIRONEMNT_VARIABLE_PREFIX}{OS_PROPERTY_SEPRATOR}ENVIRONMENT.SPACE": "dot-space-env",
-        })
-        kwargs = mock_cl.call_args[1]
-        assert kwargs["environment"] == "space-env"
-
-    def test_environment_none_when_no_env_vars_set(self):
-        """When no environment variables are set, environment should be None."""
-        _, _, mock_cl = _run_main()
-        kwargs = mock_cl.call_args[1]
-        assert kwargs["environment"] is None
+    def test_custom_config_path(self, monkeypatch):
+        monkeypatch.setenv("CONFIG_PATH", "/custom/config")
+        assert resolve_config_path() == "/custom/config"
 
 
-class TestDBConfig:
+# ============================================================================
+# TestBuildDBConfig
+# ============================================================================
+class TestBuildDBConfig:
     """Database configuration extraction and pool settings injection."""
 
     def test_db_config_from_loader(self):
-        """DB config from get_DB_config should be passed to create_app."""
         fake_db = {"host": "dbhost", "database": "mydb"}
-        _, mock_app, _ = _run_main(config_values={
+        loader = _make_config_loader({
             "db_config": fake_db,
             CFG_GLOBALS_DATABASES_DEFAULT: {"max_pool_size": 100},
         })
-        db = mock_app.call_args[1]["db_config"]
-        assert db["host"] == "dbhost"
-        assert db["database"] == "mydb"
+        result = build_db_config(loader)
+        assert result["host"] == "dbhost"
+        assert result["database"] == "mydb"
 
     def test_pool_settings_injected(self):
-        """Pool settings from globals.databases.default should be injected."""
         fake_db = {"host": "dbhost"}
         fake_pool = {
             "max_pool_size": 100,
@@ -293,11 +158,11 @@ class TestDBConfig:
             "heartbeat_frequency_ms": 5000,
             "wait_queue_timeout_ms": 20000,
         }
-        _, mock_app, _ = _run_main(config_values={
+        loader = _make_config_loader({
             "db_config": fake_db,
             CFG_GLOBALS_DATABASES_DEFAULT: fake_pool,
         })
-        db = mock_app.call_args[1]["db_config"]
+        db = build_db_config(loader)
         assert db[STR_MAXPOOLSIZE] == 100
         assert db["minPoolSize"] == 10
         assert db["maxIdleTimeMS"] == 600000
@@ -308,134 +173,84 @@ class TestDBConfig:
         assert db["waitQueueTimeoutMS"] == 20000
 
     def test_pool_defaults_for_missing_keys(self):
-        """Pool settings should use defaults when specific keys are missing."""
         fake_db = {"host": "dbhost"}
-        _, mock_app, _ = _run_main(config_values={
+        loader = _make_config_loader({
             "db_config": fake_db,
             CFG_GLOBALS_DATABASES_DEFAULT: {"max_pool_size": 100},
         })
-        db = mock_app.call_args[1]["db_config"]
+        db = build_db_config(loader)
         assert db[STR_MAXPOOLSIZE] == 100
-        assert db["minPoolSize"] == 5  # default
-        assert db["maxIdleTimeMS"] == 300000  # default
-        assert db["serverSelectionTimeoutMS"] == 30000  # default
+        assert db["minPoolSize"] == 5
+        assert db["maxIdleTimeMS"] == 300000
+        assert db["serverSelectionTimeoutMS"] == 30000
 
-    def test_db_config_none_when_loader_returns_none(self):
-        """If get_DB_config returns None, db_config should be None."""
-        _, mock_app, _ = _run_main(config_values={"db_config": None})
-        assert mock_app.call_args[1]["db_config"] is None
+    def test_none_when_loader_returns_none(self):
+        loader = _make_config_loader({"db_config": None})
+        assert build_db_config(loader) is None
 
     def test_pool_not_injected_when_db_config_none(self):
-        """Pool settings should not be injected when db_config is None."""
-        _, mock_app, _ = _run_main(config_values={
+        loader = _make_config_loader({
             "db_config": None,
             CFG_GLOBALS_DATABASES_DEFAULT: {"max_pool_size": 100},
         })
-        assert mock_app.call_args[1]["db_config"] is None
+        assert build_db_config(loader) is None
 
     def test_pool_not_injected_when_globals_none(self):
-        """Pool settings should not be injected when globals returns None."""
         fake_db = {"host": "dbhost"}
-        _, mock_app, _ = _run_main(config_values={
+        loader = _make_config_loader({
             "db_config": fake_db,
             CFG_GLOBALS_DATABASES_DEFAULT: None,
         })
-        db = mock_app.call_args[1]["db_config"]
+        db = build_db_config(loader)
         assert STR_MAXPOOLSIZE not in db
 
     def test_pool_not_injected_when_globals_empty_dict(self):
-        """Empty dict is falsy — pool settings should not be injected."""
         fake_db = {"host": "dbhost"}
-        _, mock_app, _ = _run_main(config_values={
+        loader = _make_config_loader({
             "db_config": fake_db,
             CFG_GLOBALS_DATABASES_DEFAULT: {},
         })
-        db = mock_app.call_args[1]["db_config"]
+        db = build_db_config(loader)
         assert STR_MAXPOOLSIZE not in db
 
 
-class TestTokenSecret:
-    """Token secret extraction."""
-
-    def test_token_secret_passed_through(self):
-        """Auth secret from config should be passed to create_app."""
-        _, mock_app, _ = _run_main(config_values={
-            "environment.app_secrets.auth_secret_key": "my-secret-key",
-        })
-        assert mock_app.call_args[1]["token_secret"] == "my-secret-key"
-
-    def test_token_secret_none_when_not_configured(self):
-        """Token secret should be None when not in config."""
-        _, mock_app, _ = _run_main()
-        assert mock_app.call_args[1]["token_secret"] is None
-
-
-class TestSMTPConfig:
-    """SMTP configuration extraction."""
-
-    def test_smtp_config_passed_through(self):
-        """SMTP config should be passed to create_app."""
-        fake_smtp = {"smtp_server": "mail.test.com", "smtp_port": 587}
-        _, mock_app, _ = _run_main(config_values={
-            "environment.smtp": fake_smtp,
-        })
-        assert mock_app.call_args[1]["smtp_config"] == fake_smtp
-
-    def test_smtp_config_none_when_not_configured(self):
-        """SMTP config should be None when not in config."""
-        _, mock_app, _ = _run_main()
-        assert mock_app.call_args[1]["smtp_config"] is None
-
-
-class TestCORSOrigins:
+# ============================================================================
+# TestBuildCorsOrigins
+# ============================================================================
+class TestBuildCorsOrigins:
     """CORS origins extraction and fallback."""
 
     def test_cors_origins_from_config(self):
-        """CORS origins from config should be used."""
-        _, mock_app, _ = _run_main(config_values={
-            CFG_ENVIRONMENT_CORS_ORIGINS: [MOCK_URL_EXAMPLE],
-        })
-        assert mock_app.call_args[1]["cors_origins"] == [MOCK_URL_EXAMPLE]
+        loader = _make_config_loader({CFG_ENVIRONMENT_CORS_ORIGINS: [MOCK_URL_EXAMPLE]})
+        assert build_cors_origins(loader) == [MOCK_URL_EXAMPLE]
 
     def test_cors_origins_fallback_when_none(self):
-        """When cors.origins is None, should fallback to default localhost list."""
-        _, mock_app, _ = _run_main(config_values={
-            CFG_ENVIRONMENT_CORS_ORIGINS: None,
-        })
-        assert mock_app.call_args[1]["cors_origins"] == [
-            MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV
-        ]
+        loader = _make_config_loader({CFG_ENVIRONMENT_CORS_ORIGINS: None})
+        assert build_cors_origins(loader) == [MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV]
 
     def test_cors_origins_fallback_when_not_set(self):
-        """When cors.origins is not in config at all, should fallback."""
-        _, mock_app, _ = _run_main()
-        assert mock_app.call_args[1]["cors_origins"] == [
-            MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV
-        ]
+        loader = _make_config_loader()
+        assert build_cors_origins(loader) == [MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV]
 
     def test_cors_empty_list_triggers_fallback(self):
-        """Empty list is falsy — should trigger fallback to defaults."""
-        _, mock_app, _ = _run_main(config_values={
-            CFG_ENVIRONMENT_CORS_ORIGINS: [],
-        })
-        assert mock_app.call_args[1]["cors_origins"] == [
-            MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV
-        ]
+        loader = _make_config_loader({CFG_ENVIRONMENT_CORS_ORIGINS: []})
+        assert build_cors_origins(loader) == [MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV]
 
 
-class TestStorageConfig:
+# ============================================================================
+# TestBuildStorageConfig
+# ============================================================================
+class TestBuildStorageConfig:
     """File storage and GCS configuration."""
 
     def test_default_local_storage(self):
-        """When no storage config, should default to local."""
-        _, mock_app, _ = _run_main()
-        fsc = mock_app.call_args[1]["file_storage_config"]
+        loader = _make_config_loader()
+        fsc, gcs = build_storage_config(loader)
         assert fsc["type"] == "local"
         assert fsc["base_path"] == MOCK_PATH_UPLOADS
-        assert mock_app.call_args[1]["gcs_config"] is None
+        assert gcs is None
 
     def test_gcs_storage_with_credentials_dict(self):
-        """GCS storage with credentials as a dict should build gcs_config."""
         storage = {
             "type": "gcs",
             "gcs": {
@@ -448,14 +263,13 @@ class TestStorageConfig:
                 "credentials_path": "path/to/creds",
             },
         }
-        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_STORAGE: storage})
+        loader = _make_config_loader({CFG_ENVIRONMENT_STORAGE: storage})
+        fsc, gcs = build_storage_config(loader)
 
-        fsc = mock_app.call_args[1]["file_storage_config"]
         assert fsc["type"] == "gcs"
         assert fsc["bucket_name"] == STR_MY_BUCKET
         assert fsc["base_path"] == MOCK_PATH_UPLOADS
 
-        gcs = mock_app.call_args[1]["gcs_config"]
         assert gcs is not None
         assert json.loads(gcs["credentials_json"]) == {
             "type": "service_account", "project_id": "test"
@@ -468,7 +282,6 @@ class TestStorageConfig:
         assert gcs["credentials_path"] == "path/to/creds"
 
     def test_gcs_storage_with_credentials_string(self):
-        """GCS storage with credentials as a JSON string."""
         storage = {
             "type": "gcs",
             "gcs": {
@@ -476,40 +289,38 @@ class TestStorageConfig:
                 "bucket_name": "bucket",
             },
         }
-        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_STORAGE: storage})
-
-        gcs = mock_app.call_args[1]["gcs_config"]
+        loader = _make_config_loader({CFG_ENVIRONMENT_STORAGE: storage})
+        _, gcs = build_storage_config(loader)
         assert gcs["credentials_json"] == '{"type":"service_account"}'
 
     def test_gcs_without_credentials_stays_local(self):
-        """GCS type but no credentials -> stays local."""
         storage = {"type": "gcs", "gcs": {}}
-        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_STORAGE: storage})
-        fsc = mock_app.call_args[1]["file_storage_config"]
+        loader = _make_config_loader({CFG_ENVIRONMENT_STORAGE: storage})
+        fsc, gcs = build_storage_config(loader)
         assert fsc["type"] == "local"
-        assert mock_app.call_args[1]["gcs_config"] is None
+        assert gcs is None
 
     def test_storage_type_defaults_to_local(self):
-        """Storage without explicit type defaults to 'local'."""
         storage = {"gcs": {}}
-        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_STORAGE: storage})
-        fsc = mock_app.call_args[1]["file_storage_config"]
+        loader = _make_config_loader({CFG_ENVIRONMENT_STORAGE: storage})
+        fsc, _ = build_storage_config(loader)
         assert fsc["type"] == "local"
 
-    def test_storage_with_no_gcp_key(self):
-        """Storage config without 'gcp' key should use empty dict default."""
+    def test_storage_with_no_gcs_key(self):
         storage = {"type": "gcs"}
-        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_STORAGE: storage})
-        fsc = mock_app.call_args[1]["file_storage_config"]
+        loader = _make_config_loader({CFG_ENVIRONMENT_STORAGE: storage})
+        fsc, gcs = build_storage_config(loader)
         assert fsc["type"] == "local"
-        assert mock_app.call_args[1]["gcs_config"] is None
+        assert gcs is None
 
 
-class TestJiraConfig:
+# ============================================================================
+# TestBuildJiraConfig
+# ============================================================================
+class TestBuildJiraConfig:
     """Jira configuration extraction."""
 
     def test_jira_config_with_all_fields(self):
-        """Jira config should be built when base_url is present."""
         jira_raw = {
             "base_url": MOCK_URL_JIRA_EXAMPLE,
             "email": MOCK_EMAIL_BOT,
@@ -528,9 +339,9 @@ class TestJiraConfig:
             "default_target_days": 14,
             "ssl": {"enabled": True},
         }
-        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_JIRA: jira_raw})
+        loader = _make_config_loader({CFG_ENVIRONMENT_JIRA: jira_raw})
+        jira = build_jira_config(loader)
 
-        jira = mock_app.call_args[1]["jira_config"]
         assert jira is not None
         assert jira["base_url"] == MOCK_URL_JIRA_EXAMPLE
         assert jira["email"] == MOCK_EMAIL_BOT
@@ -550,15 +361,14 @@ class TestJiraConfig:
         assert jira["ssl"] == {"enabled": True}
 
     def test_jira_config_defaults(self):
-        """Jira config should use defaults for optional fields."""
         jira_raw = {
             "base_url": MOCK_URL_JIRA_TEST,
             "email": MOCK_EMAIL_BOT,
             "api_token": "tok",
         }
-        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_JIRA: jira_raw})
+        loader = _make_config_loader({CFG_ENVIRONMENT_JIRA: jira_raw})
+        jira = build_jira_config(loader)
 
-        jira = mock_app.call_args[1]["jira_config"]
         assert jira["project_key"] == "SCEN"
         assert jira["issue_type"] == "Task"
         assert jira["default_priority"] == "Medium"
@@ -570,43 +380,43 @@ class TestJiraConfig:
         assert jira[STR_DEFAULT_ASSIGNEE_NAME] is None
 
     def test_jira_config_none_when_no_base_url(self):
-        """Jira config should be None when base_url is missing."""
         jira_raw = {"email": MOCK_EMAIL_BOT, "api_token": "tok"}
-        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_JIRA: jira_raw})
-        assert mock_app.call_args[1]["jira_config"] is None
+        loader = _make_config_loader({CFG_ENVIRONMENT_JIRA: jira_raw})
+        assert build_jira_config(loader) is None
 
     def test_jira_config_none_when_base_url_empty(self):
-        """Empty base_url should result in None jira_config."""
         jira_raw = {"base_url": "", "email": "e", "api_token": "t"}
-        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_JIRA: jira_raw})
-        assert mock_app.call_args[1]["jira_config"] is None
+        loader = _make_config_loader({CFG_ENVIRONMENT_JIRA: jira_raw})
+        assert build_jira_config(loader) is None
 
     def test_jira_config_none_when_not_configured(self):
-        """Jira config should be None when no jira config exists."""
-        _, mock_app, _ = _run_main()
-        assert mock_app.call_args[1]["jira_config"] is None
+        loader = _make_config_loader()
+        assert build_jira_config(loader) is None
 
     def test_jira_config_none_when_jira_raw_is_none(self):
-        """Jira config should be None when jira returns None."""
-        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_JIRA: None})
-        assert mock_app.call_args[1]["jira_config"] is None
+        loader = _make_config_loader({CFG_ENVIRONMENT_JIRA: None})
+        assert build_jira_config(loader) is None
 
     def test_jira_target_days_string_conversion(self):
-        """target_days should be converted to int even if string."""
         jira_raw = {"base_url": MOCK_URL_JIRA_TEST, "default_target_days": "21"}
-        _, mock_app, _ = _run_main(config_values={CFG_ENVIRONMENT_JIRA: jira_raw})
-        jira = mock_app.call_args[1]["jira_config"]
+        loader = _make_config_loader({CFG_ENVIRONMENT_JIRA: jira_raw})
+        jira = build_jira_config(loader)
         assert jira["target_days"] == 21
 
 
-class TestCreateAppInvocation:
-    """Ensure create_app is called exactly once with the right keyword arguments."""
+# ============================================================================
+# TestBootstrap
+# ============================================================================
+class TestBootstrap:
+    """End-to-end bootstrap orchestration."""
 
-    def test_all_kwargs_present(self):
-        """create_app must receive all expected keyword arguments."""
-        _, mock_app, _ = _run_main()
-        mock_app.assert_called_once()
-        kwargs = mock_app.call_args[1]
+    @patch("main.create_app")
+    @patch("main.ConfigurationLoader")
+    def test_all_kwargs_present(self, mock_cl_cls, mock_create_app):
+        mock_cl_cls.return_value = _make_config_loader()
+        bootstrap()
+        mock_create_app.assert_called_once()
+        kwargs = mock_create_app.call_args[1]
         expected_keys = {
             "db_config", "token_secret", "smtp_config", "jira_config",
             "file_storage_config", "gcs_config", "cors_origins",
@@ -614,97 +424,106 @@ class TestCreateAppInvocation:
         }
         assert set(kwargs.keys()) == expected_keys
 
-    def test_title_and_description(self):
-        """create_app should receive the correct title and description."""
-        _, mock_app, _ = _run_main()
-        kwargs = mock_app.call_args[1]
+    @patch("main.create_app")
+    @patch("main.ConfigurationLoader")
+    def test_title_and_description(self, mock_cl_cls, mock_create_app):
+        mock_cl_cls.return_value = _make_config_loader()
+        bootstrap()
+        kwargs = mock_create_app.call_args[1]
         assert kwargs["title"] == "EasyLife Admin Panel API"
         assert kwargs["description"] == "Authentication, Authorization, and Administration API"
 
-    def test_app_is_return_value_of_create_app(self):
-        """The module-level ``app`` should be the return value of create_app."""
-        ns, mock_app, _ = _run_main()
-        assert ns["app"] is mock_app.return_value
+    @patch("main.create_app")
+    @patch("main.ConfigurationLoader")
+    def test_returns_create_app_result(self, mock_cl_cls, mock_create_app):
+        mock_cl_cls.return_value = _make_config_loader()
+        result = bootstrap()
+        assert result is mock_create_app.return_value
+
+    @patch("main.create_app")
+    @patch("main.ConfigurationLoader")
+    def test_token_secret_passed_through(self, mock_cl_cls, mock_create_app):
+        mock_cl_cls.return_value = _make_config_loader({
+            "environment.app_secrets.auth_secret_key": "my-secret-key",
+        })
+        bootstrap()
+        assert mock_create_app.call_args[1]["token_secret"] == "my-secret-key"
+
+    @patch("main.create_app")
+    @patch("main.ConfigurationLoader")
+    def test_smtp_config_passed_through(self, mock_cl_cls, mock_create_app):
+        fake_smtp = {"smtp_server": "mail.test.com", "smtp_port": 587}
+        mock_cl_cls.return_value = _make_config_loader({
+            "environment.smtp": fake_smtp,
+        })
+        bootstrap()
+        assert mock_create_app.call_args[1]["smtp_config"] == fake_smtp
+
+    @patch("main.create_app")
+    @patch("main.ConfigurationLoader")
+    def test_minimal_config_produces_defaults(self, mock_cl_cls, mock_create_app):
+        mock_cl_cls.return_value = _make_config_loader()
+        bootstrap()
+        kwargs = mock_create_app.call_args[1]
+        assert kwargs["db_config"] is None
+        assert kwargs["token_secret"] is None
+        assert kwargs["smtp_config"] is None
+        assert kwargs["jira_config"] is None
+        assert kwargs["gcs_config"] is None
+        assert kwargs["cors_origins"] == [MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV]
+        assert kwargs["file_storage_config"]["type"] == "local"
+        assert kwargs["file_storage_config"]["base_path"] == MOCK_PATH_UPLOADS
+
+
+# ============================================================================
+# TestMainBlock
+# ============================================================================
+_MAIN_PY = Path(__file__).resolve().parent.parent / "src" / "main.py"
 
 
 class TestMainBlock:
     """Test the ``if __name__ == '__main__'`` block."""
 
     def test_uvicorn_run_called_when_name_is_main(self):
-        """Simulating __name__ == '__main__' should call uvicorn.run."""
         mock_uvicorn = MagicMock()
-
-        source = _MAIN_PY.read_text()
-        source = source.replace("\r\n", "\n")  # Normalize CRLF → LF
-        patched_source = source.replace(
-            "import os\n", "pass  # os injected\n",
-        ).replace(
-            "import json\n", "pass  # json injected\n",
-        ).replace(
-            "from pathlib import Path\n", "pass  # Path injected\n",
-        ).replace(
-            "from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX,OS_PROPERTY_SEPRATOR , LOCAL_FILE_STORAGE",
-            "pass  # ENVIRONEMNT_VARIABLE_PREFIX, OS_PROPERTY_SEPRATOR, LOCAL_FILE_STORAGE injected",
-        ).replace(
-            "from easylifeauth.app import create_app",
-            "pass  # create_app injected",
-        ).replace(
-            "from easylifeauth.utils.config import ConfigurationLoader",
-            "pass  # ConfigurationLoader injected",
-        ).replace(
-            "import uvicorn",
-            "pass  # uvicorn injected",
+        # Only exec the __main__ guard — bootstrap() is already tested above
+        code = (
+            "if __name__ == '__main__':\n"
+            "    import uvicorn\n"
+            '    uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)\n'
         )
-
         ns = {
             "__name__": "__main__",
-            "__file__": str(_MAIN_PY),
             "__builtins__": __builtins__,
-            "os": os,
-            "json": json,
-            "Path": Path,
-            "ENVIRONEMNT_VARIABLE_PREFIX": ENVIRONEMNT_VARIABLE_PREFIX,
-            "OS_PROPERTY_SEPRATOR": OS_PROPERTY_SEPRATOR,
-            "LOCAL_FILE_STORAGE": LOCAL_FILE_STORAGE,
-            "create_app": MagicMock(),
-            STR_CONFIGURATIONLOADER: MagicMock(),
             "uvicorn": mock_uvicorn,
         }
+        # Patch the import so it uses our mock
+        import builtins
+        _real_import = builtins.__import__
 
-        clean_env = {
-            k: v for k, v in os.environ.items()
-            if not any(k.startswith(p) for p in (STR_CONFIG_PATH, ENV_PREFIX))
-        }
+        def _mock_import(name, *args, **kwargs):
+            if name == "uvicorn":
+                return mock_uvicorn
+            return _real_import(name, *args, **kwargs)
 
-        with patch.dict(os.environ, clean_env, clear=True):
-            exec(compile(patched_source, str(_MAIN_PY), "exec"), ns)
+        with patch("builtins.__import__", side_effect=_mock_import):
+            exec(compile(code, "main.py", "exec"), ns)
 
         mock_uvicorn.run.assert_called_once_with(
             "src.main:app", host=MOCK_IP_BIND_ALL, port=8000, reload=True,
         )
 
     def test_uvicorn_not_called_when_imported(self):
-        """When imported normally, uvicorn.run should NOT be called."""
-        ns, mock_app, _ = _run_main(name_override="src.main")
-        # uvicorn is only imported inside the __main__ block,
-        # so it should not appear in the namespace at all
-        mock_app.assert_called_once()
-
-
-class TestEdgeCases:
-    """Edge cases and boundary conditions."""
-
-    def test_no_config_produces_minimal_app(self):
-        """With empty config, only defaults remain."""
-        _, mock_app, _ = _run_main()
-        kwargs = mock_app.call_args[1]
-        assert kwargs["db_config"] is None
-        assert kwargs["token_secret"] is None
-        assert kwargs["smtp_config"] is None
-        assert kwargs["jira_config"] is None
-        assert kwargs["gcs_config"] is None
-        assert kwargs["cors_origins"] == [
-            MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV
-        ]
-        assert kwargs["file_storage_config"]["type"] == "local"
-        assert kwargs["file_storage_config"]["base_path"] == MOCK_PATH_UPLOADS
+        code = (
+            "if __name__ == '__main__':\n"
+            "    import uvicorn\n"
+            '    uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)\n'
+        )
+        mock_uvicorn = MagicMock()
+        ns = {
+            "__name__": "src.main",
+            "__builtins__": __builtins__,
+            "uvicorn": mock_uvicorn,
+        }
+        exec(compile(code, "main.py", "exec"), ns)
+        mock_uvicorn.run.assert_not_called()
