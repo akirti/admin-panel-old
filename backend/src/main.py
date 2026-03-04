@@ -2,6 +2,7 @@
 import os
 import sys
 import json
+import shutil
 from pathlib import Path
 from typing import Optional
 def set_path():
@@ -116,6 +117,38 @@ def build_jira_config(loader: ConfigurationLoader) -> Optional[dict]:
     }
 
 
+def setup_jira_ssl_bundle(jira_config: Optional[dict], config_path: str) -> Optional[str]:
+    """Create PEM file from jira ssl bundle_data. Returns path to PEM file or None.
+
+    Deletes and recreates the bundle directory on every server start.
+    """
+    if not jira_config:
+        return None
+    ssl = jira_config.get("ssl")
+    if not ssl:
+        return None
+    bundle_data = ssl.get("bundle_data")
+    bundle_path = ssl.get("bundle_path")
+    bundle_file_name = ssl.get("bundle_file_name")
+    if not bundle_data or not bundle_path or not bundle_file_name:
+        return None
+
+    # Resolve full directory path relative to config_path
+    full_dir = os.path.join(config_path, bundle_path)
+
+    # Delete and recreate directory every server start
+    if os.path.exists(full_dir):
+        shutil.rmtree(full_dir)
+    os.makedirs(full_dir, exist_ok=True)
+
+    # Write PEM file
+    pem_path = os.path.join(full_dir, bundle_file_name)
+    with open(pem_path, "w") as f:
+        f.write(bundle_data)
+
+    return pem_path
+
+
 def bootstrap():
     """Orchestrate configuration loading and create the FastAPI application."""
     config_path = resolve_config_path()
@@ -128,6 +161,11 @@ def bootstrap():
     cors_origins = build_cors_origins(config_loader)
     file_storage_config, gcs_config = build_storage_config(config_loader)
     jira_config = build_jira_config(config_loader)
+
+    # Create SSL PEM file if configured
+    pem_path = setup_jira_ssl_bundle(jira_config, config_path)
+    if pem_path and jira_config:
+        jira_config["ssl"]["bundle_pem_path"] = pem_path
 
     return create_app(
         db_config=db_config,
