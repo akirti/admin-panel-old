@@ -1,9 +1,20 @@
 """Main entry point for EasyLife Auth API"""
 import os
+import sys
 import json
 from pathlib import Path
 from typing import Optional
-
+def set_path():
+    """set root path for all"""
+    MODULE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "."))
+    if MODULE_ROOT not in sys.path:
+        sys.path.append(MODULE_ROOT)
+    SRC_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    if SRC_PATH not in sys.path:
+        sys.path.append(SRC_PATH)
+ 
+    return MODULE_ROOT
+module_path = set_path()
 from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX, OS_PROPERTY_SEPRATOR, LOCAL_FILE_STORAGE
 from easylifeauth.app import create_app
 from easylifeauth.utils.config import ConfigurationLoader
