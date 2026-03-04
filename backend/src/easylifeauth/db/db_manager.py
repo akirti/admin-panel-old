@@ -91,14 +91,14 @@ class DatabaseManager:
 
         # Get connection pool settings from config with defaults
         # Reduced maxIdleTimeMS to clear stale connections faster after system resume
-        max_pool_size = int(config.get('maxPoolSize', 50))
-        min_pool_size = int(config.get('minPoolSize', 1))  # Reduced to allow more connection cycling
-        max_idle_time_ms = int(config.get('maxIdleTimeMS', 30000))  # 30 seconds - clear stale connections faster
-        server_selection_timeout_ms = int(config.get('serverSelectionTimeoutMS', 5000))  # 5 seconds - fail faster
-        connect_timeout_ms = int(config.get('connectTimeoutMS', 5000))  # 5 seconds
-        socket_timeout_ms = int(config.get('socketTimeoutMS', 30000))  # 30 seconds
-        heartbeat_frequency_ms = int(config.get('heartbeatFrequencyMS', 5000))  # 5 seconds - check more frequently
-        wait_queue_timeout_ms = int(config.get('waitQueueTimeoutMS', 5000))  # 5 seconds
+        max_pool_size = int(str(config.get('maxPoolSize', 50)))
+        min_pool_size = int(str(config.get('minPoolSize', 1)))  # Reduced to allow more connection cycling
+        max_idle_time_ms = int(str(config.get('maxIdleTimeMS', 30000)))  # 30 seconds - clear stale connections faster
+        server_selection_timeout_ms = int(str(config.get('serverSelectionTimeoutMS', 5000)))  # 5 seconds - fail faster
+        connect_timeout_ms = int(str(config.get('connectTimeoutMS', 5000)))  # 5 seconds
+        socket_timeout_ms = int(str(config.get('socketTimeoutMS', 30000)))  # 30 seconds
+        heartbeat_frequency_ms = int(str(config.get('heartbeatFrequencyMS', 5000)))  # 5 seconds - check more frequently
+        wait_queue_timeout_ms = int(str(config.get('waitQueueTimeoutMS', 5000)))  # 5 seconds
 
         # Motor async client with connection pool and reconnect settings
         # These settings help maintain connections and auto-reconnect after idle periods
