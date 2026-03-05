@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from easylifeauth import OS_PROPERTY_SEPRATOR
+from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX, OS_PROPERTY_SEPRATOR
 from easylifeauth.utils.config import ConfigurationLoader, ConfigValueSimulator
 from tests.test_config_values import (
     SIMULATOR_DATA, CONFIG_JSON,
@@ -66,6 +66,13 @@ def _create_config_dir(tmp_path, files):
 def clean_test_env_vars():
     """Ensure env vars set by the simulator don't leak between tests."""
     original = os.environ.copy()
+    # Strip EASYLIFE_ / EASYLIFE. env vars leaked by module-level
+    # bootstrap() in main.py (ConfigValueSimulator sets them at import time)
+    prefix = ENVIRONEMNT_VARIABLE_PREFIX
+    sep = OS_PROPERTY_SEPRATOR
+    for key in list(os.environ.keys()):
+        if key.startswith(f"{prefix}_") or key.startswith(f"{prefix}{sep}"):
+            del os.environ[key]
     yield
     os.environ.clear()
     os.environ.update(original)

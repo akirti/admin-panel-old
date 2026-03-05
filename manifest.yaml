@@ -1,0 +1,79 @@
+---
+applications:
+  # ─────────────────────────────────────────────
+  # EasyLife Admin Panel - Backend API
+  # ─────────────────────────────────────────────
+  - name: easylife-backend
+    memory: 512M
+    disk_quota: 1G
+    instances: 1
+    buildpacks:
+      - python_buildpack
+    #path: ./backend
+    command: uvicorn src.main:app --host 0.0.0.0 --port $PORT --timeout-graceful-shutdown 5
+    health-check-type: http
+    health-check-http-endpoint: /api/v1/health/live
+    health-check-invocation-timeout: 10
+    timeout: 120
+    stack: cflinuxfs4
+    env:
+      # Python
+      PYTHONPATH: /home/vcap/app:/home/vcap/app/src
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+
+      # Application
+      EASYLIFE_ENVIRONMENT: production
+      CONFIG_PATH: /home/vcap/app/config
+
+      # MongoDB (bind via service or set manually)
+      # EASYLIFE_AUTHENTICATION.CONNECTION_SCHEME: mongodb+srv
+      # EASYLIFE_AUTHENTICATION.USERNAME: <db-user>
+      # EASYLIFE_AUTHENTICATION.PASSWORD: <db-password>
+      # EASYLIFE_AUTHENTICATION.HOST: <cluster-host>
+      # EASYLIFE_AUTHENTICATION.DATABASE: easylife_auth
+
+      # JWT Secrets (set via cf set-env or Vault)
+      # EASYLIFE_ENVIRONMENT.APP_SECRETS.AUTH_SECRET_KEY: <secret>
+
+      # SMTP (optional)
+      # EASYLIFE_ENVIRONMENT.SMTP.HOST: smtp.example.com
+      # EASYLIFE_ENVIRONMENT.SMTP.PORT: "587"
+      # EASYLIFE_ENVIRONMENT.SMTP.USERNAME: <smtp-user>
+      # EASYLIFE_ENVIRONMENT.SMTP.PASSWORD: <smtp-pass>
+      # EASYLIFE_ENVIRONMENT.SMTP.FROM_EMAIL: noreply@example.com
+
+      # CORS
+      # EASYLIFE_GLOBALS.CORS_ORIGINS: '["https://easylife-frontend.apps.example.com"]'
+
+      # Jira (optional)
+      # EASYLIFE_ENVIRONMENT.JIRA.ENABLED: "true"
+      # EASYLIFE_ENVIRONMENT.JIRA.SERVER: https://your-org.atlassian.net
+      # EASYLIFE_ENVIRONMENT.JIRA.EMAIL: jira-user@example.com
+      # EASYLIFE_ENVIRONMENT.JIRA.API_TOKEN: <jira-token>
+      # EASYLIFE_ENVIRONMENT.JIRA.SSL.BUNDLE_PATH: certificate/jira
+      # EASYLIFE_ENVIRONMENT.JIRA.SSL.BUNDLE_FILE_NAME: combined.pem
+      # EASYLIFE_ENVIRONMENT.JIRA.SSL.BUNDLE_DATA: -----BEGIN CERTIFCATE------ 2372323bj23ybs -----END CERTIFICATE---- \n -----BEGIN CERTIFCATE------ 2372323bj23ybs -----END CERTIFICATE---- \n-----BEGIN CERTIFCATE------ 2372323bj23ybs -----END CERTIFICATE---- 
+
+      # GCS (optional)
+      # EASYLIFE_ENVIRONMENT.GCS.ENABLED: "false"
+      # EASYLIFE_ENVIRONMENT.GCS.BUCKET_NAME: easylife-files
+    # services:
+    #   - easylife-mongodb    # User-provided or managed MongoDB service
+    routes:
+      - route: easylife-backend.apps.internal
+
+  # ─────────────────────────────────────────────
+  # EasyLife Admin Panel - Frontend (Nginx)
+  # ─────────────────────────────────────────────
+  - name: easylife-frontend
+    memory: 128M
+    disk_quota: 256M
+    instances: 1
+    buildpacks:
+      - staticfile_buildpack
+    path: ./frontend/dist
+    env:
+      VITE_API_BASE_URL: https://easylife-backend.apps.internal/api/v1
+    routes:
+      - route: easylife.apps.example.com
