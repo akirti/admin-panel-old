@@ -38,19 +38,31 @@ def resolve_config_path() -> str:
     return os.environ.get("CONFIG_PATH", str(Path(__file__).parent.parent / "config"))
 
 
+def _safe_int(value, default: int) -> int:
+    """Convert a config value to int, returning *default* for unresolved placeholders."""
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    try:
+        return int(str(value))
+    except (ValueError, TypeError):
+        return default
+
+
 def build_db_config(loader: ConfigurationLoader) -> Optional[dict]:
     """Extract DB config and inject connection pool settings from globals."""
     db_config = loader.get_DB_config("authentication")
     globals_pool = loader.get_config_by_path("globals.databases.default")
     if db_config and globals_pool:
-        db_config["maxPoolSize"] = globals_pool.get("max_pool_size", 50)
-        db_config["minPoolSize"] = globals_pool.get("min_pool_size", 5)
-        db_config["maxIdleTimeMS"] = globals_pool.get("max_idle_time_ms", 300000)
-        db_config["serverSelectionTimeoutMS"] = globals_pool.get("server_selection_timeout_ms", 30000)
-        db_config["connectTimeoutMS"] = globals_pool.get("connect_timeout_ms", 20000)
-        db_config["socketTimeoutMS"] = globals_pool.get("socket_timeout_ms", 60000)
-        db_config["heartbeatFrequencyMS"] = globals_pool.get("heartbeat_frequency_ms", 10000)
-        db_config["waitQueueTimeoutMS"] = globals_pool.get("wait_queue_timeout_ms", 10000)
+        db_config["maxPoolSize"] = _safe_int(globals_pool.get("max_pool_size"), 50)
+        db_config["minPoolSize"] = _safe_int(globals_pool.get("min_pool_size"), 5)
+        db_config["maxIdleTimeMS"] = _safe_int(globals_pool.get("max_idle_time_ms"), 300000)
+        db_config["serverSelectionTimeoutMS"] = _safe_int(globals_pool.get("server_selection_timeout_ms"), 30000)
+        db_config["connectTimeoutMS"] = _safe_int(globals_pool.get("connect_timeout_ms"), 20000)
+        db_config["socketTimeoutMS"] = _safe_int(globals_pool.get("socket_timeout_ms"), 60000)
+        db_config["heartbeatFrequencyMS"] = _safe_int(globals_pool.get("heartbeat_frequency_ms"), 10000)
+        db_config["waitQueueTimeoutMS"] = _safe_int(globals_pool.get("wait_queue_timeout_ms"), 10000)
     return db_config
 
 

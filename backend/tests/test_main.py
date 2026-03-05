@@ -18,6 +18,7 @@ from mock_data import (
 from main import (
     resolve_environment, resolve_config_path, build_db_config,
     build_cors_origins, build_storage_config, build_jira_config, bootstrap,
+    _safe_int,
 )
 
 ENV_PREFIX = f"{ENVIRONEMNT_VARIABLE_PREFIX}_"
@@ -38,6 +39,7 @@ UVICORN_APP_REF = "src.main:app"
 PATCH_MAIN_SETUP_SSL = "main.setup_jira_ssl_bundle"
 STR_USERNAME = "username"
 STR_PASSWORD = "password"
+UNRESOLVED_PLACEHOLDER = "{globals.databases.default.max_pool_size}"
 
 # All env var keys that main.py reads — cleared before each test
 _ENV_KEYS_TO_CLEAR = [
@@ -222,6 +224,79 @@ class TestBuildDBConfig:
         })
         db = build_db_config(loader)
         assert STR_MAXPOOLSIZE not in db
+
+    def test_pool_settings_fallback_for_unresolved_placeholders(self):
+        """Unresolved placeholder strings fall back to defaults (not ValueError)."""
+        fake_db = {"host": "dbhost"}
+        fake_pool = {
+            "max_pool_size": UNRESOLVED_PLACEHOLDER,
+            "min_pool_size": "{globals.databases.default.min_pool_size}",
+            "max_idle_time_ms": "{globals.databases.default.max_idle_time_ms}",
+            "server_selection_timeout_ms": "{unresolved}",
+            "connect_timeout_ms": "{unresolved}",
+            "socket_timeout_ms": "{unresolved}",
+            "heartbeat_frequency_ms": "{unresolved}",
+            "wait_queue_timeout_ms": "{unresolved}",
+        }
+        loader = _make_config_loader({
+            "db_config": fake_db,
+            CFG_GLOBALS_DATABASES_DEFAULT: fake_pool,
+        })
+        db = build_db_config(loader)
+        assert db[STR_MAXPOOLSIZE] == 50
+        assert db["minPoolSize"] == 5
+        assert db["maxIdleTimeMS"] == 300000
+        assert db["serverSelectionTimeoutMS"] == 30000
+        assert db["connectTimeoutMS"] == 20000
+        assert db["socketTimeoutMS"] == 60000
+        assert db["heartbeatFrequencyMS"] == 10000
+        assert db["waitQueueTimeoutMS"] == 10000
+
+    def test_pool_settings_accept_string_integers(self):
+        """String integers (e.g. from env vars) are converted properly."""
+        fake_db = {"host": "dbhost"}
+        fake_pool = {"max_pool_size": "200", "min_pool_size": "10"}
+        loader = _make_config_loader({
+            "db_config": fake_db,
+            CFG_GLOBALS_DATABASES_DEFAULT: fake_pool,
+        })
+        db = build_db_config(loader)
+        assert db[STR_MAXPOOLSIZE] == 200
+        assert db["minPoolSize"] == 10
+
+
+# ============================================================================
+# TestSafeInt
+# ============================================================================
+class TestSafeInt:
+    """Tests for _safe_int helper."""
+
+    def test_int_passthrough(self):
+        assert _safe_int(100, 50) == 100
+
+    def test_string_int(self):
+        assert _safe_int("42", 50) == 42
+
+    def test_float_truncated(self):
+        assert _safe_int(3.9, 50) == 3
+
+    def test_placeholder_returns_default(self):
+        assert _safe_int(UNRESOLVED_PLACEHOLDER, 50) == 50
+
+    def test_none_returns_default(self):
+        assert _safe_int(None, 50) == 50
+
+    def test_empty_string_returns_default(self):
+        assert _safe_int("", 50) == 50
+
+    def test_non_numeric_string_returns_default(self):
+        assert _safe_int("abc", 50) == 50
+
+    def test_zero(self):
+        assert _safe_int(0, 50) == 0
+
+    def test_negative_int(self):
+        assert _safe_int(-1, 50) == -1
 
 
 # ============================================================================
