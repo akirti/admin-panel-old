@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock
 import pytest
 
 from mock_data import MOCK_EMAIL_BOT, MOCK_API_TOKEN, MOCK_SECRET, MOCK_URL_JIRA_EXAMPLE
-from src.easylifeauth.utils.certificate_util import format_pem_bundle, setup_jira_ssl_bundle
+from easylifeauth.utils.certificate_util import format_pem_bundle, setup_jira_ssl_bundle
 
 # -- PEM markers ---------------------------------------------------------------
 PEM_BEGIN_CERT = "-----BEGIN CERTIFICATE-----"
@@ -34,10 +34,10 @@ CFG_STORAGE = "environment.storage"
 CFG_JIRA = "environment.jira"
 
 # -- Patch targets -------------------------------------------------------------
-PATCH_CREATE_APP = "src.main.create_app"
-PATCH_CONFIG_LOADER = "src.main.ConfigurationLoader"
-PATCH_RESOLVE_CONFIG = "src.main.resolve_config_path"
-PATCH_RESOLVE_ENV = "src.main.resolve_environment"
+PATCH_CREATE_APP = "main.create_app"
+PATCH_CONFIG_LOADER = "main.ConfigurationLoader"
+PATCH_RESOLVE_CONFIG = "main.resolve_config_path"
+PATCH_RESOLVE_ENV = "main.resolve_environment"
 
 # -- Sample data ---------------------------------------------------------------
 
@@ -336,7 +336,7 @@ class TestBootstrapIntegration:
     @patch(PATCH_CREATE_APP)
     @patch(PATCH_CONFIG_LOADER)
     def test_bootstrap_stores_pem_path_in_jira_config(self, mock_loader_cls, mock_create_app, tmp_path):
-        from src.main import bootstrap
+        from main import bootstrap
 
         mock_loader = MagicMock()
         mock_loader_cls.return_value = mock_loader
@@ -387,7 +387,7 @@ class TestBootstrapIntegration:
     @patch(PATCH_CREATE_APP)
     @patch(PATCH_CONFIG_LOADER)
     def test_bootstrap_no_pem_path_when_ssl_not_configured(self, mock_loader_cls, mock_create_app, tmp_path):
-        from src.main import bootstrap
+        from main import bootstrap
 
         mock_loader = MagicMock()
         mock_loader_cls.return_value = mock_loader
