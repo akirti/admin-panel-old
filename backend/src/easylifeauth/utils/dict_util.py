@@ -1,8 +1,46 @@
 """Dictionary Utility"""
+import re
 from functools import reduce
 from typing import Any, Dict, Optional
 
 from easylifeauth import OS_PROPERTY_SEPRATOR
+
+
+def parse_ruby_hash(raw: str) -> Optional[Dict[str, Any]]:
+    """Parse a Ruby hash string into a Python dict.
+
+    Ruby hash format: {:key=>"value", key2=>"value2"}
+    Keys may have an optional ``:`` prefix (Ruby symbol notation).
+    Values are double-quoted strings.
+
+    Returns a dict on success, or ``None`` if *raw* does not look like a
+    Ruby hash (allowing callers to fall through to other converters).
+    """
+    s = raw.strip()
+    if not (s.startswith("{") and s.endswith("}") and "=>" in s):
+        return None
+
+    inner = s[1:-1]
+
+    # :?key => "value"  (key may contain dots, dashes, or word chars)
+    pattern = re.compile(
+        r""":?([\w.\-]+)\s*=>\s*"((?:[^"\\]|\\.)*)" """.strip(),
+    )
+
+    result: Dict[str, Any] = {}
+    for match in pattern.finditer(inner):
+        key = match.group(1)
+        value = match.group(2)
+        # Unescape common Ruby string escape sequences
+        value = (
+            value
+            .replace('\\"', '"')
+            .replace("\\\\", "\\")
+            .replace("\\n", "\n")
+        )
+        result[key] = value
+
+    return result if result else None
 
 
 class DictUtil:

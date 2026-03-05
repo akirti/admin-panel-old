@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from copy import deepcopy
 
-from .dict_util import DictUtil
+from .dict_util import DictUtil, parse_ruby_hash
 from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX, OS_PROPERTY_SEPRATOR
 
 
@@ -240,6 +240,11 @@ class ConfigurationLoader:
             return json.loads(value)
         except json.JSONDecodeError:
             pass
+
+        # Try Ruby hash (e.g. GCS credentials_json from env vars)
+        ruby_result = parse_ruby_hash(value)
+        if ruby_result is not None:
+            return ruby_result
 
         # Try int
         try:
