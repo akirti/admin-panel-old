@@ -2,7 +2,6 @@
 import os
 import sys
 import json
-import shutil
 from pathlib import Path
 from typing import Optional
 def set_path():
@@ -19,6 +18,7 @@ module_path = set_path()
 from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX, OS_PROPERTY_SEPRATOR, LOCAL_FILE_STORAGE
 from easylifeauth.app import create_app
 from easylifeauth.utils.config import ConfigurationLoader
+from easylifeauth.utils.certificate_util import setup_jira_ssl_bundle
 
 
 def resolve_environment() -> Optional[str]:
@@ -115,38 +115,6 @@ def build_jira_config(loader: ConfigurationLoader) -> Optional[dict]:
         "target_days": int(jira_raw.get("default_target_days", 7)),
         "ssl": jira_raw.get("ssl", {}),
     }
-
-
-def setup_jira_ssl_bundle(jira_config: Optional[dict], config_path: str) -> Optional[str]:
-    """Create PEM file from jira ssl bundle_data. Returns path to PEM file or None.
-
-    Deletes and recreates the bundle directory on every server start.
-    """
-    if not jira_config:
-        return None
-    ssl = jira_config.get("ssl")
-    if not ssl:
-        return None
-    bundle_data = ssl.get("bundle_data")
-    bundle_path = ssl.get("bundle_path")
-    bundle_file_name = ssl.get("bundle_file_name")
-    if not bundle_data or not bundle_path or not bundle_file_name:
-        return None
-
-    # Resolve full directory path relative to config_path
-    full_dir = os.path.join(config_path, bundle_path)
-
-    # Delete and recreate directory every server start
-    if os.path.exists(full_dir):
-        shutil.rmtree(full_dir)
-    os.makedirs(full_dir, exist_ok=True)
-
-    # Write PEM file
-    pem_path = os.path.join(full_dir, bundle_file_name)
-    with open(pem_path, "w") as f:
-        f.write(bundle_data)
-
-    return pem_path
 
 
 def bootstrap():
