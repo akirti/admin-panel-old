@@ -11,7 +11,7 @@ import pytest
 
 from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX, OS_PROPERTY_SEPRATOR, LOCAL_FILE_STORAGE
 from mock_data import (
-    MOCK_EMAIL_BOT, MOCK_IP_BIND_ALL, MOCK_PATH_UPLOADS,
+    MOCK_EMAIL_BOT, MOCK_IP_BIND_ALL, MOCK_JIRA_PASSWORD, MOCK_PATH_UPLOADS,
     MOCK_URL_EXAMPLE, MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV,
     MOCK_URL_JIRA_EXAMPLE, MOCK_URL_JIRA_TEST,
 )
@@ -35,6 +35,9 @@ PATCH_MAIN_CONFIG_LOADER = "main.ConfigurationLoader"
 APP_TITLE = "EasyLife Admin Panel API"
 APP_DESCRIPTION = "Authentication, Authorization, and Administration API"
 UVICORN_APP_REF = "src.main:app"
+PATCH_MAIN_SETUP_SSL = "main.setup_jira_ssl_bundle"
+STR_USERNAME = "username"
+STR_PASSWORD = "password"
 
 # All env var keys that main.py reads — cleared before each test
 _ENV_KEYS_TO_CLEAR = [
@@ -330,6 +333,8 @@ class TestBuildJiraConfig:
     def test_jira_config_with_all_fields(self):
         jira_raw = {
             "base_url": MOCK_URL_JIRA_EXAMPLE,
+            STR_USERNAME: "jirauser",
+            STR_PASSWORD: MOCK_JIRA_PASSWORD,
             "email": MOCK_EMAIL_BOT,
             "api_token": "tok123",
             "project_key": "PROJ",
@@ -351,6 +356,8 @@ class TestBuildJiraConfig:
 
         assert jira is not None
         assert jira["base_url"] == MOCK_URL_JIRA_EXAMPLE
+        assert jira[STR_USERNAME] == "jirauser"
+        assert jira[STR_PASSWORD] == MOCK_JIRA_PASSWORD
         assert jira["email"] == MOCK_EMAIL_BOT
         assert jira["api_token"] == "tok123"
         assert jira["project_key"] == "PROJ"
@@ -382,6 +389,8 @@ class TestBuildJiraConfig:
         assert jira["target_days"] == 7
         assert jira["components"] == []
         assert jira["default_watchers"] == []
+        assert jira[STR_USERNAME] is None
+        assert jira[STR_PASSWORD] is None
         assert jira["default_team"] is None
         assert jira["default_assignee"] is None
         assert jira[STR_DEFAULT_ASSIGNEE_NAME] is None
@@ -480,6 +489,50 @@ class TestBootstrap:
         assert kwargs["cors_origins"] == [MOCK_URL_FRONTEND, MOCK_URL_FRONTEND_DEV]
         assert kwargs["file_storage_config"]["type"] == "local"
         assert kwargs["file_storage_config"]["base_path"] == MOCK_PATH_UPLOADS
+
+    @patch(PATCH_MAIN_SETUP_SSL, return_value="/app/config/certificate/jira/combined.pem")
+    @patch(PATCH_MAIN_CREATE_APP)
+    @patch(PATCH_MAIN_CONFIG_LOADER)
+    def test_bootstrap_sets_bundle_pem_path_when_ssl_configured(
+        self, mock_cl_cls, mock_create_app, mock_setup_ssl,
+    ):
+        jira_raw = {
+            "base_url": MOCK_URL_JIRA_EXAMPLE,
+            "ssl": {"bundle_data": "cert-data", "bundle_path": "certificate/jira", "bundle_file_name": "combined.pem"},
+        }
+        mock_cl_cls.return_value = _make_config_loader({CFG_ENVIRONMENT_JIRA: jira_raw})
+        bootstrap()
+
+        mock_setup_ssl.assert_called_once()
+        kwargs = mock_create_app.call_args[1]
+        assert kwargs["jira_config"]["ssl"]["bundle_pem_path"] == "/app/config/certificate/jira/combined.pem"
+
+    @patch(PATCH_MAIN_SETUP_SSL, return_value=None)
+    @patch(PATCH_MAIN_CREATE_APP)
+    @patch(PATCH_MAIN_CONFIG_LOADER)
+    def test_bootstrap_no_pem_path_when_ssl_returns_none(
+        self, mock_cl_cls, mock_create_app, mock_setup_ssl,
+    ):
+        jira_raw = {"base_url": MOCK_URL_JIRA_EXAMPLE, "ssl": {}}
+        mock_cl_cls.return_value = _make_config_loader({CFG_ENVIRONMENT_JIRA: jira_raw})
+        bootstrap()
+
+        mock_setup_ssl.assert_called_once()
+        kwargs = mock_create_app.call_args[1]
+        assert "bundle_pem_path" not in kwargs["jira_config"]["ssl"]
+
+    @patch(PATCH_MAIN_SETUP_SSL, return_value=None)
+    @patch(PATCH_MAIN_CREATE_APP)
+    @patch(PATCH_MAIN_CONFIG_LOADER)
+    def test_bootstrap_skips_ssl_when_jira_none(
+        self, mock_cl_cls, mock_create_app, mock_setup_ssl,
+    ):
+        mock_cl_cls.return_value = _make_config_loader()
+        bootstrap()
+
+        mock_setup_ssl.assert_called_once()
+        kwargs = mock_create_app.call_args[1]
+        assert kwargs["jira_config"] is None
 
 
 # ============================================================================

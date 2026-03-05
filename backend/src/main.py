@@ -99,6 +99,8 @@ def build_jira_config(loader: ConfigurationLoader) -> Optional[dict]:
         return None
     return {
         "base_url": jira_raw.get("base_url"),
+        "username": jira_raw.get("username"),
+        "password": jira_raw.get("password"),
         "email": jira_raw.get("email"),
         "api_token": jira_raw.get("api_token"),
         "project_key": jira_raw.get("project_key", "SCEN"),

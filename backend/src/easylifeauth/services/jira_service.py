@@ -37,6 +37,8 @@ class JiraService:
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.enabled = False
         self.base_url = None
+        self.username = None
+        self.password = None
         self.email = None
         self.api_token = None
         self.project_key = None
@@ -50,6 +52,8 @@ class JiraService:
 
         if config:
             self.base_url = config.get("base_url")
+            self.username = config.get("username")
+            self.password = config.get("password")
             self.email = config.get("email")
             self.api_token = config.get("api_token")
             self.project_key = config.get("project_key", "SCEN")
@@ -80,7 +84,7 @@ class JiraService:
             # Set timeout options to prevent hanging on invalid credentials
             self._client = JIRA(
                 server=self.base_url,
-                basic_auth=(self.email, self.api_token),
+                basic_auth=(self.email or self.username, self.api_token or self.password),
                 options={
                     'verify': True,
                     'timeout': 10  # 10 second timeout
