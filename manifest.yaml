@@ -51,6 +51,7 @@ applications:
       # EASYLIFE_ENVIRONMENT.JIRA.SERVER: https://your-org.atlassian.net
       # EASYLIFE_ENVIRONMENT.JIRA.EMAIL: jira-user@example.com
       # EASYLIFE_ENVIRONMENT.JIRA.API_TOKEN: <jira-token>
+      # EASYLIFE_ENVIRONMENT.JIRA.SSL.ENABLED: true
       # EASYLIFE_ENVIRONMENT.JIRA.SSL.BUNDLE_PATH: certificate/jira
       # EASYLIFE_ENVIRONMENT.JIRA.SSL.BUNDLE_FILE_NAME: combined.pem
       # EASYLIFE_ENVIRONMENT.JIRA.SSL.BUNDLE_DATA: -----BEGIN CERTIFCATE------ 2372323bj23ybs -----END CERTIFICATE---- \n -----BEGIN CERTIFCATE------ 2372323bj23ybs -----END CERTIFICATE---- \n-----BEGIN CERTIFCATE------ 2372323bj23ybs -----END CERTIFICATE---- 
@@ -74,6 +75,8 @@ applications:
       - staticfile_buildpack
     path: ./frontend/dist
     env:
+      EASYLIFE_ENVIRONMENT: production
       VITE_API_BASE_URL: https://easylife-backend.apps.internal/api/v1
+      VITE_PREVAIL_API_BASE_URL: https://easylife-backend-core.apps.internal/api/v1
     routes:
       - route: easylife.apps.example.com

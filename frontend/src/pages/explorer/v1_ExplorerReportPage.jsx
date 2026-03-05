@@ -7,6 +7,7 @@ import V1FilterSection from '../../components/explorer/v1_FilterSection';
 import V1DataTable from '../../components/explorer/v1_DataTable';
 import { playboardAPI } from '../../services/api';
 import { prevailAPI } from '../../services/v1_explorerApi';
+import { ENV } from '../../config/env';
 import { getColumnsFromData as getColumnsObj } from '../../utils/v1_reportUtils';
 import V1DescriptionRenderer from '../../components/explorer/v1_DescriptionRenderer';
 
@@ -396,7 +397,7 @@ function V1ExplorerReportPage() {
         paginationConfig.pages = pages;
 
         // Determine environment
-        const appEnv = window.__env?.ENV || 'dev';
+        const appEnv = ENV;
         const prevailEnv = appEnv === 'stg' ? 'stage' : appEnv;
 
         const apiPayload = {

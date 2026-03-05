@@ -1,8 +1,5 @@
 import axios from 'axios';
-
-// Use relative path - Vite dev server proxies /api to backend
-// In production, nginx handles the proxy
-const API_BASE_URL = '/api/v1';
+import { API_BASE_URL } from '../config/env';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
