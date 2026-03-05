@@ -100,7 +100,7 @@ class TestBuildDbConfigPoolLines:
 
     def test_all_pool_settings_from_int_values(self):
         loader = _make_loader(
-            db_config={"host": "h"},
+            db_config={"host": "h", "username": "u", "password": "p"},
             globals_pool={
                 "max_pool_size": 200,
                 "min_pool_size": 20,
@@ -124,7 +124,7 @@ class TestBuildDbConfigPoolLines:
 
     def test_all_pool_settings_from_string_values(self):
         loader = _make_loader(
-            db_config={"host": "h"},
+            db_config={"host": "h", "username": "u", "password": "p"},
             globals_pool={
                 "max_pool_size": "150",
                 "min_pool_size": "15",
@@ -148,7 +148,7 @@ class TestBuildDbConfigPoolLines:
 
     def test_all_pool_settings_fallback_on_unresolved_placeholders(self):
         loader = _make_loader(
-            db_config={"host": "h"},
+            db_config={"host": "h", "username": "u", "password": "p"},
             globals_pool={
                 "max_pool_size": UNRESOLVED_PLACEHOLDER,
                 "min_pool_size": "{unresolved}",
@@ -172,7 +172,7 @@ class TestBuildDbConfigPoolLines:
 
     def test_pool_defaults_when_keys_missing(self):
         loader = _make_loader(
-            db_config={"host": "h"},
+            db_config={"host": "h", "username": "u", "password": "p"},
             globals_pool={"max_pool_size": 100},
         )
         db = build_db_config(loader)
@@ -190,18 +190,18 @@ class TestBuildDbConfigPoolLines:
         assert build_db_config(loader) is None
 
     def test_no_pool_injection_when_globals_none(self):
-        loader = _make_loader(db_config={"host": "h"}, globals_pool=None)
+        loader = _make_loader(db_config={"host": "h", "username": "u", "password": "p"}, globals_pool=None)
         db = build_db_config(loader)
         assert KEY_MAX_POOL not in db
 
     def test_no_pool_injection_when_globals_empty(self):
-        loader = _make_loader(db_config={"host": "h"}, globals_pool={})
+        loader = _make_loader(db_config={"host": "h", "username": "u", "password": "p"}, globals_pool={})
         db = build_db_config(loader)
         assert KEY_MAX_POOL not in db
 
     def test_float_pool_values(self):
         loader = _make_loader(
-            db_config={"host": "h"},
+            db_config={"host": "h", "username": "u", "password": "p"},
             globals_pool={"max_pool_size": 50.9, "min_pool_size": 5.1},
         )
         db = build_db_config(loader)

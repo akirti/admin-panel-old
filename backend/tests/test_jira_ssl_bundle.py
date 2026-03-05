@@ -363,7 +363,7 @@ class TestBootstrapIntegration:
             return mapping.get(path)
 
         mock_loader.get_config_by_path.side_effect = side_effect
-        mock_loader.get_DB_config.return_value = {"host": "localhost"}
+        mock_loader.get_DB_config.return_value = {"host": "localhost", "username": "admin", "password": "pass"}
         mock_create_app.return_value = "fake_app"
 
         with patch(PATCH_RESOLVE_CONFIG, return_value=str(tmp_path)), \
@@ -403,7 +403,7 @@ class TestBootstrapIntegration:
             return mapping.get(path)
 
         mock_loader.get_config_by_path.side_effect = side_effect
-        mock_loader.get_DB_config.return_value = {"host": "localhost"}
+        mock_loader.get_DB_config.return_value = {"host": "localhost", "username": "admin", "password": "pass"}
         mock_create_app.return_value = "fake_app"
 
         with patch(PATCH_RESOLVE_CONFIG, return_value=str(tmp_path)), \

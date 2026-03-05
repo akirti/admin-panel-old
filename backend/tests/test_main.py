@@ -149,7 +149,7 @@ class TestBuildDBConfig:
     """Database configuration extraction and pool settings injection."""
 
     def test_db_config_from_loader(self):
-        fake_db = {"host": "dbhost", "database": "mydb"}
+        fake_db = {"host": "dbhost", "username": "admin", "password": "pass", "database": "mydb"}
         loader = _make_config_loader({
             "db_config": fake_db,
             CFG_GLOBALS_DATABASES_DEFAULT: {"max_pool_size": 100},
@@ -159,7 +159,7 @@ class TestBuildDBConfig:
         assert result["database"] == "mydb"
 
     def test_pool_settings_injected(self):
-        fake_db = {"host": "dbhost"}
+        fake_db = {"host": "dbhost", "username": "admin", "password": "pass"}
         fake_pool = {
             "max_pool_size": 100,
             "min_pool_size": 10,
@@ -185,7 +185,7 @@ class TestBuildDBConfig:
         assert db["waitQueueTimeoutMS"] == 20000
 
     def test_pool_defaults_for_missing_keys(self):
-        fake_db = {"host": "dbhost"}
+        fake_db = {"host": "dbhost", "username": "admin", "password": "pass"}
         loader = _make_config_loader({
             "db_config": fake_db,
             CFG_GLOBALS_DATABASES_DEFAULT: {"max_pool_size": 100},
@@ -208,7 +208,7 @@ class TestBuildDBConfig:
         assert build_db_config(loader) is None
 
     def test_pool_not_injected_when_globals_none(self):
-        fake_db = {"host": "dbhost"}
+        fake_db = {"host": "dbhost", "username": "admin", "password": "pass"}
         loader = _make_config_loader({
             "db_config": fake_db,
             CFG_GLOBALS_DATABASES_DEFAULT: None,
@@ -217,7 +217,7 @@ class TestBuildDBConfig:
         assert STR_MAXPOOLSIZE not in db
 
     def test_pool_not_injected_when_globals_empty_dict(self):
-        fake_db = {"host": "dbhost"}
+        fake_db = {"host": "dbhost", "username": "admin", "password": "pass"}
         loader = _make_config_loader({
             "db_config": fake_db,
             CFG_GLOBALS_DATABASES_DEFAULT: {},
@@ -227,7 +227,7 @@ class TestBuildDBConfig:
 
     def test_pool_settings_fallback_for_unresolved_placeholders(self):
         """Unresolved placeholder strings fall back to defaults (not ValueError)."""
-        fake_db = {"host": "dbhost"}
+        fake_db = {"host": "dbhost", "username": "admin", "password": "pass"}
         fake_pool = {
             "max_pool_size": UNRESOLVED_PLACEHOLDER,
             "min_pool_size": "{globals.databases.default.min_pool_size}",
@@ -254,7 +254,7 @@ class TestBuildDBConfig:
 
     def test_pool_settings_accept_string_integers(self):
         """String integers (e.g. from env vars) are converted properly."""
-        fake_db = {"host": "dbhost"}
+        fake_db = {"host": "dbhost", "username": "admin", "password": "pass"}
         fake_pool = {"max_pool_size": "200", "min_pool_size": "10"}
         loader = _make_config_loader({
             "db_config": fake_db,

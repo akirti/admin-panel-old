@@ -126,12 +126,17 @@ class ConfigurationLoader:
         Uses known_dot_paths to build an accurate reverse map that handles
         underscore ambiguity (e.g. db_info vs db.info).
         Falls back to simple underscore→dot conversion for unknown keys.
+
+        The reverse map normalises dots to underscores so that env vars from
+        platforms that use underscores (PCF, Docker, etc.) match correctly.
         """
         sep = OS_PROPERTY_SEPRATOR
-        # Build reverse map: ENV_VAR_NAME → original property path
+        # Build reverse map: ENV_VAR_NAME → original property path.
+        # Env var names use underscores, so replace the separator (.) with _
+        # to match what PCF / Docker / shell actually set.
         reverse_map: Dict[str, str] = {}
         for prop_path in known_dot_paths:
-            env_key = f"{prefix}_{prop_path}".upper()
+            env_key = f"{prefix}_{prop_path.replace(sep, '_')}".upper()
             reverse_map[env_key] = prop_path
 
         # Meta env vars to skip (not config values)

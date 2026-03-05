@@ -2,8 +2,12 @@
 import os
 import sys
 import json
+import logging
+import re
 from pathlib import Path
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 def set_path():
     """set root path for all"""
     MODULE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "."))
@@ -38,6 +42,13 @@ def resolve_config_path() -> str:
     return os.environ.get("CONFIG_PATH", str(Path(__file__).parent.parent / "config"))
 
 
+def _is_placeholder(value) -> bool:
+    """Return True if *value* is an unresolved ``{dot.path}`` placeholder."""
+    if not isinstance(value, str):
+        return False
+    return bool(re.fullmatch(r'\{[^{}]+\}', value.strip()))
+
+
 def _safe_int(value, default: int) -> int:
     """Convert a config value to int, returning *default* for unresolved placeholders."""
     if isinstance(value, int):
@@ -51,10 +62,28 @@ def _safe_int(value, default: int) -> int:
 
 
 def build_db_config(loader: ConfigurationLoader) -> Optional[dict]:
-    """Extract DB config and inject connection pool settings from globals."""
+    """Extract DB config and inject connection pool settings from globals.
+
+    Returns None when required fields (host, username, password) are missing
+    or still contain unresolved ``{placeholder}`` strings.
+    """
     db_config = loader.get_DB_config("authentication")
+    if not db_config:
+        return None
+
+    # Validate required connection fields are resolved
+    required_keys = ("host", "username", "password")
+    for key in required_keys:
+        val = db_config.get(key)
+        if not val or _is_placeholder(val):
+            logger.warning(
+                "DB config key '%s' is missing or unresolved (%s) — skipping database setup",
+                key, val,
+            )
+            return None
+
     globals_pool = loader.get_config_by_path("globals.databases.default")
-    if db_config and globals_pool:
+    if globals_pool:
         db_config["maxPoolSize"] = _safe_int(globals_pool.get("max_pool_size"), 50)
         db_config["minPoolSize"] = _safe_int(globals_pool.get("min_pool_size"), 5)
         db_config["maxIdleTimeMS"] = _safe_int(globals_pool.get("max_idle_time_ms"), 300000)
