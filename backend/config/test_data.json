@@ -133,5 +133,26 @@
   "MOCK_GCS_TEST_BUCKET_PREFIX": "gs://test-bucket/",
   "MOCK_GCS_FILE_JSON": "gs://bucket/file.json",
   "MOCK_GCS_FILE": "gs://bucket/file",
-  "MOCK_GCS_BUCKET_NAME_FILE": "gs://bucket-name/path/to/file.txt"
+  "MOCK_GCS_BUCKET_NAME_FILE": "gs://bucket-name/path/to/file.txt",
+
+  "MOCK_DB_HOST": "dbhost",
+  "MOCK_DB_HOST_SHORT": "h",
+  "MOCK_DB_HOST_LOCAL": "localhost:27017",
+  "MOCK_DB_HOST_CLUSTER": "cluster.mongodb.net",
+  "MOCK_DB_HOST_EXAMPLE": "myhost.example.com",
+  "MOCK_DB_USERNAME": "admin",
+  "MOCK_DB_USERNAME_SHORT": "u",
+  "MOCK_DB_USERNAME_ALT": "dbadmin",
+  "MOCK_DB_PASSWORD_MOCK": "pass",
+  "MOCK_DB_PASSWORD_SHORT": "p",
+  "MOCK_DB_PASSWORD_ALT": "s3cret",
+  "MOCK_DB_PASSWORD_SECRET": "secret",
+  "MOCK_DB_PASSWORD_SECRET123": "secret123",
+  "MOCK_DB_DATABASE": "mydb",
+  "MOCK_DB_DATABASE_EASYLIFE": "easylife",
+  "MOCK_DB_DATABASE_PROD": "easylife_prod",
+  "MOCK_DB_SCHEME_DEFAULT": "mongodb",
+  "MOCK_DB_SCHEME_SRV": "mongodb+srv",
+  "MOCK_URL_HOST_1": "host1.example.com",
+  "MOCK_URL_HOST_2": "host2.example.com"
 }

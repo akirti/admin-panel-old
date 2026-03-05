@@ -118,6 +118,16 @@ class ConfigurationLoader:
             _scan(config)
         return keys
 
+    @staticmethod
+    def _normalise_env_key(key: str) -> str:
+        """Normalise an env var name by replacing dots with underscores and upper-casing.
+
+        This allows a single reverse-map lookup to match env vars regardless of
+        whether the platform uses dots (``EASYLIFE.DB.HOST``) or underscores
+        (``EASYLIFE_DB_HOST``).
+        """
+        return key.replace(".", "_").upper()
+
     def _collect_env_overrides(
         self, known_dot_paths: set, prefix: str
     ) -> Dict[str, Any]:
@@ -127,31 +137,41 @@ class ConfigurationLoader:
         underscore ambiguity (e.g. db_info vs db.info).
         Falls back to simple underscore→dot conversion for unknown keys.
 
-        The reverse map normalises dots to underscores so that env vars from
-        platforms that use underscores (PCF, Docker, etc.) match correctly.
+        Supports env vars with dots (``EASYLIFE.DB.HOST``) and underscores
+        (``EASYLIFE_DB_HOST``) — both are normalised before lookup.
         """
         sep = OS_PROPERTY_SEPRATOR
-        # Build reverse map: ENV_VAR_NAME → original property path.
-        # Env var names use underscores, so replace the separator (.) with _
-        # to match what PCF / Docker / shell actually set.
+        # Build reverse map: NORMALISED_ENV_KEY → original property path.
+        # Normalisation replaces dots with underscores so both
+        # EASYLIFE.DB.HOST and EASYLIFE_DB_HOST resolve identically.
         reverse_map: Dict[str, str] = {}
         for prop_path in known_dot_paths:
-            env_key = f"{prefix}_{prop_path.replace(sep, '_')}".upper()
-            reverse_map[env_key] = prop_path
+            norm_key = self._normalise_env_key(f"{prefix}_{prop_path}")
+            reverse_map[norm_key] = prop_path
 
         # Meta env vars to skip (not config values)
-        skip_keys = {f"{prefix}_ENVIRONMENT", "CONFIG_PATH"}
+        skip_keys = {
+            self._normalise_env_key(f"{prefix}_ENVIRONMENT"),
+            self._normalise_env_key(f"{prefix}{sep}ENVIRONMENT"),
+            self._normalise_env_key("CONFIG_PATH"),
+        }
 
         overrides: Dict[str, Any] = {}
-        env_prefix = f"{prefix}_"
+        norm_prefix = self._normalise_env_key(f"{prefix}_")
+        dot_prefix = f"{prefix}{sep}"
         for key, value in os.environ.items():
-            if not key.startswith(env_prefix) or key in skip_keys:
+            # Accept both EASYLIFE_... and EASYLIFE.... prefixed vars
+            if not (key.startswith(f"{prefix}_") or key.startswith(dot_prefix)):
                 continue
-            if key in reverse_map:
-                prop_path = reverse_map[key]
+            norm_key = self._normalise_env_key(key)
+            if norm_key in skip_keys:
+                continue
+            if norm_key in reverse_map:
+                prop_path = reverse_map[norm_key]
             else:
                 # Fallback: strip prefix and lowercase
-                prop_path = key[len(env_prefix):].lower()
+                suffix = norm_key[len(norm_prefix):]
+                prop_path = suffix.lower()
             overrides[prop_path] = self._convert_value(value)
         return overrides
 

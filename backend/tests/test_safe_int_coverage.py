@@ -6,6 +6,7 @@ _safe_int call-site inside build_db_config (lines 58-65) as covered.
 from unittest.mock import MagicMock
 
 from main import _safe_int, build_db_config
+from mock_data import MOCK_DB_HOST_SHORT, MOCK_DB_USERNAME_SHORT, MOCK_DB_PASSWORD_SHORT
 
 CFG_GLOBALS_DATABASES_DEFAULT = "globals.databases.default"
 UNRESOLVED_PLACEHOLDER = "{globals.databases.default.max_pool_size}"
@@ -100,7 +101,7 @@ class TestBuildDbConfigPoolLines:
 
     def test_all_pool_settings_from_int_values(self):
         loader = _make_loader(
-            db_config={"host": "h", "username": "u", "password": "p"},
+            db_config={"host": MOCK_DB_HOST_SHORT, "username": MOCK_DB_USERNAME_SHORT, "password": MOCK_DB_PASSWORD_SHORT},
             globals_pool={
                 "max_pool_size": 200,
                 "min_pool_size": 20,
@@ -124,7 +125,7 @@ class TestBuildDbConfigPoolLines:
 
     def test_all_pool_settings_from_string_values(self):
         loader = _make_loader(
-            db_config={"host": "h", "username": "u", "password": "p"},
+            db_config={"host": MOCK_DB_HOST_SHORT, "username": MOCK_DB_USERNAME_SHORT, "password": MOCK_DB_PASSWORD_SHORT},
             globals_pool={
                 "max_pool_size": "150",
                 "min_pool_size": "15",
@@ -148,7 +149,7 @@ class TestBuildDbConfigPoolLines:
 
     def test_all_pool_settings_fallback_on_unresolved_placeholders(self):
         loader = _make_loader(
-            db_config={"host": "h", "username": "u", "password": "p"},
+            db_config={"host": MOCK_DB_HOST_SHORT, "username": MOCK_DB_USERNAME_SHORT, "password": MOCK_DB_PASSWORD_SHORT},
             globals_pool={
                 "max_pool_size": UNRESOLVED_PLACEHOLDER,
                 "min_pool_size": "{unresolved}",
@@ -172,7 +173,7 @@ class TestBuildDbConfigPoolLines:
 
     def test_pool_defaults_when_keys_missing(self):
         loader = _make_loader(
-            db_config={"host": "h", "username": "u", "password": "p"},
+            db_config={"host": MOCK_DB_HOST_SHORT, "username": MOCK_DB_USERNAME_SHORT, "password": MOCK_DB_PASSWORD_SHORT},
             globals_pool={"max_pool_size": 100},
         )
         db = build_db_config(loader)
@@ -190,18 +191,18 @@ class TestBuildDbConfigPoolLines:
         assert build_db_config(loader) is None
 
     def test_no_pool_injection_when_globals_none(self):
-        loader = _make_loader(db_config={"host": "h", "username": "u", "password": "p"}, globals_pool=None)
+        loader = _make_loader(db_config={"host": MOCK_DB_HOST_SHORT, "username": MOCK_DB_USERNAME_SHORT, "password": MOCK_DB_PASSWORD_SHORT}, globals_pool=None)
         db = build_db_config(loader)
         assert KEY_MAX_POOL not in db
 
     def test_no_pool_injection_when_globals_empty(self):
-        loader = _make_loader(db_config={"host": "h", "username": "u", "password": "p"}, globals_pool={})
+        loader = _make_loader(db_config={"host": MOCK_DB_HOST_SHORT, "username": MOCK_DB_USERNAME_SHORT, "password": MOCK_DB_PASSWORD_SHORT}, globals_pool={})
         db = build_db_config(loader)
         assert KEY_MAX_POOL not in db
 
     def test_float_pool_values(self):
         loader = _make_loader(
-            db_config={"host": "h", "username": "u", "password": "p"},
+            db_config={"host": MOCK_DB_HOST_SHORT, "username": MOCK_DB_USERNAME_SHORT, "password": MOCK_DB_PASSWORD_SHORT},
             globals_pool={"max_pool_size": 50.9, "min_pool_size": 5.1},
         )
         db = build_db_config(loader)

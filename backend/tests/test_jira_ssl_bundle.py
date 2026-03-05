@@ -6,7 +6,10 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from mock_data import MOCK_EMAIL_BOT, MOCK_API_TOKEN, MOCK_SECRET, MOCK_URL_JIRA_EXAMPLE
+from mock_data import (
+    MOCK_EMAIL_BOT, MOCK_API_TOKEN, MOCK_SECRET, MOCK_URL_JIRA_EXAMPLE,
+    MOCK_DB_HOST_LOCAL, MOCK_DB_USERNAME, MOCK_DB_PASSWORD_MOCK,
+)
 from easylifeauth.utils.certificate_util import format_pem_bundle, setup_jira_ssl_bundle
 
 # -- PEM markers ---------------------------------------------------------------
@@ -363,7 +366,7 @@ class TestBootstrapIntegration:
             return mapping.get(path)
 
         mock_loader.get_config_by_path.side_effect = side_effect
-        mock_loader.get_DB_config.return_value = {"host": "localhost", "username": "admin", "password": "pass"}
+        mock_loader.get_DB_config.return_value = {"host": MOCK_DB_HOST_LOCAL, "username": MOCK_DB_USERNAME, "password": MOCK_DB_PASSWORD_MOCK}
         mock_create_app.return_value = "fake_app"
 
         with patch(PATCH_RESOLVE_CONFIG, return_value=str(tmp_path)), \
@@ -403,7 +406,7 @@ class TestBootstrapIntegration:
             return mapping.get(path)
 
         mock_loader.get_config_by_path.side_effect = side_effect
-        mock_loader.get_DB_config.return_value = {"host": "localhost", "username": "admin", "password": "pass"}
+        mock_loader.get_DB_config.return_value = {"host": MOCK_DB_HOST_LOCAL, "username": MOCK_DB_USERNAME, "password": MOCK_DB_PASSWORD_MOCK}
         mock_create_app.return_value = "fake_app"
 
         with patch(PATCH_RESOLVE_CONFIG, return_value=str(tmp_path)), \

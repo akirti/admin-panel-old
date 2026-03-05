@@ -2,6 +2,10 @@
 from unittest.mock import MagicMock
 
 from main import _is_placeholder, build_db_config
+from mock_data import (
+    MOCK_DB_HOST_LOCAL, MOCK_DB_USERNAME, MOCK_DB_PASSWORD_SECRET123,
+    MOCK_DB_DATABASE_EASYLIFE, MOCK_DB_SCHEME_DEFAULT, MOCK_DB_SCHEME_SRV,
+)
 
 CFG_GLOBALS_DATABASES_DEFAULT = "globals.databases.default"
 
@@ -33,11 +37,11 @@ def _make_loader(db_config=None, globals_pool=None):
 def _resolved_db_config(**overrides):
     """Return a valid db_config dict with all required fields resolved."""
     base = {
-        "connection_scheme": "mongodb",
-        "username": "admin",
-        "password": "secret123",
-        "host": "localhost:27017",
-        "database": "easylife",
+        "connection_scheme": MOCK_DB_SCHEME_DEFAULT,
+        "username": MOCK_DB_USERNAME,
+        "password": MOCK_DB_PASSWORD_SECRET123,
+        "host": MOCK_DB_HOST_LOCAL,
+        "database": MOCK_DB_DATABASE_EASYLIFE,
         "collections": ["users", "tokens"],
     }
     base.update(overrides)
@@ -95,7 +99,7 @@ class TestIsPlaceholder:
         assert _is_placeholder("prefix{some.path}suffix") is False
 
     def test_resolved_url(self):
-        assert _is_placeholder("mongodb+srv://cluster.example.net") is False
+        assert _is_placeholder(f"{MOCK_DB_SCHEME_SRV}://cluster.example.net") is False
 
     def test_nested_braces(self):
         assert _is_placeholder("{{nested}}") is False
@@ -150,8 +154,8 @@ class TestBuildDbConfigPlaceholders:
         )
         result = build_db_config(loader)
         assert result is not None
-        assert result["host"] == "localhost:27017"
-        assert result["username"] == "admin"
+        assert result["host"] == MOCK_DB_HOST_LOCAL
+        assert result["username"] == MOCK_DB_USERNAME
         assert result[KEY_MAX_POOL] == 100
 
     def test_returns_config_without_pool_when_globals_none(self):
@@ -171,7 +175,7 @@ class TestBuildDbConfigPlaceholders:
         loader = _make_loader(db_config=cfg, globals_pool={"max_pool_size": 50})
         result = build_db_config(loader)
         assert result is not None
-        assert result["host"] == "localhost:27017"
+        assert result["host"] == MOCK_DB_HOST_LOCAL
 
     def test_pool_settings_still_injected_when_resolved(self):
         cfg = _resolved_db_config()
