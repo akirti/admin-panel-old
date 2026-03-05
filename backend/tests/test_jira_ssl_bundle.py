@@ -1,11 +1,12 @@
 """Tests for certificate_util: format_pem_bundle() and setup_jira_ssl_bundle()"""
 import os
+import shutil
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import pytest
 
 from src.easylifeauth.utils.certificate_util import format_pem_bundle, setup_jira_ssl_bundle
-from src.main import bootstrap
 
 
 # -- Sample data ---------------------------------------------------------------
@@ -55,6 +56,23 @@ PROPER_PEM = (
 )
 
 SIMPLE_PEM = "-----BEGIN CERTIFICATE-----\nMIIBxTCCAW\n-----END CERTIFICATE-----\n"
+
+
+# -- Cleanup fixture -----------------------------------------------------------
+# Module-level app = bootstrap() in src.main creates a real SSL directory under
+# the config path when jira ssl bundle_data is configured.  Clean it up after
+# all tests in this module finish so it doesn't persist on the filesystem.
+
+@pytest.fixture(autouse=True, scope="module")
+def _cleanup_ssl_cert_directory():
+    yield
+    config_path = os.environ.get(
+        "CONFIG_PATH",
+        str(Path(__file__).resolve().parent.parent / "src" / "config"),
+    )
+    cert_dir = os.path.normpath(os.path.join(config_path, "certificate"))
+    if os.path.isdir(cert_dir):
+        shutil.rmtree(cert_dir, ignore_errors=True)
 
 
 # ==============================================================================
@@ -240,7 +258,10 @@ class TestSetupJiraSslBundleHappyPath:
     def test_returns_full_pem_path(self, tmp_path):
         cfg = _make_jira_config()
         result = setup_jira_ssl_bundle(cfg, str(tmp_path))
-        expected = os.path.join(str(tmp_path), "certificate", "jira", "combined.pem")
+        # Use os.path.normpath on both sides for cross-platform compatibility
+        expected = os.path.normpath(
+            os.path.join(str(tmp_path), "certificate", "jira", "combined.pem")
+        )
         assert result == expected
 
     def test_deletes_and_recreates_existing_directory(self, tmp_path):
@@ -259,9 +280,10 @@ class TestSetupJiraSslBundleHappyPath:
         cfg = _make_jira_config(bundle_path="a/b/c/d")
         result = setup_jira_ssl_bundle(cfg, str(tmp_path))
 
-        expected = tmp_path / "a" / "b" / "c" / "d" / "combined.pem"
-        assert expected.exists()
-        assert result == str(expected)
+        expected_path = tmp_path / "a" / "b" / "c" / "d" / "combined.pem"
+        assert expected_path.exists()
+        # Compare normalized paths for cross-platform consistency
+        assert os.path.normpath(result) == os.path.normpath(str(expected_path))
 
     def test_writes_formatted_content_not_raw(self, tmp_path):
         """Verifies the file is formatted, not a raw single-line dump."""
@@ -284,6 +306,8 @@ class TestBootstrapIntegration:
     @patch("src.main.create_app")
     @patch("src.main.ConfigurationLoader")
     def test_bootstrap_stores_pem_path_in_jira_config(self, mock_loader_cls, mock_create_app, tmp_path):
+        from src.main import bootstrap
+
         mock_loader = MagicMock()
         mock_loader_cls.return_value = mock_loader
 
@@ -318,18 +342,23 @@ class TestBootstrapIntegration:
 
         call_kwargs = mock_create_app.call_args[1]
         jira_cfg = call_kwargs["jira_config"]
-        expected_pem = os.path.join(str(tmp_path), "certificate", "jira", "combined.pem")
+        expected_pem = os.path.normpath(
+            os.path.join(str(tmp_path), "certificate", "jira", "combined.pem")
+        )
         assert jira_cfg["ssl"]["bundle_pem_path"] == expected_pem
         assert os.path.exists(expected_pem)
 
         # Verify the written file is properly formatted
-        content = open(expected_pem).read()
+        with open(expected_pem) as f:
+            content = f.read()
         assert "\\n" not in content
         assert "-----BEGIN CERTIFICATE-----\n" in content
 
     @patch("src.main.create_app")
     @patch("src.main.ConfigurationLoader")
     def test_bootstrap_no_pem_path_when_ssl_not_configured(self, mock_loader_cls, mock_create_app, tmp_path):
+        from src.main import bootstrap
+
         mock_loader = MagicMock()
         mock_loader_cls.return_value = mock_loader
 

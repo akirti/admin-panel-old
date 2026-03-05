@@ -67,8 +67,8 @@ def setup_jira_ssl_bundle(
     if not bundle_data or not bundle_path or not bundle_file_name:
         return None
 
-    # Resolve full directory path relative to config_path
-    full_dir = os.path.join(config_path, bundle_path)
+    # Resolve full directory path relative to config_path (normpath for cross-platform)
+    full_dir = os.path.normpath(os.path.join(config_path, bundle_path))
 
     # Delete and recreate directory every server start
     if os.path.exists(full_dir):
@@ -76,7 +76,7 @@ def setup_jira_ssl_bundle(
     os.makedirs(full_dir, exist_ok=True)
 
     # Format and write PEM file
-    pem_path = os.path.join(full_dir, bundle_file_name)
+    pem_path = os.path.normpath(os.path.join(full_dir, bundle_file_name))
     formatted = format_pem_bundle(bundle_data)
     with open(pem_path, "w") as f:
         f.write(formatted)
