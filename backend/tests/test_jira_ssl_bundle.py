@@ -6,8 +6,38 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
+from mock_data import MOCK_EMAIL_BOT, MOCK_API_TOKEN, MOCK_SECRET, MOCK_URL_JIRA_EXAMPLE
 from src.easylifeauth.utils.certificate_util import format_pem_bundle, setup_jira_ssl_bundle
 
+# -- PEM markers ---------------------------------------------------------------
+PEM_BEGIN_CERT = "-----BEGIN CERTIFICATE-----"
+PEM_END_CERT = "-----END CERTIFICATE-----"
+PEM_BEGIN_RSA_KEY = "-----BEGIN RSA PRIVATE KEY-----"
+PEM_END_RSA_KEY = "-----END RSA PRIVATE KEY-----"
+PEM_BEGIN_EC_KEY = "-----BEGIN EC PRIVATE KEY-----"
+PEM_END_EC_KEY = "-----END EC PRIVATE KEY-----"
+PEM_BEGIN_KEY = "-----BEGIN PRIVATE KEY-----"
+PEM_END_KEY = "-----END PRIVATE KEY-----"
+PEM_MARKER_PREFIX = "-----BEGIN"
+PEM_MARKER_SUFFIX = "-----"
+
+# -- File / path defaults ------------------------------------------------------
+DEFAULT_PEM_FILE = "combined.pem"
+DEFAULT_BUNDLE_PATH = "certificate/jira"
+CERT_DIR = "certificate"
+
+# -- Config path strings -------------------------------------------------------
+CFG_AUTH_SECRET_KEY = "environment.app_secrets.auth_secret_key"
+CFG_SMTP = "environment.smtp"
+CFG_CORS_ORIGINS = "environment.cors.origins"
+CFG_STORAGE = "environment.storage"
+CFG_JIRA = "environment.jira"
+
+# -- Patch targets -------------------------------------------------------------
+PATCH_CREATE_APP = "src.main.create_app"
+PATCH_CONFIG_LOADER = "src.main.ConfigurationLoader"
+PATCH_RESOLVE_CONFIG = "src.main.resolve_config_path"
+PATCH_RESOLVE_ENV = "src.main.resolve_environment"
 
 # -- Sample data ---------------------------------------------------------------
 
@@ -18,44 +48,44 @@ KEY_B64 = "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7o4qne60TB3pM"
 CA_CERT_B64 = "MIIDXTCCAkWgAwIBAgIJAJC1HiIAZAiUMA0GCSqGSIb3Qq9BQBCwUAMEUxCzAJBg"
 
 SINGLE_LINE_BUNDLE = (
-    "-----BEGIN CERTIFICATE-----\\n"
+    f"{PEM_BEGIN_CERT}\\n"
     f"{CLIENT_CERT_B64}\\n"
-    "-----END CERTIFICATE-----\\n"
-    "-----BEGIN RSA PRIVATE KEY-----\\n"
+    f"{PEM_END_CERT}\\n"
+    f"{PEM_BEGIN_RSA_KEY}\\n"
     f"{KEY_B64}\\n"
-    "-----END RSA PRIVATE KEY-----\\n"
-    "-----BEGIN CERTIFICATE-----\\n"
+    f"{PEM_END_RSA_KEY}\\n"
+    f"{PEM_BEGIN_CERT}\\n"
     f"{CA_CERT_B64}\\n"
-    "-----END CERTIFICATE-----"
+    f"{PEM_END_CERT}"
 )
 
 # Same bundle but with spaces instead of \n (another common env-var encoding)
 SPACE_SEPARATED_BUNDLE = (
-    "-----BEGIN CERTIFICATE----- "
+    f"{PEM_BEGIN_CERT} "
     f"{CLIENT_CERT_B64} "
-    "-----END CERTIFICATE----- "
-    "-----BEGIN RSA PRIVATE KEY----- "
+    f"{PEM_END_CERT} "
+    f"{PEM_BEGIN_RSA_KEY} "
     f"{KEY_B64} "
-    "-----END RSA PRIVATE KEY----- "
-    "-----BEGIN CERTIFICATE----- "
+    f"{PEM_END_RSA_KEY} "
+    f"{PEM_BEGIN_CERT} "
     f"{CA_CERT_B64} "
-    "-----END CERTIFICATE-----"
+    f"{PEM_END_CERT}"
 )
 
 # Already properly formatted PEM (should pass through unchanged)
 PROPER_PEM = (
-    "-----BEGIN CERTIFICATE-----\n"
+    f"{PEM_BEGIN_CERT}\n"
     f"{CLIENT_CERT_B64}\n"
-    "-----END CERTIFICATE-----\n"
-    "-----BEGIN RSA PRIVATE KEY-----\n"
+    f"{PEM_END_CERT}\n"
+    f"{PEM_BEGIN_RSA_KEY}\n"
     f"{KEY_B64}\n"
-    "-----END RSA PRIVATE KEY-----\n"
-    "-----BEGIN CERTIFICATE-----\n"
+    f"{PEM_END_RSA_KEY}\n"
+    f"{PEM_BEGIN_CERT}\n"
     f"{CA_CERT_B64}\n"
-    "-----END CERTIFICATE-----\n"
+    f"{PEM_END_CERT}\n"
 )
 
-SIMPLE_PEM = "-----BEGIN CERTIFICATE-----\nMIIBxTCCAW\n-----END CERTIFICATE-----\n"
+SIMPLE_PEM = f"{PEM_BEGIN_CERT}\nMIIBxTCCAW\n{PEM_END_CERT}\n"
 
 
 # -- Cleanup fixture -----------------------------------------------------------
@@ -70,7 +100,7 @@ def _cleanup_ssl_cert_directory():
         "CONFIG_PATH",
         str(Path(__file__).resolve().parent.parent / "src" / "config"),
     )
-    cert_dir = os.path.normpath(os.path.join(config_path, "certificate"))
+    cert_dir = os.path.normpath(os.path.join(config_path, CERT_DIR))
     if os.path.isdir(cert_dir):
         shutil.rmtree(cert_dir, ignore_errors=True)
 
@@ -82,10 +112,10 @@ def _cleanup_ssl_cert_directory():
 class TestFormatPemBundle:
 
     def test_converts_literal_backslash_n_to_newlines(self):
-        raw = "-----BEGIN CERTIFICATE-----\\nMIIBxTCCAW\\n-----END CERTIFICATE-----"
+        raw = f"{PEM_BEGIN_CERT}\\nMIIBxTCCAW\\n{PEM_END_CERT}"
         result = format_pem_bundle(raw)
         assert "\\n" not in result
-        assert result.startswith("-----BEGIN CERTIFICATE-----\n")
+        assert result.startswith(f"{PEM_BEGIN_CERT}\n")
 
     def test_formats_single_line_bundle_with_three_blocks(self):
         result = format_pem_bundle(SINGLE_LINE_BUNDLE)
@@ -96,7 +126,7 @@ class TestFormatPemBundle:
     def test_each_block_has_begin_and_end_on_own_lines(self):
         result = format_pem_bundle(SINGLE_LINE_BUNDLE)
         lines = result.strip().split("\n")
-        begin_lines = [l for l in lines if l.startswith("-----BEGIN")]
+        begin_lines = [l for l in lines if l.startswith(PEM_MARKER_PREFIX)]
         end_lines = [l for l in lines if l.startswith("-----END")]
         assert len(begin_lines) == 3
         assert len(end_lines) == 3
@@ -106,13 +136,13 @@ class TestFormatPemBundle:
         lines = result.strip().split("\n")
         # Line after each BEGIN should be base64, not another marker
         for i, line in enumerate(lines):
-            if line.startswith("-----BEGIN"):
-                assert not lines[i + 1].startswith("-----")
+            if line.startswith(PEM_MARKER_PREFIX):
+                assert not lines[i + 1].startswith(PEM_MARKER_SUFFIX)
 
     def test_handles_space_separated_bundle(self):
         result = format_pem_bundle(SPACE_SEPARATED_BUNDLE)
         lines = result.strip().split("\n")
-        begin_lines = [l for l in lines if l.startswith("-----BEGIN")]
+        begin_lines = [l for l in lines if l.startswith(PEM_MARKER_PREFIX)]
         end_lines = [l for l in lines if l.startswith("-----END")]
         assert len(begin_lines) == 3
         assert len(end_lines) == 3
@@ -125,29 +155,29 @@ class TestFormatPemBundle:
     def test_wraps_base64_at_64_chars(self):
         # Long base64 body that exceeds 64 chars
         long_b64 = "A" * 128
-        raw = f"-----BEGIN CERTIFICATE-----\\n{long_b64}\\n-----END CERTIFICATE-----"
+        raw = f"{PEM_BEGIN_CERT}\\n{long_b64}\\n{PEM_END_CERT}"
         result = format_pem_bundle(raw)
         lines = result.strip().split("\n")
-        body_lines = [l for l in lines if not l.startswith("-----")]
+        body_lines = [l for l in lines if not l.startswith(PEM_MARKER_SUFFIX)]
         for line in body_lines:
             assert len(line) <= 64
 
     def test_handles_private_key_block_type(self):
-        raw = "-----BEGIN RSA PRIVATE KEY-----\\nMIIEvQ\\n-----END RSA PRIVATE KEY-----"
+        raw = f"{PEM_BEGIN_RSA_KEY}\\nMIIEvQ\\n{PEM_END_RSA_KEY}"
         result = format_pem_bundle(raw)
-        assert "-----BEGIN RSA PRIVATE KEY-----\n" in result
-        assert "-----END RSA PRIVATE KEY-----" in result
+        assert f"{PEM_BEGIN_RSA_KEY}\n" in result
+        assert PEM_END_RSA_KEY in result
 
     def test_handles_ec_private_key_block_type(self):
-        raw = "-----BEGIN EC PRIVATE KEY-----\\nMHQC\\n-----END EC PRIVATE KEY-----"
+        raw = f"{PEM_BEGIN_EC_KEY}\\nMHQC\\n{PEM_END_EC_KEY}"
         result = format_pem_bundle(raw)
-        assert "-----BEGIN EC PRIVATE KEY-----\n" in result
-        assert "-----END EC PRIVATE KEY-----" in result
+        assert f"{PEM_BEGIN_EC_KEY}\n" in result
+        assert PEM_END_EC_KEY in result
 
     def test_handles_generic_private_key_type(self):
-        raw = "-----BEGIN PRIVATE KEY-----\\nMIIE\\n-----END PRIVATE KEY-----"
+        raw = f"{PEM_BEGIN_KEY}\\nMIIE\\n{PEM_END_KEY}"
         result = format_pem_bundle(raw)
-        assert "-----BEGIN PRIVATE KEY-----\n" in result
+        assert f"{PEM_BEGIN_KEY}\n" in result
 
     def test_returns_raw_data_when_no_pem_blocks_found(self):
         raw = "not a certificate at all"
@@ -155,21 +185,21 @@ class TestFormatPemBundle:
         assert result == raw
 
     def test_ends_with_trailing_newline(self):
-        raw = "-----BEGIN CERTIFICATE-----\\nABC\\n-----END CERTIFICATE-----"
+        raw = f"{PEM_BEGIN_CERT}\\nABC\\n{PEM_END_CERT}"
         result = format_pem_bundle(raw)
         assert result.endswith("\n")
 
     def test_mixed_literal_newlines_and_spaces(self):
         raw = (
-            "-----BEGIN CERTIFICATE-----\\n"
+            f"{PEM_BEGIN_CERT}\\n"
             f"{CLIENT_CERT_B64}\\n"
-            "-----END CERTIFICATE----- "
-            "-----BEGIN CERTIFICATE-----\\n"
+            f"{PEM_END_CERT} "
+            f"{PEM_BEGIN_CERT}\\n"
             f"{CA_CERT_B64}\\n"
-            "-----END CERTIFICATE-----"
+            f"{PEM_END_CERT}"
         )
         result = format_pem_bundle(raw)
-        begin_count = result.count("-----BEGIN CERTIFICATE-----")
+        begin_count = result.count(PEM_BEGIN_CERT)
         assert begin_count == 2
 
 
@@ -177,7 +207,7 @@ class TestFormatPemBundle:
 # setup_jira_ssl_bundle tests
 # ==============================================================================
 
-def _make_jira_config(bundle_path="certificate/jira", file_name="combined.pem", data=SINGLE_LINE_BUNDLE):
+def _make_jira_config(bundle_path=DEFAULT_BUNDLE_PATH, file_name=DEFAULT_PEM_FILE, data=SINGLE_LINE_BUNDLE):
     return {
         "ssl": {
             "bundle_data": data,
@@ -199,11 +229,11 @@ class TestSetupJiraSslBundleNoop:
         assert setup_jira_ssl_bundle({"ssl": {}}, "/tmp") is None
 
     def test_returns_none_when_bundle_data_missing(self):
-        cfg = {"ssl": {"bundle_path": "cert/jira", "bundle_file_name": "combined.pem"}}
+        cfg = {"ssl": {"bundle_path": "cert/jira", "bundle_file_name": DEFAULT_PEM_FILE}}
         assert setup_jira_ssl_bundle(cfg, "/tmp") is None
 
     def test_returns_none_when_bundle_path_missing(self):
-        cfg = {"ssl": {"bundle_data": SINGLE_LINE_BUNDLE, "bundle_file_name": "combined.pem"}}
+        cfg = {"ssl": {"bundle_data": SINGLE_LINE_BUNDLE, "bundle_file_name": DEFAULT_PEM_FILE}}
         assert setup_jira_ssl_bundle(cfg, "/tmp") is None
 
     def test_returns_none_when_bundle_file_name_missing(self):
@@ -216,7 +246,7 @@ class TestSetupJiraSslBundleHappyPath:
     def test_creates_directory_and_pem_file(self, tmp_path):
         cfg = _make_jira_config()
         result = setup_jira_ssl_bundle(cfg, str(tmp_path))
-        expected = tmp_path / "certificate" / "jira" / "combined.pem"
+        expected = tmp_path / DEFAULT_BUNDLE_PATH / DEFAULT_PEM_FILE
         assert expected.exists()
         assert result is not None
 
@@ -224,14 +254,14 @@ class TestSetupJiraSslBundleHappyPath:
         cfg = _make_jira_config(data=SINGLE_LINE_BUNDLE)
         setup_jira_ssl_bundle(cfg, str(tmp_path))
 
-        pem_file = tmp_path / "certificate" / "jira" / "combined.pem"
+        pem_file = tmp_path / DEFAULT_BUNDLE_PATH / DEFAULT_PEM_FILE
         content = pem_file.read_text()
 
         # Should NOT contain literal \n
         assert "\\n" not in content
         # Should have proper BEGIN/END on their own lines
         lines = content.strip().split("\n")
-        begin_lines = [l for l in lines if l.startswith("-----BEGIN")]
+        begin_lines = [l for l in lines if l.startswith(PEM_MARKER_PREFIX)]
         end_lines = [l for l in lines if l.startswith("-----END")]
         assert len(begin_lines) == 3
         assert len(end_lines) == 3
@@ -240,32 +270,32 @@ class TestSetupJiraSslBundleHappyPath:
         cfg = _make_jira_config(data=SINGLE_LINE_BUNDLE)
         setup_jira_ssl_bundle(cfg, str(tmp_path))
 
-        content = (tmp_path / "certificate" / "jira" / "combined.pem").read_text()
-        assert "-----BEGIN CERTIFICATE-----" in content
-        assert "-----BEGIN RSA PRIVATE KEY-----" in content
-        assert content.count("-----BEGIN CERTIFICATE-----") == 2  # client + CA
+        content = (tmp_path / DEFAULT_BUNDLE_PATH / DEFAULT_PEM_FILE).read_text()
+        assert PEM_BEGIN_CERT in content
+        assert PEM_BEGIN_RSA_KEY in content
+        assert content.count(PEM_BEGIN_CERT) == 2  # client + CA
 
     def test_pem_file_base64_not_on_marker_line(self, tmp_path):
         cfg = _make_jira_config(data=SINGLE_LINE_BUNDLE)
         setup_jira_ssl_bundle(cfg, str(tmp_path))
 
-        content = (tmp_path / "certificate" / "jira" / "combined.pem").read_text()
+        content = (tmp_path / DEFAULT_BUNDLE_PATH / DEFAULT_PEM_FILE).read_text()
         for line in content.strip().split("\n"):
-            if line.startswith("-----"):
+            if line.startswith(PEM_MARKER_SUFFIX):
                 # Marker lines should ONLY be the marker, no base64 appended
-                assert line.endswith("-----")
+                assert line.endswith(PEM_MARKER_SUFFIX)
 
     def test_returns_full_pem_path(self, tmp_path):
         cfg = _make_jira_config()
         result = setup_jira_ssl_bundle(cfg, str(tmp_path))
         # Use os.path.normpath on both sides for cross-platform compatibility
         expected = os.path.normpath(
-            os.path.join(str(tmp_path), "certificate", "jira", "combined.pem")
+            os.path.join(str(tmp_path), DEFAULT_BUNDLE_PATH, DEFAULT_PEM_FILE)
         )
         assert result == expected
 
     def test_deletes_and_recreates_existing_directory(self, tmp_path):
-        stale_dir = tmp_path / "certificate" / "jira"
+        stale_dir = tmp_path / DEFAULT_BUNDLE_PATH
         stale_dir.mkdir(parents=True)
         stale_file = stale_dir / "old_cert.pem"
         stale_file.write_text("stale data")
@@ -274,13 +304,13 @@ class TestSetupJiraSslBundleHappyPath:
         setup_jira_ssl_bundle(cfg, str(tmp_path))
 
         assert not stale_file.exists()
-        assert (stale_dir / "combined.pem").exists()
+        assert (stale_dir / DEFAULT_PEM_FILE).exists()
 
     def test_creates_nested_bundle_path(self, tmp_path):
         cfg = _make_jira_config(bundle_path="a/b/c/d")
         result = setup_jira_ssl_bundle(cfg, str(tmp_path))
 
-        expected_path = tmp_path / "a" / "b" / "c" / "d" / "combined.pem"
+        expected_path = tmp_path / "a" / "b" / "c" / "d" / DEFAULT_PEM_FILE
         assert expected_path.exists()
         # Compare normalized paths for cross-platform consistency
         assert os.path.normpath(result) == os.path.normpath(str(expected_path))
@@ -290,7 +320,7 @@ class TestSetupJiraSslBundleHappyPath:
         cfg = _make_jira_config(data=SINGLE_LINE_BUNDLE)
         setup_jira_ssl_bundle(cfg, str(tmp_path))
 
-        content = (tmp_path / "certificate" / "jira" / "combined.pem").read_text()
+        content = (tmp_path / DEFAULT_BUNDLE_PATH / DEFAULT_PEM_FILE).read_text()
         # Raw input has literal \n — file must not
         assert "\\n" not in content
         # Must be multi-line
@@ -303,8 +333,8 @@ class TestSetupJiraSslBundleHappyPath:
 
 class TestBootstrapIntegration:
 
-    @patch("src.main.create_app")
-    @patch("src.main.ConfigurationLoader")
+    @patch(PATCH_CREATE_APP)
+    @patch(PATCH_CONFIG_LOADER)
     def test_bootstrap_stores_pem_path_in_jira_config(self, mock_loader_cls, mock_create_app, tmp_path):
         from src.main import bootstrap
 
@@ -312,23 +342,23 @@ class TestBootstrapIntegration:
         mock_loader_cls.return_value = mock_loader
 
         jira_raw = {
-            "base_url": "https://jira.example.com",
-            "email": "a@b.com",
-            "api_token": "tok",
+            "base_url": MOCK_URL_JIRA_EXAMPLE,
+            "email": MOCK_EMAIL_BOT,
+            "api_token": MOCK_API_TOKEN,
             "ssl": {
                 "bundle_data": SINGLE_LINE_BUNDLE,
-                "bundle_path": "certificate/jira",
-                "bundle_file_name": "combined.pem",
+                "bundle_path": DEFAULT_BUNDLE_PATH,
+                "bundle_file_name": DEFAULT_PEM_FILE,
             },
         }
 
         def side_effect(path):
             mapping = {
-                "environment.app_secrets.auth_secret_key": "secret",
-                "environment.smtp": None,
-                "environment.cors.origins": None,
-                "environment.storage": None,
-                "environment.jira": jira_raw,
+                CFG_AUTH_SECRET_KEY: MOCK_SECRET,
+                CFG_SMTP: None,
+                CFG_CORS_ORIGINS: None,
+                CFG_STORAGE: None,
+                CFG_JIRA: jira_raw,
             }
             return mapping.get(path)
 
@@ -336,14 +366,14 @@ class TestBootstrapIntegration:
         mock_loader.get_DB_config.return_value = {"host": "localhost"}
         mock_create_app.return_value = "fake_app"
 
-        with patch("src.main.resolve_config_path", return_value=str(tmp_path)), \
-             patch("src.main.resolve_environment", return_value="test"):
+        with patch(PATCH_RESOLVE_CONFIG, return_value=str(tmp_path)), \
+             patch(PATCH_RESOLVE_ENV, return_value="test"):
             bootstrap()
 
         call_kwargs = mock_create_app.call_args[1]
         jira_cfg = call_kwargs["jira_config"]
         expected_pem = os.path.normpath(
-            os.path.join(str(tmp_path), "certificate", "jira", "combined.pem")
+            os.path.join(str(tmp_path), DEFAULT_BUNDLE_PATH, DEFAULT_PEM_FILE)
         )
         assert jira_cfg["ssl"]["bundle_pem_path"] == expected_pem
         assert os.path.exists(expected_pem)
@@ -352,10 +382,10 @@ class TestBootstrapIntegration:
         with open(expected_pem) as f:
             content = f.read()
         assert "\\n" not in content
-        assert "-----BEGIN CERTIFICATE-----\n" in content
+        assert f"{PEM_BEGIN_CERT}\n" in content
 
-    @patch("src.main.create_app")
-    @patch("src.main.ConfigurationLoader")
+    @patch(PATCH_CREATE_APP)
+    @patch(PATCH_CONFIG_LOADER)
     def test_bootstrap_no_pem_path_when_ssl_not_configured(self, mock_loader_cls, mock_create_app, tmp_path):
         from src.main import bootstrap
 
@@ -364,11 +394,11 @@ class TestBootstrapIntegration:
 
         def side_effect(path):
             mapping = {
-                "environment.app_secrets.auth_secret_key": "secret",
-                "environment.smtp": None,
-                "environment.cors.origins": None,
-                "environment.storage": None,
-                "environment.jira": None,
+                CFG_AUTH_SECRET_KEY: MOCK_SECRET,
+                CFG_SMTP: None,
+                CFG_CORS_ORIGINS: None,
+                CFG_STORAGE: None,
+                CFG_JIRA: None,
             }
             return mapping.get(path)
 
@@ -376,8 +406,8 @@ class TestBootstrapIntegration:
         mock_loader.get_DB_config.return_value = {"host": "localhost"}
         mock_create_app.return_value = "fake_app"
 
-        with patch("src.main.resolve_config_path", return_value=str(tmp_path)), \
-             patch("src.main.resolve_environment", return_value="test"):
+        with patch(PATCH_RESOLVE_CONFIG, return_value=str(tmp_path)), \
+             patch(PATCH_RESOLVE_ENV, return_value="test"):
             bootstrap()
 
         call_kwargs = mock_create_app.call_args[1]

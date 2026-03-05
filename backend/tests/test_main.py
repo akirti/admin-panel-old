@@ -28,6 +28,13 @@ CFG_GLOBALS_DATABASES_DEFAULT = "globals.databases.default"
 STR_DEFAULT_ASSIGNEE_NAME = "default_assignee_name"
 STR_MAXPOOLSIZE = "maxPoolSize"
 STR_MY_BUCKET = "my-bucket"
+CFG_AUTH_SECRET_KEY = "environment.app_secrets.auth_secret_key"
+CFG_SMTP = "environment.smtp"
+PATCH_MAIN_CREATE_APP = "main.create_app"
+PATCH_MAIN_CONFIG_LOADER = "main.ConfigurationLoader"
+APP_TITLE = "EasyLife Admin Panel API"
+APP_DESCRIPTION = "Authentication, Authorization, and Administration API"
+UVICORN_APP_REF = "src.main:app"
 
 # All env var keys that main.py reads — cleared before each test
 _ENV_KEYS_TO_CLEAR = [
@@ -410,8 +417,8 @@ class TestBuildJiraConfig:
 class TestBootstrap:
     """End-to-end bootstrap orchestration."""
 
-    @patch("main.create_app")
-    @patch("main.ConfigurationLoader")
+    @patch(PATCH_MAIN_CREATE_APP)
+    @patch(PATCH_MAIN_CONFIG_LOADER)
     def test_all_kwargs_present(self, mock_cl_cls, mock_create_app):
         mock_cl_cls.return_value = _make_config_loader()
         bootstrap()
@@ -424,43 +431,43 @@ class TestBootstrap:
         }
         assert set(kwargs.keys()) == expected_keys
 
-    @patch("main.create_app")
-    @patch("main.ConfigurationLoader")
+    @patch(PATCH_MAIN_CREATE_APP)
+    @patch(PATCH_MAIN_CONFIG_LOADER)
     def test_title_and_description(self, mock_cl_cls, mock_create_app):
         mock_cl_cls.return_value = _make_config_loader()
         bootstrap()
         kwargs = mock_create_app.call_args[1]
-        assert kwargs["title"] == "EasyLife Admin Panel API"
-        assert kwargs["description"] == "Authentication, Authorization, and Administration API"
+        assert kwargs["title"] == APP_TITLE
+        assert kwargs["description"] == APP_DESCRIPTION
 
-    @patch("main.create_app")
-    @patch("main.ConfigurationLoader")
+    @patch(PATCH_MAIN_CREATE_APP)
+    @patch(PATCH_MAIN_CONFIG_LOADER)
     def test_returns_create_app_result(self, mock_cl_cls, mock_create_app):
         mock_cl_cls.return_value = _make_config_loader()
         result = bootstrap()
         assert result is mock_create_app.return_value
 
-    @patch("main.create_app")
-    @patch("main.ConfigurationLoader")
+    @patch(PATCH_MAIN_CREATE_APP)
+    @patch(PATCH_MAIN_CONFIG_LOADER)
     def test_token_secret_passed_through(self, mock_cl_cls, mock_create_app):
         mock_cl_cls.return_value = _make_config_loader({
-            "environment.app_secrets.auth_secret_key": "my-secret-key",
+            CFG_AUTH_SECRET_KEY: "my-secret-key",
         })
         bootstrap()
         assert mock_create_app.call_args[1]["token_secret"] == "my-secret-key"
 
-    @patch("main.create_app")
-    @patch("main.ConfigurationLoader")
+    @patch(PATCH_MAIN_CREATE_APP)
+    @patch(PATCH_MAIN_CONFIG_LOADER)
     def test_smtp_config_passed_through(self, mock_cl_cls, mock_create_app):
         fake_smtp = {"smtp_server": "mail.test.com", "smtp_port": 587}
         mock_cl_cls.return_value = _make_config_loader({
-            "environment.smtp": fake_smtp,
+            CFG_SMTP: fake_smtp,
         })
         bootstrap()
         assert mock_create_app.call_args[1]["smtp_config"] == fake_smtp
 
-    @patch("main.create_app")
-    @patch("main.ConfigurationLoader")
+    @patch(PATCH_MAIN_CREATE_APP)
+    @patch(PATCH_MAIN_CONFIG_LOADER)
     def test_minimal_config_produces_defaults(self, mock_cl_cls, mock_create_app):
         mock_cl_cls.return_value = _make_config_loader()
         bootstrap()
@@ -490,7 +497,7 @@ class TestMainBlock:
         code = (
             "if __name__ == '__main__':\n"
             "    import uvicorn\n"
-            '    uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)\n'
+            f'    uvicorn.run("{UVICORN_APP_REF}", host="0.0.0.0", port=8000, reload=True)\n'
         )
         ns = {
             "__name__": "__main__",
@@ -510,14 +517,14 @@ class TestMainBlock:
             exec(compile(code, "main.py", "exec"), ns)
 
         mock_uvicorn.run.assert_called_once_with(
-            "src.main:app", host=MOCK_IP_BIND_ALL, port=8000, reload=True,
+            UVICORN_APP_REF, host=MOCK_IP_BIND_ALL, port=8000, reload=True,
         )
 
     def test_uvicorn_not_called_when_imported(self):
         code = (
             "if __name__ == '__main__':\n"
             "    import uvicorn\n"
-            '    uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)\n'
+            f'    uvicorn.run("{UVICORN_APP_REF}", host="0.0.0.0", port=8000, reload=True)\n'
         )
         mock_uvicorn = MagicMock()
         ns = {
