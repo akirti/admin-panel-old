@@ -2,10 +2,10 @@
 <Quota async="false" continueOnError="false" enabled="true" name="Q-EnforceQuota" type="calendar">
     <DisplayName>Enforce API Quota</DisplayName>
     <Properties/>
-    <Allow count="10000" countRef="verifyapikey.VA-VerifyAPIKey.apiproduct.developer.quota.limit"/>
-    <Interval ref="verifyapikey.VA-VerifyAPIKey.apiproduct.developer.quota.interval">1</Interval>
-    <TimeUnit ref="verifyapikey.VA-VerifyAPIKey.apiproduct.developer.quota.timeunit">month</TimeUnit>
-    <Identifier ref="verifyapikey.VA-VerifyAPIKey.client_id"/>
+    <Allow count="10000"/>
+    <Interval>1</Interval>
+    <TimeUnit>month</TimeUnit>
+    <Identifier ref="jwt.JWT-VerifyAccessToken.decoded.claim.user_id"/>
     <Distributed>true</Distributed>
     <Synchronous>true</Synchronous>
     <StartTime>2024-01-01 00:00:00</StartTime>

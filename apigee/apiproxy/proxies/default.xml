@@ -9,24 +9,19 @@
                 <Name>RF-CORSPreflight</Name>
                 <Condition>request.verb == "OPTIONS"</Condition>
             </Step>
-            <!-- Spike Arrest to prevent abuse -->
+            <!-- Spike Arrest to prevent abuse (rate limit by client IP) -->
             <Step>
                 <Name>SA-RateLimit</Name>
-            </Step>
-            <!-- Verify API Key for non-auth endpoints -->
-            <Step>
-                <Name>VA-VerifyAPIKey</Name>
-                <Condition>!(proxy.pathsuffix MatchesPath "/auth/**") and !(proxy.pathsuffix MatchesPath "/health/**") and !(proxy.pathsuffix MatchesPath "/info")</Condition>
             </Step>
             <!-- Validate JWT Token for protected endpoints -->
             <Step>
                 <Name>JWT-VerifyAccessToken</Name>
-                <Condition>!(proxy.pathsuffix MatchesPath "/auth/login") and !(proxy.pathsuffix MatchesPath "/auth/register") and !(proxy.pathsuffix MatchesPath "/auth/forgot_password") and !(proxy.pathsuffix MatchesPath "/auth/reset_password") and !(proxy.pathsuffix MatchesPath "/auth/csrf-token") and !(proxy.pathsuffix MatchesPath "/health/**") and !(proxy.pathsuffix MatchesPath "/info") and !(proxy.pathsuffix MatchesPath "/feedback/public") and request.verb != "OPTIONS"</Condition>
+                <Condition>!(proxy.pathsuffix MatchesPath "/auth/login") and !(proxy.pathsuffix MatchesPath "/auth/register") and !(proxy.pathsuffix MatchesPath "/auth/forgot_password") and !(proxy.pathsuffix MatchesPath "/auth/reset_password") and !(proxy.pathsuffix MatchesPath "/auth/refresh") and !(proxy.pathsuffix MatchesPath "/auth/logout") and !(proxy.pathsuffix MatchesPath "/auth/csrf-token") and !(proxy.pathsuffix MatchesPath "/health/**") and !(proxy.pathsuffix MatchesPath "/info") and !(proxy.pathsuffix MatchesPath "/feedback/public") and request.verb != "OPTIONS"</Condition>
             </Step>
-            <!-- Quota enforcement -->
+            <!-- Quota enforcement (by JWT user or client IP) -->
             <Step>
                 <Name>Q-EnforceQuota</Name>
-                <Condition>!(proxy.pathsuffix MatchesPath "/health/**") and !(proxy.pathsuffix MatchesPath "/info")</Condition>
+                <Condition>!(proxy.pathsuffix MatchesPath "/health/**") and !(proxy.pathsuffix MatchesPath "/info") and !(proxy.pathsuffix MatchesPath "/auth/**") and !(proxy.pathsuffix MatchesPath "/feedback/public") and request.verb != "OPTIONS"</Condition>
             </Step>
         </Request>
         <Response>
@@ -1140,6 +1135,20 @@
             <Condition>(proxy.pathsuffix MatchesPath "/export/activity-logs/**")</Condition>
         </Flow>
 
+        <Flow name="Export-Customers">
+            <Description>Export customers data</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/export/customers/**")</Condition>
+        </Flow>
+
+        <Flow name="Export-Permissions">
+            <Description>Export permissions data</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/export/permissions/**")</Condition>
+        </Flow>
+
         <!-- ==================== Jira Integration Endpoints ==================== -->
         <Flow name="Jira-Status">
             <Description>Get Jira connection status</Description>
@@ -1252,12 +1261,6 @@
     </PostFlow>
 
     <FaultRules>
-        <FaultRule name="InvalidAPIKey">
-            <Step>
-                <Name>AM-InvalidAPIKeyResponse</Name>
-            </Step>
-            <Condition>(fault.name = "InvalidApiKey") or (fault.name = "InvalidApiKeyForGivenResource")</Condition>
-        </FaultRule>
         <FaultRule name="InvalidJWT">
             <Step>
                 <Name>AM-InvalidJWTResponse</Name>
