@@ -1,8 +1,10 @@
-"""Tests for _collect_env_overrides reverse map — dot-to-underscore normalisation.
+"""Tests for _collect_env_overrides reverse map.
 
-Verifies that env vars set by PCF/Docker — whether using underscores
-(EASYLIFE_DB_HOST) or dots (EASYLIFE.DB.HOST) — are correctly mapped back
+Verifies that env vars set by PCF/Docker using dots as path separators
+(EASYLIFE_DATABASES.AUTHENTICATION.DB_INFO.HOST or
+EASYLIFE.DATABASES.AUTHENTICATION.DB_INFO.HOST) are correctly mapped back
 to dot-path config keys like databases.authentication.db_info.host.
+Underscores within property names (db_info, connection_scheme) are preserved.
 """
 import json
 import os
@@ -32,15 +34,15 @@ DOT_PATH_DATABASE = f"databases{SEP}authentication{SEP}db_info{SEP}database"
 DOT_PATH_MAX_POOL = f"globals{SEP}databases{SEP}default{SEP}max_pool_size"
 DOT_PATH_CREDS_JSON = f"environment{SEP}storage{SEP}gcs{SEP}credentials_json"
 
-# Env var names — underscore format (Docker / shell)
-ENV_SCHEME = f"{ENV_PREFIX}_DATABASES_AUTHENTICATION_DB_INFO_CONNECTION_SCHEME"
-ENV_USERNAME = f"{ENV_PREFIX}_DATABASES_AUTHENTICATION_DB_INFO_USERNAME"
-ENV_PASSWORD = f"{ENV_PREFIX}_DATABASES_AUTHENTICATION_DB_INFO_PASSWORD"
-ENV_HOST = f"{ENV_PREFIX}_DATABASES_AUTHENTICATION_DB_INFO_HOST"
-ENV_DATABASE = f"{ENV_PREFIX}_DATABASES_AUTHENTICATION_DB_INFO_DATABASE"
-ENV_MAX_POOL = f"{ENV_PREFIX}_GLOBALS_DATABASES_DEFAULT_MAX_POOL_SIZE"
+# Env var names — underscore prefix format (EASYLIFE_DATABASES.AUTH...)
+ENV_SCHEME = f"{ENV_PREFIX}_DATABASES{SEP}AUTHENTICATION{SEP}DB_INFO{SEP}CONNECTION_SCHEME"
+ENV_USERNAME = f"{ENV_PREFIX}_DATABASES{SEP}AUTHENTICATION{SEP}DB_INFO{SEP}USERNAME"
+ENV_PASSWORD = f"{ENV_PREFIX}_DATABASES{SEP}AUTHENTICATION{SEP}DB_INFO{SEP}PASSWORD"
+ENV_HOST = f"{ENV_PREFIX}_DATABASES{SEP}AUTHENTICATION{SEP}DB_INFO{SEP}HOST"
+ENV_DATABASE = f"{ENV_PREFIX}_DATABASES{SEP}AUTHENTICATION{SEP}DB_INFO{SEP}DATABASE"
+ENV_MAX_POOL = f"{ENV_PREFIX}_GLOBALS{SEP}DATABASES{SEP}DEFAULT{SEP}MAX_POOL_SIZE"
 
-# Env var names — dot format (PCF / Spring-style)
+# Env var names — dot prefix format (EASYLIFE.DATABASES.AUTH...)
 DOT_ENV_HOST = f"{ENV_PREFIX}{SEP}DATABASES{SEP}AUTHENTICATION{SEP}DB_INFO{SEP}HOST"
 DOT_ENV_USERNAME = f"{ENV_PREFIX}{SEP}DATABASES{SEP}AUTHENTICATION{SEP}DB_INFO{SEP}USERNAME"
 DOT_ENV_PASSWORD = f"{ENV_PREFIX}{SEP}DATABASES{SEP}AUTHENTICATION{SEP}DB_INFO{SEP}PASSWORD"
@@ -78,9 +80,9 @@ def _make_loader_with_env(env_vars, known_paths=None):
 
 
 class TestEnvOverrideMapping:
-    """Env vars with underscores map to dot-path config keys."""
+    """Env vars with dot separators map to dot-path config keys."""
 
-    def test_underscore_env_maps_to_dot_path(self):
+    def test_env_maps_to_dot_path(self):
         overrides = _make_loader_with_env({ENV_HOST: MOCK_DB_HOST_EXAMPLE})
         assert overrides[DOT_PATH_HOST] == MOCK_DB_HOST_EXAMPLE
 
@@ -107,7 +109,7 @@ class TestEnvOverrideMapping:
         overrides = _make_loader_with_env({ENV_HOST: host_list_json})
         assert overrides[DOT_PATH_HOST] == [MOCK_URL_HOST_1, MOCK_URL_HOST_2]
 
-    def test_environment_key_skipped_underscore_format(self):
+    def test_environment_key_skipped(self):
         overrides = _make_loader_with_env({
             f"{ENV_PREFIX}_ENVIRONMENT": MOCK_DB_DATABASE_PROD,
             ENV_HOST: MOCK_DB_HOST,
@@ -181,11 +183,11 @@ class TestDotPrefixEnvVars:
         overrides = _make_loader_with_env({DOT_ENV_MAX_POOL: "250"})
         assert overrides[DOT_PATH_MAX_POOL] == 250
 
-    def test_mixed_dot_and_underscore_env_vars(self):
-        """Both formats coexist — both resolve to correct dot paths."""
+    def test_mixed_prefix_formats(self):
+        """Both prefix formats (EASYLIFE_ and EASYLIFE.) resolve to correct dot paths."""
         overrides = _make_loader_with_env({
-            ENV_HOST: MOCK_DB_HOST_EXAMPLE,
-            DOT_ENV_USERNAME: MOCK_DB_USERNAME_ALT,
+            ENV_HOST: MOCK_DB_HOST_EXAMPLE,           # EASYLIFE_DATABASES.AUTH...
+            DOT_ENV_USERNAME: MOCK_DB_USERNAME_ALT,    # EASYLIFE.DATABASES.AUTH...
         })
         assert overrides[DOT_PATH_HOST] == MOCK_DB_HOST_EXAMPLE
         assert overrides[DOT_PATH_USERNAME] == MOCK_DB_USERNAME_ALT
@@ -221,7 +223,7 @@ class TestEndToEndEnvResolution:
             }
         }
 
-    def test_db_config_resolved_from_underscore_env_vars(self, tmp_path):
+    def test_db_config_resolved_from_env_vars(self, tmp_path):
         (tmp_path / FILE_CONFIG_JSON).write_text(json.dumps(self._db_config_template()))
 
         clean_env = _clean_env_for_e2e({
@@ -298,7 +300,7 @@ class TestEndToEndEnvResolution:
         assert creds["type"] == "service_account"
         assert creds["project_id"] == MOCK_DB_DATABASE_EASYLIFE
 
-    def test_pool_settings_resolved_from_underscore_env_vars(self, tmp_path):
+    def test_pool_settings_resolved_from_env_vars(self, tmp_path):
         config = {
             "globals": {
                 "databases": {

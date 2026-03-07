@@ -21,7 +21,8 @@ class ConfigurationLoader:
         config_path: Optional[str] = None,
         config_file: str = "config.json",
         env_prefix: str = ENVIRONEMNT_VARIABLE_PREFIX,
-        environment: Optional[str] = None
+        environment: Optional[str] = None,
+        simulator_file: Optional[str] = None
     ):
         self.config_path = config_path or os.getcwd()
         self.env_prefix = env_prefix
@@ -30,7 +31,7 @@ class ConfigurationLoader:
         self._dict_util = DictUtil()
 
         if environment:
-            self.load_environment(self.config_path, environment)
+            self.load_environment(self.config_path, environment, simulator_file)
         else:
             # Legacy mode: load single config file + env vars
             self._load_config(config_file)
@@ -145,93 +146,100 @@ class ConfigurationLoader:
 
     @staticmethod
     def _normalise_env_key(key: str) -> str:
-        """Normalise an env var name by replacing dots with underscores and upper-casing.
+        """Upper-case the env var key for case-insensitive matching.
 
-        This allows a single reverse-map lookup to match env vars regardless of
-        whether the platform uses dots (``EASYLIFE.DB.HOST``) or underscores
-        (``EASYLIFE_DB_HOST``).
+        Dots and underscores are preserved as-is because dots are path
+        separators (OS_PROPERTY_SEPRATOR) while underscores are legitimate
+        parts of property names (e.g. ``db_info``, ``connection_scheme``).
         """
-        return key.replace(".", "_").upper()
+        return key.upper()
 
     def _collect_env_overrides(
         self, known_dot_paths: set, prefix: str,
         env_dict: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
-        """Scan OS env vars with prefix and map back to dot-path keys.
+        """Scan OS env vars with *prefix* and map back to dot-path keys.
 
-        Uses known_dot_paths to build an accurate reverse map that handles
-        underscore ambiguity (e.g. db_info vs db.info).
-        Falls back to simple underscore→dot conversion for unknown keys.
+        Env vars are expected to use dots as path separators (matching
+        ``OS_PROPERTY_SEPRATOR``), e.g.::
 
-        Supports env vars with dots (``EASYLIFE.DB.HOST``) and underscores
-        (``EASYLIFE_DB_HOST``) — both are normalised before lookup.
+            EASYLIFE_DATABASES.AUTHENTICATION.DB_INFO.HOST=myhost
+            EASYLIFE.ENVIRONMENT.SMTP.SMTP_SERVER=mailpit
+
+        Underscores within a segment are preserved (``db_info`` stays
+        ``db_info``).  Both ``PREFIX_`` and ``PREFIX.`` prefixes are accepted.
         """
         sep = OS_PROPERTY_SEPRATOR
-        # Build reverse map: NORMALISED_ENV_KEY → original property path.
-        # Normalisation replaces dots with underscores so both
-        # EASYLIFE.DB.HOST and EASYLIFE_DB_HOST resolve identically.
+        prefix_us = f"{prefix}_"          # EASYLIFE_
+        prefix_dot = f"{prefix}{sep}"     # EASYLIFE.
+
+        # Build reverse map: UPPER-CASED env key → original dot-path.
+        # Register both prefix forms so either matches.
         reverse_map: Dict[str, str] = {}
         for prop_path in known_dot_paths:
-            norm_key = self._normalise_env_key(f"{prefix}_{prop_path}")
-            reverse_map[norm_key] = prop_path
+            key_us = f"{prefix_us}{prop_path}".upper()
+            key_dot = f"{prefix_dot}{prop_path}".upper()
+            reverse_map[key_us] = prop_path
+            reverse_map[key_dot] = prop_path
 
         # Meta env vars to skip (not config values)
-        skip_keys = {
-            self._normalise_env_key(f"{prefix}_ENVIRONMENT"),
-            self._normalise_env_key(f"{prefix}{sep}ENVIRONMENT"),
-            self._normalise_env_key("CONFIG_PATH"),
-        }
+        skip_keys: set = set()
+        for meta_suffix in ["ENVIRONMENT"]:
+            skip_keys.add(f"{prefix_us}{meta_suffix}".upper())
+            skip_keys.add(f"{prefix_dot}{meta_suffix}".upper())
+        skip_keys.add("CONFIG_PATH")
 
         overrides: Dict[str, Any] = {}
-        norm_prefix = self._normalise_env_key(f"{prefix}_")
-        dot_prefix = f"{prefix}{sep}"
+        # Both prefix forms have the same length (prefix + 1 separator char)
+        prefix_len = len(prefix_us)
         source = env_dict if env_dict is not None else os.environ
         for key, value in source.items():
-            # Accept both EASYLIFE_... and EASYLIFE.... prefixed vars
-            if not (key.startswith(f"{prefix}_") or key.startswith(dot_prefix)):
+            if not (key.startswith(prefix_us) or key.startswith(prefix_dot)):
                 continue
-            norm_key = self._normalise_env_key(key)
-            if norm_key in skip_keys:
+            upper_key = key.upper()
+            if upper_key in skip_keys:
                 continue
-            if norm_key in reverse_map:
-                prop_path = reverse_map[norm_key]
+            if upper_key in reverse_map:
+                prop_path = reverse_map[upper_key]
             else:
-                # Fallback: strip prefix and lowercase
-                suffix = norm_key[len(norm_prefix):]
+                # Fallback: strip prefix, lowercase — dots stay as separators,
+                # underscores stay as part of property names.
+                suffix = key[prefix_len:]
                 prop_path = suffix.lower()
             overrides[prop_path] = self._convert_value(value)
         return overrides
 
-    def load_environment(self, config_path: str, environment: str) -> None:
+    def load_environment(
+        self,
+        config_path: str,
+        environment: str,
+        simulator_file: Optional[str] = None
+    ) -> None:
         """Main config pipeline — 3 files + OS env vars.
 
-        Files:
+        Files (required):
           1. localenv-{env}.json  — base property values (flat or nested)
           2. {env}.json           — env-specific addon config with {placeholder} refs
           3. config.json          — base app config with {placeholder} refs
 
-        Flow:
-          a) Load simulator (optional, sets env vars for local dev)
-          b) Load localenv → flatten to get base values dict
-          c) Collect OS env vars → override/extend localenv values (OS wins)
-          d) Resolve any {placeholders} within localenv using merged values
-          e) Resolve {env}.json from values dict
-          f) Resolve config.json from values dict
-          g) Merge extras from resolved {env}.json into config.json
-          h) Collect unresolved placeholders
+        Optional:
+          simulator_file — path to a flat JSON file that sets env var defaults
+                           for local dev.  Only loaded when explicitly provided.
+
+        Priority (lowest → highest):
+          simulator defaults → localenv hardcoded → OS env vars
         """
         base = Path(config_path)
 
-        # a) Snapshot pre-existing env vars BEFORE simulator loads.
-        #    Only these count as real OS overrides (highest priority).
-        #    Simulator-set vars should NOT override localenv values.
-        pre_sim_env = dict(os.environ)
-
-        # Load simulator file (optional — sets env vars for local dev)
-        simulator_path = base / f"server.env.{environment}.json"
-        simulator_data = ConfigValueSimulator.load_simulator_file(
-            str(simulator_path), self.env_prefix
-        )
+        # a) Optionally load simulator file (only when explicitly provided)
+        simulator_data: Dict[str, Any] = {}
+        if simulator_file:
+            pre_sim_env = dict(os.environ)
+            simulator_data = ConfigValueSimulator.load_simulator_file(
+                simulator_file, self.env_prefix
+            )
+        else:
+            pre_sim_env = None  # no snapshot needed
 
         # b) Load all template files (raw, unresolved)
         localenv_path = base / f"localenv-{environment}.json"
@@ -253,6 +261,8 @@ class ConfigurationLoader:
         # d) Build values_lookup:
         #    simulator (lowest) → localenv hardcoded (overrides simulator)
         #    → OS env vars (highest, overrides everything)
+        #    When a simulator file was loaded, use the pre-simulator env
+        #    snapshot so simulator-set vars don't count as OS overrides.
         localenv_flat = self._flatten_to_dot_paths(localenv_raw)
         env_overrides = self._collect_env_overrides(
             known_dot_paths, self.env_prefix, pre_sim_env

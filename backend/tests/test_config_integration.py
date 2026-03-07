@@ -100,7 +100,8 @@ class TestPlaceholderResolution:
             "production.json": {},
             f"localenv-{environment}.json": {},
         })
-        loader = ConfigurationLoader(config_path=config_path, environment=environment)
+        loader = ConfigurationLoader(config_path=config_path, environment=environment,
+                                     simulator_file=str(Path(config_path) / f"server.env.{environment}.json"))
         assert loader.get_config_by_path("application.name") == "test-app"
         assert loader.get_config_by_path(CFG_DATABASE_HOST) == "localhost"
         assert loader.get_config_by_path("database.port") == 27017
@@ -117,7 +118,8 @@ class TestPlaceholderResolution:
             f"{environment}.json": {},
             f"localenv-{environment}.json": {},
         })
-        loader = ConfigurationLoader(config_path=config_path, environment=environment)
+        loader = ConfigurationLoader(config_path=config_path, environment=environment,
+                                     simulator_file=str(Path(config_path) / f"server.env.{environment}.json"))
         result = loader.get_config_by_path("database.collections")
         assert result == ["users", "tokens", "sessions"]
 
@@ -134,13 +136,13 @@ class TestPlaceholderResolution:
             f"{environment}.json": {},
             f"localenv-{environment}.json": {},
         })
-        loader = ConfigurationLoader(config_path=config_path, environment=environment)
+        loader = ConfigurationLoader(config_path=config_path, environment=environment,
+                                     simulator_file=str(Path(config_path) / f"server.env.{environment}.json"))
         assert loader.get_config_by_path("connection_string") == MOCK_URL_MONGODB_MYHOST
 
     def test_unresolved_placeholders_kept(self, tmp_path, environment="production"):
         """Placeholders with no matching value should be kept as-is."""
         config_path = _create_config_dir(tmp_path, {
-            f"server.env.{environment}.json": {},
             FILE_CONFIG_JSON: {"item": "{nonexistent.path}"},
             f"{environment}.json": {},
             f"localenv-{environment}.json": {},
@@ -164,7 +166,8 @@ class TestPlaceholderResolution:
             f"{environment}.json": {},
             f"localenv-{environment}.json": {},
         })
-        loader = ConfigurationLoader(config_path=config_path, environment=environment)
+        loader = ConfigurationLoader(config_path=config_path, environment=environment,
+                                     simulator_file=str(Path(config_path) / f"server.env.{environment}.json"))
         assert loader.get_config_by_path("feature.enabled") is True
         assert loader.get_config_by_path("feature.debug") is False
 
@@ -182,7 +185,8 @@ class TestPlaceholderResolution:
             f"{environment}.json": {},
             f"localenv-{environment}.json": {},
         })
-        loader = ConfigurationLoader(config_path=config_path, environment=environment)
+        loader = ConfigurationLoader(config_path=config_path, environment=environment,
+                                     simulator_file=str(Path(config_path) / f"server.env.{environment}.json"))
         assert loader.get_config_by_path("server.port") == 8080
         assert loader.get_config_by_path("pool.size") == 50
 
@@ -205,7 +209,8 @@ class TestLayeredOverrides:
                 "database": {"host": JSON_DB_HOST, "port": "{db.port}"},
             },
         })
-        loader = ConfigurationLoader(config_path=config_path, environment=environment)
+        loader = ConfigurationLoader(config_path=config_path, environment=environment,
+                                     simulator_file=str(Path(config_path) / f"server.env.{environment}.json"))
         assert loader.get_config_by_path(CFG_DATABASE_HOST) == STR_LOCALENV_HOST
         assert loader.get_config_by_path("database.port") == 27017
 
@@ -217,13 +222,13 @@ class TestLayeredOverrides:
             f"{environment}.json": {"db": {"host": "env-host"}},
             FILE_CONFIG_JSON: {"database": {"host": JSON_DB_HOST}},
         })
-        loader = ConfigurationLoader(config_path=config_path, environment=environment)
+        loader = ConfigurationLoader(config_path=config_path, environment=environment,
+                                     simulator_file=str(Path(config_path) / f"server.env.{environment}.json"))
         assert loader.get_config_by_path(CFG_DATABASE_HOST) == "env-host"
 
     def test_env_file_adds_extra_properties(self, tmp_path, environment="production"):
         """Environment file should merge extra properties into final config."""
         config_path = _create_config_dir(tmp_path, {
-            f"server.env.{environment}.json": {},
             FILE_CONFIG_JSON: {"app": {"name": "base-app"}},
             f"{environment}.json": {"app": {"version": "2.0"}},
             f"localenv-{environment}.json": {},
@@ -251,7 +256,8 @@ class TestMissingFiles:
             FILE_CONFIG_JSON: {"item": "{val}"},
             f"{environment}.json": {},
         })
-        loader = ConfigurationLoader(config_path=config_path, environment=environment)
+        loader = ConfigurationLoader(config_path=config_path, environment=environment,
+                                     simulator_file=str(Path(config_path) / f"server.env.{environment}.json"))
         assert loader.get_config_by_path("item") == STR_SIM_VAL
 
     def test_missing_env_file(self, tmp_path, environment="production"):
@@ -260,7 +266,8 @@ class TestMissingFiles:
             FILE_CONFIG_JSON: {"item": "{val}"},
             f"localenv-{environment}.json": {},
         })
-        loader = ConfigurationLoader(config_path=config_path, environment=environment)
+        loader = ConfigurationLoader(config_path=config_path, environment=environment,
+                                     simulator_file=str(Path(config_path) / f"server.env.{environment}.json"))
         assert loader.get_config_by_path("item") == STR_SIM_VAL
 
     def test_all_optional_files_missing(self, tmp_path):
@@ -283,12 +290,12 @@ class TestDifferentEnvironments:
             f"{environment}.json": {"db": {"host": "staging-db.example.com"}},
             FILE_CONFIG_JSON: {"database": {"host": JSON_DB_HOST}},
         })
-        loader = ConfigurationLoader(config_path=config_path, environment=environment)
+        loader = ConfigurationLoader(config_path=config_path, environment=environment,
+                                     simulator_file=str(Path(config_path) / f"server.env.{environment}.json"))
         assert loader.get_config_by_path(CFG_DATABASE_HOST) == "staging-db.example.com"
 
     def test_dev_environment(self, tmp_path, environment="dev"):
         config_path = _create_config_dir(tmp_path, {
-            f"server.env.{environment}.json": {},
             f"localenv-{environment}.json": {"app": {"debug": True}},
             f"{environment}.json": {},
             FILE_CONFIG_JSON: {"app": {"debug": "{app.debug}"}},
@@ -308,7 +315,6 @@ class TestGetDBConfig:
     def test_db_info_key_with_underscore(self, tmp_path, environment="production"):
         """get_DB_config should handle 'db_info' key."""
         config_path = _create_config_dir(tmp_path, {
-            f"server.env.{environment}.json": {},
             FILE_CONFIG_JSON: {
                 "databases": {
                     "mydb": {
@@ -328,7 +334,6 @@ class TestGetDBConfig:
     def test_flat_database_config(self, tmp_path,environment="production"):
         """get_DB_config should handle flat database config (no db_info wrapper)."""
         config_path = _create_config_dir(tmp_path, {
-            f"server.env.{environment}.json": {},
             FILE_CONFIG_JSON: {
                 "databases": {
                     "mydb": {"host": "flathost", "port": 5432}
@@ -344,7 +349,6 @@ class TestGetDBConfig:
 
     def test_nonexistent_token_returns_none(self, tmp_path, environment="production"):
         config_path = _create_config_dir(tmp_path, {
-            f"server.env.{environment}.json": {},
             FILE_CONFIG_JSON: {"databases": {}},
             f"{environment}.json": {},
             f"localenv-{environment}.json": {},
@@ -355,7 +359,6 @@ class TestGetDBConfig:
     def test_get_DB_config_returns_deepcopy(self, tmp_path, environment="production"):
         """Returned config should be a deep copy — mutations don't affect loader."""
         config_path = _create_config_dir(tmp_path, {
-            f"server.env.{environment}.json": {},
             FILE_CONFIG_JSON: {
                 "databases": {
                     "mydb": {"db_info": {"host": "original"}}
@@ -449,7 +452,8 @@ class TestRealConfigFiles:
 
     def test_loads_production_environment(self, config_path):
         """Loading 'production' environment should produce valid resolved config."""
-        loader = ConfigurationLoader(config_path=config_path, environment="production")
+        loader = ConfigurationLoader(config_path=config_path, environment="production",
+                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
         db = loader.get_config_by_path("databases.authentication.db_info")
         assert db is not None
         assert db["host"] == EXPECTED_DB_HOST
@@ -459,7 +463,8 @@ class TestRealConfigFiles:
 
     def test_get_DB_config_returns_db_info(self, config_path):
         """get_DB_config('authentication') should return the db_info dict."""
-        loader = ConfigurationLoader(config_path=config_path, environment="production")
+        loader = ConfigurationLoader(config_path=config_path, environment="production",
+                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
         db_config = loader.get_DB_config("authentication")
         assert db_config is not None
         assert db_config["host"] == EXPECTED_DB_HOST
@@ -468,47 +473,54 @@ class TestRealConfigFiles:
         assert db_config["connection_scheme"] == EXPECTED_DB_CONNECTION_SCHEME
 
     def test_token_secret_resolved(self, config_path):
-        loader = ConfigurationLoader(config_path=config_path, environment="production")
+        loader = ConfigurationLoader(config_path=config_path, environment="production",
+                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
         secret = loader.get_config_by_path("environment.app_secrets.auth_secret_key")
         assert secret is not None
         assert isinstance(secret, str)
         assert secret == EXPECTED_SECRET_KEY
 
     def test_smtp_config_resolved(self, config_path):
-        loader = ConfigurationLoader(config_path=config_path, environment="production")
+        loader = ConfigurationLoader(config_path=config_path, environment="production",
+                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
         smtp = loader.get_config_by_path("environment.smtp")
         assert smtp is not None
         assert smtp["smtp_server"] == EXPECTED_SMTP_SERVER
         assert smtp["smtp_port"] == EXPECTED_SMTP_PORT
 
     def test_cors_origins_resolved(self, config_path):
-        loader = ConfigurationLoader(config_path=config_path, environment="production")
+        loader = ConfigurationLoader(config_path=config_path, environment="production",
+                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
         origins = loader.get_config_by_path("environment.cors.origins")
         assert isinstance(origins, list)
         assert origins == EXPECTED_CORS_ORIGINS
 
     def test_globals_pool_settings_resolved(self, config_path):
-        loader = ConfigurationLoader(config_path=config_path, environment="production")
+        loader = ConfigurationLoader(config_path=config_path, environment="production",
+                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
         pool = loader.get_config_by_path("globals.databases.default")
         assert pool is not None
         assert pool["max_pool_size"] == EXPECTED_MAX_POOL_SIZE
         assert pool["min_pool_size"] == EXPECTED_MIN_POOL_SIZE
 
     def test_storage_config_resolved(self, config_path):
-        loader = ConfigurationLoader(config_path=config_path, environment="production")
+        loader = ConfigurationLoader(config_path=config_path, environment="production",
+                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
         storage = loader.get_config_by_path("environment.storage")
         assert storage is not None
         assert "type" in storage
 
     def test_jira_config_resolved(self, config_path):
-        loader = ConfigurationLoader(config_path=config_path, environment="production")
+        loader = ConfigurationLoader(config_path=config_path, environment="production",
+                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
         jira = loader.get_config_by_path("environment.jira")
         assert jira is not None
         assert jira["base_url"] == EXPECTED_JIRA_BASE_URL
 
     def test_full_main_py_wiring_simulation(self, config_path):
         """Simulate the full main.py extraction logic with test config."""
-        loader = ConfigurationLoader(config_path=config_path, environment="production")
+        loader = ConfigurationLoader(config_path=config_path, environment="production",
+                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
 
         # DB
         db_config = loader.get_DB_config("authentication")
@@ -540,7 +552,8 @@ class TestRealConfigFiles:
 
     def test_collections_list_from_real_config(self, config_path):
         """The collections list should be fully resolved from simulator data."""
-        loader = ConfigurationLoader(config_path=config_path, environment="production")
+        loader = ConfigurationLoader(config_path=config_path, environment="production",
+                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
         db_config = loader.get_DB_config("authentication")
         assert db_config is not None
         collections = db_config["collections"]

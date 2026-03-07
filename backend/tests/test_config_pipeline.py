@@ -428,6 +428,7 @@ class TestLoadEnvironmentPipeline:
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
                 environment=env,
+                simulator_file=str(tmp_path / f"server.env.{env}.json"),
             )
         assert loader.configuration["db_url"] == MOCK_URL_MONGODB_SIM
         assert loader.configuration["db_host"] == "simhost"
@@ -478,6 +479,7 @@ class TestLoadEnvironmentPipeline:
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
                 environment=env,
+                simulator_file=str(tmp_path / f"server.env.{env}.json"),
             )
         assert loader.configuration["host"] == "local-host"
 
@@ -520,6 +522,7 @@ class TestAuthenticationTypoFix:
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
                 environment=env,
+                simulator_file=str(tmp_path / f"server.env.{env}.json"),
             )
         assert loader.configuration["auth_secret"] == "s3cret"
 
@@ -538,6 +541,7 @@ class TestAuthenticationTypoFix:
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
                 environment=env,
+                simulator_file=str(tmp_path / f"server.env.{env}.json"),
             )
         # Typo placeholder should stay unresolved
         assert loader.configuration["auth_secret"] == "{environment.authenitcation.secret}"
@@ -563,6 +567,7 @@ class TestEnvVarOverrides:
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
                 environment=env,
+                simulator_file=str(tmp_path / f"server.env.{env}.json"),
             )
         assert loader.configuration["host"] == "docker-host"
         assert loader.configuration["port"] == 5432
@@ -606,6 +611,7 @@ class TestEnvVarOverrides:
             loader = ConfigurationLoader(
                 config_path=str(tmp_path),
                 environment=env,
+                simulator_file=str(tmp_path / f"server.env.{env}.json"),
             )
         assert loader.configuration["host"] == "docker-db"
 
