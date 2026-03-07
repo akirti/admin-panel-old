@@ -956,4 +956,181 @@ describe('UsersManagement', () => {
     // Should show +2 (4 roles, shows first 2 + overflow badge with count)
     expect(screen.getByText('+2')).toBeInTheDocument();
   });
+
+  it('toggles role checkbox in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderUsersManagement();
+    await waitFor(() => { expect(screen.getByText('user1@test.com')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add User'));
+    await waitFor(() => { expect(screen.getByText('Roles (0 selected)')).toBeInTheDocument(); });
+
+    // Find role checkboxes
+    const checkboxes = screen.getAllByRole('checkbox');
+    const roleCheckbox = checkboxes[0]; // First role checkbox
+    await user.click(roleCheckbox);
+    expect(roleCheckbox.checked).toBe(true);
+
+    // Uncheck it
+    await user.click(roleCheckbox);
+    expect(roleCheckbox.checked).toBe(false);
+  });
+
+  it('clicks Select All and Clear All for roles', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderUsersManagement();
+    await waitFor(() => { expect(screen.getByText('user1@test.com')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add User'));
+    await waitFor(() => { expect(screen.getByText('Roles (0 selected)')).toBeInTheDocument(); });
+
+    const selectAllBtns = screen.getAllByText('Select All');
+    await user.click(selectAllBtns[0]); // First Select All = Roles
+
+    await waitFor(() => { expect(screen.getByText('Roles (2 selected)')).toBeInTheDocument(); });
+
+    const clearAllBtns = screen.getAllByText('Clear All');
+    await user.click(clearAllBtns[0]); // First Clear All = Roles
+
+    await waitFor(() => { expect(screen.getByText('Roles (0 selected)')).toBeInTheDocument(); });
+  });
+
+  it('clicks Select All and Clear All for groups', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderUsersManagement();
+    await waitFor(() => { expect(screen.getByText('user1@test.com')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add User'));
+    await waitFor(() => { expect(screen.getByText('Groups (0 selected)')).toBeInTheDocument(); });
+
+    const selectAllBtns = screen.getAllByText('Select All');
+    await user.click(selectAllBtns[1]); // Second Select All = Groups
+
+    await waitFor(() => { expect(screen.getByText('Groups (1 selected)')).toBeInTheDocument(); });
+
+    const clearAllBtns = screen.getAllByText('Clear All');
+    await user.click(clearAllBtns[1]);
+
+    await waitFor(() => { expect(screen.getByText('Groups (0 selected)')).toBeInTheDocument(); });
+  });
+
+  it('clicks Select All and Clear All for customers', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderUsersManagement();
+    await waitFor(() => { expect(screen.getByText('user1@test.com')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add User'));
+    await waitFor(() => { expect(screen.getByText('Customers (0 selected)')).toBeInTheDocument(); });
+
+    const selectAllBtns = screen.getAllByText('Select All');
+    await user.click(selectAllBtns[2]); // Third Select All = Customers
+
+    await waitFor(() => { expect(screen.getByText('Customers (1 selected)')).toBeInTheDocument(); });
+
+    const clearAllBtns = screen.getAllByText('Clear All');
+    await user.click(clearAllBtns[2]);
+
+    await waitFor(() => { expect(screen.getByText('Customers (0 selected)')).toBeInTheDocument(); });
+  });
+
+  it('toggles group and customer checkboxes', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderUsersManagement();
+    await waitFor(() => { expect(screen.getByText('user1@test.com')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add User'));
+    await waitFor(() => { expect(screen.getByText('Roles (0 selected)')).toBeInTheDocument(); });
+
+    // Find all checkboxes - they include roles, groups, customers, is_active, send_password_email
+    const checkboxes = screen.getAllByRole('checkbox');
+    // Roles: first 2 (Admin, User), Groups: next 1 (Group 1), Customers: next 1 (Customer 1), is_active, send_password_email
+    // Toggle group checkbox
+    const groupCheckbox = checkboxes[2]; // After 2 role checkboxes
+    await user.click(groupCheckbox);
+    expect(groupCheckbox.checked).toBe(true);
+
+    // Toggle customer checkbox
+    const custCheckbox = checkboxes[3]; // After 2 roles + 1 group
+    await user.click(custCheckbox);
+    expect(custCheckbox.checked).toBe(true);
+  });
+
+  it('toggles is_active checkbox in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderUsersManagement();
+    await waitFor(() => { expect(screen.getByText('user1@test.com')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add User'));
+    await waitFor(() => { expect(screen.getByText('Roles (0 selected)')).toBeInTheDocument(); });
+
+    // Find Active label text (there may be multiple "Active" texts - one in table badge, one in modal)
+    const activeTexts = screen.getAllByText('Active');
+    const modalActiveLabel = activeTexts.find(el => el.closest('label'));
+    if (modalActiveLabel) {
+      const isActiveCheckbox = modalActiveLabel.closest('label').querySelector('input[type="checkbox"]');
+      expect(isActiveCheckbox.checked).toBe(true);
+      await user.click(isActiveCheckbox);
+      expect(isActiveCheckbox.checked).toBe(false);
+    }
+  });
+
+  it('shows send password email checkbox in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderUsersManagement();
+    await waitFor(() => { expect(screen.getByText('user1@test.com')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add User'));
+    await waitFor(() => { expect(screen.getByText('Roles (0 selected)')).toBeInTheDocument(); });
+
+    // Send password email option should be visible in create mode
+    expect(screen.getByText('Send password email')).toBeInTheDocument();
+  });
+
+  it('fills password field in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderUsersManagement();
+    await waitFor(() => { expect(screen.getByText('user1@test.com')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add User'));
+    await waitFor(() => { expect(screen.getByText('Roles (0 selected)')).toBeInTheDocument(); });
+
+    // Find password input by type
+    const passwordInputs = document.querySelectorAll('input[type="password"]');
+    expect(passwordInputs.length).toBeGreaterThan(0);
+    await user.type(passwordInputs[0], 'SecurePass123');
+    expect(passwordInputs[0].value).toBe('SecurePass123');
+  });
+
+  it('shows pagination when multiple pages exist', async () => {
+    const { usersAPI, rolesAPI, groupsAPI, customersAPI } = await import('../../services/api');
+    usersAPI.list.mockResolvedValue({
+      data: { data: mockUsers, pagination: { total: 50, pages: 2, page: 0, limit: 25 } },
+    });
+    rolesAPI.list.mockResolvedValue({ data: { data: mockRoles } });
+    groupsAPI.list.mockResolvedValue({ data: { data: mockGroups } });
+    customersAPI.list.mockResolvedValue({ data: { data: mockCustomers } });
+    const user = userEvent.setup();
+
+    renderUsersManagement();
+    await waitFor(() => { expect(screen.getByText('user1@test.com')).toBeInTheDocument(); });
+
+    // Should show pagination
+    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+  });
 });

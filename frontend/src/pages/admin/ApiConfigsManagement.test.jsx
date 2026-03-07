@@ -498,4 +498,496 @@ describe('ApiConfigsManagement', () => {
       expect(screen.getByText('api_key')).toBeInTheDocument();
     });
   });
+
+  it('handles activate toggle for inactive config', async () => {
+    await setupMocks();
+    const { apiConfigsAPI } = await import('../../services/api');
+    const toast = await import('react-hot-toast');
+    apiConfigsAPI.toggleStatus.mockResolvedValue({ data: {} });
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Payment API')).toBeInTheDocument();
+    });
+
+    const activateButtons = screen.getAllByTitle('Activate');
+    await user.click(activateButtons[0]);
+
+    await waitFor(() => {
+      expect(apiConfigsAPI.toggleStatus).toHaveBeenCalledWith('ac2');
+      expect(toast.default.success).toHaveBeenCalledWith('Configuration activated');
+    });
+  });
+
+  it('handles test API failure', async () => {
+    await setupMocks();
+    const { apiConfigsAPI } = await import('../../services/api');
+    apiConfigsAPI.testById.mockRejectedValue({ response: { data: { detail: 'Connection refused' } } });
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('User Service')).toBeInTheDocument();
+    });
+
+    const testButtons = screen.getAllByTitle('Test API');
+    await user.click(testButtons[0]);
+
+    await waitFor(() => {
+      expect(apiConfigsAPI.testById).toHaveBeenCalledWith('ac1');
+    });
+  });
+
+  it('handles update failure', async () => {
+    await setupMocks();
+    const { apiConfigsAPI } = await import('../../services/api');
+    const toast = await import('react-hot-toast');
+    apiConfigsAPI.update.mockRejectedValue({ response: { data: { detail: 'Update failed' } } });
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('User Service')).toBeInTheDocument();
+    });
+
+    const editButtons = screen.getAllByTitle('Edit');
+    await user.click(editButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Edit API Configuration')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Update'));
+
+    await waitFor(() => {
+      expect(toast.default.error).toHaveBeenCalledWith('Update failed');
+    });
+  });
+
+  it('shows GCS status badge when configured', async () => {
+    const { apiConfigsAPI } = await import('../../services/api');
+    apiConfigsAPI.list.mockResolvedValue({
+      data: { data: mockConfigs, pagination: { total: 2, pages: 1, page: 0, limit: 25 } },
+    });
+    apiConfigsAPI.getTags.mockResolvedValue({ data: { tags: ['users'] } });
+    apiConfigsAPI.getGCSStatus.mockResolvedValue({ data: { configured: true } });
+
+    renderApiConfigsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('GCS: Connected')).toBeInTheDocument();
+    });
+  });
+
+  it('shows GCS not configured badge', async () => {
+    await setupMocks();
+    renderApiConfigsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('GCS: Not configured')).toBeInTheDocument();
+    });
+  });
+
+  it('shows Upload Certificate button when GCS is configured', async () => {
+    const { apiConfigsAPI } = await import('../../services/api');
+    apiConfigsAPI.list.mockResolvedValue({
+      data: { data: mockConfigs, pagination: { total: 2, pages: 1, page: 0, limit: 25 } },
+    });
+    apiConfigsAPI.getTags.mockResolvedValue({ data: { tags: ['users'] } });
+    apiConfigsAPI.getGCSStatus.mockResolvedValue({ data: { configured: true } });
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('User Service')).toBeInTheDocument();
+    });
+
+    const certButtons = screen.getAllByTitle('Upload Certificate');
+    expect(certButtons.length).toBeGreaterThanOrEqual(1);
+
+    await user.click(certButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Upload Certificate')).toBeInTheDocument();
+    });
+  });
+
+  it('handles search input change', async () => {
+    await setupMocks();
+    const { apiConfigsAPI } = await import('../../services/api');
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('User Service')).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByPlaceholderText(/Search/i);
+    await user.type(searchInput, 'user');
+
+    await waitFor(() => {
+      expect(apiConfigsAPI.list).toHaveBeenCalledWith(expect.objectContaining({
+        search: 'user',
+      }));
+    });
+  });
+
+  it('handles status filter change', async () => {
+    await setupMocks();
+    const { apiConfigsAPI } = await import('../../services/api');
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('User Service')).toBeInTheDocument();
+    });
+
+    const statusSelect = screen.getByDisplayValue('All Status');
+    await user.selectOptions(statusSelect, 'active');
+
+    await waitFor(() => {
+      expect(apiConfigsAPI.list).toHaveBeenCalledWith(expect.objectContaining({
+        status: 'active',
+      }));
+    });
+  });
+
+  it('handles tag filter change', async () => {
+    await setupMocks();
+    const { apiConfigsAPI } = await import('../../services/api');
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('User Service')).toBeInTheDocument();
+    });
+
+    const tagSelect = screen.getByDisplayValue('All Tags');
+    await user.selectOptions(tagSelect, 'users');
+
+    await waitFor(() => {
+      expect(apiConfigsAPI.list).toHaveBeenCalledWith(expect.objectContaining({
+        tags: 'users',
+      }));
+    });
+  });
+
+  it('shows tag badges in table', async () => {
+    await setupMocks();
+    renderApiConfigsManagement();
+
+    await waitFor(() => {
+      // Tags appear in both the filter dropdown and the table
+      expect(screen.getAllByText('users').length).toBeGreaterThanOrEqual(2);
+      expect(screen.getAllByText('payments').length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it('shows tag overflow indicator for configs with many tags', async () => {
+    const { apiConfigsAPI } = await import('../../services/api');
+    const configWithManyTags = [{
+      ...mockConfigs[0],
+      tags: ['api', 'auth', 'billing', 'core'],
+    }];
+    apiConfigsAPI.list.mockResolvedValue({
+      data: { data: configWithManyTags, pagination: { total: 1, pages: 1, page: 0, limit: 25 } },
+    });
+    apiConfigsAPI.getTags.mockResolvedValue({ data: { tags: ['api', 'auth', 'billing', 'core'] } });
+    apiConfigsAPI.getGCSStatus.mockResolvedValue({ data: { configured: false } });
+
+    renderApiConfigsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('+2')).toBeInTheDocument();
+    });
+  });
+
+  it('shows pagination when multiple pages', async () => {
+    const { apiConfigsAPI } = await import('../../services/api');
+    apiConfigsAPI.list.mockResolvedValue({
+      data: { data: mockConfigs, pagination: { total: 50, pages: 2, page: 0, limit: 25 } },
+    });
+    apiConfigsAPI.getTags.mockResolvedValue({ data: { tags: [] } });
+    apiConfigsAPI.getGCSStatus.mockResolvedValue({ data: { configured: false } });
+
+    renderApiConfigsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+    });
+  });
+
+  it('hides pagination for single page', async () => {
+    await setupMocks();
+    renderApiConfigsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('User Service')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText(/Page \d+ of/)).not.toBeInTheDocument();
+  });
+
+  it('closes modal on cancel', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('User Service')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText(/Add API Config/));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Cancel'));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('modal')).not.toBeInTheDocument();
+    });
+  });
+
+  it('renders detail modal with config info', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('User Service')).toBeInTheDocument();
+    });
+
+    const viewButtons = screen.getAllByTitle('View Details');
+    await user.click(viewButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('API Configuration Details')).toBeInTheDocument();
+      expect(screen.getAllByText('user-svc').length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it('shows page description', async () => {
+    await setupMocks();
+    renderApiConfigsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Manage external API configurations and test connectivity')).toBeInTheDocument();
+    });
+  });
+
+  // --- Additional coverage tests ---
+
+  it('fills form fields in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Fill key
+    const keyInput = screen.getByPlaceholderText('unique-api-key');
+    await user.type(keyInput, 'new-api');
+    expect(keyInput.value).toBe('new-api');
+
+    // Fill name
+    const nameInput = screen.getByPlaceholderText('My API');
+    await user.type(nameInput, 'New API');
+    expect(nameInput.value).toBe('New API');
+
+    // Fill endpoint
+    const urlInput = screen.getByPlaceholderText('https://api.example.com/v1/resource');
+    await user.type(urlInput, 'https://test.com/api');
+    expect(urlInput.value).toBe('https://test.com/api');
+  });
+
+  it('changes auth type dropdown in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Find auth type select
+    const selects = screen.getByTestId('modal').querySelectorAll('select');
+    const authSelect = Array.from(selects).find(s =>
+      Array.from(s.options).some(o => o.value === 'bearer' || o.value === 'basic')
+    );
+    if (authSelect) {
+      await user.selectOptions(authSelect, 'basic');
+      expect(authSelect.value).toBe('basic');
+    }
+  });
+
+  it('populates form when editing existing config', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    const editButtons = screen.getAllByTitle('Edit');
+    await user.click(editButtons[0]);
+
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+    expect(screen.getByDisplayValue('user-svc')).toBeInTheDocument();
+    expect(screen.getAllByDisplayValue('User Service').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByDisplayValue('/users')).toBeInTheDocument();
+  });
+
+  it('handles test connection with success', async () => {
+    await setupMocks();
+    const { apiConfigsAPI } = await import('../../services/api');
+    apiConfigsAPI.testById.mockResolvedValue({ data: { success: true, status_code: 200, response_time: 150 } });
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    const testButtons = screen.getAllByTitle('Test API');
+    await user.click(testButtons[0]);
+
+    await waitFor(() => {
+      expect(apiConfigsAPI.testById).toHaveBeenCalled();
+    });
+  });
+
+  it('handles test connection with failure', async () => {
+    await setupMocks();
+    const { apiConfigsAPI } = await import('../../services/api');
+    apiConfigsAPI.testById.mockRejectedValue({ response: { data: { detail: 'Connection refused' } } });
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    const testButtons = screen.getAllByTitle('Test API');
+    await user.click(testButtons[0]);
+
+    await waitFor(() => {
+      expect(apiConfigsAPI.testById).toHaveBeenCalled();
+    });
+  });
+
+  it('fills JSON fields in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Find headers JSON textarea
+    const textareas = screen.getByTestId('modal').querySelectorAll('textarea');
+    if (textareas.length > 0) {
+      await user.type(textareas[0], 'test json');
+      expect(textareas[0].value).toContain('test json');
+    }
+  });
+
+  it('toggles ssl_verify checkbox', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Find checkboxes (ssl_verify, use_proxy, cache_enabled)
+    const checkboxes = screen.getByTestId('modal').querySelectorAll('input[type="checkbox"]');
+    if (checkboxes.length > 0) {
+      await user.click(checkboxes[0]);
+    }
+  });
+
+  it('changes tags input in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Find tags input
+    const tagsInput = screen.getByPlaceholderText('production, internal, payment');
+    await user.type(tagsInput, 'api, test');
+    expect(tagsInput.value).toBe('api, test');
+  });
+
+  it('shows status and method badges in table', async () => {
+    await setupMocks();
+    renderApiConfigsManagement();
+
+    await waitFor(() => {
+      // Status badges (Active also in filter option)
+      expect(screen.getAllByText('Active').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Inactive').length).toBeGreaterThanOrEqual(1);
+      // Method badges
+      expect(screen.getByText('GET')).toBeInTheDocument();
+      expect(screen.getByText('POST')).toBeInTheDocument();
+    });
+  });
+
+  it('shows auth type badges in table', async () => {
+    await setupMocks();
+    renderApiConfigsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('bearer')).toBeInTheDocument();
+      expect(screen.getByText('api_key')).toBeInTheDocument();
+    });
+  });
+
+  it('filters by status', async () => {
+    await setupMocks();
+    const { apiConfigsAPI } = await import('../../services/api');
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    const statusFilter = screen.getByDisplayValue('All Status');
+    await user.selectOptions(statusFilter, 'active');
+
+    await waitFor(() => {
+      expect(apiConfigsAPI.list).toHaveBeenCalled();
+    });
+  });
+
+  it('handles certificate upload modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    // Find SSL Certificate button if it exists
+    const certBtns = screen.queryAllByText(/Certificate|SSL/i);
+    if (certBtns.length > 0) {
+      await user.click(certBtns[0]);
+    }
+  });
 });

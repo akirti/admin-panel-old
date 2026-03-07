@@ -176,4 +176,172 @@ describe('ActivityLogsPage', () => {
       expect(toast.default.error).toHaveBeenCalledWith('Failed to load activity logs');
     });
   });
+
+  it('handles user email filter', async () => {
+    await setupMocks();
+    const { activityLogsAPI } = await import('../../services/api');
+    const user = (await import('@testing-library/user-event')).default.setup();
+
+    renderActivityLogsPage();
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Filter by user email...')).toBeInTheDocument();
+    });
+
+    const emailInput = screen.getByPlaceholderText('Filter by user email...');
+    await user.type(emailInput, 'admin');
+
+    await waitFor(() => {
+      expect(activityLogsAPI.list).toHaveBeenCalledWith(expect.objectContaining({
+        user_email: 'admin',
+      }));
+    });
+  });
+
+  it('handles entity type filter', async () => {
+    await setupMocks();
+    const { activityLogsAPI } = await import('../../services/api');
+    const user = (await import('@testing-library/user-event')).default.setup();
+
+    renderActivityLogsPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('All Entity Types')).toBeInTheDocument();
+    });
+
+    const entitySelect = screen.getByDisplayValue('All Entity Types');
+    await user.selectOptions(entitySelect, 'user');
+
+    await waitFor(() => {
+      expect(activityLogsAPI.list).toHaveBeenCalledWith(expect.objectContaining({
+        entity_type: 'user',
+      }));
+    });
+  });
+
+  it('handles action filter', async () => {
+    await setupMocks();
+    const { activityLogsAPI } = await import('../../services/api');
+    const user = (await import('@testing-library/user-event')).default.setup();
+
+    renderActivityLogsPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('All Actions')).toBeInTheDocument();
+    });
+
+    const actionSelect = screen.getByDisplayValue('All Actions');
+    await user.selectOptions(actionSelect, 'create');
+
+    await waitFor(() => {
+      expect(activityLogsAPI.list).toHaveBeenCalledWith(expect.objectContaining({
+        action: 'create',
+      }));
+    });
+  });
+
+  it('handles time range change', async () => {
+    await setupMocks();
+    const { activityLogsAPI } = await import('../../services/api');
+    const user = (await import('@testing-library/user-event')).default.setup();
+
+    renderActivityLogsPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Last 7 Days')).toBeInTheDocument();
+    });
+
+    const timeSelect = screen.getByDisplayValue('Last 7 Days');
+    await user.selectOptions(timeSelect, '30');
+
+    await waitFor(() => {
+      expect(activityLogsAPI.list).toHaveBeenCalledWith(expect.objectContaining({
+        days: 30,
+      }));
+    });
+  });
+
+  it('shows action color badges', async () => {
+    await setupMocks();
+    renderActivityLogsPage();
+
+    await waitFor(() => {
+      // Actions in stats show as "action (count)" and in table as "action"
+      expect(screen.getByText('create (20)')).toBeInTheDocument();
+      expect(screen.getByText('update (30)')).toBeInTheDocument();
+    });
+  });
+
+  it('shows changes in log entries', async () => {
+    await setupMocks();
+    renderActivityLogsPage();
+
+    await waitFor(() => {
+      // The first log entry has changes with old/new values
+      expect(screen.getByText(/inactive/)).toBeInTheDocument();
+    });
+  });
+
+  it('shows top user in statistics', async () => {
+    await setupMocks();
+    renderActivityLogsPage();
+
+    await waitFor(() => {
+      expect(screen.getAllByText('admin@test.com').length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it('renders timeline when stats have timeline data', async () => {
+    const { activityLogsAPI } = await import('../../services/api');
+    activityLogsAPI.list.mockResolvedValue({
+      data: { data: mockLogs, pagination: { total: 2, pages: 1, page: 0, limit: 25 } },
+    });
+    activityLogsAPI.getStats.mockResolvedValue({
+      data: {
+        ...mockStats,
+        timeline: [
+          { date: '2025-01-15', count: 10 },
+          { date: '2025-01-14', count: 5 },
+        ],
+      },
+    });
+    activityLogsAPI.getActions.mockResolvedValue({ data: { actions: ['create'] } });
+    activityLogsAPI.getEntityTypes.mockResolvedValue({ data: { entity_types: ['user'] } });
+
+    renderActivityLogsPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Activity Timeline')).toBeInTheDocument();
+    });
+  });
+
+  it('shows entity IDs in table', async () => {
+    await setupMocks();
+    renderActivityLogsPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('user123')).toBeInTheDocument();
+      expect(screen.getByText('domain456')).toBeInTheDocument();
+    });
+  });
+
+  it('truncates long entity IDs', async () => {
+    const { activityLogsAPI } = await import('../../services/api');
+    const longIdLog = [{
+      ...mockLogs[0],
+      entity_id: 'very_long_entity_id_that_exceeds_20_characters',
+    }];
+    activityLogsAPI.list.mockResolvedValue({
+      data: { data: longIdLog, pagination: { total: 1, pages: 1, page: 0, limit: 25 } },
+    });
+    activityLogsAPI.getStats.mockResolvedValue({ data: mockStats });
+    activityLogsAPI.getActions.mockResolvedValue({ data: { actions: ['create'] } });
+    activityLogsAPI.getEntityTypes.mockResolvedValue({ data: { entity_types: ['user'] } });
+
+    renderActivityLogsPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('very_long_entity_id_...')).toBeInTheDocument();
+    });
+  });
 });

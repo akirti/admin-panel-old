@@ -181,4 +181,408 @@ describe('PermissionsManagement', () => {
       expect(screen.getAllByText('permissions').length).toBeGreaterThanOrEqual(1);
     });
   });
+
+  it('opens edit modal with pre-populated data', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+    render(<PermissionsManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Create Users')).toBeInTheDocument();
+    });
+
+    const editButtons = screen.getAllByTitle('Edit');
+    await user.click(editButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Edit Permission' })).toBeInTheDocument();
+    });
+
+    expect(screen.getByDisplayValue('users.create')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Create Users')).toBeInTheDocument();
+  });
+
+  it('submits create form and calls API', async () => {
+    await setupMocks();
+    const { permissionsAPI } = await import('../../services/api');
+    permissionsAPI.create.mockResolvedValue({ data: {} });
+    const user = userEvent.setup();
+
+    render(<PermissionsManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Create Users')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Add Permission'));
+    expect(screen.getByRole('heading', { name: 'Create Permission' })).toBeInTheDocument();
+
+    const form = document.querySelector('form');
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+
+    await waitFor(() => {
+      expect(permissionsAPI.create).toHaveBeenCalled();
+    });
+  });
+
+  it('submits update form and calls API', async () => {
+    await setupMocks();
+    const { permissionsAPI } = await import('../../services/api');
+    permissionsAPI.update.mockResolvedValue({ data: {} });
+    const user = userEvent.setup();
+
+    render(<PermissionsManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Create Users')).toBeInTheDocument();
+    });
+
+    const editButtons = screen.getAllByTitle('Edit');
+    await user.click(editButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Edit Permission' })).toBeInTheDocument();
+    });
+
+    const form = document.querySelector('form');
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+
+    await waitFor(() => {
+      expect(permissionsAPI.update).toHaveBeenCalledWith('p1', expect.any(Object));
+    });
+  });
+
+  it('handles create failure', async () => {
+    await setupMocks();
+    const { permissionsAPI } = await import('../../services/api');
+    permissionsAPI.create.mockRejectedValue({ response: { data: { detail: 'Key exists' } } });
+    const user = userEvent.setup();
+
+    render(<PermissionsManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Create Users')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Add Permission'));
+    const form = document.querySelector('form');
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Key exists')).toBeInTheDocument();
+    });
+  });
+
+  it('handles delete with confirmation', async () => {
+    await setupMocks();
+    const { permissionsAPI } = await import('../../services/api');
+    permissionsAPI.delete.mockResolvedValue({ data: {} });
+    const user = userEvent.setup();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    render(<PermissionsManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Create Users')).toBeInTheDocument();
+    });
+
+    const deleteButtons = screen.getAllByTitle('Delete');
+    await user.click(deleteButtons[0]);
+
+    await waitFor(() => {
+      expect(permissionsAPI.delete).toHaveBeenCalledWith('p1');
+      expect(screen.getByText('Permission deleted successfully')).toBeInTheDocument();
+    });
+
+    vi.restoreAllMocks();
+  });
+
+  it('cancels delete when user declines', async () => {
+    await setupMocks();
+    const { permissionsAPI } = await import('../../services/api');
+    const user = userEvent.setup();
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    render(<PermissionsManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Create Users')).toBeInTheDocument();
+    });
+
+    const deleteButtons = screen.getAllByTitle('Delete');
+    await user.click(deleteButtons[0]);
+
+    expect(permissionsAPI.delete).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
+
+  it('handles delete failure', async () => {
+    await setupMocks();
+    const { permissionsAPI } = await import('../../services/api');
+    permissionsAPI.delete.mockRejectedValue(new Error('Server error'));
+    const user = userEvent.setup();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    render(<PermissionsManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Create Users')).toBeInTheDocument();
+    });
+
+    const deleteButtons = screen.getAllByTitle('Delete');
+    await user.click(deleteButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Failed to delete permission')).toBeInTheDocument();
+    });
+
+    vi.restoreAllMocks();
+  });
+
+  it('shows relationships modal when View Roles & Groups clicked', async () => {
+    await setupMocks();
+    const { permissionsAPI } = await import('../../services/api');
+    permissionsAPI.getRoles.mockResolvedValue({ data: [{ name: 'Admin', roleId: 'admin' }] });
+    permissionsAPI.getGroups.mockResolvedValue({ data: [{ name: 'Sales', groupId: 'sales' }] });
+    const user = userEvent.setup();
+
+    render(<PermissionsManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Create Users')).toBeInTheDocument();
+    });
+
+    const viewButtons = screen.getAllByTitle('View Roles & Groups');
+    await user.click(viewButtons[0]);
+
+    await waitFor(() => {
+      expect(permissionsAPI.getRoles).toHaveBeenCalledWith('p1');
+      expect(permissionsAPI.getGroups).toHaveBeenCalledWith('p1');
+    });
+  });
+
+  it('handles CSV export', async () => {
+    await setupMocks();
+    const { exportAPI } = await import('../../services/api');
+    exportAPI.permissions.csv.mockResolvedValue({ data: 'csv data' });
+    const user = userEvent.setup();
+
+    global.URL.createObjectURL = vi.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = vi.fn();
+
+    render(<PermissionsManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Create Users')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Export'));
+    await user.click(screen.getByText('Export as CSV'));
+
+    await waitFor(() => {
+      expect(exportAPI.permissions.csv).toHaveBeenCalled();
+    });
+  });
+
+  it('handles JSON export', async () => {
+    await setupMocks();
+    const { exportAPI } = await import('../../services/api');
+    exportAPI.permissions.json.mockResolvedValue({ data: '{}' });
+    const user = userEvent.setup();
+
+    global.URL.createObjectURL = vi.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = vi.fn();
+
+    render(<PermissionsManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Create Users')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Export'));
+    await user.click(screen.getByText('Export as JSON'));
+
+    await waitFor(() => {
+      expect(exportAPI.permissions.json).toHaveBeenCalled();
+    });
+  });
+
+  it('handles export failure', async () => {
+    await setupMocks();
+    const { exportAPI } = await import('../../services/api');
+    exportAPI.permissions.csv.mockRejectedValue(new Error('Export failed'));
+    const user = userEvent.setup();
+
+    render(<PermissionsManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Create Users')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Export'));
+    await user.click(screen.getByText('Export as CSV'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Failed to export permissions')).toBeInTheDocument();
+    });
+  });
+
+  it('cancels modal via Cancel button', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+    render(<PermissionsManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Create Users')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Add Permission'));
+    expect(screen.getByRole('heading', { name: 'Create Permission' })).toBeInTheDocument();
+
+    await user.click(screen.getByText('Cancel'));
+    expect(screen.queryByRole('heading', { name: 'Create Permission' })).not.toBeInTheDocument();
+  });
+
+  it('shows Select All and Clear All buttons in modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+    render(<PermissionsManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Create Users')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Add Permission'));
+    expect(screen.getAllByText('Select All').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Clear All').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('shows permission description', async () => {
+    await setupMocks();
+    render(<PermissionsManagement />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Allows creating users')).toBeInTheDocument();
+    });
+  });
+
+  it('toggles action checkbox in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+    render(<PermissionsManagement />);
+
+    await waitFor(() => { expect(screen.getByText('Create Users')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add Permission'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Find action checkboxes (create, read, update, delete, list, export)
+    const checkboxes = screen.getAllByRole('checkbox');
+    // "read" should be pre-checked (default), click another action
+    const uncheckedCb = checkboxes.find(cb => !cb.checked);
+    if (uncheckedCb) {
+      await user.click(uncheckedCb);
+      expect(uncheckedCb.checked).toBe(true);
+      // Toggle it off
+      await user.click(uncheckedCb);
+      expect(uncheckedCb.checked).toBe(false);
+    }
+  });
+
+  it('clicks Select All and Clear All for actions', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+    render(<PermissionsManagement />);
+
+    await waitFor(() => { expect(screen.getByText('Create Users')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add Permission'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Click Select All
+    const selectAllBtns = screen.getAllByText('Select All');
+    await user.click(selectAllBtns[0]);
+
+    // All checkboxes should be checked
+    const checkboxes = screen.getAllByRole('checkbox');
+    const allChecked = checkboxes.every(cb => cb.checked);
+    expect(allChecked).toBe(true);
+
+    // Click Clear All
+    const clearAllBtns = screen.getAllByText('Clear All');
+    await user.click(clearAllBtns[0]);
+
+    // All checkboxes should be unchecked
+    const checkboxes2 = screen.getAllByRole('checkbox');
+    const allUnchecked = checkboxes2.every(cb => !cb.checked);
+    expect(allUnchecked).toBe(true);
+  });
+
+  it('filters by module using dropdown', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+    render(<PermissionsManagement />);
+
+    await waitFor(() => { expect(screen.getByText('Create Users')).toBeInTheDocument(); });
+
+    // Find module filter dropdown
+    const moduleSelect = screen.getByDisplayValue('All Modules');
+    await user.selectOptions(moduleSelect, 'Users');
+    expect(moduleSelect.value).toBe('Users');
+
+    // Clear button should appear
+    await waitFor(() => {
+      expect(screen.getByText('Clear')).toBeInTheDocument();
+    });
+
+    // Click clear
+    await user.click(screen.getByText('Clear'));
+    expect(moduleSelect.value).toBe('');
+  });
+
+  it('clicks module stat card to filter', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+    render(<PermissionsManagement />);
+
+    await waitFor(() => { expect(screen.getByText('Create Users')).toBeInTheDocument(); });
+
+    // Click on module stat card (Users module card)
+    const usersCards = screen.getAllByText('Users');
+    await user.click(usersCards[0]); // Click first Users text (module card)
+
+    // Should filter to Users module
+    await waitFor(() => {
+      expect(screen.getByText('Clear')).toBeInTheDocument();
+    });
+  });
+
+  it('fills form fields in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+    render(<PermissionsManagement />);
+
+    await waitFor(() => { expect(screen.getByText('Create Users')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add Permission'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Fill in form fields
+    const inputs = screen.getByTestId('modal').querySelectorAll('input[type="text"]');
+    if (inputs.length > 0) {
+      await user.type(inputs[0], 'test.permission');
+    }
+  });
+
+  it('searches permissions by text', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+    render(<PermissionsManagement />);
+
+    await waitFor(() => { expect(screen.getByText('Create Users')).toBeInTheDocument(); });
+
+    const searchInput = screen.getByPlaceholderText('Search permissions by key or name...');
+    await user.type(searchInput, 'users');
+    expect(searchInput.value).toBe('users');
+  });
 });

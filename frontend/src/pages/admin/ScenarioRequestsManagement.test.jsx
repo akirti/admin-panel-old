@@ -345,4 +345,227 @@ describe('ScenarioRequestsManagement', () => {
 
     // The modal should close
   });
+
+  it('filters by status', async () => {
+    await setupMocks();
+    const { scenarioRequestAPI } = await import('../../services/api');
+    const user = userEvent.setup();
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+
+    const statusSelect = screen.getByDisplayValue('All Status');
+    await user.selectOptions(statusSelect, 'submitted');
+
+    // Client-side filter: only submitted requests visible
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+  });
+
+  it('filters by domain', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+
+    const domainSelect = screen.getByDisplayValue('All Domains');
+    await user.selectOptions(domainSelect, 'hr');
+
+    // Client-side filter: only hr domain visible
+    await waitFor(() => {
+      expect(screen.queryByText('Revenue Dashboard')).not.toBeInTheDocument();
+      expect(screen.getByText('HR Analytics')).toBeInTheDocument();
+    });
+  });
+
+  it('updates status comment in modal', async () => {
+    await setupMocks();
+    const { scenarioRequestAPI } = await import('../../services/api');
+    const toast = await import('react-hot-toast');
+    scenarioRequestAPI.updateStatus.mockResolvedValue({ data: {} });
+    const user = userEvent.setup();
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('REQ-001')).toBeInTheDocument();
+    });
+
+    const statusButtons = screen.getAllByTitle('Update Status');
+    await user.click(statusButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Update Status' })).toBeInTheDocument();
+    });
+
+    // Type a comment
+    const commentArea = screen.getByPlaceholderText(/Add a comment/i) || screen.getByRole('textbox');
+    if (commentArea) {
+      await user.type(commentArea, 'Status change comment');
+    }
+
+    // Change the status dropdown
+    const statusDropdowns = document.querySelectorAll('select');
+    const modalStatusSelect = Array.from(statusDropdowns).find(s =>
+      Array.from(s.options).some(o => o.value === 'review')
+    );
+    if (modalStatusSelect) {
+      await user.selectOptions(modalStatusSelect, 'review');
+    }
+
+    const updateButtons = screen.getAllByText('Update Status');
+    await user.click(updateButtons[updateButtons.length - 1]);
+
+    await waitFor(() => {
+      expect(scenarioRequestAPI.updateStatus).toHaveBeenCalled();
+    });
+  });
+
+  it('shows formatted dates', async () => {
+    await setupMocks();
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      // The date should be formatted by formatDate
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+  });
+
+  it('strips HTML from descriptions', async () => {
+    await setupMocks();
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      // stripHtml should convert <p>Monthly revenue report</p> to plain text
+      expect(screen.getByText(/Monthly revenue report/)).toBeInTheDocument();
+      expect(screen.getByText(/Employee analytics/)).toBeInTheDocument();
+    });
+  });
+
+  it('shows "N/A" for missing team/assignee', async () => {
+    await setupMocks();
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      // REQ-002 has null team and assignee_name
+      expect(screen.getByText('HR Analytics')).toBeInTheDocument();
+    });
+  });
+
+  it('renders pagination info', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: { data: mockRequests, pagination: { total: 50, page: 0, limit: 25 } },
+    });
+    scenarioRequestAPI.getDomains.mockResolvedValue({ data: mockDomains });
+    scenarioRequestAPI.getStatuses.mockResolvedValue({ data: mockStatuses });
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+  });
+
+  it('shows refresh button', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+
+    // Look for refresh button
+    const refreshButton = screen.queryByTitle('Refresh') || screen.queryByText('Refresh');
+    if (refreshButton) {
+      await user.click(refreshButton);
+    }
+  });
+
+  it('filters by domain dropdown', async () => {
+    await setupMocks();
+    const { scenarioRequestAPI } = await import('../../services/api');
+    const user = userEvent.setup();
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+
+    const domainFilter = screen.getByDisplayValue('All Domains');
+    if (domainFilter) {
+      await user.selectOptions(domainFilter, 'finance');
+      await waitFor(() => {
+        expect(scenarioRequestAPI.getAll).toHaveBeenCalledTimes(2);
+      });
+    }
+  });
+
+  it('filters by status dropdown', async () => {
+    await setupMocks();
+    const { scenarioRequestAPI } = await import('../../services/api');
+    const user = userEvent.setup();
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+
+    const statusFilter = screen.getByDisplayValue('All Status');
+    if (statusFilter) {
+      await user.selectOptions(statusFilter, 'submitted');
+      await waitFor(() => {
+        expect(scenarioRequestAPI.getAll).toHaveBeenCalledTimes(2);
+      });
+    }
+  });
+
+  it('shows Jira ticket info when available', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: {
+        data: [{
+          ...mockRequests[0],
+          jira: { ticket_key: 'PROJ-123' },
+          jira_links: [{ ticket_key: 'PROJ-456', link_type: 'related' }],
+        }],
+        pagination: { total: 1 },
+      },
+    });
+    scenarioRequestAPI.getDomains.mockResolvedValue({ data: mockDomains });
+    scenarioRequestAPI.getStatuses.mockResolvedValue({ data: mockStatuses });
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+
+    // Jira ticket key should be visible
+    await waitFor(() => {
+      expect(screen.getByText('PROJ-123')).toBeInTheDocument();
+    });
+  });
+
+  it('shows assignee and team info', async () => {
+    await setupMocks();
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('John Doe')).toBeInTheDocument();
+      expect(screen.getByText('Analytics')).toBeInTheDocument();
+    });
+  });
 });

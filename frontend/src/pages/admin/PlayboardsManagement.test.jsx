@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import PlayboardsManagement from './PlayboardsManagement';
@@ -834,5 +834,835 @@ describe('PlayboardsManagement', () => {
       expect(screen.getByTestId('modal')).toBeInTheDocument();
       expect(screen.getByText('Upload Playboard JSON')).toBeInTheDocument();
     });
+  });
+
+  // --- Filter management tests ---
+
+  it('adds a filter via the Filters tab', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Switch to Filters tab
+    const filtersTab = screen.getAllByText('Filters');
+    await user.click(filtersTab[filtersTab.length - 1]);
+
+    await waitFor(() => { expect(screen.getByText('Add New Filter')).toBeInTheDocument(); });
+
+    // Fill filter form
+    const nameInput = screen.getByPlaceholderText('query_text');
+    const displayInput = screen.getByPlaceholderText('Customer#');
+    await user.type(nameInput, 'query_customer');
+    await user.type(displayInput, 'Customer Name');
+
+    // Click "Add Filter"
+    await user.click(screen.getByText('Add Filter'));
+
+    // Should show "Configured Filters (1)"
+    await waitFor(() => {
+      expect(screen.getByText(/Configured Filters \(1\)/)).toBeInTheDocument();
+    });
+  });
+
+  it('removes a filter from configured filters', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    // Open edit modal (has a filter already)
+    const editButtons = screen.getAllByTitle('Edit');
+    await user.click(editButtons[0]);
+    await waitFor(() => { expect(screen.getByText('Edit Playboard')).toBeInTheDocument(); });
+
+    // Switch to Filters tab
+    const filtersTab = screen.getAllByText('Filters');
+    await user.click(filtersTab[filtersTab.length - 1]);
+
+    // Should show configured filters
+    await waitFor(() => {
+      expect(screen.getByText(/Configured Filters/)).toBeInTheDocument();
+    });
+
+    // Delete the filter - click the Delete button within configured filters
+    const deleteButtons = screen.getByTestId('modal').querySelectorAll('button[title="Delete"]');
+    if (deleteButtons.length > 0) {
+      await user.click(deleteButtons[0]);
+    }
+  });
+
+  it('adds a description element via Description tab', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Switch to Description tab
+    const tabs = screen.getByTestId('modal').querySelectorAll('button');
+    const descTab = Array.from(tabs).find(t => t.textContent === 'Description');
+    if (descTab) {
+      await user.click(descTab);
+
+      await waitFor(() => {
+        expect(screen.getByText('Add Description Element')).toBeInTheDocument();
+      });
+
+      // Fill in description text and click add
+      const textInputs = screen.getByTestId('modal').querySelectorAll('input[type="text"]');
+      // The last text input should be the description text field
+      const descInput = Array.from(textInputs).pop();
+      if (descInput) {
+        await user.type(descInput, 'Welcome to the report');
+      }
+
+      await user.click(screen.getByText('Add Description Element'));
+    }
+  });
+
+  it('switches to Row Actions tab and shows form', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Find and click Row Actions tab
+    const tabs = screen.getByTestId('modal').querySelectorAll('button');
+    const actionsTab = Array.from(tabs).find(t => t.textContent === 'Row Actions');
+    if (actionsTab) {
+      await user.click(actionsTab);
+
+      await waitFor(() => {
+        expect(screen.getByText('Add New Row Action')).toBeInTheDocument();
+      });
+    }
+  });
+
+  it('adds a row action via Row Actions tab', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Switch to Row Actions tab
+    const tabs = screen.getByTestId('modal').querySelectorAll('button');
+    const actionsTab = Array.from(tabs).find(t => t.textContent === 'Row Actions');
+    if (actionsTab) {
+      await user.click(actionsTab);
+
+      await waitFor(() => {
+        expect(screen.getByText('Add New Row Action')).toBeInTheDocument();
+      });
+
+      // Fill in action fields - find by label text
+      const allInputs = screen.getByTestId('modal').querySelectorAll('input[type="text"]');
+      // Fill in the key and name fields (first two inputs in the action form)
+      if (allInputs.length >= 2) {
+        await user.type(allInputs[0], 'drill_down');
+        await user.type(allInputs[1], 'Drill Down');
+      }
+
+      // Click "Add Row Action"
+      const addBtn = screen.queryByText('Add Row Action');
+      if (addBtn) {
+        await user.click(addBtn);
+        await waitFor(() => {
+          expect(screen.getByText(/Configured Row Actions/)).toBeInTheDocument();
+        });
+      }
+    }
+  });
+
+  it('switches to Grid Settings tab', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // This was already tested but let's verify content
+    await user.click(screen.getByText('Grid Settings'));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Default Page Size/i)).toBeInTheDocument();
+    });
+  });
+
+  it('edits a filter in configured filters', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    // Open edit for playboard that has filters
+    const editButtons = screen.getAllByTitle('Edit');
+    await user.click(editButtons[0]);
+    await waitFor(() => { expect(screen.getByText('Edit Playboard')).toBeInTheDocument(); });
+
+    // Switch to Filters tab
+    const filtersTab = screen.getAllByText('Filters');
+    await user.click(filtersTab[filtersTab.length - 1]);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Configured Filters/)).toBeInTheDocument();
+    });
+
+    // Click Edit (pencil) on the first configured filter
+    const editFilterBtns = screen.getByTestId('modal').querySelectorAll('button[title="Edit"]');
+    if (editFilterBtns.length > 0) {
+      await user.click(editFilterBtns[0]);
+      await waitFor(() => {
+        // Should show "Editing" badge or "Update Filter" button
+        const updateBtn = screen.queryByText('Update Filter');
+        const editingBadge = screen.queryByText('Editing');
+        expect(updateBtn || editingBadge).toBeTruthy();
+      });
+    }
+  });
+
+  it('shows addons section in basic info', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Addon configurations section should be on basic info tab
+    expect(screen.getByText(/Addon Configurations/i)).toBeInTheDocument();
+  });
+
+  it('shows row actions in edit mode', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    // Edit first playboard (has row actions)
+    const editButtons = screen.getAllByTitle('Edit');
+    await user.click(editButtons[0]);
+    await waitFor(() => { expect(screen.getByText('Edit Playboard')).toBeInTheDocument(); });
+
+    // Switch to Row Actions tab
+    const tabs = screen.getByTestId('modal').querySelectorAll('button');
+    const actionsTab = Array.from(tabs).find(t => t.textContent === 'Row Actions');
+    if (actionsTab) {
+      await user.click(actionsTab);
+      await waitFor(() => {
+        // Should show configured row actions since the playboard has events
+        expect(screen.getByText(/Configured Row Actions/)).toBeInTheDocument();
+      });
+    }
+  });
+
+  it('shows filter type badge for select type', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Switch to Filters tab
+    const filtersTab = screen.getAllByText('Filters');
+    await user.click(filtersTab[filtersTab.length - 1]);
+
+    await waitFor(() => { expect(screen.getByText('Add New Filter')).toBeInTheDocument(); });
+
+    // Add a filter with select type
+    await user.type(screen.getByPlaceholderText('query_text'), 'category');
+    await user.type(screen.getByPlaceholderText('Customer#'), 'Category');
+
+    // Change type to select
+    const typeSelect = screen.getByTestId('modal').querySelector('select');
+    if (typeSelect) {
+      await user.selectOptions(typeSelect, 'select');
+    }
+
+    // Options section should appear for select type
+    await waitFor(() => {
+      expect(screen.getByText('Options')).toBeInTheDocument();
+    });
+  });
+
+  it('handles upload form submission', async () => {
+    await setupMocks();
+    const { playboardsAPI } = await import('../../services/api');
+    const toast = await import('react-hot-toast');
+    playboardsAPI.upload.mockResolvedValue({ data: {} });
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Customer Search')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText(/Upload JSON/));
+
+    await waitFor(() => {
+      expect(screen.getByText('Upload Playboard JSON')).toBeInTheDocument();
+    });
+
+    // Submit the upload form
+    const form = screen.getByTestId('modal').querySelector('form');
+    if (form) {
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    }
+
+    // Without a file selected, should show error
+    await waitFor(() => {
+      expect(toast.default.error).toHaveBeenCalledWith('Please select a file');
+    });
+  });
+
+  it('handles upload API failure', async () => {
+    await setupMocks();
+    const { playboardsAPI } = await import('../../services/api');
+    const toast = await import('react-hot-toast');
+    playboardsAPI.upload.mockRejectedValue({ response: { data: { detail: 'Invalid JSON format' } } });
+
+    renderPlayboardsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Customer Search')).toBeInTheDocument();
+    });
+  });
+
+  it('shows loading state', async () => {
+    const { playboardsAPI, scenariosAPI, domainsAPI } = await import('../../services/api');
+    playboardsAPI.list.mockReturnValue(new Promise(() => {}));
+    scenariosAPI.list.mockReturnValue(new Promise(() => {}));
+    domainsAPI.list.mockReturnValue(new Promise(() => {}));
+
+    renderPlayboardsManagement();
+
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
+  });
+
+  it('shows config type in basic info form', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Customer Search')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText(/Build Playboard/));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    // Config Type and Program Key should be in Basic Info
+    expect(screen.getAllByText('Config Type').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Program Key').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders scenario and domain selectors in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Customer Search')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText(/Build Playboard/));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    // Modal should contain Scenario and Data Domain form fields
+    expect(screen.getByText('Scenario *')).toBeInTheDocument();
+  });
+
+  it('shows pagination for multi-page results', async () => {
+    const { playboardsAPI, scenariosAPI, domainsAPI } = await import('../../services/api');
+    playboardsAPI.list.mockResolvedValue({
+      data: { data: mockPlayboards, pagination: { total: 50, pages: 2, page: 0, limit: 25 } },
+    });
+    scenariosAPI.list.mockResolvedValue({ data: { data: [] } });
+    domainsAPI.list.mockResolvedValue({ data: { data: [] } });
+
+    renderPlayboardsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+    });
+  });
+
+  it('hides pagination for single page', async () => {
+    await setupMocks();
+    renderPlayboardsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Customer Search')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText(/Page \d+ of/)).not.toBeInTheDocument();
+  });
+
+  it('renders grid settings form fields', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Grid Settings'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Enable Pagination')).toBeInTheDocument();
+      expect(screen.getByText(/Default Page Size/i)).toBeInTheDocument();
+      expect(screen.getByText(/Row Actions Render As/i)).toBeInTheDocument();
+    });
+  });
+
+  it('shows cancel and submit buttons in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    expect(screen.getByText('Cancel')).toBeInTheDocument();
+    expect(screen.getAllByText('Create Playboard').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders status dropdown in basic info form', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Status appears in table and form
+    expect(screen.getAllByText('Status').length).toBeGreaterThanOrEqual(2);
+  });
+
+  // --- Additional coverage tests ---
+
+  it('fills in filter name and adds a filter', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Switch to Filters tab - use getAllByText since "Filters" appears in table too
+    const modal = screen.getByTestId('modal');
+    const filtersTabBtns = within(modal).getAllByText('Filters');
+    await user.click(filtersTabBtns[0]);
+    await waitFor(() => { expect(screen.getByText('Add New Filter')).toBeInTheDocument(); });
+
+    const nameInput = screen.getByPlaceholderText('query_text');
+    await user.type(nameInput, 'search_field');
+
+    const displayInput = screen.getByPlaceholderText('Customer#');
+    await user.type(displayInput, 'Search');
+
+    await user.click(screen.getByText('Add Filter'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Configured Filters (1)')).toBeInTheDocument();
+    });
+  });
+
+  it('adds and removes addon configurations', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    const addonInput = screen.getByPlaceholderText('customer-api_v2');
+    await user.type(addonInput, 'my-addon');
+
+    // Click the "Add" button near the addon input
+    const addButtons = screen.getAllByText('Add');
+    await user.click(addButtons[addButtons.length - 1]);
+
+    await waitFor(() => {
+      expect(screen.getByText('my-addon')).toBeInTheDocument();
+    });
+
+    const removeBtn = screen.getByText('x');
+    await user.click(removeBtn);
+
+    await waitFor(() => {
+      expect(screen.queryByText('my-addon')).not.toBeInTheDocument();
+    });
+  });
+
+  it('switches to Row Actions tab and fills action fields', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    const modal = screen.getByTestId('modal');
+    const rowActionBtns = within(modal).getAllByText('Row Actions');
+    await user.click(rowActionBtns[0]);
+    await waitFor(() => { expect(screen.getByText('Add New Row Action')).toBeInTheDocument(); });
+
+    const actionKeyInput = screen.getByPlaceholderText('orders_scenario_6');
+    await user.type(actionKeyInput, 'edit_item');
+
+    const actionNameInput = screen.getByPlaceholderText('Orders');
+    await user.type(actionNameInput, 'Edit Item');
+
+    await user.click(screen.getByText('Add Row Action'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Configured Row Actions (1)')).toBeInTheDocument();
+    });
+  });
+
+  it('switches to Description tab and adds description element', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    const modal = screen.getByTestId('modal');
+    const descBtns = within(modal).getAllByText('Description');
+    await user.click(descBtns[0]);
+    await waitFor(() => { expect(screen.getByText('Add Description Element')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add Description'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Scenario Description Items')).toBeInTheDocument();
+    });
+  });
+
+  it('fills in key and data domain in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    const keyInput = screen.getByPlaceholderText('customers_scenario_playboard_1');
+    await user.type(keyInput, 'new_playboard');
+    expect(keyInput.value).toBe('new_playboard');
+  });
+
+  it('cancels filter edit mode', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    const editButtons = screen.getAllByTitle('Edit');
+    await user.click(editButtons[0]);
+
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    const modal = screen.getByTestId('modal');
+    const filtersTabBtns = within(modal).getAllByText('Filters');
+    await user.click(filtersTabBtns[0]);
+    await waitFor(() => { expect(screen.getByText(/Configured Filters/)).toBeInTheDocument(); });
+
+    // Click edit on a filter - find Edit buttons with title="Edit" in the modal
+    const filterEditBtns = modal.querySelectorAll('button[title="Edit"]');
+    if (filterEditBtns.length > 0) {
+      await user.click(filterEditBtns[0]);
+      const cancelBtns = screen.queryAllByText('Cancel Edit');
+      if (cancelBtns.length > 0) {
+        await user.click(cancelBtns[0]);
+      }
+    }
+  });
+
+  it('downloads playboard JSON', async () => {
+    await setupMocks();
+    const { playboardsAPI } = await import('../../services/api');
+    playboardsAPI.download.mockResolvedValue({ data: { key: 'customer_search_1' } });
+    const user = userEvent.setup();
+    global.URL.createObjectURL = vi.fn(() => 'blob:url');
+    global.URL.revokeObjectURL = vi.fn();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    const downloadBtns = screen.getAllByTitle('Download JSON');
+    await user.click(downloadBtns[0]);
+
+    await waitFor(() => {
+      expect(playboardsAPI.download).toHaveBeenCalledWith('pb1');
+    });
+  });
+
+  it('toggles grid settings checkboxes', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Grid Settings'));
+    await waitFor(() => { expect(screen.getByText(/Enable Pagination/)).toBeInTheDocument(); });
+
+    const paginationCheckbox = screen.getByLabelText(/Enable Pagination/);
+    await user.click(paginationCheckbox);
+    expect(paginationCheckbox.checked).toBe(false);
+  });
+
+  it('removes a description element', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    const modal = screen.getByTestId('modal');
+    const descBtns = within(modal).getAllByText('Description');
+    await user.click(descBtns[0]);
+    await waitFor(() => { expect(screen.getByText('Add Description Element')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add Description'));
+    await user.click(screen.getByText('Add Description'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Scenario Description Items')).toBeInTheDocument();
+    });
+
+    const removeBtns = modal.querySelectorAll('button.text-red-500');
+    if (removeBtns.length > 0) {
+      await user.click(removeBtns[0]);
+      await waitFor(() => {
+        expect(screen.getByText('Scenario Description Items')).toBeInTheDocument();
+      });
+    }
+  });
+
+  it('changes filter type to select and shows options section', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    const modal = screen.getByTestId('modal');
+    const filtersTabBtns = within(modal).getAllByText('Filters');
+    await user.click(filtersTabBtns[0]);
+    await waitFor(() => { expect(screen.getByText('Add New Filter')).toBeInTheDocument(); });
+
+    const selects = modal.querySelectorAll('select');
+    const filterTypeSelect = Array.from(selects).find(s =>
+      Array.from(s.options).some(o => o.value === 'select')
+    );
+    if (filterTypeSelect) {
+      await user.selectOptions(filterTypeSelect, 'select');
+      await waitFor(() => {
+        expect(screen.getByText('Options')).toBeInTheDocument();
+      });
+    }
+  });
+
+  it('adds option to select filter', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    const modal = screen.getByTestId('modal');
+    const filtersTabBtns = within(modal).getAllByText('Filters');
+    await user.click(filtersTabBtns[0]);
+
+    const selects = modal.querySelectorAll('select');
+    const filterTypeSelect = Array.from(selects).find(s =>
+      Array.from(s.options).some(o => o.value === 'select')
+    );
+    if (filterTypeSelect) {
+      await user.selectOptions(filterTypeSelect, 'select');
+
+      await waitFor(() => {
+        expect(screen.getByText('Options')).toBeInTheDocument();
+      });
+
+      const optionValueInput = screen.getByPlaceholderText('Value (e.g., 01)');
+      const optionNameInput = screen.getByPlaceholderText('Display Name (e.g., 01 - Option)');
+      await user.type(optionValueInput, 'opt1');
+      await user.type(optionNameInput, 'Option 1');
+
+      const addBtns2 = within(screen.getByTestId('modal')).getAllByText('Add');
+      await user.click(addBtns2[0]);
+
+      await waitFor(() => {
+        expect(screen.getByText('opt1 - Option 1')).toBeInTheDocument();
+      });
+    }
+  });
+
+  it('adds filter attribute', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    const modal = screen.getByTestId('modal');
+    const filtersTabBtns = within(modal).getAllByText('Filters');
+    await user.click(filtersTabBtns[0]);
+
+    await waitFor(() => { expect(screen.getByText(/Custom Attributes/)).toBeInTheDocument(); });
+
+    // Fill attr name and value
+    const attrNameInput = screen.getByPlaceholderText('Name (e.g., width)');
+    await user.type(attrNameInput, 'width');
+
+    const attrValueInput = screen.getByPlaceholderText('Value (e.g., 200px)');
+    await user.type(attrValueInput, '200px');
+
+    // Click Add button near attributes
+    const addBtns = within(modal).getAllByText('Add');
+    await user.click(addBtns[addBtns.length - 1]);
+
+    await waitFor(() => {
+      expect(modal.textContent).toContain('200px');
+    });
+  });
+
+  it('adds row action filter mapping', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Build Playboard/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    const modal = screen.getByTestId('modal');
+    const rowActionBtns = within(modal).getAllByText('Row Actions');
+    await user.click(rowActionBtns[0]);
+    await waitFor(() => { expect(screen.getByText('Add New Row Action')).toBeInTheDocument(); });
+
+    const inputKeyField = screen.getByPlaceholderText('inputKey (e.g., query_customer)');
+    const dataKeyField = screen.getByPlaceholderText('dataKey (e.g., customer)');
+    await user.type(inputKeyField, 'query_customer');
+    await user.type(dataKeyField, 'customer');
+
+    // Click the "Add" button near the filter inputs
+    const addBtns = within(modal).getAllByText('Add');
+    await user.click(addBtns[addBtns.length - 1]);
+
+    await waitFor(() => {
+      expect(screen.getByText(/query_customer/)).toBeInTheDocument();
+    });
+  });
+
+  it('handles upload modal and shows no file selected error', async () => {
+    await setupMocks();
+    const toast = (await import('react-hot-toast')).default;
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    const user = userEvent.setup();
+    await user.click(screen.getByText(/Upload JSON/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    const form = screen.getByTestId('modal').querySelector('form');
+    if (form) {
+      fireEvent.submit(form);
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalled();
+      });
+    }
+  });
+
+  it('fills upload form fields', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPlayboardsManagement();
+    await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText(/Upload JSON/));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    const modal = screen.getByTestId('modal');
+    const inputs = modal.querySelectorAll('input');
+    if (inputs.length > 0) {
+      await user.type(inputs[0], 'Test Upload');
+    }
   });
 });

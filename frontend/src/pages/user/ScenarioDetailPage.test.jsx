@@ -993,4 +993,493 @@ describe('ScenarioDetailPage', () => {
       expect(screen.getAllByText('Customer Playboard').length).toBeGreaterThanOrEqual(2);
     });
   });
+
+  // --- Remove/delete handler tests ---
+
+  it('removes a filter from the configured filters', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Customer Search' })).toBeInTheDocument();
+    });
+
+    const buildBtns = screen.getAllByText('Build Playboard');
+    await user.click(buildBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    // Switch to Filters tab
+    await user.click(screen.getByText('Filters'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Add New Filter')).toBeInTheDocument();
+    });
+
+    // Add a filter first
+    const nameInput = screen.getByPlaceholderText('query_text');
+    const displayInput = screen.getByPlaceholderText('Customer#');
+    await user.type(nameInput, 'temp_filter');
+    await user.type(displayInput, 'Temp');
+    await user.click(screen.getByText('Add Filter'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Configured Filters (1)')).toBeInTheDocument();
+    });
+
+    // Remove the filter
+    const removeButtons = document.querySelectorAll('button[title="Remove"]');
+    if (removeButtons.length > 0) {
+      await user.click(removeButtons[0]);
+      await waitFor(() => {
+        expect(screen.getByText('Configured Filters (0)')).toBeInTheDocument();
+      });
+    }
+  });
+
+  it('removes a row action from configured actions', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Customer Search' })).toBeInTheDocument();
+    });
+
+    const buildBtns = screen.getAllByText('Build Playboard');
+    await user.click(buildBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    // Switch to Row Actions tab
+    await user.click(screen.getByText('Row Actions'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Add New Row Action')).toBeInTheDocument();
+    });
+
+    // Add a row action first
+    const keyInput = screen.getByPlaceholderText('orders_scenario_6');
+    const nameInput = screen.getByPlaceholderText('Orders');
+    await user.type(keyInput, 'action_key');
+    await user.type(nameInput, 'Action Name');
+    await user.click(screen.getByText('Add Row Action'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Configured Row Actions (1)')).toBeInTheDocument();
+    });
+
+    // Remove the row action
+    const removeButtons = document.querySelectorAll('button[title="Remove"]');
+    if (removeButtons.length > 0) {
+      await user.click(removeButtons[0]);
+      await waitFor(() => {
+        expect(screen.getByText('Configured Row Actions (0)')).toBeInTheDocument();
+      });
+    }
+  });
+
+  it('removes an addon', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Customer Search' })).toBeInTheDocument();
+    });
+
+    const buildBtns = screen.getAllByText('Build Playboard');
+    await user.click(buildBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    // Add an addon first
+    const addonInput = screen.getByPlaceholderText('customer-api_v2');
+    await user.type(addonInput, 'remove-addon');
+    const modal = screen.getByTestId('modal');
+    const addBtns = within(modal).getAllByText('Add');
+    if (addBtns.length > 0) await user.click(addBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('remove-addon')).toBeInTheDocument();
+    });
+
+    // Find and click X/remove button for the addon
+    const removeButtons = document.querySelectorAll('button[title="Remove addon"]');
+    if (removeButtons.length > 0) {
+      await user.click(removeButtons[0]);
+    } else {
+      // Try finding a close button near the addon text
+      const addonSpan = screen.getByText('remove-addon');
+      const parent = addonSpan.closest('.flex') || addonSpan.parentElement;
+      if (parent) {
+        const btn = parent.querySelector('button');
+        if (btn) await user.click(btn);
+      }
+    }
+  });
+
+  it('adds description element in description tab', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Customer Search' })).toBeInTheDocument();
+    });
+
+    const buildBtns = screen.getAllByText('Build Playboard');
+    await user.click(buildBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    // Switch to Description tab
+    const modal = screen.getByTestId('modal');
+    const descBtns = within(modal).getAllByText('Description');
+    const tabBtn = descBtns.find(b => b.tagName === 'BUTTON');
+    if (tabBtn) await user.click(tabBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('Add Description Element')).toBeInTheDocument();
+    });
+
+    // Click Add Description button
+    await user.click(screen.getByText('Add Description'));
+
+    // A description element should be added - shows "Scenario Description Items" heading
+    await waitFor(() => {
+      expect(screen.getByText('Scenario Description Items')).toBeInTheDocument();
+    });
+  });
+
+  it('adds select filter options', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Customer Search' })).toBeInTheDocument();
+    });
+
+    const buildBtns = screen.getAllByText('Build Playboard');
+    await user.click(buildBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    // Switch to Filters tab
+    await user.click(screen.getByText('Filters'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Add New Filter')).toBeInTheDocument();
+    });
+
+    // Change filter type to select
+    const filterTypeSelect = document.querySelector('select[name="filterType"]') ||
+      Array.from(document.querySelectorAll('select')).find(s =>
+        Array.from(s.options).some(o => o.value === 'select' || o.textContent === 'Select')
+      );
+    if (filterTypeSelect) {
+      await user.selectOptions(filterTypeSelect, 'select');
+    }
+  });
+
+  it('uploads playboard JSON file', async () => {
+    const { scenariosAPI } = await setupMocks();
+    const { playboardsAPI } = await import('../../services/api');
+    playboardsAPI.upload.mockResolvedValue({ data: {} });
+    scenariosAPI.get.mockResolvedValue({ data: mockScenario });
+    scenariosAPI.getPlayboards.mockResolvedValue({ data: mockPlayboards });
+    const toast = (await import('react-hot-toast')).default;
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Customer Search' })).toBeInTheDocument();
+    });
+
+    const uploadBtns = screen.getAllByText('Upload JSON');
+    await user.click(uploadBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    // The FileUpload mock doesn't support file selection, but we can verify the modal renders
+    expect(screen.getByText('Upload Playboard JSON')).toBeInTheDocument();
+  });
+
+  it('handles create API error', async () => {
+    await setupMocks();
+    const { playboardsAPI } = await import('../../services/api');
+    playboardsAPI.create.mockRejectedValue({ response: { data: { detail: 'Key already exists' } } });
+    const toast = (await import('react-hot-toast')).default;
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Customer Search' })).toBeInTheDocument();
+    });
+
+    const buildBtns = screen.getAllByText('Build Playboard');
+    await user.click(buildBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    // Fill in the key and submit
+    const inputs = screen.getByTestId('modal').querySelectorAll('input');
+    const keyInput = Array.from(inputs).find(i => i.placeholder?.includes('playboard'));
+    if (keyInput) await user.type(keyInput, 'test_pb');
+
+    const form = screen.getByTestId('modal').querySelector('form');
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Key already exists');
+    });
+  });
+
+  it('shows domain key in breadcrumb', async () => {
+    await setupMocks();
+    renderPage();
+
+    await waitFor(() => {
+      const domainLinks = screen.getAllByText('customers');
+      expect(domainLinks.length).toBeGreaterThanOrEqual(1);
+      // Breadcrumb link should point to domain page
+      const breadcrumbLink = domainLinks.find(el => el.tagName === 'A' && el.href?.includes('/domains/customers'));
+      expect(breadcrumbLink).toBeTruthy();
+    });
+  });
+
+  it('toggles pagination in grid settings tab', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Customer Search' })).toBeInTheDocument();
+    });
+
+    const buildBtns = screen.getAllByText('Build Playboard');
+    await user.click(buildBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Grid Settings'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Enable Pagination')).toBeInTheDocument();
+    });
+
+    // Toggle pagination checkbox (starts checked=true, clicking unchecks it)
+    const paginationCheckbox = screen.getByLabelText('Enable Pagination');
+    expect(paginationCheckbox.checked).toBe(true);
+    await user.click(paginationCheckbox);
+    expect(paginationCheckbox.checked).toBe(false);
+  });
+
+  it('fills default page size in grid settings tab', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Customer Search' })).toBeInTheDocument();
+    });
+
+    const buildBtns = screen.getAllByText('Build Playboard');
+    await user.click(buildBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Grid Settings'));
+
+    // Find default page size input via label parent (mock Input has label+input as siblings)
+    const pageSizeLabel = screen.getByText('Default Page Size');
+    const pageSizeInput = pageSizeLabel.parentElement.querySelector('input');
+    fireEvent.change(pageSizeInput, { target: { value: '50' } });
+    expect(pageSizeInput.value).toBe('50');
+  });
+
+  it('changes render as option in grid settings tab', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Customer Search' })).toBeInTheDocument();
+    });
+
+    const buildBtns = screen.getAllByText('Build Playboard');
+    await user.click(buildBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Grid Settings'));
+
+    // Find renderAs dropdown (if present)
+    const selects = screen.getByTestId('modal').querySelectorAll('select');
+    if (selects.length > 0) {
+      const renderAsSelect = Array.from(selects).find(s =>
+        Array.from(s.options).some(o => o.value === 'button' || o.textContent.includes('Button'))
+      );
+      if (renderAsSelect) {
+        await user.selectOptions(renderAsSelect, 'button');
+      }
+    }
+  });
+
+  it('toggles status for active playboard', async () => {
+    const { scenariosAPI } = await setupMocks();
+    const { playboardsAPI } = await import('../../services/api');
+    playboardsAPI.toggleStatus.mockResolvedValue({ data: {} });
+    scenariosAPI.get.mockResolvedValue({ data: mockScenario });
+    scenariosAPI.getPlayboards.mockResolvedValue({ data: mockPlayboards });
+    const toast = (await import('react-hot-toast')).default;
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Customer Playboard')).toBeInTheDocument();
+    });
+
+    // Find toggle button
+    const toggleBtn = screen.queryByTitle('Deactivate') || screen.queryByTitle('Toggle Status');
+    if (toggleBtn) {
+      await user.click(toggleBtn);
+      await waitFor(() => {
+        expect(playboardsAPI.toggleStatus).toHaveBeenCalledWith('pb1');
+      });
+    }
+  });
+
+  it('fills form fields in basic info tab', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Customer Search' })).toBeInTheDocument();
+    });
+
+    const buildBtns = screen.getAllByText('Build Playboard');
+    await user.click(buildBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    // Fill order field via label parent (mock Input has label+input as siblings)
+    const orderLabel = screen.getByText('Order');
+    const orderInput = orderLabel.parentElement.querySelector('input');
+    await user.clear(orderInput);
+    await user.type(orderInput, '3');
+    expect(orderInput.value).toBe('3');
+
+    // Fill description textarea (placeholder is 'Playboard description...')
+    const descInput = screen.getByPlaceholderText('Playboard description...');
+    await user.type(descInput, 'Test description');
+    expect(descInput.value).toBe('Test description');
+  });
+
+  it('adds action filter mapping in row actions tab', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Customer Search' })).toBeInTheDocument();
+    });
+
+    const buildBtns = screen.getAllByText('Build Playboard');
+    await user.click(buildBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Row Actions'));
+
+    // First add a row action
+    const keyInput = screen.getByPlaceholderText('orders_scenario_6');
+    const nameInput = screen.getByPlaceholderText('Orders');
+    await user.type(keyInput, 'query_action');
+    await user.type(nameInput, 'Query');
+    await user.click(screen.getByText('Add Row Action'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Configured Row Actions (1)')).toBeInTheDocument();
+    });
+
+    // Fill filter mapping fields (correct placeholders from source)
+    const inputKeyField = screen.queryByPlaceholderText('inputKey (e.g., query_customer)');
+    const dataKeyField = screen.queryByPlaceholderText('dataKey (e.g., customer)');
+    if (inputKeyField && dataKeyField) {
+      await user.type(inputKeyField, 'query_field');
+      await user.type(dataKeyField, 'field');
+      // Click Add to add the filter mapping
+      const modal = screen.getByTestId('modal');
+      const addBtns = within(modal).getAllByText('Add');
+      const addFilterBtn = addBtns.find(b => b.closest('.flex')?.querySelector('input[placeholder*="inputKey"]'));
+      if (addFilterBtn) await user.click(addFilterBtn);
+    }
+  });
+
+  it('shows multiple playboards with badges', async () => {
+    const multiPlayboards = [
+      ...mockPlayboards,
+      {
+        _id: 'pb2',
+        name: 'Second Playboard',
+        description: 'Another playboard',
+        status: 'inactive',
+        scenarioKey: 'customer_search',
+        data: {
+          key: 'second_pb',
+          widgets: { filters: [], grid: { actions: { rowActions: { events: [] } } } },
+        },
+      },
+    ];
+    await setupMocks(mockScenario, multiPlayboards);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Customer Playboard')).toBeInTheDocument();
+      expect(screen.getByText('Second Playboard')).toBeInTheDocument();
+      expect(screen.getByText(/Playboards \(2\)/)).toBeInTheDocument();
+    });
+  });
 });

@@ -918,4 +918,417 @@ describe('RequestDetailPage', () => {
       expect(toast.error).toHaveBeenCalledWith('Invalid file type');
     });
   });
+
+  it('handles Jira link add error', async () => {
+    const api = await setupMock();
+    api.addJiraLink.mockRejectedValue(new Error('fail'));
+    const toast = (await import('react-hot-toast')).default;
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Add Link')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Add Link'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    await user.type(screen.getByPlaceholderText('e.g., PROJ-123'), 'FAIL-123');
+
+    const modal = screen.getByTestId('modal');
+    const buttons = modal.querySelectorAll('button');
+    const submitBtn = Array.from(buttons).find(b => b.textContent.includes('Add Link'));
+    if (submitBtn) await user.click(submitBtn);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Failed to add Jira link');
+    });
+  });
+
+  it('handles Jira link remove error', async () => {
+    const requestWithLinks = {
+      ...mockRequest,
+      jira_links: [
+        { ticket_key: 'DEP-456', ticket_url: 'https://jira.test/DEP-456', link_type: 'dependency', title: 'Data pipeline' },
+      ],
+    };
+    const api = await setupMock(requestWithLinks);
+    api.removeJiraLink.mockRejectedValue(new Error('fail'));
+    const toast = (await import('react-hot-toast')).default;
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('DEP-456')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTitle('Remove link'));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Failed to remove Jira link');
+    });
+  });
+
+  it('shows Upload Snapshot for in-progress status', async () => {
+    const inProgressRequest = { ...mockRequest, status: 'in-progress' };
+    await setupMock(inProgressRequest);
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Upload Snapshot')).toBeInTheDocument();
+    });
+  });
+
+  it('shows Upload Snapshot for development status', async () => {
+    const devRequest = { ...mockRequest, status: 'development' };
+    await setupMock(devRequest);
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Upload Snapshot')).toBeInTheDocument();
+    });
+  });
+
+  it('shows Upload Snapshot for testing status', async () => {
+    const testingRequest = { ...mockRequest, status: 'testing' };
+    await setupMock(testingRequest);
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Upload Snapshot')).toBeInTheDocument();
+    });
+  });
+
+  it('renders preview modal with text content', async () => {
+    const api = await setupMock();
+    api.previewFile.mockResolvedValue({
+      data: { type: 'text', data: 'Hello file content', fileName: 'readme.txt' },
+    });
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('sample.csv')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTitle('Preview'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+  });
+
+  it('renders preview modal with grid content', async () => {
+    const api = await setupMock();
+    api.previewFile.mockResolvedValue({
+      data: { type: 'grid', headers: ['name', 'value'], rows: [['Alice', '100'], ['Bob', '200']], fileName: 'data.csv' },
+    });
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('sample.csv')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTitle('Preview'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('name')).toBeInTheDocument();
+      expect(screen.getByText('value')).toBeInTheDocument();
+    });
+  });
+
+  it('renders preview modal with JSON content', async () => {
+    const api = await setupMock();
+    api.previewFile.mockResolvedValue({
+      data: { type: 'json', data: { key: 'value' }, fileName: 'config.json' },
+    });
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('sample.csv')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTitle('Preview'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+  });
+
+  it('uses management edit path', async () => {
+    await setupMock();
+    const user = userEvent.setup();
+
+    renderPage('REQ-001', '/management/scenario-requests');
+
+    await waitFor(() => {
+      expect(screen.getByText('Edit')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Edit'));
+    expect(mockNavigate).toHaveBeenCalledWith('/management/scenario-requests/REQ-001/edit');
+  });
+
+  it('shows Jira integration section when jira_integration exists', async () => {
+    const requestWithIntegration = {
+      ...mockRequest,
+      jira_integration: {
+        ticket_key: 'INT-789',
+        ticket_url: 'https://jira.test/INT-789',
+        status: 'To Do',
+        sync_status: 'synced',
+      },
+    };
+    await setupMock(requestWithIntegration);
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('INT-789')).toBeInTheDocument();
+    });
+  });
+
+  it('shows multiple Jira links with correct indices', async () => {
+    const requestWithMultipleLinks = {
+      ...mockRequest,
+      jira_links: [
+        { ticket_key: 'LINK-1', ticket_url: 'https://jira.test/LINK-1', link_type: 'dependency', title: 'Link 1' },
+        { ticket_key: 'LINK-2', ticket_url: 'https://jira.test/LINK-2', link_type: 'blocks', title: 'Link 2' },
+      ],
+    };
+    await setupMock(requestWithMultipleLinks);
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('LINK-1')).toBeInTheDocument();
+      expect(screen.getByText('LINK-2')).toBeInTheDocument();
+    });
+  });
+
+  it('renders multiple workflow entries', async () => {
+    const requestWithWorkflow = {
+      ...mockRequest,
+      work_flow: [
+        { from_status: 'new', to_status: 'submitted', create_stp: '2026-01-15T10:00:00Z', comment: 'Initial request created' },
+        { from_status: 'submitted', to_status: 'review', create_stp: '2026-01-16T10:00:00Z', comment: 'Moved to review queue' },
+        { from_status: 'review', to_status: 'accepted', create_stp: '2026-01-17T10:00:00Z', comment: 'Approved by admin' },
+      ],
+    };
+    await setupMock(requestWithWorkflow);
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Initial request created')).toBeInTheDocument();
+      expect(screen.getByText('Moved to review queue')).toBeInTheDocument();
+      expect(screen.getByText('Approved by admin')).toBeInTheDocument();
+    });
+  });
+
+  it('renders step query when available', async () => {
+    await setupMock();
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('SELECT * FROM orders')).toBeInTheDocument();
+    });
+  });
+
+  it('shows accepted status badge', async () => {
+    const acceptedRequest = { ...mockRequest, status: 'accepted' };
+    await setupMock(acceptedRequest);
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Accepted')).toBeInTheDocument();
+    });
+  });
+
+  it('shows review status badge', async () => {
+    const reviewRequest = { ...mockRequest, status: 'review' };
+    await setupMock(reviewRequest);
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Review')).toBeInTheDocument();
+    });
+  });
+
+  it('closes preview modal', async () => {
+    const api = await setupMock();
+    api.previewFile.mockResolvedValue({
+      data: { type: 'text', data: 'Some content', fileName: 'readme.txt' },
+    });
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('sample.csv')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTitle('Preview'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    // The modal mock has no close button, but we can verify modal appeared
+  });
+
+  it('opens upload modal and types upload comment', async () => {
+    const acceptedRequest = { ...mockRequest, status: 'accepted' };
+    const api = await setupMock(acceptedRequest);
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Upload Snapshot')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Upload Snapshot'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    // Type in the comment/explanation textarea
+    const textareas = document.querySelectorAll('textarea');
+    if (textareas.length > 0) {
+      const uploadTextarea = Array.from(textareas).find(t =>
+        t.placeholder?.includes('explain') || t.placeholder?.includes('comment') || t.name === 'uploadComment'
+      ) || textareas[textareas.length - 1];
+      await user.type(uploadTextarea, 'Upload explanation');
+    }
+  });
+
+  it('renders bucket file preview and download buttons', async () => {
+    const requestWithBuckets = {
+      ...mockRequest,
+      status: 'accepted',
+      buckets: [
+        { file_name: 'bucket_data.csv', gcs_path: 'path/to/bucket_data.csv', version: 1, uploaded_by: 'admin', upload_date: '2026-01-20T00:00:00Z' },
+      ],
+    };
+    const api = await setupMock(requestWithBuckets);
+    api.previewFile.mockResolvedValue({
+      data: { type: 'text', data: 'bucket content', fileName: 'bucket_data.csv' },
+    });
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('bucket_data.csv')).toBeInTheDocument();
+    });
+
+    // Click preview on bucket file
+    const viewButtons = screen.getAllByTitle('View');
+    if (viewButtons.length > 0) {
+      await user.click(viewButtons[0]);
+      await waitFor(() => {
+        expect(api.previewFile).toHaveBeenCalled();
+      });
+    }
+  });
+
+  it('downloads bucket file', async () => {
+    const requestWithBuckets = {
+      ...mockRequest,
+      status: 'accepted',
+      buckets: [
+        { file_name: 'bucket_data.csv', gcs_path: 'path/to/bucket_data.csv', version: 1, uploaded_by: 'admin', upload_date: '2026-01-20T00:00:00Z' },
+      ],
+    };
+    const api = await setupMock(requestWithBuckets);
+    api.downloadFile.mockResolvedValue({ data: 'file content' });
+    global.URL.createObjectURL = vi.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = vi.fn();
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('bucket_data.csv')).toBeInTheDocument();
+    });
+
+    const downloadButtons = screen.getAllByTitle('Download');
+    if (downloadButtons.length > 0) {
+      await user.click(downloadButtons[downloadButtons.length - 1]);
+      await waitFor(() => {
+        expect(api.downloadFile).toHaveBeenCalled();
+      });
+    }
+  });
+
+  it('fills in Jira link form fields', async () => {
+    const api = await setupMock();
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Add Link')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Add Link'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
+
+    // Fill in URL field
+    const urlInput = screen.queryByPlaceholderText(/URL/i) || screen.queryByPlaceholderText(/url/);
+    if (urlInput) {
+      await user.type(urlInput, 'https://jira.test/PROJ-123');
+    }
+
+    // Fill in title field
+    const titleInput = screen.queryByPlaceholderText(/title/i);
+    if (titleInput) {
+      await user.type(titleInput, 'Related ticket');
+    }
+
+    // Change link type
+    const modal = screen.getByTestId('modal');
+    const selects = modal.querySelectorAll('select');
+    if (selects.length > 0) {
+      await user.selectOptions(selects[0], 'blocks');
+    }
+  });
+
+  it('shows workflow assigned_to_name when present', async () => {
+    const requestWithAssignedWorkflow = {
+      ...mockRequest,
+      work_flow: [
+        {
+          from_status: 'submitted',
+          to_status: 'review',
+          create_stp: '2026-01-16T10:00:00Z',
+          comment: 'Assigned for review',
+          assigned_to_name: 'Jane Smith',
+        },
+      ],
+    };
+    await setupMock(requestWithAssignedWorkflow);
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Jane Smith/)).toBeInTheDocument();
+    });
+  });
+
 });

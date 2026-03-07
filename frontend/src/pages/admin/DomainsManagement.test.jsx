@@ -406,4 +406,102 @@ describe('DomainsManagement', () => {
       expect(screen.getByText('/hr')).toBeInTheDocument();
     });
   });
+
+  it('adds a subdomain in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+    renderDomainsManagement();
+
+    await waitFor(() => { expect(screen.getByText('Finance')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add Domain'));
+    await waitFor(() => { expect(screen.getByText('Create Domain')).toBeInTheDocument(); });
+
+    // Fill subdomain fields
+    const keyInput = screen.getByPlaceholderText('Key');
+    const nameInput = screen.getByPlaceholderText('Name');
+    const pathInput = screen.getByPlaceholderText('Path');
+    await user.type(keyInput, 'sub1');
+    await user.type(nameInput, 'Sub Domain 1');
+    await user.type(pathInput, '/sub1');
+
+    // Click Add SubDomain
+    await user.click(screen.getByText('Add SubDomain'));
+
+    // Subdomain should appear in list
+    await waitFor(() => {
+      expect(screen.getByText('Sub Domain 1')).toBeInTheDocument();
+      expect(screen.getByText('(sub1)')).toBeInTheDocument();
+    });
+  });
+
+  it('toggles defaultSelected checkbox', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+    renderDomainsManagement();
+
+    await waitFor(() => { expect(screen.getByText('Finance')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add Domain'));
+    await waitFor(() => { expect(screen.getByText('Create Domain')).toBeInTheDocument(); });
+
+    const defaultCheckbox = screen.getByLabelText('Default Selected');
+    expect(defaultCheckbox.checked).toBe(false);
+    await user.click(defaultCheckbox);
+    expect(defaultCheckbox.checked).toBe(true);
+  });
+
+  it('opens icon picker', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+    renderDomainsManagement();
+
+    await waitFor(() => { expect(screen.getByText('Finance')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add Domain'));
+    await waitFor(() => { expect(screen.getByText('Create Domain')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Select Icon'));
+    await waitFor(() => {
+      expect(screen.getByTestId('icon-picker')).toBeInTheDocument();
+    });
+  });
+
+  it('fills icon URL and shows clear button', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+    renderDomainsManagement();
+
+    await waitFor(() => { expect(screen.getByText('Finance')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add Domain'));
+    await waitFor(() => { expect(screen.getByText('Create Domain')).toBeInTheDocument(); });
+
+    const iconInput = screen.getByPlaceholderText('Icon data URI or URL');
+    await user.type(iconInput, 'https://example.com/icon.png');
+    expect(iconInput.value).toBe('https://example.com/icon.png');
+
+    // Clear icon button should appear
+    await waitFor(() => {
+      expect(screen.getByTitle('Clear icon')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTitle('Clear icon'));
+    expect(iconInput.value).toBe('');
+  });
+
+  it('changes status dropdown in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+    renderDomainsManagement();
+
+    await waitFor(() => { expect(screen.getByText('Finance')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add Domain'));
+    await waitFor(() => { expect(screen.getByText('Create Domain')).toBeInTheDocument(); });
+
+    const statusSelect = screen.getByDisplayValue('Active');
+    await user.selectOptions(statusSelect, 'inactive');
+    expect(statusSelect.value).toBe('inactive');
+  });
 });

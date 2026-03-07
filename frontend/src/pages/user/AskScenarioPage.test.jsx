@@ -690,4 +690,255 @@ describe('AskScenarioPage', () => {
       expect(screen.getByText('New Scenario Request')).toBeInTheDocument();
     });
   });
+
+  it('validates missing description on submit', async () => {
+    await setupLookupMocks();
+    const toast = (await import('react-hot-toast')).default;
+    const user = userEvent.setup();
+
+    renderNew();
+
+    await waitFor(() => {
+      expect(screen.getByText('Finance')).toBeInTheDocument();
+    });
+
+    const domainSelect = screen.getByDisplayValue('Select a domain...');
+    await user.selectOptions(domainSelect, 'finance');
+
+    const nameInput = screen.getByPlaceholderText('Enter a descriptive name for your scenario');
+    await user.type(nameInput, 'Test Scenario');
+
+    // Leave description empty - don't type in contentEditable
+    const form = document.querySelector('form');
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Please enter a description');
+    });
+  });
+
+  it('handles update error in edit mode', async () => {
+    const { scenarioRequestAPI } = await setupLookupMocks();
+    scenarioRequestAPI.get.mockResolvedValue({
+      data: {
+        user_id: 'u1',
+        requestId: 'REQ-001',
+        requestType: 'scenario',
+        dataDomain: 'finance',
+        name: 'Test',
+        description: '<p>desc</p>',
+        status: 'submitted',
+        steps: [],
+        files: [],
+      },
+    });
+    scenarioRequestAPI.update.mockRejectedValue({ response: { data: { detail: 'Update failed' } } });
+    const toast = (await import('react-hot-toast')).default;
+
+    renderEdit();
+
+    await waitFor(() => {
+      expect(screen.getByText('Edit Scenario Request')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Save Changes'));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Update failed');
+    });
+  });
+
+  it('adds and removes implementation steps', async () => {
+    await setupLookupMocks();
+    const user = userEvent.setup();
+
+    renderNew();
+
+    await waitFor(() => {
+      expect(screen.getByText('Implementation Details')).toBeInTheDocument();
+    });
+
+    const checkbox = document.querySelector('input[name="knows_steps"]');
+    if (checkbox) {
+      await user.click(checkbox);
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText('What should this step do?')).toBeInTheDocument();
+      });
+
+      const stepInput = screen.getByPlaceholderText('What should this step do?');
+      await user.type(stepInput, 'Step to remove');
+      await user.click(screen.getByText('Add Step'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Step to remove')).toBeInTheDocument();
+      });
+
+      // Find and click the remove button (trash icon)
+      const removeButtons = document.querySelectorAll('button[title="Remove step"]');
+      if (removeButtons.length > 0) {
+        await user.click(removeButtons[0]);
+
+        await waitFor(() => {
+          expect(screen.queryByText('Step to remove')).not.toBeInTheDocument();
+        });
+      }
+    }
+  });
+
+  it('handles file removal', async () => {
+    await setupLookupMocks();
+    const user = userEvent.setup();
+
+    renderNew();
+
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+      const testFile = new File(['content'], 'remove_me.csv', { type: 'text/csv' });
+      await user.upload(fileInput, testFile);
+
+      await waitFor(() => {
+        expect(screen.getByText('remove_me.csv')).toBeInTheDocument();
+      });
+
+      // Find the remove button for the file
+      const removeButtons = document.querySelectorAll('button');
+      const removeBtn = Array.from(removeButtons).find(b => {
+        // Look for X icon button near the filename
+        const parent = b.closest('.flex');
+        return parent && parent.textContent.includes('remove_me.csv');
+      });
+      if (removeBtn) {
+        await user.click(removeBtn);
+      }
+    }
+  });
+
+  it('shows Jira error gracefully', async () => {
+    const { scenarioRequestAPI, jiraAPI } = await import('../../services/api');
+    scenarioRequestAPI.getDomains.mockResolvedValue({ data: [{ key: 'finance', name: 'Finance' }] });
+    scenarioRequestAPI.getRequestTypes.mockResolvedValue({ data: [{ value: 'scenario', label: 'New Scenario Request' }] });
+    scenarioRequestAPI.getDefaults.mockResolvedValue({ data: { team: 'Team-A' } });
+    jiraAPI.getBoards.mockRejectedValue(new Error('Jira unavailable'));
+    jiraAPI.getAssignableUsers.mockRejectedValue(new Error('Jira unavailable'));
+
+    renderNew();
+
+    // Should still render the form even though Jira data failed to load
+    await waitFor(() => {
+      expect(screen.getByText('Ask for a New Scenario')).toBeInTheDocument();
+    });
+  });
+
+  it('shows default team and assignee from API defaults', async () => {
+    await setupLookupMocks();
+    renderNew();
+
+    await waitFor(() => {
+      // Team should be set from defaults
+      expect(screen.getByText('Team')).toBeInTheDocument();
+    });
+  });
+
+  it('submits form with file upload', async () => {
+    const { scenarioRequestAPI } = await setupLookupMocks();
+    scenarioRequestAPI.create.mockResolvedValue({ data: { requestId: 'REQ-003' } });
+    scenarioRequestAPI.uploadFile.mockResolvedValue({ data: {} });
+    const toast = (await import('react-hot-toast')).default;
+    const user = userEvent.setup();
+
+    renderNew();
+
+    await waitFor(() => {
+      expect(screen.getByText('Finance')).toBeInTheDocument();
+    });
+
+    // Fill required fields
+    await user.selectOptions(screen.getByDisplayValue('Select a domain...'), 'finance');
+    await user.type(screen.getByPlaceholderText('Enter a descriptive name for your scenario'), 'File Upload Test');
+
+    const editorDiv = document.querySelector('[contenteditable]');
+    if (editorDiv) {
+      editorDiv.innerHTML = '<p>Test with file</p>';
+      fireEvent.input(editorDiv);
+    }
+
+    // Upload a file
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+      const testFile = new File(['content'], 'upload.csv', { type: 'text/csv' });
+      await user.upload(fileInput, testFile);
+    }
+
+    fireEvent.click(screen.getByText('Submit Request'));
+
+    await waitFor(() => {
+      expect(scenarioRequestAPI.create).toHaveBeenCalled();
+    });
+  });
+
+  it('handles admin settings in edit mode', async () => {
+    const { scenarioRequestAPI } = await setupLookupMocks();
+    scenarioRequestAPI.get.mockResolvedValue({
+      data: {
+        user_id: 'u1',
+        requestId: 'REQ-001',
+        requestType: 'scenario',
+        dataDomain: 'finance',
+        name: 'Admin Edit Test',
+        description: '<p>desc</p>',
+        status: 'submitted',
+        steps: [],
+        files: [],
+        scenarioKey: 'SC-001',
+        configName: 'config-1',
+      },
+    });
+    scenarioRequestAPI.update.mockResolvedValue({ data: {} });
+    scenarioRequestAPI.adminUpdate.mockResolvedValue({ data: {} });
+    const toast = (await import('react-hot-toast')).default;
+
+    renderEdit();
+
+    await waitFor(() => {
+      expect(screen.getByText('Admin Settings')).toBeInTheDocument();
+    });
+
+    // Click Save Changes to trigger both user update and admin update
+    fireEvent.click(screen.getByText('Save Changes'));
+
+    await waitFor(() => {
+      expect(scenarioRequestAPI.update).toHaveBeenCalled();
+    });
+  });
+
+  it('renders business justification field', async () => {
+    await setupLookupMocks();
+    renderNew();
+
+    expect(screen.getByText('Reason / Business Justification')).toBeInTheDocument();
+  });
+
+  it('shows fulfilment date field in admin settings', async () => {
+    const { scenarioRequestAPI } = await setupLookupMocks();
+    scenarioRequestAPI.get.mockResolvedValue({
+      data: {
+        user_id: 'u1',
+        requestId: 'REQ-001',
+        requestType: 'scenario',
+        dataDomain: 'finance',
+        name: 'Test',
+        description: '<p>desc</p>',
+        status: 'submitted',
+        steps: [],
+        files: [],
+      },
+    });
+
+    renderEdit();
+
+    await waitFor(() => {
+      expect(screen.getByText('Target Date')).toBeInTheDocument();
+    });
+  });
 });

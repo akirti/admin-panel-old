@@ -25,6 +25,9 @@ const mockFeedback = [
     email: 'john@test.com',
     rating: 5,
     message: 'Great product!',
+    improvements: 'Nothing to improve',
+    suggestions: 'Keep going',
+    is_public: true,
     source: 'web',
     createdAt: '2025-01-15T10:00:00Z',
   },
@@ -34,6 +37,9 @@ const mockFeedback = [
     email: 'jane@test.com',
     rating: 3,
     message: 'Decent experience',
+    improvements: 'Speed could be better',
+    suggestions: 'Add dark mode',
+    is_public: false,
     source: 'mobile',
     createdAt: '2025-01-14T10:00:00Z',
   },
@@ -230,6 +236,230 @@ describe('FeedbackManagement', () => {
       expect(screen.getByText('Rating')).toBeInTheDocument();
       expect(screen.getByText('Date')).toBeInTheDocument();
       expect(screen.getByText('Actions')).toBeInTheDocument();
+    });
+  });
+
+  it('handles search input', async () => {
+    await setupMocks();
+    const { feedbackAPI } = await import('../../services/api');
+    const user = userEvent.setup();
+    renderFeedbackManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('john@test.com')).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByPlaceholderText(/Search/i);
+    await user.type(searchInput, 'john');
+
+    await waitFor(() => {
+      expect(feedbackAPI.getAdminList).toHaveBeenCalledWith(expect.objectContaining({
+        search: 'john',
+      }));
+    });
+  });
+
+  it('handles rating filter change', async () => {
+    await setupMocks();
+    const { feedbackAPI } = await import('../../services/api');
+    const user = userEvent.setup();
+    renderFeedbackManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('john@test.com')).toBeInTheDocument();
+    });
+
+    const ratingSelect = screen.getByDisplayValue('All Ratings');
+    await user.selectOptions(ratingSelect, '5');
+
+    await waitFor(() => {
+      expect(feedbackAPI.getAdminList).toHaveBeenCalledWith(expect.objectContaining({
+        rating: 5,
+      }));
+    });
+  });
+
+  it('handles clear filters', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+    renderFeedbackManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('john@test.com')).toBeInTheDocument();
+    });
+
+    // Type in search to make Clear button appear
+    const searchInput = screen.getByPlaceholderText(/Search/i);
+    await user.type(searchInput, 'test');
+
+    // Click Clear button
+    const clearButton = screen.getByText('Clear');
+    await user.click(clearButton);
+
+    // Search should be cleared
+    expect(searchInput.value).toBe('');
+  });
+
+  it('handles sort by clicking column header', async () => {
+    await setupMocks();
+    const { feedbackAPI } = await import('../../services/api');
+    const user = userEvent.setup();
+    renderFeedbackManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('john@test.com')).toBeInTheDocument();
+    });
+
+    // Click the Rating column header to sort
+    await user.click(screen.getByText('Rating'));
+
+    await waitFor(() => {
+      expect(feedbackAPI.getAdminList).toHaveBeenCalledWith(expect.objectContaining({
+        sort_by: 'rating',
+      }));
+    });
+  });
+
+  it('closes detail modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+    renderFeedbackManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('john@test.com')).toBeInTheDocument();
+    });
+
+    // Open detail modal
+    const viewButtons = screen.getAllByText('View');
+    await user.click(viewButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Feedback Details')).toBeInTheDocument();
+    });
+
+    // Close modal
+    await user.click(screen.getByText('Close'));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Feedback Details')).not.toBeInTheDocument();
+    });
+  });
+
+  it('renders feedback improvements in table', async () => {
+    await setupMocks();
+    renderFeedbackManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Nothing to improve')).toBeInTheDocument();
+      expect(screen.getByText('Speed could be better')).toBeInTheDocument();
+    });
+  });
+
+  it('renders type badges', async () => {
+    await setupMocks();
+    renderFeedbackManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Public')).toBeInTheDocument();
+      expect(screen.getByText('User')).toBeInTheDocument();
+    });
+  });
+
+  it('sorts by clicking column headers', async () => {
+    await setupMocks();
+    const { feedbackAPI } = await import('../../services/api');
+    const user = userEvent.setup();
+
+    renderFeedbackManagement();
+    await waitFor(() => { expect(screen.getByText('john@test.com')).toBeInTheDocument(); });
+
+    // Click Email header to sort
+    const emailHeaders = screen.getAllByText('Email');
+    await user.click(emailHeaders[0]);
+
+    // Should trigger refetch with sort params
+    await waitFor(() => {
+      expect(feedbackAPI.getAdminList).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('sorts by date column', async () => {
+    await setupMocks();
+    const { feedbackAPI } = await import('../../services/api');
+    const user = userEvent.setup();
+
+    renderFeedbackManagement();
+    await waitFor(() => { expect(screen.getByText('john@test.com')).toBeInTheDocument(); });
+
+    // Click Date header
+    const dateHeaders = screen.getAllByText('Date');
+    await user.click(dateHeaders[0]);
+
+    await waitFor(() => {
+      expect(feedbackAPI.getAdminList).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('shows pagination when multiple pages', async () => {
+    const { feedbackAPI } = await import('../../services/api');
+    feedbackAPI.getAdminList.mockResolvedValue({
+      data: { data: mockFeedback, pagination: { total: 50, pages: 5, page: 0, limit: 10 } },
+    });
+    feedbackAPI.getStats.mockResolvedValue({ data: mockStats });
+
+    renderFeedbackManagement();
+    await waitFor(() => { expect(screen.getByText('john@test.com')).toBeInTheDocument(); });
+
+    // Navigation buttons should exist
+    await waitFor(() => {
+      expect(screen.getByTitle('Next page')).toBeInTheDocument();
+    });
+    expect(screen.getByTitle('Previous page')).toBeInTheDocument();
+    expect(screen.getByTitle('First page')).toBeInTheDocument();
+    expect(screen.getByTitle('Last page')).toBeInTheDocument();
+  });
+
+  it('shows page size selector', async () => {
+    const { feedbackAPI } = await import('../../services/api');
+    feedbackAPI.getAdminList.mockResolvedValue({
+      data: { data: mockFeedback, pagination: { total: 50, pages: 5, page: 0, limit: 10 } },
+    });
+    feedbackAPI.getStats.mockResolvedValue({ data: mockStats });
+
+    renderFeedbackManagement();
+    await waitFor(() => { expect(screen.getByText('john@test.com')).toBeInTheDocument(); });
+
+    // Should show page size selector
+    const pageSizeSelect = screen.getByDisplayValue('10 per page');
+    expect(pageSizeSelect).toBeInTheDocument();
+  });
+
+  it('searches feedback', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderFeedbackManagement();
+    await waitFor(() => { expect(screen.getByText('john@test.com')).toBeInTheDocument(); });
+
+    const searchInput = screen.getByPlaceholderText(/search/i);
+    await user.type(searchInput, 'john');
+    expect(searchInput.value).toBe('john');
+  });
+
+  it('filters by rating', async () => {
+    await setupMocks();
+    const { feedbackAPI } = await import('../../services/api');
+    const user = userEvent.setup();
+
+    renderFeedbackManagement();
+    await waitFor(() => { expect(screen.getByText('john@test.com')).toBeInTheDocument(); });
+
+    // Find rating filter dropdown
+    const ratingSelect = screen.getByDisplayValue('All Ratings');
+    await user.selectOptions(ratingSelect, '5');
+
+    await waitFor(() => {
+      expect(feedbackAPI.getAdminList).toHaveBeenCalledTimes(2);
     });
   });
 });

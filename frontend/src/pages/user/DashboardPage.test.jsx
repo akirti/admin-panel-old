@@ -140,4 +140,113 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Your Access')).toBeInTheDocument();
     expect(screen.getByText('test@example.com')).toBeInTheDocument();
   });
+
+  it('renders recent requests with different status badges', async () => {
+    const { domainAPI, scenarioRequestAPI } = await import('../../services/api');
+    domainAPI.getAll.mockResolvedValueOnce({ data: [] });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: {
+      total: 5, submitted: 1, inProgress: 1, deployed: 1,
+      recent: [
+        { requestId: 'REQ-001', name: 'Request 1', status: 'submitted' },
+        { requestId: 'REQ-002', name: 'Request 2', status: 'in-progress' },
+        { requestId: 'REQ-003', name: 'Request 3', status: 'deployed' },
+        { requestId: 'REQ-004', name: 'Request 4', status: 'rejected' },
+        { requestId: 'REQ-005', name: 'Request 5', status: 'development' },
+      ]
+    } });
+
+    renderDashboardPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Submitted')).toBeInTheDocument();
+      expect(screen.getAllByText('In Progress').length).toBeGreaterThan(0);
+      expect(screen.getByText('Deployed')).toBeInTheDocument();
+      expect(screen.getByText('Rejected')).toBeInTheDocument();
+      expect(screen.getByText('Development')).toBeInTheDocument();
+    });
+  });
+
+  it('renders status badges for review, testing, active, accepted', async () => {
+    const { domainAPI, scenarioRequestAPI } = await import('../../services/api');
+    domainAPI.getAll.mockResolvedValueOnce({ data: [] });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: {
+      total: 4, submitted: 0, inProgress: 0, deployed: 0,
+      recent: [
+        { requestId: 'REQ-010', name: 'R10', status: 'review' },
+        { requestId: 'REQ-011', name: 'R11', status: 'testing' },
+        { requestId: 'REQ-012', name: 'R12', status: 'active' },
+        { requestId: 'REQ-013', name: 'R13', status: 'accepted' },
+      ]
+    } });
+
+    renderDashboardPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Review')).toBeInTheDocument();
+      expect(screen.getByText('Testing')).toBeInTheDocument();
+      expect(screen.getAllByText('Active').length).toBeGreaterThan(0);
+      expect(screen.getByText('Accepted')).toBeInTheDocument();
+    });
+  });
+
+  it('shows stat counts correctly', async () => {
+    const { domainAPI, scenarioRequestAPI } = await import('../../services/api');
+    domainAPI.getAll.mockResolvedValueOnce({ data: [{ key: 'd1', name: 'D1' }, { key: 'd2', name: 'D2' }] });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: {
+      total: 10, submitted: 3, inProgress: 4, deployed: 3, recent: []
+    } });
+
+    renderDashboardPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('10')).toBeInTheDocument();
+      expect(screen.getByText('3')).toBeInTheDocument();
+      expect(screen.getByText('4')).toBeInTheDocument();
+    });
+  });
+
+  it('shows user roles and groups badges', async () => {
+    const { domainAPI, scenarioRequestAPI } = await import('../../services/api');
+    domainAPI.getAll.mockResolvedValueOnce({ data: [] });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: { total: 0, submitted: 0, inProgress: 0, deployed: 0, recent: [] } });
+
+    renderDashboardPage();
+
+    expect(screen.getByText('Roles')).toBeInTheDocument();
+    expect(screen.getByText('user')).toBeInTheDocument();
+    expect(screen.getAllByText('Groups').length).toBeGreaterThan(0);
+    expect(screen.getByText('group1')).toBeInTheDocument();
+    expect(screen.getByText('Domains Access')).toBeInTheDocument();
+    expect(screen.getByText('domain1')).toBeInTheDocument();
+  });
+
+  it('limits domains to 6 in grid', async () => {
+    const { domainAPI, scenarioRequestAPI } = await import('../../services/api');
+    const manyDomains = Array.from({ length: 8 }, (_, i) => ({ key: `d${i}`, name: `Domain ${i}` }));
+    domainAPI.getAll.mockResolvedValueOnce({ data: manyDomains });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: { total: 0, submitted: 0, inProgress: 0, deployed: 0, recent: [] } });
+
+    renderDashboardPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Domain 0')).toBeInTheDocument();
+      expect(screen.getByText('Domain 5')).toBeInTheDocument();
+      // Domains 6 and 7 should not be displayed (sliced to 6)
+      expect(screen.queryByText('Domain 6')).not.toBeInTheDocument();
+      expect(screen.queryByText('Domain 7')).not.toBeInTheDocument();
+    });
+  });
+
+  it('shows "View all" links', async () => {
+    const { domainAPI, scenarioRequestAPI } = await import('../../services/api');
+    domainAPI.getAll.mockResolvedValueOnce({ data: [{ key: 'd1', name: 'D1' }] });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: { total: 1, submitted: 1, inProgress: 0, deployed: 0, recent: [{ requestId: 'R1', name: 'Test', status: 'submitted' }] } });
+
+    renderDashboardPage();
+
+    await waitFor(() => {
+      const viewAllLinks = screen.getAllByText(/View all/);
+      expect(viewAllLinks.length).toBeGreaterThanOrEqual(1);
+    });
+  });
 });

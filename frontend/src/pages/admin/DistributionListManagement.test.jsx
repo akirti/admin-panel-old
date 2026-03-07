@@ -423,4 +423,92 @@ describe('DistributionListManagement', () => {
       expect(screen.queryByTestId('modal')).not.toBeInTheDocument();
     });
   });
+
+  it('adds and removes email in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderDistributionListManagement();
+    await waitFor(() => { expect(screen.getByText('Dev Team')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add Distribution List'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Type email and click Add
+    const emailInput = screen.getByPlaceholderText('email@example.com');
+    await user.type(emailInput, 'new@test.com');
+    await user.click(screen.getByText('Add'));
+
+    // Email should appear in list
+    await waitFor(() => {
+      expect(screen.getByText('new@test.com')).toBeInTheDocument();
+    });
+  });
+
+  it('rejects invalid email format', async () => {
+    await setupMocks();
+    const toast = (await import('react-hot-toast')).default;
+    const user = userEvent.setup();
+
+    renderDistributionListManagement();
+    await waitFor(() => { expect(screen.getByText('Dev Team')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add Distribution List'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    const emailInput = screen.getByPlaceholderText('email@example.com');
+    await user.type(emailInput, 'notanemail');
+    await user.click(screen.getByText('Add'));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Please enter a valid email address');
+    });
+  });
+
+  it('searches by name or key', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderDistributionListManagement();
+    await waitFor(() => { expect(screen.getByText('Dev Team')).toBeInTheDocument(); });
+
+    const searchInput = screen.getByPlaceholderText('Search by name or key...');
+    await user.type(searchInput, 'dev');
+    expect(searchInput.value).toBe('dev');
+  });
+
+  it('filters by type dropdown', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderDistributionListManagement();
+    await waitFor(() => { expect(screen.getByText('Dev Team')).toBeInTheDocument(); });
+
+    const typeSelect = screen.getByDisplayValue('All Types');
+    await user.selectOptions(typeSelect, 'custom');
+    expect(typeSelect.value).toBe('custom');
+  });
+
+  it('fills form fields in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderDistributionListManagement();
+    await waitFor(() => { expect(screen.getByText('Dev Team')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add Distribution List'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    const keyInput = screen.getByPlaceholderText('unique-key');
+    await user.type(keyInput, 'test-list');
+    expect(keyInput.value).toBe('test-list');
+
+    const nameInput = screen.getByPlaceholderText('Distribution List Name');
+    await user.type(nameInput, 'Test List');
+    expect(nameInput.value).toBe('Test List');
+
+    const descInput = screen.getByPlaceholderText('Optional description');
+    await user.type(descInput, 'A test list');
+    expect(descInput.value).toBe('A test list');
+  });
 });
