@@ -1,19 +1,10 @@
-import axios from 'axios';
 import api from './api';
-import { API_BASE_URL, PREVAIL_API_BASE_URL } from '../config/env';
 
-// Create a separate axios instance for prevail if it has a different base URL
-const prevailInstance = PREVAIL_API_BASE_URL !== API_BASE_URL
-  ? axios.create({
-      baseURL: PREVAIL_API_BASE_URL,
-      headers: { 'Content-Type': 'application/json' },
-      withCredentials: true,
-    })
-  : api;
-
-// Explorer API - Query execution via prevail endpoint
+// Explorer API - Query execution via prevail endpoint.
+// Always routes through our backend's /prevail proxy which handles
+// auth token extraction and forwarding to the external Prevail service.
 export const prevailAPI = {
-  execute: (scenarioKey, payload) => prevailInstance.post(`/prevail/${scenarioKey}`, payload),
+  execute: (scenarioKey, payload) => api.post(`/prevail/${scenarioKey}`, payload),
 };
 
 // Download API for explorer reports

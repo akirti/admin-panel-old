@@ -37,8 +37,8 @@ STOPSIGNAL SIGTERM
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/live')" || exit 1
 
-# Use tini as init system for proper signal handling
-ENTRYPOINT ["/usr/bin/tini", "--"]
+# Use tini as init system, then docker-entrypoint.py loads server env vars
+ENTRYPOINT ["/usr/bin/tini", "--", "python3", "/app/docker-entrypoint.py"]
 
 # Run the application with timeout for graceful shutdown
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--timeout-graceful-shutdown", "5"]

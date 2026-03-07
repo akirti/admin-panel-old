@@ -21,7 +21,7 @@
       "type": "db",
       "db_info": {
         "type": "mongodb",
-        "connectionScheme": "{databases.authentication.db_info.connectionScheme}",
+        "connection_scheme": "{databases.authentication.db_info.connection_scheme}",
         "username": "{databases.authentication.db_info.username}",
         "password": "{databases.authentication.db_info.password}",
         "host": "{databases.authentication.db_info.host}",
