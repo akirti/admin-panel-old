@@ -2,12 +2,15 @@
 import os
 import json
 import re
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from copy import deepcopy
 
 from .dict_util import DictUtil, parse_ruby_hash
 from easylifeauth import ENVIRONEMNT_VARIABLE_PREFIX, OS_PROPERTY_SEPRATOR
+
+logger = logging.getLogger(__name__)
 
 
 class ConfigurationLoader:
@@ -23,6 +26,7 @@ class ConfigurationLoader:
         self.config_path = config_path or os.getcwd()
         self.env_prefix = env_prefix
         self.configuration: Dict[str, Any] = {}
+        self.unresolved_properties: List[str] = []
         self._dict_util = DictUtil()
 
         if environment:
@@ -119,6 +123,27 @@ class ConfigurationLoader:
         return keys
 
     @staticmethod
+    def _collect_unresolved(config: Any, parent: str = "") -> List[str]:
+        """Collect dot-paths of values that still contain {placeholder} strings."""
+        sep = OS_PROPERTY_SEPRATOR
+        unresolved: List[str] = []
+        if isinstance(config, dict):
+            for key, value in config.items():
+                path = f"{parent}{sep}{key}" if parent else key
+                unresolved.extend(
+                    ConfigurationLoader._collect_unresolved(value, path)
+                )
+        elif isinstance(config, list):
+            for i, item in enumerate(config):
+                path = f"{parent}[{i}]"
+                unresolved.extend(
+                    ConfigurationLoader._collect_unresolved(item, path)
+                )
+        elif isinstance(config, str) and re.search(r'\{[^{}]+\}', config):
+            unresolved.append(f"{parent} = {config}")
+        return unresolved
+
+    @staticmethod
     def _normalise_env_key(key: str) -> str:
         """Normalise an env var name by replacing dots with underscores and upper-casing.
 
@@ -129,7 +154,8 @@ class ConfigurationLoader:
         return key.replace(".", "_").upper()
 
     def _collect_env_overrides(
-        self, known_dot_paths: set, prefix: str
+        self, known_dot_paths: set, prefix: str,
+        env_dict: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """Scan OS env vars with prefix and map back to dot-path keys.
 
@@ -159,7 +185,8 @@ class ConfigurationLoader:
         overrides: Dict[str, Any] = {}
         norm_prefix = self._normalise_env_key(f"{prefix}_")
         dot_prefix = f"{prefix}{sep}"
-        for key, value in os.environ.items():
+        source = env_dict if env_dict is not None else os.environ
+        for key, value in source.items():
             # Accept both EASYLIFE_... and EASYLIFE.... prefixed vars
             if not (key.startswith(f"{prefix}_") or key.startswith(dot_prefix)):
                 continue
@@ -176,16 +203,31 @@ class ConfigurationLoader:
         return overrides
 
     def load_environment(self, config_path: str, environment: str) -> None:
-        """Main config pipeline:
-        simulator → env var overrides → localenv → env → config.json resolution
+        """Main config pipeline — 3 files + OS env vars.
 
-        Works with or without the simulator file. When the simulator is
-        missing, OS environment variables alone populate the values lookup.
-        Environment variables always override simulator values.
+        Files:
+          1. localenv-{env}.json  — base property values (flat or nested)
+          2. {env}.json           — env-specific addon config with {placeholder} refs
+          3. config.json          — base app config with {placeholder} refs
+
+        Flow:
+          a) Load simulator (optional, sets env vars for local dev)
+          b) Load localenv → flatten to get base values dict
+          c) Collect OS env vars → override/extend localenv values (OS wins)
+          d) Resolve any {placeholders} within localenv using merged values
+          e) Resolve {env}.json from values dict
+          f) Resolve config.json from values dict
+          g) Merge extras from resolved {env}.json into config.json
+          h) Collect unresolved placeholders
         """
         base = Path(config_path)
 
-        # a) Load simulator file (empty dict if missing — that's OK)
+        # a) Snapshot pre-existing env vars BEFORE simulator loads.
+        #    Only these count as real OS overrides (highest priority).
+        #    Simulator-set vars should NOT override localenv values.
+        pre_sim_env = dict(os.environ)
+
+        # Load simulator file (optional — sets env vars for local dev)
         simulator_path = base / f"server.env.{environment}.json"
         simulator_data = ConfigValueSimulator.load_simulator_file(
             str(simulator_path), self.env_prefix
@@ -199,34 +241,60 @@ class ConfigurationLoader:
         config_json_path = base / "config.json"
         config_raw = self._load_json_file(str(config_json_path))
 
-        # c) Collect all known dot-path keys (simulator keys + template placeholders)
+        # c) Collect all known dot-path keys for env var reverse mapping
         known_dot_paths = set(simulator_data.keys())
         known_dot_paths.update(
             self._extract_placeholder_keys(localenv_raw, env_raw, config_raw)
         )
+        known_dot_paths.update(
+            self._flatten_to_dot_paths(localenv_raw).keys()
+        )
 
-        # d) Build values_lookup: simulator first, then env vars override
-        values_lookup = dict(simulator_data)
-        env_overrides = self._collect_env_overrides(known_dot_paths, self.env_prefix)
-        values_lookup.update(env_overrides)
+        # d) Build values_lookup:
+        #    simulator (lowest) → localenv hardcoded (overrides simulator)
+        #    → OS env vars (highest, overrides everything)
+        localenv_flat = self._flatten_to_dot_paths(localenv_raw)
+        env_overrides = self._collect_env_overrides(
+            known_dot_paths, self.env_prefix, pre_sim_env
+        )
 
-        # e) Resolve localenv-{environment}.json
+        values_lookup: Dict[str, Any] = {}
+        values_lookup.update(simulator_data)       # simulator defaults (lowest)
+        values_lookup.update(localenv_flat)         # localenv hardcoded override simulator
+        values_lookup.update(env_overrides)         # OS env vars (highest)
+
+        # e) Resolve any {placeholders} within localenv itself, re-flatten,
+        #    then re-apply env overrides so OS vars always win
         localenv_config = self._resolve_placeholders(localenv_raw, values_lookup)
-        localenv_flat = self._flatten_to_dot_paths(localenv_config)
-        values_lookup.update(localenv_flat)
+        localenv_flat_resolved = self._flatten_to_dot_paths(localenv_config)
+        values_lookup.update(localenv_flat_resolved)
+        values_lookup.update(env_overrides)         # OS env vars still win
 
-        # f) Resolve {environment}.json
+        # f) Resolve {environment}.json from values dict
         env_config = self._resolve_placeholders(env_raw, values_lookup)
         env_flat = self._flatten_to_dot_paths(env_config)
         values_lookup.update(env_flat)
+        values_lookup.update(env_overrides)         # OS env vars still win
 
-        # g) Resolve config.json with final lookup
+        # g) Resolve config.json with final values lookup
         resolved_config = self._resolve_placeholders(config_raw, values_lookup)
 
         # h) Merge extra properties from env_config into resolved_config
+        #    (adds env-specific keys not present in config.json)
         self._dict_util.merge_dicts(resolved_config, env_config)
 
-        # i) Set final configuration
+        # i) Collect unresolved placeholders
+        self.unresolved_properties = sorted(
+            self._collect_unresolved(resolved_config)
+        )
+        if self.unresolved_properties:
+            logger.warning(
+                "Unresolved config placeholders (%d): %s",
+                len(self.unresolved_properties),
+                ", ".join(self.unresolved_properties),
+            )
+
+        # j) Set final configuration
         self.configuration = resolved_config
 
     def _load_config(self, config_file: str) -> None:

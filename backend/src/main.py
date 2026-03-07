@@ -155,7 +155,7 @@ def build_jira_config(loader: ConfigurationLoader) -> Optional[dict]:
         "default_watchers": jira_raw.get("default_watchers", []),
         "default_task_environment": jira_raw.get("default_task_environment"),
         "default_task_labels": jira_raw.get("default_task_labels"),
-        "target_days": int(jira_raw.get("default_target_days", 7)),
+        "target_days": _safe_int(jira_raw.get("default_target_days", 7), 7),
         "ssl": jira_raw.get("ssl", {}),
     }
 
