@@ -9,7 +9,7 @@ const isDev = process.env.NODE_ENV !== 'production';
 
 module.exports = {
   mode: isDev ? 'development' : 'production',
-  entry: './src/main.jsx',
+  entry: path.resolve(__dirname, 'src/main.jsx'),
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: isDev ? 'assets/js/[name].js' : 'assets/js/[name].[contenthash:8].js',
@@ -20,6 +20,11 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.jsx', '.json'],
     symlinks: false,
+    modules: [path.resolve(__dirname, 'node_modules'), 'node_modules'],
+  },
+  resolveLoader: {
+    symlinks: false,
+    modules: [path.resolve(__dirname, 'node_modules'), 'node_modules'],
   },
   module: {
     rules: [
@@ -59,7 +64,7 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: './public/index.html',
+      template: path.resolve(__dirname, 'public/index.html'),
     }),
     ...(isDev
       ? [new ReactRefreshWebpackPlugin()]
@@ -72,7 +77,7 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [
         {
-          from: 'public',
+          from: path.resolve(__dirname, 'public'),
           to: '.',
           globOptions: {
             ignore: ['**/index.html'],
