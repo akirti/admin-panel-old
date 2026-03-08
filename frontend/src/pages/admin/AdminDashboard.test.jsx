@@ -229,4 +229,291 @@ describe('AdminDashboard', () => {
       expect(screen.getByText('No recent logins')).toBeInTheDocument();
     });
   });
+
+  // --- Deep coverage tests for uncovered branches ---
+
+  it('shows configurations overview when summary has configurations', async () => {
+    const { dashboardAPI, scenarioRequestAPI, feedbackAPI } = await import('../../services/api');
+    dashboardAPI.getStats.mockResolvedValueOnce({ data: mockStats });
+    dashboardAPI.getSummary.mockResolvedValueOnce({
+      data: {
+        ...mockSummary,
+        configurations: {
+          'process-config': 3,
+          'lookup-data': 5,
+          'gcs-data': 2,
+          'snapshot-data': 1,
+        },
+      },
+    });
+    dashboardAPI.getRecentLogins.mockResolvedValueOnce({ data: mockRecentLogins });
+    dashboardAPI.getAnalytics.mockResolvedValueOnce({ data: mockAnalytics });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: mockRequestStats });
+    feedbackAPI.getStats.mockResolvedValueOnce({ data: mockFeedbackStats });
+
+    renderAdminDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText('Configurations Overview')).toBeInTheDocument();
+      expect(screen.getByText('Total Configs')).toBeInTheDocument();
+      expect(screen.getByText('Process')).toBeInTheDocument();
+      expect(screen.getByText('Lookup')).toBeInTheDocument();
+      expect(screen.getByText('GCS Files')).toBeInTheDocument();
+      expect(screen.getByText('Snapshot')).toBeInTheDocument();
+      expect(screen.getByText('View All →')).toBeInTheDocument();
+    });
+  });
+
+  it('shows entity status summary', async () => {
+    await setupMocks();
+    renderAdminDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText('Entity Status Summary')).toBeInTheDocument();
+      // 'users' and 'domains' from mockSummary
+      expect(screen.getByText('users')).toBeInTheDocument();
+      expect(screen.getByText('domains')).toBeInTheDocument();
+    });
+  });
+
+  it('renders top active users with multiple positions', async () => {
+    const { dashboardAPI, scenarioRequestAPI, feedbackAPI } = await import('../../services/api');
+    dashboardAPI.getStats.mockResolvedValueOnce({ data: mockStats });
+    dashboardAPI.getSummary.mockResolvedValueOnce({ data: mockSummary });
+    dashboardAPI.getRecentLogins.mockResolvedValueOnce({ data: mockRecentLogins });
+    dashboardAPI.getAnalytics.mockResolvedValueOnce({
+      data: {
+        ...mockAnalytics,
+        top_active_users: [
+          { user_email: 'first@test.com', activities: 50 },
+          { user_email: 'second@test.com', activities: 40 },
+          { user_email: 'third@test.com', activities: 30 },
+          { user_email: 'fourth@test.com', activities: 20 },
+        ],
+      },
+    });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: mockRequestStats });
+    feedbackAPI.getStats.mockResolvedValueOnce({ data: mockFeedbackStats });
+
+    renderAdminDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText('first@test.com')).toBeInTheDocument();
+      expect(screen.getByText('second@test.com')).toBeInTheDocument();
+      expect(screen.getByText('third@test.com')).toBeInTheDocument();
+      expect(screen.getByText('fourth@test.com')).toBeInTheDocument();
+      expect(screen.getByText('50 activities')).toBeInTheDocument();
+      expect(screen.getByText('20 activities')).toBeInTheDocument();
+    });
+  });
+
+  it('shows no activity data message when top_active_users is empty', async () => {
+    const { dashboardAPI, scenarioRequestAPI, feedbackAPI } = await import('../../services/api');
+    dashboardAPI.getStats.mockResolvedValueOnce({ data: mockStats });
+    dashboardAPI.getSummary.mockResolvedValueOnce({ data: mockSummary });
+    dashboardAPI.getRecentLogins.mockResolvedValueOnce({ data: mockRecentLogins });
+    dashboardAPI.getAnalytics.mockResolvedValueOnce({
+      data: { ...mockAnalytics, top_active_users: [] },
+    });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: mockRequestStats });
+    feedbackAPI.getStats.mockResolvedValueOnce({ data: mockFeedbackStats });
+
+    renderAdminDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText('No activity data available')).toBeInTheDocument();
+    });
+  });
+
+  it('shows no recent signups message', async () => {
+    const { dashboardAPI, scenarioRequestAPI, feedbackAPI } = await import('../../services/api');
+    dashboardAPI.getStats.mockResolvedValueOnce({ data: mockStats });
+    dashboardAPI.getSummary.mockResolvedValueOnce({ data: mockSummary });
+    dashboardAPI.getRecentLogins.mockResolvedValueOnce({ data: mockRecentLogins });
+    dashboardAPI.getAnalytics.mockResolvedValueOnce({
+      data: { ...mockAnalytics, recent_signups: [] },
+    });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: mockRequestStats });
+    feedbackAPI.getStats.mockResolvedValueOnce({ data: mockFeedbackStats });
+
+    renderAdminDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText('No recent signups')).toBeInTheDocument();
+    });
+  });
+
+  it('renders recent signup without full_name', async () => {
+    const { dashboardAPI, scenarioRequestAPI, feedbackAPI } = await import('../../services/api');
+    dashboardAPI.getStats.mockResolvedValueOnce({ data: mockStats });
+    dashboardAPI.getSummary.mockResolvedValueOnce({ data: mockSummary });
+    dashboardAPI.getRecentLogins.mockResolvedValueOnce({ data: mockRecentLogins });
+    dashboardAPI.getAnalytics.mockResolvedValueOnce({
+      data: {
+        ...mockAnalytics,
+        recent_signups: [
+          { email: 'noname@test.com', created_at: null },
+        ],
+      },
+    });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: mockRequestStats });
+    feedbackAPI.getStats.mockResolvedValueOnce({ data: mockFeedbackStats });
+
+    renderAdminDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText('N/A')).toBeInTheDocument();
+      expect(screen.getByText('noname@test.com')).toBeInTheDocument();
+      expect(screen.getByText('Unknown')).toBeInTheDocument();
+    });
+  });
+
+  it('renders login without last_login showing Never', async () => {
+    const { dashboardAPI, scenarioRequestAPI, feedbackAPI } = await import('../../services/api');
+    dashboardAPI.getStats.mockResolvedValueOnce({ data: mockStats });
+    dashboardAPI.getSummary.mockResolvedValueOnce({ data: mockSummary });
+    dashboardAPI.getRecentLogins.mockResolvedValueOnce({
+      data: {
+        recent_logins: [
+          { full_name: 'No Login User', email: 'nologin@test.com', last_login: null },
+        ],
+      },
+    });
+    dashboardAPI.getAnalytics.mockResolvedValueOnce({ data: mockAnalytics });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: mockRequestStats });
+    feedbackAPI.getStats.mockResolvedValueOnce({ data: mockFeedbackStats });
+
+    renderAdminDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText('No Login User')).toBeInTheDocument();
+      expect(screen.getByText('Never')).toBeInTheDocument();
+    });
+  });
+
+  it('renders rating distribution entries', async () => {
+    await setupMocks();
+    renderAdminDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText('Rating Distribution')).toBeInTheDocument();
+      expect(screen.getByText('5★')).toBeInTheDocument();
+      expect(screen.getByText('4★')).toBeInTheDocument();
+      expect(screen.getByText('3★')).toBeInTheDocument();
+      expect(screen.getByText('50')).toBeInTheDocument(); // 5-star count
+    });
+  });
+
+  it('renders analytics with no activity_trend data', async () => {
+    const { dashboardAPI, scenarioRequestAPI, feedbackAPI } = await import('../../services/api');
+    dashboardAPI.getStats.mockResolvedValueOnce({ data: mockStats });
+    dashboardAPI.getSummary.mockResolvedValueOnce({ data: mockSummary });
+    dashboardAPI.getRecentLogins.mockResolvedValueOnce({ data: mockRecentLogins });
+    dashboardAPI.getAnalytics.mockResolvedValueOnce({
+      data: {
+        activity_trend: [],
+        role_distribution: [],
+        top_active_users: [{ user_email: 'u@t.com', activities: 5 }],
+        recent_signups: [{ full_name: 'U', email: 'u@t.com', created_at: '2025-01-01T00:00:00Z' }],
+      },
+    });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: mockRequestStats });
+    feedbackAPI.getStats.mockResolvedValueOnce({ data: mockFeedbackStats });
+
+    renderAdminDashboard();
+
+    await waitFor(() => {
+      // Activity trend and role distribution should not appear
+      expect(screen.queryByText('Activity Trend (Last 7 Days)')).not.toBeInTheDocument();
+      expect(screen.queryByText('Role Distribution')).not.toBeInTheDocument();
+      // But top active users and recent signups should
+      expect(screen.getByText('Top Active Users (Last 7 Days)')).toBeInTheDocument();
+    });
+  });
+
+  it('renders without analytics data', async () => {
+    const { dashboardAPI, scenarioRequestAPI, feedbackAPI } = await import('../../services/api');
+    dashboardAPI.getStats.mockResolvedValueOnce({ data: mockStats });
+    dashboardAPI.getSummary.mockResolvedValueOnce({ data: mockSummary });
+    dashboardAPI.getRecentLogins.mockResolvedValueOnce({ data: mockRecentLogins });
+    dashboardAPI.getAnalytics.mockResolvedValueOnce({ data: null });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: mockRequestStats });
+    feedbackAPI.getStats.mockResolvedValueOnce({ data: mockFeedbackStats });
+
+    renderAdminDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText('Admin Dashboard')).toBeInTheDocument();
+      // No analytics sections should appear
+      expect(screen.queryByText('Activity Trend (Last 7 Days)')).not.toBeInTheDocument();
+      expect(screen.queryByText('Role Distribution')).not.toBeInTheDocument();
+      expect(screen.queryByText('Top Active Users (Last 7 Days)')).not.toBeInTheDocument();
+    });
+  });
+
+  it('renders stat cards with zero values when stats is null', async () => {
+    const { dashboardAPI, scenarioRequestAPI, feedbackAPI } = await import('../../services/api');
+    dashboardAPI.getStats.mockResolvedValueOnce({ data: null });
+    dashboardAPI.getSummary.mockResolvedValueOnce({ data: null });
+    dashboardAPI.getRecentLogins.mockResolvedValueOnce({ data: { recent_logins: [] } });
+    dashboardAPI.getAnalytics.mockResolvedValueOnce({ data: null });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: null });
+    feedbackAPI.getStats.mockResolvedValueOnce({ data: null });
+
+    renderAdminDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText('Admin Dashboard')).toBeInTheDocument();
+    });
+  });
+
+  it('renders summary entity status excluding module and configurations keys', async () => {
+    const { dashboardAPI, scenarioRequestAPI, feedbackAPI } = await import('../../services/api');
+    dashboardAPI.getStats.mockResolvedValueOnce({ data: mockStats });
+    dashboardAPI.getSummary.mockResolvedValueOnce({
+      data: {
+        users: { active: 100, inactive: 10 },
+        domains: { active: 5, inactive: 2 },
+        module_status: { active: 3, inactive: 0 },
+        configurations: { 'process-config': 2 },
+      },
+    });
+    dashboardAPI.getRecentLogins.mockResolvedValueOnce({ data: mockRecentLogins });
+    dashboardAPI.getAnalytics.mockResolvedValueOnce({ data: mockAnalytics });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: mockRequestStats });
+    feedbackAPI.getStats.mockResolvedValueOnce({ data: mockFeedbackStats });
+
+    renderAdminDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText('Entity Status Summary')).toBeInTheDocument();
+      expect(screen.getByText('users')).toBeInTheDocument();
+      expect(screen.getByText('domains')).toBeInTheDocument();
+      // module_status should be filtered out (contains 'module')
+      expect(screen.queryByText('module_status')).not.toBeInTheDocument();
+    });
+  });
+
+  it('renders login without full_name showing U initial', async () => {
+    const { dashboardAPI, scenarioRequestAPI, feedbackAPI } = await import('../../services/api');
+    dashboardAPI.getStats.mockResolvedValueOnce({ data: mockStats });
+    dashboardAPI.getSummary.mockResolvedValueOnce({ data: mockSummary });
+    dashboardAPI.getRecentLogins.mockResolvedValueOnce({
+      data: {
+        recent_logins: [
+          { email: 'nofullname@test.com', last_login: '2025-01-15T10:00:00Z' },
+        ],
+      },
+    });
+    dashboardAPI.getAnalytics.mockResolvedValueOnce({ data: mockAnalytics });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: mockRequestStats });
+    feedbackAPI.getStats.mockResolvedValueOnce({ data: mockFeedbackStats });
+
+    renderAdminDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText('U')).toBeInTheDocument();
+      expect(screen.getByText('nofullname@test.com')).toBeInTheDocument();
+    });
+  });
 });

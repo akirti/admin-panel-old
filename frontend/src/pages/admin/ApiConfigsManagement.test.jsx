@@ -990,4 +990,725 @@ describe('ApiConfigsManagement', () => {
       await user.click(certBtns[0]);
     }
   });
+
+  // --- Deep coverage tests for uncovered branches/functions ---
+
+  it('shows login_token auth config form', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Change auth type to login_token
+    const selects = screen.getByTestId('modal').querySelectorAll('select');
+    const authSelect = Array.from(selects).find(s =>
+      Array.from(s.options).some(o => o.value === 'login_token')
+    );
+    await user.selectOptions(authSelect, 'login_token');
+
+    await waitFor(() => {
+      expect(screen.getByText('Login Token Configuration')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('https://api.example.com/auth/login')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('user@example.com')).toBeInTheDocument();
+    });
+  });
+
+  it('fills login_token auth config fields', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    const selects = screen.getByTestId('modal').querySelectorAll('select');
+    const authSelect = Array.from(selects).find(s =>
+      Array.from(s.options).some(o => o.value === 'login_token')
+    );
+    await user.selectOptions(authSelect, 'login_token');
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('https://api.example.com/auth/login')).toBeInTheDocument();
+    });
+
+    // Fill login endpoint
+    const loginEndpoint = screen.getByPlaceholderText('https://api.example.com/auth/login');
+    await user.type(loginEndpoint, 'https://auth.test.com/login');
+    expect(loginEndpoint.value).toBe('https://auth.test.com/login');
+
+    // Fill username
+    const usernameInput = screen.getByPlaceholderText('user@example.com');
+    await user.type(usernameInput, 'admin@test.com');
+    expect(usernameInput.value).toBe('admin@test.com');
+
+    // Fill password
+    const passwordInput = screen.getByPlaceholderText('••••••••');
+    await user.type(passwordInput, 'secret123');
+
+    // Fill token response path
+    const tokenPathInput = screen.getByPlaceholderText('access_token or data.token');
+    await user.clear(tokenPathInput);
+    await user.type(tokenPathInput, 'data.token');
+  });
+
+  it('shows oauth2 auth config form', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    const selects = screen.getByTestId('modal').querySelectorAll('select');
+    const authSelect = Array.from(selects).find(s =>
+      Array.from(s.options).some(o => o.value === 'oauth2')
+    );
+    await user.selectOptions(authSelect, 'oauth2');
+
+    await waitFor(() => {
+      expect(screen.getByText('OAuth2 Client Credentials Configuration')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('https://auth.example.com/oauth/token')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('my-client-id')).toBeInTheDocument();
+    });
+  });
+
+  it('fills oauth2 auth config fields', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    const selects = screen.getByTestId('modal').querySelectorAll('select');
+    const authSelect = Array.from(selects).find(s =>
+      Array.from(s.options).some(o => o.value === 'oauth2')
+    );
+    await user.selectOptions(authSelect, 'oauth2');
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('https://auth.example.com/oauth/token')).toBeInTheDocument();
+    });
+
+    // Fill token endpoint
+    await user.type(screen.getByPlaceholderText('https://auth.example.com/oauth/token'), 'https://oauth.test.com/token');
+
+    // Fill client ID
+    await user.type(screen.getByPlaceholderText('my-client-id'), 'test-client');
+
+    // Fill scope
+    await user.type(screen.getByPlaceholderText('read write'), 'read');
+
+    // Fill audience
+    await user.type(screen.getByPlaceholderText('https://api.example.com'), 'https://api.test.com');
+  });
+
+  it('shows auth config JSON textarea for basic auth type', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    const selects = screen.getByTestId('modal').querySelectorAll('select');
+    const authSelect = Array.from(selects).find(s =>
+      Array.from(s.options).some(o => o.value === 'basic')
+    );
+    await user.selectOptions(authSelect, 'basic');
+
+    await waitFor(() => {
+      expect(screen.getByText('Auth Configuration JSON')).toBeInTheDocument();
+    });
+  });
+
+  it('toggles use_proxy checkbox and shows proxy URL input', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Find use_proxy checkbox (second checkbox)
+    const checkboxes = screen.getByTestId('modal').querySelectorAll('input[type="checkbox"]');
+    const proxyCheckbox = Array.from(checkboxes).find(cb => {
+      const label = cb.parentElement?.textContent;
+      return label?.includes('Use Proxy');
+    });
+
+    await user.click(proxyCheckbox);
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('http://proxy:8080')).toBeInTheDocument();
+    });
+  });
+
+  it('toggles cache_enabled checkbox and shows cache TTL', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Find Enable Caching checkbox
+    const checkboxes = screen.getByTestId('modal').querySelectorAll('input[type="checkbox"]');
+    const cacheCheckbox = Array.from(checkboxes).find(cb => {
+      const label = cb.parentElement?.textContent;
+      return label?.includes('Enable Caching');
+    });
+
+    await user.click(cacheCheckbox);
+
+    await waitFor(() => {
+      expect(screen.getByText('Cache TTL (sec)')).toBeInTheDocument();
+    });
+  });
+
+  it('shows test result modal with successful test', async () => {
+    await setupMocks();
+    const { apiConfigsAPI } = await import('../../services/api');
+    apiConfigsAPI.testById.mockResolvedValue({
+      data: {
+        success: true,
+        status_code: 200,
+        response_time_ms: 150,
+        ssl_info: { version: 'TLSv1.3' },
+        response_headers: { 'content-type': 'application/json' },
+        response_body: { message: 'ok' },
+      },
+    });
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    const testButtons = screen.getAllByTitle('Test API');
+    await user.click(testButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Connection Successful')).toBeInTheDocument();
+      expect(screen.getByText('200')).toBeInTheDocument();
+      expect(screen.getByText('150ms')).toBeInTheDocument();
+      expect(screen.getByText('TLSv1.3')).toBeInTheDocument();
+      expect(screen.getByText('Response Headers')).toBeInTheDocument();
+      expect(screen.getByText('Response Body')).toBeInTheDocument();
+    });
+  });
+
+  it('shows test result modal with failed test', async () => {
+    await setupMocks();
+    const { apiConfigsAPI } = await import('../../services/api');
+    apiConfigsAPI.testById.mockResolvedValue({
+      data: {
+        success: false,
+        error: 'Connection timed out',
+      },
+    });
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    const testButtons = screen.getAllByTitle('Test API');
+    await user.click(testButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Connection Failed')).toBeInTheDocument();
+      expect(screen.getByText('Connection timed out')).toBeInTheDocument();
+    });
+  });
+
+  it('shows test result with string response body', async () => {
+    await setupMocks();
+    const { apiConfigsAPI } = await import('../../services/api');
+    apiConfigsAPI.testById.mockResolvedValue({
+      data: {
+        success: true,
+        status_code: 200,
+        response_body: 'plain text response',
+      },
+    });
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    const testButtons = screen.getAllByTitle('Test API');
+    await user.click(testButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('plain text response')).toBeInTheDocument();
+    });
+  });
+
+  it('shows detail modal with full config info including description and tags', async () => {
+    const { apiConfigsAPI } = await import('../../services/api');
+    const configWithDetails = [{
+      ...mockConfigs[0],
+      description: 'A test API service',
+      tags: ['api', 'prod'],
+      headers: { 'Authorization': 'Bearer xxx' },
+      ssl_cert_gcs_path: 'gs://bucket/cert.pem',
+      ssl_key_gcs_path: 'gs://bucket/key.pem',
+      ssl_ca_gcs_path: 'gs://bucket/ca.pem',
+      created_at: '2025-01-01T10:00:00Z',
+      created_by: 'admin',
+      updated_at: '2025-01-15T10:00:00Z',
+      updated_by: 'editor',
+    }];
+    apiConfigsAPI.list.mockResolvedValue({
+      data: { data: configWithDetails, pagination: { total: 1, pages: 1, page: 0, limit: 25 } },
+    });
+    apiConfigsAPI.getTags.mockResolvedValue({ data: { tags: ['api', 'prod'] } });
+    apiConfigsAPI.getGCSStatus.mockResolvedValue({ data: { configured: false } });
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    const viewButtons = screen.getAllByTitle('View Details');
+    await user.click(viewButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('API Configuration Details')).toBeInTheDocument();
+      expect(screen.getByText('A test API service')).toBeInTheDocument();
+      expect(screen.getByText('SSL Certificates')).toBeInTheDocument();
+      expect(screen.getByText('gs://bucket/cert.pem')).toBeInTheDocument();
+      expect(screen.getByText('gs://bucket/key.pem')).toBeInTheDocument();
+      expect(screen.getByText('gs://bucket/ca.pem')).toBeInTheDocument();
+      expect(screen.getByText(/by admin/)).toBeInTheDocument();
+      expect(screen.getByText(/by editor/)).toBeInTheDocument();
+    });
+  });
+
+  it('shows detail modal info: timeout, ssl_verify, use_proxy', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    const viewButtons = screen.getAllByTitle('View Details');
+    await user.click(viewButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('30s')).toBeInTheDocument();
+      expect(screen.getByText('Yes')).toBeInTheDocument(); // ssl_verify
+    });
+  });
+
+  it('clicks Test API button from detail modal', async () => {
+    await setupMocks();
+    const { apiConfigsAPI } = await import('../../services/api');
+    apiConfigsAPI.testById.mockResolvedValue({ data: { success: true, status_code: 200 } });
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    const viewButtons = screen.getAllByTitle('View Details');
+    await user.click(viewButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('API Configuration Details')).toBeInTheDocument();
+    });
+
+    // Click Test API button in detail modal
+    await user.click(screen.getByText('Test API'));
+
+    await waitFor(() => {
+      expect(apiConfigsAPI.testById).toHaveBeenCalledWith('ac1');
+    });
+  });
+
+  it('clicks Edit button from detail modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    const viewButtons = screen.getAllByTitle('View Details');
+    await user.click(viewButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('API Configuration Details')).toBeInTheDocument();
+    });
+
+    // Click Edit button inside detail modal
+    const editBtn = screen.getByTestId('modal').querySelector('button');
+    const allButtons = screen.getByTestId('modal').querySelectorAll('button');
+    const editButton = Array.from(allButtons).find(b => b.textContent === 'Edit');
+    await user.click(editButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Edit API Configuration')).toBeInTheDocument();
+    });
+  });
+
+  it('submits certificate upload form', async () => {
+    const { apiConfigsAPI } = await import('../../services/api');
+    apiConfigsAPI.list.mockResolvedValue({
+      data: { data: mockConfigs, pagination: { total: 2, pages: 1, page: 0, limit: 25 } },
+    });
+    apiConfigsAPI.getTags.mockResolvedValue({ data: { tags: [] } });
+    apiConfigsAPI.getGCSStatus.mockResolvedValue({ data: { configured: true } });
+    apiConfigsAPI.uploadCert.mockResolvedValue({ data: {} });
+    const toast = await import('react-hot-toast');
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    // Click upload cert button
+    const certButtons = screen.getAllByTitle('Upload Certificate');
+    await user.click(certButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Upload Certificate')).toBeInTheDocument();
+    });
+
+    // Select certificate type
+    const certTypeSelect = screen.getByTestId('modal').querySelectorAll('select');
+    if (certTypeSelect.length > 0) {
+      await user.selectOptions(certTypeSelect[0], 'key');
+    }
+
+    // Upload file
+    const fileInput = screen.getByTestId('modal').querySelector('input[type="file"]');
+    const file = new File(['cert content'], 'client.pem', { type: 'application/x-pem-file' });
+    await user.upload(fileInput, file);
+
+    await waitFor(() => {
+      expect(screen.getByText('Selected: client.pem')).toBeInTheDocument();
+    });
+
+    // Submit
+    const submitBtn = Array.from(screen.getByTestId('modal').querySelectorAll('button')).find(b => b.textContent === 'Upload');
+    await user.click(submitBtn);
+
+    await waitFor(() => {
+      expect(apiConfigsAPI.uploadCert).toHaveBeenCalled();
+      expect(toast.default.success).toHaveBeenCalledWith('Certificate uploaded successfully');
+    });
+  });
+
+  it('handles certificate upload failure', async () => {
+    const { apiConfigsAPI } = await import('../../services/api');
+    apiConfigsAPI.list.mockResolvedValue({
+      data: { data: mockConfigs, pagination: { total: 2, pages: 1, page: 0, limit: 25 } },
+    });
+    apiConfigsAPI.getTags.mockResolvedValue({ data: { tags: [] } });
+    apiConfigsAPI.getGCSStatus.mockResolvedValue({ data: { configured: true } });
+    apiConfigsAPI.uploadCert.mockRejectedValue({ response: { data: { detail: 'Invalid cert format' } } });
+    const toast = await import('react-hot-toast');
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    const certButtons = screen.getAllByTitle('Upload Certificate');
+    await user.click(certButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Upload Certificate')).toBeInTheDocument();
+    });
+
+    const fileInput = screen.getByTestId('modal').querySelector('input[type="file"]');
+    const file = new File(['bad'], 'bad.pem', { type: 'application/x-pem-file' });
+    await user.upload(fileInput, file);
+
+    const submitBtn = Array.from(screen.getByTestId('modal').querySelectorAll('button')).find(b => b.textContent === 'Upload');
+    await user.click(submitBtn);
+
+    await waitFor(() => {
+      expect(toast.default.error).toHaveBeenCalledWith('Invalid cert format');
+    });
+  });
+
+  it('changes form fields: timeout, retry_count, retry_delay', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+    const { fireEvent } = await import('@testing-library/react');
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Find timeout input by label
+    const timeoutLabel = screen.getByText('Timeout (sec)');
+    const timeoutInput = timeoutLabel.parentElement.querySelector('input');
+    fireEvent.change(timeoutInput, { target: { value: '60' } });
+    expect(timeoutInput.value).toBe('60');
+
+    // Retry count
+    const retryLabel = screen.getByText('Retry Count');
+    const retryInput = retryLabel.parentElement.querySelector('input');
+    fireEvent.change(retryInput, { target: { value: '3' } });
+    expect(retryInput.value).toBe('3');
+
+    // Retry delay
+    const delayLabel = screen.getByText('Retry Delay (sec)');
+    const delayInput = delayLabel.parentElement.querySelector('input');
+    fireEvent.change(delayInput, { target: { value: '5' } });
+    expect(delayInput.value).toBe('5');
+  });
+
+  it('changes ping/health check settings', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+    const { fireEvent } = await import('@testing-library/react');
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Ping endpoint
+    const pingInput = screen.getByPlaceholderText('Leave empty to use main endpoint');
+    await user.type(pingInput, 'https://api.test.com/health');
+    expect(pingInput.value).toBe('https://api.test.com/health');
+
+    // Expected status
+    const statusLabel = screen.getByText('Expected Status');
+    const statusInput = statusLabel.parentElement.querySelector('input');
+    fireEvent.change(statusInput, { target: { value: '204' } });
+    expect(statusInput.value).toBe('204');
+  });
+
+  it('changes method dropdown in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Find method select - 'Method' appears in both table header and form
+    const methodLabels = screen.getAllByText('Method');
+    // The one inside the modal form has a select sibling
+    const methodLabel = Array.from(methodLabels).find(l => l.parentElement?.querySelector('select'));
+    const methodSelect = methodLabel.parentElement.querySelector('select');
+    await user.selectOptions(methodSelect, 'POST');
+    expect(methodSelect.value).toBe('POST');
+  });
+
+  it('changes status dropdown in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Find status select
+    const statusLabel = screen.getAllByText('Status');
+    // Get the select inside the form (last Status label)
+    const formStatusLabels = screen.getByTestId('modal').querySelectorAll('label');
+    const statusLabelElem = Array.from(formStatusLabels).find(l => l.textContent === 'Status');
+    const statusSelect = statusLabelElem?.parentElement?.querySelector('select');
+    if (statusSelect) {
+      await user.selectOptions(statusSelect, 'inactive');
+      expect(statusSelect.value).toBe('inactive');
+    }
+  });
+
+  it('fills description field in create modal', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    const descInput = screen.getByPlaceholderText('Optional description');
+    await user.type(descInput, 'Test API description');
+    expect(descInput.value).toBe('Test API description');
+  });
+
+  it('closes test result modal', async () => {
+    await setupMocks();
+    const { apiConfigsAPI } = await import('../../services/api');
+    apiConfigsAPI.testById.mockResolvedValue({ data: { success: true, status_code: 200 } });
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    const testButtons = screen.getAllByTitle('Test API');
+    await user.click(testButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Connection Successful')).toBeInTheDocument();
+    });
+
+    // Click Close button
+    await user.click(screen.getByText('Close'));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Connection Successful')).not.toBeInTheDocument();
+    });
+  });
+
+  it('shows loading spinner in test modal while testing', async () => {
+    await setupMocks();
+    const { apiConfigsAPI } = await import('../../services/api');
+    let resolveTest;
+    apiConfigsAPI.testById.mockReturnValue(new Promise(r => { resolveTest = r; }));
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    const testButtons = screen.getAllByTitle('Test API');
+    await user.click(testButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Testing API connection...')).toBeInTheDocument();
+    });
+
+    // Resolve to clean up
+    resolveTest({ data: { success: true } });
+  });
+
+  it('changes login method select in login_token form', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Select login_token auth type
+    const selects = screen.getByTestId('modal').querySelectorAll('select');
+    const authSelect = Array.from(selects).find(s =>
+      Array.from(s.options).some(o => o.value === 'login_token')
+    );
+    await user.selectOptions(authSelect, 'login_token');
+
+    await waitFor(() => {
+      expect(screen.getByText('Login Token Configuration')).toBeInTheDocument();
+    });
+
+    // Fill username field name
+    const usernameFieldInput = screen.getByPlaceholderText('email');
+    await user.clear(usernameFieldInput);
+    await user.type(usernameFieldInput, 'login');
+
+    // Fill password field name
+    const passwordFieldInput = screen.getByPlaceholderText('password');
+    await user.clear(passwordFieldInput);
+    await user.type(passwordFieldInput, 'pass');
+
+    // Fill token type
+    const tokenTypeInputs = screen.getAllByDisplayValue('Bearer');
+    if (tokenTypeInputs.length > 0) {
+      await user.clear(tokenTypeInputs[0]);
+      await user.type(tokenTypeInputs[0], 'Token');
+    }
+  });
+
+  it('fills oauth2 client secret and token fields', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Select oauth2 auth type
+    const selects = screen.getByTestId('modal').querySelectorAll('select');
+    const authSelect = Array.from(selects).find(s =>
+      Array.from(s.options).some(o => o.value === 'oauth2')
+    );
+    await user.selectOptions(authSelect, 'oauth2');
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('my-client-id')).toBeInTheDocument();
+    });
+
+    // Fill client secret - find the password input
+    const allPasswordInputs = screen.getByTestId('modal').querySelectorAll('input[type="password"]');
+    if (allPasswordInputs.length > 0) {
+      await user.type(allPasswordInputs[0], 'super-secret');
+    }
+
+    // Fill token response path
+    const tokenPathInputs = screen.getAllByDisplayValue('access_token');
+    if (tokenPathInputs.length > 0) {
+      await user.clear(tokenPathInputs[0]);
+      await user.type(tokenPathInputs[0], 'token');
+    }
+
+    // Fill token header name
+    const headerInputs = screen.getAllByDisplayValue('Authorization');
+    if (headerInputs.length > 0) {
+      await user.clear(headerInputs[0]);
+      await user.type(headerInputs[0], 'X-Token');
+    }
+  });
+
+  it('changes ping method select', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    await user.click(screen.getByText('Add API Config'));
+    await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
+
+    // Find Ping Method select
+    const pingMethodLabel = screen.getByText('Ping Method');
+    const pingMethodSelect = pingMethodLabel.parentElement.querySelector('select');
+    await user.selectOptions(pingMethodSelect, 'POST');
+    expect(pingMethodSelect.value).toBe('POST');
+  });
+
+  it('opens detail modal and shows No for use_proxy', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderApiConfigsManagement();
+    await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
+
+    const viewButtons = screen.getAllByTitle('View Details');
+    await user.click(viewButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('API Configuration Details')).toBeInTheDocument();
+      expect(screen.getByText('No')).toBeInTheDocument(); // use_proxy is false
+    });
+  });
 });

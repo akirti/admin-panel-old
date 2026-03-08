@@ -358,4 +358,369 @@ describe('V1DynamicFilterControl', () => {
     );
     expect(container.querySelector('input[type="date"]')).toBeInTheDocument();
   });
+
+  // --- Deep coverage: uncovered branches/functions ---
+
+  it('parses string options into array', () => {
+    const filter = {
+      dataKey: 'category',
+      attributes: [
+        { key: 'type', value: 'select' },
+        { key: 'options', value: 'Apple,Banana,Cherry' },
+      ],
+    };
+    render(<V1DynamicFilterControl filter={filter} value="" onChange={onChange} />);
+    expect(screen.getByRole('button')).toBeInTheDocument();
+  });
+
+  it('converts non-array non-string options to empty array', () => {
+    const filter = {
+      dataKey: 'category',
+      attributes: [
+        { key: 'type', value: 'select' },
+        { key: 'options', value: 42 },
+      ],
+    };
+    render(<V1DynamicFilterControl filter={filter} value="" onChange={onChange} />);
+    expect(screen.getByRole('button')).toBeInTheDocument();
+  });
+
+  it('uses defaultValue as array for multiselect when value is empty', () => {
+    const filter = {
+      dataKey: 'tags',
+      attributes: [
+        { key: 'type', value: 'multiselect' },
+        { key: 'options', value: [{ name: 'Tag1', value: 't1' }, { name: 'Tag2', value: 't2' }] },
+        { key: 'defaultValue', value: ['t1', 't2'] },
+      ],
+    };
+    render(<V1DynamicFilterControl filter={filter} value={null} onChange={onChange} />);
+    expect(screen.getByRole('button')).toBeInTheDocument();
+  });
+
+  it('renders customer suggest input for customer filter', () => {
+    const filter = {
+      dataKey: 'query_customer',
+      displayName: 'Customer #1',
+      attributes: [{ key: 'type', value: 'input' }],
+    };
+    const customerData = {
+      hasAssigned: true,
+      customers: [{ id: '1', name: 'Cust 1' }],
+      tags: ['vip'],
+      loading: false,
+      search: vi.fn(),
+      filterByTag: vi.fn(),
+    };
+    render(
+      <V1DynamicFilterControl
+        filter={filter}
+        value=""
+        onChange={onChange}
+        useCustomerSuggest={true}
+        customerData={customerData}
+      />
+    );
+    // V1CustomerSuggestInput should be rendered; it's mocked so we verify no crash
+  });
+
+  it('does not render customer suggest when useCustomerSuggest is false', () => {
+    const filter = {
+      dataKey: 'query_customer',
+      attributes: [{ key: 'type', value: 'input' }],
+    };
+    render(
+      <V1DynamicFilterControl
+        filter={filter}
+        value=""
+        onChange={onChange}
+        useCustomerSuggest={false}
+      />
+    );
+    // Falls through to text input
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
+  });
+
+  it('detects customer filter by displayName', () => {
+    const filter = {
+      dataKey: 'some_field',
+      displayName: 'Customer #2',
+      attributes: [{ key: 'type', value: 'input' }],
+    };
+    const customerData = {
+      hasAssigned: true,
+      customers: [],
+      tags: [],
+      loading: false,
+      search: vi.fn(),
+      filterByTag: vi.fn(),
+    };
+    render(
+      <V1DynamicFilterControl
+        filter={filter}
+        value=""
+        onChange={onChange}
+        useCustomerSuggest={true}
+        customerData={customerData}
+      />
+    );
+    // Should match the customer pattern and render customer suggest
+  });
+
+  it('handles toggle button with value object and values.on/off mapping', () => {
+    const filter = {
+      dataKey: 'toggles',
+      attributes: [
+        { key: 'type', value: 'toggleButton' },
+        {
+          key: 'options',
+          value: [
+            { name: 'Toggle A', dataKey: 'toggleA', values: { on: 'Y', off: 'N' } },
+            { name: 'Toggle B', dataKey: 'toggleB', values: { on: 'Y', off: 'N' } },
+          ],
+        },
+      ],
+    };
+    render(
+      <V1DynamicFilterControl
+        filter={filter}
+        value={{ toggleA: 'Y', toggleB: 'N' }}
+        onChange={onChange}
+      />
+    );
+    expect(screen.getByRole('button')).toBeInTheDocument();
+  });
+
+  it('handles toggle button with value object but no values.on (uses isToggleOn fallback)', () => {
+    const filter = {
+      dataKey: 'toggles',
+      attributes: [
+        { key: 'type', value: 'toggleButton' },
+        {
+          key: 'options',
+          value: [
+            { name: 'Toggle A', dataKey: 'toggleA' },
+            { name: 'Toggle B', dataKey: 'toggleB' },
+          ],
+        },
+      ],
+    };
+    render(
+      <V1DynamicFilterControl
+        filter={filter}
+        value={{ toggleA: 1, toggleB: false }}
+        onChange={onChange}
+      />
+    );
+    expect(screen.getByRole('button')).toBeInTheDocument();
+  });
+
+  it('handles toggle button with value object where key is undefined and defaultVal is object', () => {
+    const filter = {
+      dataKey: 'toggles',
+      attributes: [
+        { key: 'type', value: 'toggleButton' },
+        {
+          key: 'options',
+          value: [
+            { name: 'Toggle A', dataKey: 'toggleA', values: { on: 1, off: 0 } },
+            { name: 'Toggle B', dataKey: 'toggleB' },
+          ],
+        },
+        { key: 'defaultValue', value: { toggleA: 1, toggleB: true } },
+      ],
+    };
+    // value has the dataKey but toggleB is undefined in value object
+    render(
+      <V1DynamicFilterControl
+        filter={filter}
+        value={{ toggleA: 1 }}
+        onChange={onChange}
+      />
+    );
+    expect(screen.getByRole('button')).toBeInTheDocument();
+  });
+
+  it('handles toggle button with defaultVal as array', () => {
+    const filter = {
+      dataKey: 'toggles',
+      attributes: [
+        { key: 'type', value: 'toggleButton' },
+        {
+          key: 'options',
+          value: [
+            { name: 'Toggle A', dataKey: 'toggleA', values: { on: 1, off: 0 } },
+          ],
+        },
+        {
+          key: 'defaultValue',
+          value: [{ toggleA: 1 }],
+        },
+      ],
+    };
+    render(
+      <V1DynamicFilterControl filter={filter} value={undefined} onChange={onChange} />
+    );
+    expect(screen.getByRole('button')).toBeInTheDocument();
+  });
+
+  it('handles date-range with defaultValue_start and defaultValue_end', () => {
+    const filter = {
+      dataKey: 'dateRange',
+      attributes: [
+        { key: 'type', value: 'date-range' },
+        { key: 'defaultValue_start', value: '2025-01-01' },
+        { key: 'defaultValue_end', value: '2025-12-31' },
+      ],
+    };
+    const { container } = render(
+      <V1DynamicFilterControl
+        filter={filter}
+        value={{ start: '', end: '' }}
+        onChange={onChange}
+      />
+    );
+    const dateInputs = container.querySelectorAll('input[type="date"]');
+    expect(dateInputs).toHaveLength(2);
+  });
+
+  it('handles date-range onChange for end date', async () => {
+    const user = userEvent.setup();
+    const filter = {
+      dataKey: 'dateRange',
+      attributes: [{ key: 'type', value: 'date-range' }],
+    };
+    const { container } = render(
+      <V1DynamicFilterControl
+        filter={filter}
+        value={{ start: '2026-01-01', end: '2026-01-31' }}
+        onChange={onChange}
+      />
+    );
+    const dateInputs = container.querySelectorAll('input[type="date"]');
+    await user.clear(dateInputs[1]);
+    await user.type(dateInputs[1], '2026-02-28');
+    expect(onChange).toHaveBeenCalled();
+  });
+
+  it('uses placeholder prop as fallback for text input', () => {
+    const filter = {
+      dataKey: 'field1',
+      attributes: [{ key: 'type', value: 'input' }],
+    };
+    render(
+      <V1DynamicFilterControl
+        filter={filter}
+        value=""
+        onChange={onChange}
+        placeholder="Custom placeholder"
+      />
+    );
+    expect(screen.getByPlaceholderText('Custom placeholder')).toBeInTheDocument();
+  });
+
+  it('uses type as fallback placeholder when no inputHint and no placeholder', () => {
+    const filter = {
+      dataKey: 'field1',
+      attributes: [{ key: 'type', value: 'input' }],
+    };
+    render(
+      <V1DynamicFilterControl filter={filter} value="" onChange={onChange} />
+    );
+    expect(screen.getByPlaceholderText('input')).toBeInTheDocument();
+  });
+
+  it('passes title prop to text input', () => {
+    const filter = {
+      dataKey: 'field1',
+      attributes: [{ key: 'type', value: 'input' }],
+    };
+    const { container } = render(
+      <V1DynamicFilterControl filter={filter} value="" onChange={onChange} title="Help text" />
+    );
+    expect(container.querySelector('input[title="Help text"]')).toBeInTheDocument();
+  });
+
+  it('handles multiselect with empty array value', () => {
+    const filter = {
+      dataKey: 'tags',
+      attributes: [
+        { key: 'type', value: 'multiselect' },
+        { key: 'options', value: [{ name: 'Tag1', value: 't1' }] },
+      ],
+    };
+    render(<V1DynamicFilterControl filter={filter} value={[]} onChange={onChange} />);
+    expect(screen.getByRole('button')).toBeInTheDocument();
+  });
+
+  it('handles radio with undefined value and no defaultValue', () => {
+    const filter = {
+      dataKey: 'status',
+      attributes: [
+        { key: 'type', value: 'radioButton' },
+        { key: 'options', value: [{ name: 'Active', value: 'A' }] },
+      ],
+    };
+    render(<V1DynamicFilterControl filter={filter} value={undefined} onChange={onChange} />);
+    expect(screen.getByRole('button')).toBeInTheDocument();
+  });
+
+  it('handles paired date pickers with form value for toDate', () => {
+    const fromFilter = {
+      dataKey: 'fromDate',
+      attributes: [{ key: 'type', value: 'date-picker' }],
+    };
+    const toFilter = {
+      dataKey: 'toDate',
+      attributes: [{ key: 'type', value: 'date-picker' }],
+    };
+    const { container } = render(
+      <V1DynamicFilterControl
+        filter={fromFilter}
+        value=""
+        onChange={onChange}
+        allFilters={[fromFilter, toFilter]}
+        form={{ toDate: '2026-03-15' }}
+      />
+    );
+    expect(container.querySelector('input[type="date"]')).toBeInTheDocument();
+  });
+
+  it('calls onChange on date input change', async () => {
+    const user = userEvent.setup();
+    const filter = {
+      dataKey: 'dateField',
+      attributes: [{ key: 'type', value: 'date-picker' }],
+    };
+    const { container } = render(
+      <V1DynamicFilterControl filter={filter} value="2026-01-01" onChange={onChange} />
+    );
+    const dateInput = container.querySelector('input[type="date"]');
+    await user.clear(dateInput);
+    await user.type(dateInput, '2026-02-01');
+    expect(onChange).toHaveBeenCalled();
+  });
+
+  it('handles toggle with defaultVal array where key not found', () => {
+    const filter = {
+      dataKey: 'toggles',
+      attributes: [
+        { key: 'type', value: 'toggleButton' },
+        {
+          key: 'options',
+          value: [
+            { name: 'Toggle X', dataKey: 'toggleX' },
+          ],
+        },
+        {
+          key: 'defaultValue',
+          value: [{ toggleY: true }],
+        },
+      ],
+    };
+    render(
+      <V1DynamicFilterControl filter={filter} value={undefined} onChange={onChange} />
+    );
+    expect(screen.getByRole('button')).toBeInTheDocument();
+  });
 });

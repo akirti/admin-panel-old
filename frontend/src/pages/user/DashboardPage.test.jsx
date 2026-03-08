@@ -249,4 +249,73 @@ describe('DashboardPage', () => {
       expect(viewAllLinks.length).toBeGreaterThanOrEqual(1);
     });
   });
+
+  it('renders snapshot status badge with success variant', async () => {
+    const { domainAPI, scenarioRequestAPI } = await import('../../services/api');
+    domainAPI.getAll.mockResolvedValueOnce({ data: [] });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: {
+      total: 1, submitted: 0, inProgress: 0, deployed: 0,
+      recent: [{ requestId: 'REQ-020', name: 'Snap', status: 'snapshot' }]
+    } });
+
+    renderDashboardPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('REQ-020')).toBeInTheDocument();
+    });
+  });
+
+  it('renders unknown status using statusDescription fallback', async () => {
+    const { domainAPI, scenarioRequestAPI } = await import('../../services/api');
+    domainAPI.getAll.mockResolvedValueOnce({ data: [] });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: {
+      total: 1, submitted: 0, inProgress: 0, deployed: 0,
+      recent: [{ requestId: 'REQ-030', name: 'Custom', status: 'custom-status', statusDescription: 'Custom Desc' }]
+    } });
+
+    renderDashboardPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Custom Desc')).toBeInTheDocument();
+    });
+  });
+
+  it('renders unknown status showing raw status when no statusDescription', async () => {
+    const { domainAPI, scenarioRequestAPI } = await import('../../services/api');
+    domainAPI.getAll.mockResolvedValueOnce({ data: [] });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: {
+      total: 1, submitted: 0, inProgress: 0, deployed: 0,
+      recent: [{ requestId: 'REQ-031', name: 'Raw', status: 'pending-approval' }]
+    } });
+
+    renderDashboardPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('pending-approval')).toBeInTheDocument();
+    });
+  });
+
+  it('handles null stats data from API', async () => {
+    const { domainAPI, scenarioRequestAPI } = await import('../../services/api');
+    domainAPI.getAll.mockResolvedValueOnce({ data: null });
+    scenarioRequestAPI.getStats.mockResolvedValueOnce({ data: null });
+
+    renderDashboardPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('No domains available. Contact your administrator.')).toBeInTheDocument();
+    });
+  });
+
+  it('shows loading spinner initially', async () => {
+    const { domainAPI, scenarioRequestAPI } = await import('../../services/api');
+    let resolveApi;
+    domainAPI.getAll.mockReturnValue(new Promise(r => { resolveApi = r; }));
+    scenarioRequestAPI.getStats.mockReturnValue(new Promise(() => {}));
+
+    const { container } = renderDashboardPage();
+    expect(container.querySelector('.animate-spin')).toBeInTheDocument();
+
+    resolveApi({ data: [] });
+  });
 });

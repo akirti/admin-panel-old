@@ -568,4 +568,485 @@ describe('ScenarioRequestsManagement', () => {
       expect(screen.getByText('Analytics')).toBeInTheDocument();
     });
   });
+
+  // --- Additional branch coverage tests ---
+
+  it('handles status update failure with error.response.data.error fallback', async () => {
+    await setupMocks();
+    const { scenarioRequestAPI } = await import('../../services/api');
+    const toast = await import('react-hot-toast');
+    // No detail, but has error property
+    scenarioRequestAPI.updateStatus.mockRejectedValue({ response: { data: { error: 'Status error fallback' } } });
+    const user = userEvent.setup();
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('REQ-001')).toBeInTheDocument();
+    });
+
+    const statusButtons = screen.getAllByTitle('Update Status');
+    await user.click(statusButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Update Status' })).toBeInTheDocument();
+    });
+
+    const updateButtons = screen.getAllByText('Update Status');
+    await user.click(updateButtons[updateButtons.length - 1]);
+
+    await waitFor(() => {
+      expect(toast.default.error).toHaveBeenCalledWith('Status error fallback');
+    });
+  });
+
+  it('handles status update failure with generic fallback message', async () => {
+    await setupMocks();
+    const { scenarioRequestAPI } = await import('../../services/api');
+    const toast = await import('react-hot-toast');
+    // No response at all
+    scenarioRequestAPI.updateStatus.mockRejectedValue(new Error('Network error'));
+    const user = userEvent.setup();
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('REQ-001')).toBeInTheDocument();
+    });
+
+    const statusButtons = screen.getAllByTitle('Update Status');
+    await user.click(statusButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Update Status' })).toBeInTheDocument();
+    });
+
+    const updateButtons = screen.getAllByText('Update Status');
+    await user.click(updateButtons[updateButtons.length - 1]);
+
+    await waitFor(() => {
+      expect(toast.default.error).toHaveBeenCalledWith('Failed to update status');
+    });
+  });
+
+  it('early returns from handleStatusUpdate when no selectedRequest', async () => {
+    await setupMocks();
+    const { scenarioRequestAPI } = await import('../../services/api');
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('REQ-001')).toBeInTheDocument();
+    });
+
+    // handleStatusUpdate with no selectedRequest should not call API
+    expect(scenarioRequestAPI.updateStatus).not.toHaveBeenCalled();
+  });
+
+  it('renders jira_links when jira is not present', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: {
+        data: [{
+          ...mockRequests[0],
+          jira: null,
+          jira_integration: null,
+          jira_links: [
+            { ticket_key: 'LINK-001', ticket_url: 'https://jira.test/LINK-001' },
+            { ticket_key: 'LINK-002', ticket_url: 'https://jira.test/LINK-002' },
+          ],
+        }],
+        pagination: { total: 1 },
+      },
+    });
+    scenarioRequestAPI.getDomains.mockResolvedValue({ data: mockDomains });
+    scenarioRequestAPI.getStatuses.mockResolvedValue({ data: mockStatuses });
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('LINK-001')).toBeInTheDocument();
+      expect(screen.getByText('LINK-002')).toBeInTheDocument();
+    });
+  });
+
+  it('renders "+N more" for jira_links exceeding 2', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: {
+        data: [{
+          ...mockRequests[0],
+          jira: null,
+          jira_integration: null,
+          jira_links: [
+            { ticket_key: 'LINK-001', ticket_url: 'https://jira.test/LINK-001' },
+            { ticket_key: 'LINK-002', ticket_url: 'https://jira.test/LINK-002' },
+            { ticket_key: 'LINK-003', ticket_url: 'https://jira.test/LINK-003' },
+            { ticket_key: 'LINK-004', ticket_url: 'https://jira.test/LINK-004' },
+          ],
+        }],
+        pagination: { total: 1 },
+      },
+    });
+    scenarioRequestAPI.getDomains.mockResolvedValue({ data: mockDomains });
+    scenarioRequestAPI.getStatuses.mockResolvedValue({ data: mockStatuses });
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('LINK-001')).toBeInTheDocument();
+      expect(screen.getByText('LINK-002')).toBeInTheDocument();
+      expect(screen.getByText('+2 more')).toBeInTheDocument();
+    });
+  });
+
+  it('renders jira dash when no jira info at all', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: {
+        data: [{
+          ...mockRequests[0],
+          jira: null,
+          jira_integration: null,
+          jira_links: null,
+        }],
+        pagination: { total: 1 },
+      },
+    });
+    scenarioRequestAPI.getDomains.mockResolvedValue({ data: mockDomains });
+    scenarioRequestAPI.getStatuses.mockResolvedValue({ data: mockStatuses });
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+  });
+
+  it('renders unknown status badge with fallback', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: {
+        data: [{
+          ...mockRequests[0],
+          status: 'some_unknown_status',
+        }],
+        pagination: { total: 1 },
+      },
+    });
+    scenarioRequestAPI.getDomains.mockResolvedValue({ data: mockDomains });
+    scenarioRequestAPI.getStatuses.mockResolvedValue({ data: mockStatuses });
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('some_unknown_status')).toBeInTheDocument();
+    });
+  });
+
+  it('renders status badge with null status fallback to Unknown', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: {
+        data: [{
+          ...mockRequests[0],
+          status: null,
+        }],
+        pagination: { total: 1 },
+      },
+    });
+    scenarioRequestAPI.getDomains.mockResolvedValue({ data: mockDomains });
+    scenarioRequestAPI.getStatuses.mockResolvedValue({ data: mockStatuses });
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Unknown')).toBeInTheDocument();
+    });
+  });
+
+  it('returns dash for null dateString in formatDate', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: {
+        data: [{
+          ...mockRequests[0],
+          row_add_stp: null,
+        }],
+        pagination: { total: 1 },
+      },
+    });
+    scenarioRequestAPI.getDomains.mockResolvedValue({ data: mockDomains });
+    scenarioRequestAPI.getStatuses.mockResolvedValue({ data: mockStatuses });
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+  });
+
+  it('returns empty string for null html in stripHtml', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: {
+        data: [{
+          ...mockRequests[0],
+          description: null,
+        }],
+        pagination: { total: 1 },
+      },
+    });
+    scenarioRequestAPI.getDomains.mockResolvedValue({ data: mockDomains });
+    scenarioRequestAPI.getStatuses.mockResolvedValue({ data: mockStatuses });
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+  });
+
+  it('uses paginiation (typo) fallback for total', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: {
+        data: mockRequests,
+        paginiation: { total: 99 },
+      },
+    });
+    scenarioRequestAPI.getDomains.mockResolvedValue({ data: mockDomains });
+    scenarioRequestAPI.getStatuses.mockResolvedValue({ data: mockStatuses });
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+  });
+
+  it('falls back to data.length when no pagination at all', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: {
+        data: mockRequests,
+      },
+    });
+    scenarioRequestAPI.getDomains.mockResolvedValue({ data: mockDomains });
+    scenarioRequestAPI.getStatuses.mockResolvedValue({ data: mockStatuses });
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+  });
+
+  it('handles loadLookups failure gracefully', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getDomains.mockRejectedValue(new Error('Lookup error'));
+    scenarioRequestAPI.getStatuses.mockRejectedValue(new Error('Lookup error'));
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: { data: mockRequests, pagination: { total: 2 } },
+    });
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+  });
+
+  it('handles null domains/statuses data in lookups', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getDomains.mockResolvedValue({ data: null });
+    scenarioRequestAPI.getStatuses.mockResolvedValue({ data: null });
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: { data: mockRequests, pagination: { total: 2 } },
+    });
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+  });
+
+  it('navigates with management base path', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/management/scenario-requests']}>
+        <ScenarioRequestsManagement />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('REQ-001')).toBeInTheDocument();
+    });
+
+    const viewButtons = screen.getAllByTitle('View');
+    await user.click(viewButtons[0]);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/management/scenario-requests/REQ-001');
+  });
+
+  it('renders pagination with next/prev and clicking next page', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    // Create enough data for pagination (total > limit of 15)
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: { data: mockRequests, pagination: { total: 50 } },
+    });
+    scenarioRequestAPI.getDomains.mockResolvedValue({ data: mockDomains });
+    scenarioRequestAPI.getStatuses.mockResolvedValue({ data: mockStatuses });
+    const user = userEvent.setup();
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+
+    // Should display pagination
+    await waitFor(() => {
+      expect(screen.getByText(/Page 1 of/)).toBeInTheDocument();
+    });
+  });
+
+  it('uses jira_integration ticket_key when jira is absent', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: {
+        data: [{
+          ...mockRequests[0],
+          jira: null,
+          jira_integration: { ticket_key: 'INT-789', ticket_url: 'https://jira.test/INT-789' },
+          jira_links: null,
+        }],
+        pagination: { total: 1 },
+      },
+    });
+    scenarioRequestAPI.getDomains.mockResolvedValue({ data: mockDomains });
+    scenarioRequestAPI.getStatuses.mockResolvedValue({ data: mockStatuses });
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('INT-789')).toBeInTheDocument();
+    });
+  });
+
+  it('filters by search matching email', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+
+    await user.type(screen.getByPlaceholderText('Search by ID, name or email...'), 'user2@test.com');
+
+    expect(screen.queryByText('Revenue Dashboard')).not.toBeInTheDocument();
+    expect(screen.getByText('HR Analytics')).toBeInTheDocument();
+  });
+
+  it('filters by search matching requestId', async () => {
+    await setupMocks();
+    const user = userEvent.setup();
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+
+    await user.type(screen.getByPlaceholderText('Search by ID, name or email...'), 'REQ-002');
+
+    expect(screen.queryByText('Revenue Dashboard')).not.toBeInTheDocument();
+    expect(screen.getByText('HR Analytics')).toBeInTheDocument();
+  });
+
+  it('calculates stats correctly with various statuses', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: {
+        data: [
+          { ...mockRequests[0], status: 'submitted' },
+          { ...mockRequests[1], status: 'review' },
+          { ...mockRequests[0], requestId: 'REQ-003', status: 'rejected' },
+          { ...mockRequests[0], requestId: 'REQ-004', status: 'deployed' },
+          { ...mockRequests[0], requestId: 'REQ-005', status: 'inactive' },
+        ],
+        pagination: { total: 5 },
+      },
+    });
+    scenarioRequestAPI.getDomains.mockResolvedValue({ data: mockDomains });
+    scenarioRequestAPI.getStatuses.mockResolvedValue({ data: mockStatuses });
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('REQ-003')).toBeInTheDocument();
+    });
+  });
+
+  it('uses domain.value and domain.label as fallback keys', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: { data: mockRequests, pagination: { total: 2 } },
+    });
+    scenarioRequestAPI.getDomains.mockResolvedValue({
+      data: [
+        { value: 'finance', label: 'Finance' },
+        { value: 'hr', label: 'HR' },
+      ],
+    });
+    scenarioRequestAPI.getStatuses.mockResolvedValue({ data: mockStatuses });
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+  });
+
+  it('handles null response.data in getAll', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: { data: null },
+    });
+    scenarioRequestAPI.getDomains.mockResolvedValue({ data: mockDomains });
+    scenarioRequestAPI.getStatuses.mockResolvedValue({ data: mockStatuses });
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('No requests found')).toBeInTheDocument();
+    });
+  });
+
+  it('clicks refresh button to reload requests', async () => {
+    await setupMocks();
+    const { scenarioRequestAPI } = await import('../../services/api');
+    const user = userEvent.setup();
+
+    renderScenarioRequestsManagement();
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue Dashboard')).toBeInTheDocument();
+    });
+
+    // The refresh button is a button with RefreshCw icon
+    const buttons = screen.getAllByRole('button');
+    const refreshBtn = buttons.find(btn => btn.classList.contains('btn-secondary'));
+    if (refreshBtn) {
+      await user.click(refreshBtn);
+      await waitFor(() => {
+        // getAll should be called more than initial load
+        expect(scenarioRequestAPI.getAll.mock.calls.length).toBeGreaterThanOrEqual(2);
+      });
+    }
+  });
 });

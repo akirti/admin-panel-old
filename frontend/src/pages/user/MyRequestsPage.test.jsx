@@ -196,4 +196,144 @@ describe('MyRequestsPage', () => {
       expect(screen.getByText('Deployed')).toBeInTheDocument();
     });
   });
+
+  it('filters by status', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: { data: mockRequests, pagination: { total: 2 } },
+    });
+
+    const user = userEvent.setup();
+    renderMyRequestsPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('REQ-001')).toBeInTheDocument();
+    });
+
+    const statusSelect = screen.getByDisplayValue('All Status');
+    await user.selectOptions(statusSelect, 'submitted');
+
+    // After filtering, only submitted request should show
+    expect(screen.getByText('REQ-001')).toBeInTheDocument();
+    expect(screen.queryByText('REQ-002')).not.toBeInTheDocument();
+  });
+
+  it('renders pagination when more than one page', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: {
+        data: mockRequests,
+        pagination: { total: 25 },
+      },
+    });
+
+    renderMyRequestsPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('REQ-001')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/Page 1 of/)).toBeInTheDocument();
+    expect(screen.getByText(/Showing 1 to/)).toBeInTheDocument();
+  });
+
+  it('handles refresh button click', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValue({
+      data: { data: mockRequests, pagination: { total: 2 } },
+    });
+
+    const user = userEvent.setup();
+    renderMyRequestsPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('REQ-001')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Refresh'));
+
+    await waitFor(() => {
+      expect(scenarioRequestAPI.getAll).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('handles unknown status gracefully', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValueOnce({
+      data: {
+        data: [{ ...mockRequests[0], status: 'unknown-status' }],
+        pagination: { total: 1 },
+      },
+    });
+
+    renderMyRequestsPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('unknown-status')).toBeInTheDocument();
+    });
+  });
+
+  it('shows various status badges', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    const allStatusRequests = [
+      { ...mockRequests[0], requestId: 'R1', status: 'review' },
+      { ...mockRequests[0], requestId: 'R2', status: 'rejected' },
+      { ...mockRequests[0], requestId: 'R3', status: 'accepted' },
+      { ...mockRequests[0], requestId: 'R4', status: 'in-progress' },
+      { ...mockRequests[0], requestId: 'R5', status: 'development' },
+      { ...mockRequests[0], requestId: 'R6', status: 'testing' },
+      { ...mockRequests[0], requestId: 'R7', status: 'snapshot' },
+      { ...mockRequests[0], requestId: 'R8', status: 'active' },
+      { ...mockRequests[0], requestId: 'R9', status: 'inactive' },
+    ];
+    scenarioRequestAPI.getAll.mockResolvedValueOnce({
+      data: { data: allStatusRequests, pagination: { total: 9 } },
+    });
+
+    renderMyRequestsPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Review')).toBeInTheDocument();
+      expect(screen.getAllByText('Rejected').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText('Accepted')).toBeInTheDocument();
+      expect(screen.getByText('In Progress')).toBeInTheDocument();
+      expect(screen.getByText('Development')).toBeInTheDocument();
+      expect(screen.getByText('Testing')).toBeInTheDocument();
+      expect(screen.getByText('Files Ready')).toBeInTheDocument();
+    });
+  });
+
+  it('shows dash for null date', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    scenarioRequestAPI.getAll.mockResolvedValueOnce({
+      data: {
+        data: [{ ...mockRequests[0], row_add_stp: null, row_update_stp: null }],
+        pagination: { total: 1 },
+      },
+    });
+
+    renderMyRequestsPage();
+
+    await waitFor(() => {
+      const dashes = screen.getAllByText('-');
+      expect(dashes.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it('truncates long descriptions', async () => {
+    const { scenarioRequestAPI } = await import('../../services/api');
+    const longDesc = 'A'.repeat(100);
+    scenarioRequestAPI.getAll.mockResolvedValueOnce({
+      data: {
+        data: [{ ...mockRequests[0], description: longDesc }],
+        pagination: { total: 1 },
+      },
+    });
+
+    renderMyRequestsPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/\.\.\.$/)).toBeInTheDocument();
+    });
+  });
 });

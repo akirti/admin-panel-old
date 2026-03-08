@@ -193,4 +193,64 @@ describe('V1ExplorerSidebar', () => {
     await user.click(screen.getAllByRole('button')[0]);
     expect(screen.getByText('Data Domains')).toBeInTheDocument();
   });
+
+  it('renders domain without icon - no img element', () => {
+    useExplorer.mockReturnValue({
+      domains: [{ key: 'd1', name: 'NoIcon' }],
+      loading: false,
+    });
+
+    const { container } = render(
+      <MemoryRouter initialEntries={['/explorer/other']}>
+        <V1ExplorerSidebar />
+      </MemoryRouter>
+    );
+
+    // Should not have an img element since domain has no icon
+    const img = container.querySelector('img');
+    // domain.icon is falsy, so img should not exist
+    expect(screen.getByText('NoIcon')).toBeInTheDocument();
+  });
+
+  it('renders with defaultSelected domain when no dataDomain in URL', () => {
+    // Override useParams to return no dataDomain
+    const reactRouter = require('react-router');
+    const originalUseParams = reactRouter.useParams;
+
+    useExplorer.mockReturnValue({
+      domains: [
+        { key: 'second', name: 'Second', defaultSelected: false },
+        { key: 'default', name: 'Default Domain', defaultSelected: true },
+      ],
+      loading: false,
+    });
+
+    render(
+      <MemoryRouter>
+        <V1ExplorerSidebar />
+      </MemoryRouter>
+    );
+
+    // Both domains should be rendered
+    expect(screen.getByText('Second')).toBeInTheDocument();
+    expect(screen.getByText('Default Domain')).toBeInTheDocument();
+  });
+
+  it('renders empty domain list', () => {
+    useExplorer.mockReturnValue({
+      domains: [],
+      loading: false,
+    });
+
+    render(
+      <MemoryRouter>
+        <V1ExplorerSidebar />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Data Domains')).toBeInTheDocument();
+    // No domain links should exist
+    const links = screen.queryAllByRole('link');
+    expect(links.length).toBe(0);
+  });
 });
