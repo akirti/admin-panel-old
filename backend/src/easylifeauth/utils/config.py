@@ -206,7 +206,14 @@ class ConfigurationLoader:
                 # underscores stay as part of property names.
                 suffix = key[prefix_len:]
                 prop_path = suffix.lower()
-            overrides[prop_path] = self._convert_value(value)
+            converted = self._convert_value(value)
+            overrides[prop_path] = converted
+            # If the converted value is a dict, also add flattened dot-path
+            # entries so individual field placeholders can be resolved.
+            if isinstance(converted, dict):
+                overrides.update(
+                    self._flatten_to_dot_paths(converted, prop_path)
+                )
         return overrides
 
     def load_environment(

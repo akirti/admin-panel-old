@@ -79,6 +79,8 @@ services:
     container_name: easylife-frontend
     restart: unless-stopped
     stop_grace_period: 5s
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-production}
     ports:
       - "${FRONTEND_PORT:-3000}:80"
     depends_on:

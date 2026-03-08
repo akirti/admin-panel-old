@@ -36,6 +36,7 @@ services:
     environment:
       # Proxy target for Webpack dev server (uses Docker network hostname)
       WEBPACK_PROXY_TARGET: http://backend:8000
+      ENVIRONMENT: dev
     volumes:
       - ./frontend:/app
       - /app/node_modules
