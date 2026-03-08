@@ -19,6 +19,7 @@ module.exports = {
   },
   resolve: {
     extensions: ['.js', '.jsx', '.json'],
+    symlinks: false,
   },
   module: {
     rules: [
