@@ -2,9 +2,9 @@
 const applyOperator = (operator, value, expressionValue) => {
   switch (operator) {
     case '$eq':
-      return value == expressionValue;
+      return String(value) === String(expressionValue);
     case '$ne':
-      return value != expressionValue;
+      return String(value) !== String(expressionValue);
     case '$gt':
       return Number(value) > Number(expressionValue);
     case '$gte':

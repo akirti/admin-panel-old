@@ -2169,15 +2169,11 @@ describe('GroupsManagement', () => {
     domainsAPI.list.mockRejectedValue(new Error('Domains error'));
     customersAPI.list.mockRejectedValue(new Error('Customers error'));
 
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     render(<GroupsManagement />);
 
     await waitFor(() => {
       expect(screen.getByText('Sales Team')).toBeInTheDocument();
     });
-
-    expect(consoleSpy).toHaveBeenCalledWith('Failed to fetch form data:', expect.any(Error));
-    consoleSpy.mockRestore();
   });
 
   it('renders total count in header', async () => {

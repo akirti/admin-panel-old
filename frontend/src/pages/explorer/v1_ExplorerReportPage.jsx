@@ -233,7 +233,6 @@ function V1ExplorerReportPage() {
           setPlayboardError('No playboard configuration found for this scenario.');
         }
       } catch (err) {
-        console.error('Failed to load playboard:', err);
         setPlayboard(null);
         setFilterConfig([]);
         setPlayboardError('Failed to load filters. Please try again.');
@@ -283,7 +282,7 @@ function V1ExplorerReportPage() {
         const logic_args = {};
         if (Array.isArray(filterConfig) && filterConfig.length > 0) {
           filterConfig.forEach((filter) => {
-            const step = filter.index != null ? filter.index.toString() : '0';
+            const step = filter.index !== null && filter.index !== undefined ? filter.index.toString() : '0';
             if (!logic_args[step]) logic_args[step] = { query_params: {} };
             if (filter.dataKey in filterValues) {
               let value = filterValues[filter.dataKey];
@@ -428,7 +427,6 @@ function V1ExplorerReportPage() {
           }
         }
       } catch (err) {
-        console.error('Failed to fetch report data:', err);
         setError('Failed to fetch data. Please try again.');
       } finally {
         setLoading(false);

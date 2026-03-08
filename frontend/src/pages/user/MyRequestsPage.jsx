@@ -66,7 +66,6 @@ function MyRequestsPage() {
         total: response.data?.pagination?.total || response.data?.paginiation?.total || 0
       }));
     } catch (error) {
-      console.error('Load requests error:', error);
       toast.error('Failed to load requests');
     } finally {
       setLoading(false);

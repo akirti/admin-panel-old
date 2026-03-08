@@ -31,7 +31,7 @@ const BulkUploadPage = () => {
       const response = await bulkAPI.getGCSStatus();
       setGcsStatus(response.data);
     } catch (error) {
-      console.error('Failed to check GCS status');
+      // error handled silently
     }
   };
 

@@ -266,7 +266,7 @@ function AskScenarioPage() {
       // Load Jira boards and assignable users
       loadJiraData();
     } catch (error) {
-      console.error('Failed to load lookups:', error);
+      // error handled silently
     }
   };
 
@@ -279,7 +279,7 @@ function AskScenarioPage() {
       setJiraBoards(boardsRes.data || []);
       setJiraUsers(usersRes.data || []);
     } catch (error) {
-      console.error('Failed to load Jira data:', error);
+      // error handled silently
     }
   };
 
@@ -290,7 +290,7 @@ function AskScenarioPage() {
       const res = await jiraAPI.getAssignableUsers(null, query);
       setJiraUsers(res.data || []);
     } catch (error) {
-      console.error('Failed to search Jira users:', error);
+      // error handled silently
     } finally {
       setLoadingJiraUsers(false);
     }
@@ -337,7 +337,6 @@ function AskScenarioPage() {
       // Set existing files
       setExistingFiles(request.files || []);
     } catch (error) {
-      console.error('Failed to load request:', error);
       toast.error('Failed to load request');
       navigate('/my-requests');
     } finally {
@@ -474,7 +473,6 @@ function AskScenarioPage() {
           try {
             await scenarioRequestAPI.uploadFile(requestId, file);
           } catch (fileError) {
-            console.error('Failed to upload file:', file.name, fileError);
             toast.error(`Failed to upload: ${file.name}`);
           }
         }
@@ -505,7 +503,6 @@ function AskScenarioPage() {
           try {
             await scenarioRequestAPI.uploadFile(newRequestId, file);
           } catch (fileError) {
-            console.error('Failed to upload file:', file.name, fileError);
             toast.error(`Failed to upload: ${file.name}`);
           }
         }
@@ -514,7 +511,6 @@ function AskScenarioPage() {
         navigate('/my-requests');
       }
     } catch (error) {
-      console.error('Submit error:', error.response?.data);
       const errorMsg = error.response?.data?.detail || error.response?.data?.error || 'Failed to submit request';
       toast.error(typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg));
     } finally {

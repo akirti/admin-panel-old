@@ -91,7 +91,6 @@ const PermissionsManagement = () => {
       setModules(modulesRes.data.modules || []);
     } catch (err) {
       setError('Failed to fetch permissions');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -219,7 +218,6 @@ const PermissionsManagement = () => {
       setPermissionRoles(rolesRes.data || []);
       setPermissionGroups(groupsRes.data || []);
     } catch (err) {
-      console.error('Failed to fetch relationships:', err);
       setPermissionRoles([]);
       setPermissionGroups([]);
     } finally {

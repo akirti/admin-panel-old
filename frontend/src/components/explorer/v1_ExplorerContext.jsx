@@ -27,7 +27,6 @@ export function ExplorerProvider({ children }) {
         setDomains(sortedDomains);
         setScenarios(scenarioData);
       } catch (err) {
-        console.error('Failed to load explorer data:', err);
         setError(err.message || 'Failed to load explorer data');
       } finally {
         setLoading(false);

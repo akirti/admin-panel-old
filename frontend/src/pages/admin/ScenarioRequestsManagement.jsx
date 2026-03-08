@@ -89,7 +89,7 @@ function ScenarioRequestsManagement() {
       setDomains(domainsRes.data || []);
       setStatuses(statusesRes.data || []);
     } catch (error) {
-      console.error('Failed to load lookups:', error);
+      // error handled silently
     }
   };
 
@@ -116,7 +116,6 @@ function ScenarioRequestsManagement() {
         rejected: data.filter(r => REJECTED_STATUSES.includes(r.status)).length
       });
     } catch (error) {
-      console.error('Load requests error:', error);
       toast.error('Failed to load requests');
     } finally {
       setLoading(false);

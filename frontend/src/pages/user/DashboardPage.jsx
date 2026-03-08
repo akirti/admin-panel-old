@@ -29,7 +29,7 @@ function DashboardPage() {
           total: 0, submitted: 0, inProgress: 0, deployed: 0, recent: []
         });
       } catch (error) {
-        console.error('Failed to fetch data:', error);
+        // error handled silently
       } finally {
         setLoading(false);
       }

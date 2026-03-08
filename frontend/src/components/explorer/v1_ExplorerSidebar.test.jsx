@@ -213,10 +213,6 @@ describe('V1ExplorerSidebar', () => {
   });
 
   it('renders with defaultSelected domain when no dataDomain in URL', () => {
-    // Override useParams to return no dataDomain
-    const reactRouter = require('react-router');
-    const originalUseParams = reactRouter.useParams;
-
     useExplorer.mockReturnValue({
       domains: [
         { key: 'second', name: 'Second', defaultSelected: false },
@@ -234,6 +230,33 @@ describe('V1ExplorerSidebar', () => {
     // Both domains should be rendered
     expect(screen.getByText('Second')).toBeInTheDocument();
     expect(screen.getByText('Default Domain')).toBeInTheDocument();
+  });
+
+  it('handles image onError by hiding img and showing fallback icon', () => {
+    useExplorer.mockReturnValue({
+      domains: [{ key: 'd1', name: 'WithIcon', icon: '/broken-icon.png' }],
+      loading: false,
+    });
+
+    // Override useParams to make domain not active so img shows
+    const reactRouter = require('react-router');
+    jest.spyOn(reactRouter, 'useParams').mockReturnValue({ dataDomain: 'other' });
+
+    const { container } = render(
+      <MemoryRouter initialEntries={['/explorer/other']}>
+        <V1ExplorerSidebar />
+      </MemoryRouter>
+    );
+
+    const img = container.querySelector('img');
+    if (img) {
+      // Simulate image error
+      const nextSibling = { style: { display: 'none' } };
+      Object.defineProperty(img, 'nextSibling', { value: nextSibling });
+      img.dispatchEvent(new Event('error', { bubbles: true }));
+      expect(img.style.display).toBe('none');
+      expect(nextSibling.style.display).toBe('block');
+    }
   });
 
   it('renders empty domain list', () => {

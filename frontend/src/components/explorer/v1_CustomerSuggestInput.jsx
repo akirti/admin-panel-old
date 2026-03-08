@@ -107,8 +107,8 @@ const V1CustomerSuggestInput = ({
       const style = computePosition();
       if (style && menuRef.current) {
         Object.assign(menuRef.current.style, {
-          top: style.top != null ? `${style.top}px` : '',
-          bottom: style.bottom != null ? `${style.bottom}px` : '',
+          top: style.top !== null && style.top !== undefined ? `${style.top}px` : '',
+          bottom: style.bottom !== null && style.bottom !== undefined ? `${style.bottom}px` : '',
           left: `${style.left}px`,
           width: `${style.width}px`,
         });

@@ -55,7 +55,6 @@ function AdminDashboard() {
         });
       } catch (error) {
         toast.error('Failed to load dashboard data');
-        console.error('Dashboard error:', error);
       } finally {
         setLoading(false);
       }

@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // Build icon names list - filter to only actual icon components
 const getIconNames = () => {
@@ -68,7 +69,6 @@ function LucideIconPicker({ onChange, onClose }) {
       const iconButton = document.querySelector(`[data-icon-name="${iconName}"] svg`);
 
       if (!iconButton) {
-        console.error('Could not find rendered icon:', iconName);
         return;
       }
 
@@ -89,9 +89,8 @@ function LucideIconPicker({ onChange, onClose }) {
 
       onChange(dataUri);
       onClose();
-    } catch (error) {
-      console.error('Error converting icon:', error);
-      alert('Failed to select icon. Please try again.');
+    } catch {
+      toast.error('Failed to select icon. Please try again.');
     }
   }, [selectedColor, onChange, onClose]);
 

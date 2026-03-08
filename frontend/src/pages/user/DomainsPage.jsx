@@ -16,7 +16,7 @@ function DomainsPage() {
         const response = await domainAPI.getAll();
         setDomains(response.data);
       } catch (error) {
-        console.error('Failed to fetch domains:', error);
+        // error handled silently
       } finally {
         setLoading(false);
       }

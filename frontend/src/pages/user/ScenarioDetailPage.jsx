@@ -142,7 +142,6 @@ function ScenarioDetailPage() {
       setPlayboards(playboardsRes.data || []);
       setDomains(domainsRes.data.data || domainsRes.data || []);
     } catch (error) {
-      console.error('Failed to fetch scenario data:', error);
       toast.error('Failed to load scenario details');
     } finally {
       setLoading(false);

@@ -20,7 +20,7 @@ function DomainDetailPage() {
         setDomain(domainResponse.data);
         setScenarios(scenariosResponse.data);
       } catch (error) {
-        console.error('Failed to fetch domain data:', error);
+        // error handled silently
       } finally {
         setLoading(false);
       }

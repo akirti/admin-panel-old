@@ -1,4 +1,5 @@
 import React from 'react';
+import DOMPurify from 'dompurify';
 
 /**
  * Renders a WidgetDescription array (or string) as rich HTML content.
@@ -32,7 +33,7 @@ const V1DescriptionRenderer = ({ description, className = '' }) => {
     return (
       <div
         className={`description-content ${className}`}
-        dangerouslySetInnerHTML={{ __html: description }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(description) }}
       />
     );
   }
@@ -80,7 +81,7 @@ const DescriptionNode = ({ node }) => {
     return (
       <Tag className={styleClasses || undefined}>
         {node.text && (
-          <li><span dangerouslySetInnerHTML={{ __html: node.text }} /></li>
+          <li><span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(node.text) }} /></li>
         )}
         {activeChildren.map((child, idx) => (
           <DescriptionNode key={child.index ?? idx} node={child} />
@@ -92,7 +93,7 @@ const DescriptionNode = ({ node }) => {
   return (
     <Tag className={styleClasses || undefined}>
       {node.text && (
-        <span dangerouslySetInnerHTML={{ __html: node.text }} />
+        <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(node.text) }} />
       )}
       {activeChildren.map((child, idx) => (
         <DescriptionNode key={child.index ?? idx} node={child} />

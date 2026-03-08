@@ -38,7 +38,6 @@ const ExportButton = ({ exportFn, format = 'csv', filters = {}, label = 'Export'
 
       toast.success(`Data exported successfully as ${format.toUpperCase()}`);
     } catch (error) {
-      console.error('Export error:', error);
       toast.error(error.response?.data?.detail || 'Failed to export data');
     } finally {
       setExporting(false);

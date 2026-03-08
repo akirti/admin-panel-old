@@ -2687,17 +2687,11 @@ describe('RolesManagement', () => {
     permissionsAPI.list.mockRejectedValue(new Error('Perm fetch fail'));
     domainsAPI.list.mockRejectedValue(new Error('Domain fetch fail'));
 
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-
     render(<RolesManagement />);
 
     await waitFor(() => {
       expect(screen.getByText('Administrator')).toBeInTheDocument();
     });
-
-    expect(consoleSpy).toHaveBeenCalledWith('Failed to fetch form data:', expect.any(Error));
-
-    consoleSpy.mockRestore();
   });
 
   it('total count displays correctly in header', async () => {

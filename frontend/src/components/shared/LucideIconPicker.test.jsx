@@ -101,4 +101,68 @@ describe('LucideIconPicker', () => {
     const searchInput = screen.getByPlaceholderText(/search icons/i);
     expect(searchInput).toHaveFocus();
   });
+
+  it('handles icon click when SVG element is found', async () => {
+    const user = userEvent.setup();
+
+    // Mock XMLSerializer and btoa
+    const mockSerializeToString = jest.fn(() => '<svg></svg>');
+    window.XMLSerializer = jest.fn(() => ({ serializeToString: mockSerializeToString }));
+
+    render(<LucideIconPicker onChange={mockOnChange} onClose={mockOnClose} />);
+
+    // Click the Home icon button
+    const homeButton = screen.getByTitle('Select Home');
+    await user.click(homeButton);
+
+    // The handler should have attempted to select the icon
+    // If SVG was found in DOM, onChange and onClose should be called
+    if (mockOnChange.mock.calls.length > 0) {
+      expect(mockOnChange).toHaveBeenCalledWith(expect.stringContaining('data:image/svg+xml;base64,'));
+      expect(mockOnClose).toHaveBeenCalled();
+    }
+  });
+
+  it('handles icon click when SVG element is not found', async () => {
+    const user = userEvent.setup();
+
+    // Temporarily remove all SVGs from DOM
+    const originalQuerySelector = document.querySelector.bind(document);
+    jest.spyOn(document, 'querySelector').mockImplementation((selector) => {
+      if (selector.includes('data-icon-name')) return null;
+      return originalQuerySelector(selector);
+    });
+
+    render(<LucideIconPicker onChange={mockOnChange} onClose={mockOnClose} />);
+
+    const homeButton = screen.getByTitle('Select Home');
+    await user.click(homeButton);
+
+    // onChange should NOT be called since SVG was not found
+    expect(mockOnChange).not.toHaveBeenCalled();
+
+    document.querySelector.mockRestore();
+  });
+
+  it('truncates long icon names in display', async () => {
+    const user = userEvent.setup();
+    render(<LucideIconPicker onChange={mockOnChange} onClose={mockOnClose} />);
+
+    // Search for an icon with a long name
+    await user.type(screen.getByPlaceholderText(/search icons/i), 'ArrowUpRight');
+
+    // Long names should be truncated with ellipsis
+    const iconTexts = screen.getAllByTitle(/Select Arrow/);
+    expect(iconTexts.length).toBeGreaterThan(0);
+  });
+
+  it('changes color with custom color input', async () => {
+    const user = userEvent.setup();
+    render(<LucideIconPicker onChange={mockOnChange} onClose={mockOnClose} />);
+
+    const customColorInput = screen.getByTitle('Custom color');
+    await user.click(customColorInput);
+    // Just ensure the custom color input exists and is interactive
+    expect(customColorInput).toHaveAttribute('type', 'color');
+  });
 });

@@ -89,7 +89,6 @@ const RolesManagement = () => {
       }
     } catch (err) {
       setError('Failed to fetch roles');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -105,7 +104,7 @@ const RolesManagement = () => {
       setPermissions(permRes.data.data || []);
       setDomains(domRes.data.data || []);
     } catch (err) {
-      console.error('Failed to fetch form data:', err);
+      // error handled silently
     }
   }, []);
 
@@ -294,7 +293,6 @@ const RolesManagement = () => {
       const response = await rolesAPI.getUsers(role._id || role.roleId);
       setRoleUsers(response.data || []);
     } catch (err) {
-      console.error('Failed to fetch role users:', err);
       setRoleUsers([]);
     } finally {
       setLoadingUsers(false);

@@ -93,7 +93,6 @@ const GroupsManagement = () => {
       }
     } catch (err) {
       setError('Failed to fetch groups');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -113,7 +112,7 @@ const GroupsManagement = () => {
       setGroupTypes(typesRes.data || []);
       setAllCustomers(custRes.data.data || []);
     } catch (err) {
-      console.error('Failed to fetch form data:', err);
+      // error handled silently
     }
   }, []);
 
@@ -341,7 +340,6 @@ const GroupsManagement = () => {
       const response = await groupsAPI.getUsers(group._id || group.groupId);
       setGroupUsers(response.data || []);
     } catch (err) {
-      console.error('Failed to fetch group users:', err);
       setGroupUsers([]);
     } finally {
       setLoadingUsers(false);

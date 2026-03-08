@@ -48,7 +48,7 @@ function DomainsManagement() {
       const response = await domainAPI.getTypes();
       setDomainTypes(response.data || []);
     } catch (error) {
-      console.error('Failed to fetch domain types:', error);
+      // error handled silently
     }
   };
 

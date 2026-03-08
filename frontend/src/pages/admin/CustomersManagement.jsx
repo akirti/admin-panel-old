@@ -103,7 +103,6 @@ const CustomersManagement = () => {
       }
     } catch (err) {
       setError('Failed to fetch customers');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -117,7 +116,7 @@ const CustomersManagement = () => {
       setAvailableLocations(response.data.locations || []);
       setAvailableUnits(response.data.units || []);
     } catch (err) {
-      console.error('Failed to fetch filter options:', err);
+      // error handled silently
     }
   }, []);
 
@@ -127,7 +126,7 @@ const CustomersManagement = () => {
       const response = await usersAPI.list({ limit: 1000 });
       setAllUsers(response.data.data || []);
     } catch (err) {
-      console.error('Failed to fetch users:', err);
+      // error handled silently
     }
   }, []);
 
@@ -276,7 +275,6 @@ const CustomersManagement = () => {
       const response = await customersAPI.getUsers(customer._id || customer.customerId);
       setCustomerUsers(response.data || []);
     } catch (err) {
-      console.error('Failed to fetch customer users:', err);
       setCustomerUsers([]);
     } finally {
       setLoadingUsers(false);

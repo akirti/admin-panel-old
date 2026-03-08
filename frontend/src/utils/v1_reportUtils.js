@@ -224,7 +224,7 @@ export const handleArray = (vals, filter, onChange) => {
 export const deepEqual = (a, b) => {
   if (a === b) return true;
   if (typeof a !== typeof b) return false;
-  if (a == null || b == null) return false;
+  if (a === null || a === undefined || b === null || b === undefined) return false;
   if (typeof a !== 'object') return false;
   if (Array.isArray(a) !== Array.isArray(b)) return false;
 
