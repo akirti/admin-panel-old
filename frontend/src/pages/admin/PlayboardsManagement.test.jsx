@@ -490,8 +490,7 @@ describe('PlayboardsManagement', () => {
       expect(screen.getByText('Basic Info')).toBeInTheDocument();
       // 'Filters' appears both in the tab and table header so use getAllByText
       expect(screen.getAllByText('Filters').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getByText('Row Actions')).toBeInTheDocument();
-      expect(screen.getByText('Grid Settings')).toBeInTheDocument();
+      expect(screen.getByText('Grid & Actions')).toBeInTheDocument();
       expect(screen.getByText('JSON Preview')).toBeInTheDocument();
     });
   });
@@ -542,7 +541,7 @@ describe('PlayboardsManagement', () => {
     });
   });
 
-  it('switches to Row Actions tab', async () => {
+  it('switches to Grid & Actions tab and shows row actions and grid settings', async () => {
     await setupMocks();
     const user = userEvent.setup();
 
@@ -558,32 +557,10 @@ describe('PlayboardsManagement', () => {
       expect(screen.getByTestId('modal')).toBeInTheDocument();
     });
 
-    await user.click(screen.getByText('Row Actions'));
+    await user.click(screen.getByText('Grid & Actions'));
 
     await waitFor(() => {
       expect(screen.getByText('Add New Row Action')).toBeInTheDocument();
-    });
-  });
-
-  it('switches to Grid Settings tab', async () => {
-    await setupMocks();
-    const user = userEvent.setup();
-
-    renderPlayboardsManagement();
-
-    await waitFor(() => {
-      expect(screen.getByText('Customer Search')).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByText(/Build Playboard/));
-
-    await waitFor(() => {
-      expect(screen.getByTestId('modal')).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByText('Grid Settings'));
-
-    await waitFor(() => {
       expect(screen.getByText('Enable Pagination')).toBeInTheDocument();
     });
   });
@@ -713,7 +690,7 @@ describe('PlayboardsManagement', () => {
     });
 
     // Filter builder form fields should be present
-    expect(screen.getByText('Name (key)')).toBeInTheDocument();
+    expect(screen.getByText('Name (key) *')).toBeInTheDocument();
   });
 
   it('shows description tab content', async () => {
@@ -854,7 +831,7 @@ describe('PlayboardsManagement', () => {
     await waitFor(() => { expect(screen.getByText('Add New Filter')).toBeInTheDocument(); });
 
     // Fill filter form
-    const nameInput = screen.getByPlaceholderText('query_text');
+    const nameInput = screen.getAllByPlaceholderText('query_text')[0];
     const displayInput = screen.getByPlaceholderText('Customer#');
     await user.type(nameInput, 'query_customer');
     await user.type(displayInput, 'Customer Name');
@@ -928,7 +905,7 @@ describe('PlayboardsManagement', () => {
     }
   });
 
-  it('switches to Row Actions tab and shows form', async () => {
+  it('switches to Grid & Actions tab and shows form', async () => {
     await setupMocks();
     const user = userEvent.setup();
 
@@ -938,9 +915,9 @@ describe('PlayboardsManagement', () => {
     await user.click(screen.getByText(/Build Playboard/));
     await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
 
-    // Find and click Row Actions tab
+    // Find and click Grid & Actions tab
     const tabs = screen.getByTestId('modal').querySelectorAll('button');
-    const actionsTab = Array.from(tabs).find(t => t.textContent === 'Row Actions');
+    const actionsTab = Array.from(tabs).find(t => t.textContent === 'Grid & Actions');
     if (actionsTab) {
       await user.click(actionsTab);
 
@@ -950,7 +927,7 @@ describe('PlayboardsManagement', () => {
     }
   });
 
-  it('adds a row action via Row Actions tab', async () => {
+  it('adds a row action via Grid & Actions tab', async () => {
     await setupMocks();
     const user = userEvent.setup();
 
@@ -960,9 +937,9 @@ describe('PlayboardsManagement', () => {
     await user.click(screen.getByText(/Build Playboard/));
     await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
 
-    // Switch to Row Actions tab
+    // Switch to Grid & Actions tab
     const tabs = screen.getByTestId('modal').querySelectorAll('button');
-    const actionsTab = Array.from(tabs).find(t => t.textContent === 'Row Actions');
+    const actionsTab = Array.from(tabs).find(t => t.textContent === 'Grid & Actions');
     if (actionsTab) {
       await user.click(actionsTab);
 
@@ -989,7 +966,7 @@ describe('PlayboardsManagement', () => {
     }
   });
 
-  it('switches to Grid Settings tab', async () => {
+  it('switches to Grid & Actions tab and verifies grid settings content', async () => {
     await setupMocks();
     const user = userEvent.setup();
 
@@ -1000,7 +977,7 @@ describe('PlayboardsManagement', () => {
     await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
 
     // This was already tested but let's verify content
-    await user.click(screen.getByText('Grid Settings'));
+    await user.click(screen.getByText('Grid & Actions'));
 
     await waitFor(() => {
       expect(screen.getByText(/Default Page Size/i)).toBeInTheDocument();
@@ -1066,9 +1043,9 @@ describe('PlayboardsManagement', () => {
     await user.click(editButtons[0]);
     await waitFor(() => { expect(screen.getByText('Edit Playboard')).toBeInTheDocument(); });
 
-    // Switch to Row Actions tab
+    // Switch to Grid & Actions tab
     const tabs = screen.getByTestId('modal').querySelectorAll('button');
-    const actionsTab = Array.from(tabs).find(t => t.textContent === 'Row Actions');
+    const actionsTab = Array.from(tabs).find(t => t.textContent === 'Grid & Actions');
     if (actionsTab) {
       await user.click(actionsTab);
       await waitFor(() => {
@@ -1095,7 +1072,7 @@ describe('PlayboardsManagement', () => {
     await waitFor(() => { expect(screen.getByText('Add New Filter')).toBeInTheDocument(); });
 
     // Add a filter with select type
-    await user.type(screen.getByPlaceholderText('query_text'), 'category');
+    await user.type(screen.getAllByPlaceholderText('query_text')[0], 'category');
     await user.type(screen.getByPlaceholderText('Customer#'), 'Category');
 
     // Change type to select
@@ -1242,7 +1219,7 @@ describe('PlayboardsManagement', () => {
     await user.click(screen.getByText(/Build Playboard/));
     await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
 
-    await user.click(screen.getByText('Grid Settings'));
+    await user.click(screen.getByText('Grid & Actions'));
 
     await waitFor(() => {
       expect(screen.getByText('Enable Pagination')).toBeInTheDocument();
@@ -1297,7 +1274,7 @@ describe('PlayboardsManagement', () => {
     await user.click(filtersTabBtns[0]);
     await waitFor(() => { expect(screen.getByText('Add New Filter')).toBeInTheDocument(); });
 
-    const nameInput = screen.getByPlaceholderText('query_text');
+    const nameInput = screen.getAllByPlaceholderText('query_text')[0];
     await user.type(nameInput, 'search_field');
 
     const displayInput = screen.getByPlaceholderText('Customer#');
@@ -1339,7 +1316,7 @@ describe('PlayboardsManagement', () => {
     });
   });
 
-  it('switches to Row Actions tab and fills action fields', async () => {
+  it('switches to Grid & Actions tab and fills action fields', async () => {
     await setupMocks();
     const user = userEvent.setup();
 
@@ -1350,8 +1327,7 @@ describe('PlayboardsManagement', () => {
     await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
 
     const modal = screen.getByTestId('modal');
-    const rowActionBtns = within(modal).getAllByText('Row Actions');
-    await user.click(rowActionBtns[0]);
+    await user.click(within(modal).getByText('Grid & Actions'));
     await waitFor(() => { expect(screen.getByText('Add New Row Action')).toBeInTheDocument(); });
 
     const actionKeyInput = screen.getByPlaceholderText('orders_scenario_6');
@@ -1461,7 +1437,7 @@ describe('PlayboardsManagement', () => {
     await user.click(screen.getByText(/Build Playboard/));
     await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
 
-    await user.click(screen.getByText('Grid Settings'));
+    await user.click(screen.getByText('Grid & Actions'));
     await waitFor(() => { expect(screen.getByText(/Enable Pagination/)).toBeInTheDocument(); });
 
     const paginationCheckbox = screen.getByLabelText(/Enable Pagination/);
@@ -1580,7 +1556,10 @@ describe('PlayboardsManagement', () => {
     const filtersTabBtns = within(modal).getAllByText('Filters');
     await user.click(filtersTabBtns[0]);
 
-    await waitFor(() => { expect(screen.getByText(/Custom Attributes/)).toBeInTheDocument(); });
+    await waitFor(() => { expect(screen.getByText(/Advanced Attributes/)).toBeInTheDocument(); });
+
+    // Expand Advanced Attributes section
+    await user.click(screen.getByText('Advanced Attributes'));
 
     // Fill attr name and value
     const attrNameInput = screen.getByPlaceholderText('Name (e.g., width)');
@@ -1609,8 +1588,7 @@ describe('PlayboardsManagement', () => {
     await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
 
     const modal = screen.getByTestId('modal');
-    const rowActionBtns = within(modal).getAllByText('Row Actions');
-    await user.click(rowActionBtns[0]);
+    await user.click(within(modal).getByText('Grid & Actions'));
     await waitFor(() => { expect(screen.getByText('Add New Row Action')).toBeInTheDocument(); });
 
     const inputKeyField = screen.getByPlaceholderText('inputKey (e.g., query_customer)');
@@ -1618,9 +1596,9 @@ describe('PlayboardsManagement', () => {
     await user.type(inputKeyField, 'query_customer');
     await user.type(dataKeyField, 'customer');
 
-    // Click the "Add" button near the filter inputs
+    // Click the first "Add" button (action filter Add, not grid column Add)
     const addBtns = within(modal).getAllByText('Add');
-    await user.click(addBtns[addBtns.length - 1]);
+    await user.click(addBtns[0]);
 
     await waitFor(() => {
       expect(screen.getByText(/query_customer/)).toBeInTheDocument();
@@ -1850,8 +1828,8 @@ describe('PlayboardsManagement', () => {
       expect(keyInput.value).toBe('direct_widgets');
     });
 
-    // Switch to Grid Settings to verify the dropdown/layout settings
-    await user.click(screen.getByText('Grid Settings'));
+    // Switch to Grid & Actions to verify the dropdown/layout settings
+    await user.click(screen.getByText('Grid & Actions'));
     await waitFor(() => {
       expect(screen.getByText('Enable Pagination')).toBeInTheDocument();
     });
@@ -2095,7 +2073,10 @@ describe('PlayboardsManagement', () => {
     const filtersTabBtns = within(modal).getAllByText('Filters');
     await user.click(filtersTabBtns[0]);
 
-    await waitFor(() => { expect(screen.getByText(/Custom Attributes/)).toBeInTheDocument(); });
+    await waitFor(() => { expect(screen.getByText(/Advanced Attributes/)).toBeInTheDocument(); });
+
+    // Expand Advanced Attributes section
+    await user.click(screen.getByText('Advanced Attributes'));
 
     // Add first attribute
     const attrNameInput = screen.getByPlaceholderText('Name (e.g., width)');
@@ -2137,8 +2118,11 @@ describe('PlayboardsManagement', () => {
     await waitFor(() => { expect(screen.getByText('Add New Filter')).toBeInTheDocument(); });
 
     // Fill filter fields
-    await user.type(screen.getByPlaceholderText('query_text'), 'search');
+    await user.type(screen.getAllByPlaceholderText('query_text')[0], 'search');
     await user.type(screen.getByPlaceholderText('Customer#'), 'Search Field');
+
+    // Expand Appearance section
+    await user.click(screen.getByText('Appearance'));
 
     // Fill defaultValue
     const defaultValueLabel = screen.getByText('Default Value');
@@ -2170,7 +2154,7 @@ describe('PlayboardsManagement', () => {
     await user.click(filtersTabBtns[0]);
 
     // Fill name/display
-    await user.type(screen.getByPlaceholderText('query_text'), 'category');
+    await user.type(screen.getAllByPlaceholderText('query_text')[0], 'category');
     await user.type(screen.getByPlaceholderText('Customer#'), 'Category');
 
     // Change type to select
@@ -2347,12 +2331,12 @@ describe('PlayboardsManagement', () => {
     await user.click(filtersTabBtns[0]);
 
     // Add two filters
-    await user.type(screen.getByPlaceholderText('query_text'), 'filter1');
+    await user.type(screen.getAllByPlaceholderText('query_text')[0], 'filter1');
     await user.type(screen.getByPlaceholderText('Customer#'), 'Filter 1');
     await user.click(screen.getByText('Add Filter'));
     await waitFor(() => { expect(screen.getByText(/Configured Filters \(1\)/)).toBeInTheDocument(); });
 
-    await user.type(screen.getByPlaceholderText('query_text'), 'filter2');
+    await user.type(screen.getAllByPlaceholderText('query_text')[0], 'filter2');
     await user.type(screen.getByPlaceholderText('Customer#'), 'Filter 2');
     await user.click(screen.getByText('Add Filter'));
     await waitFor(() => { expect(screen.getByText(/Configured Filters \(2\)/)).toBeInTheDocument(); });
@@ -2418,8 +2402,7 @@ describe('PlayboardsManagement', () => {
     await waitFor(() => { expect(screen.getByText('Edit Playboard')).toBeInTheDocument(); });
 
     const modal = screen.getByTestId('modal');
-    const rowActionBtns = within(modal).getAllByText('Row Actions');
-    await user.click(rowActionBtns[0]);
+    await user.click(within(modal).getByText('Grid & Actions'));
     await waitFor(() => { expect(screen.getByText(/Configured Row Actions/)).toBeInTheDocument(); });
 
     // Click edit on first action
@@ -2485,8 +2468,7 @@ describe('PlayboardsManagement', () => {
     await waitFor(() => { expect(screen.getByText('Edit Playboard')).toBeInTheDocument(); });
 
     const modal = screen.getByTestId('modal');
-    const rowActionBtns = within(modal).getAllByText('Row Actions');
-    await user.click(rowActionBtns[0]);
+    await user.click(within(modal).getByText('Grid & Actions'));
     await waitFor(() => { expect(screen.getByText(/Configured Row Actions/)).toBeInTheDocument(); });
 
     // Edit first action
@@ -2550,8 +2532,7 @@ describe('PlayboardsManagement', () => {
     await waitFor(() => { expect(screen.getByText('Edit Playboard')).toBeInTheDocument(); });
 
     const modal = screen.getByTestId('modal');
-    const rowActionBtns = within(modal).getAllByText('Row Actions');
-    await user.click(rowActionBtns[0]);
+    await user.click(within(modal).getByText('Grid & Actions'));
     await waitFor(() => { expect(screen.getByText(/Configured Row Actions/)).toBeInTheDocument(); });
 
     // Edit second action (index 1)
@@ -2581,14 +2562,12 @@ describe('PlayboardsManagement', () => {
     await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
 
     const modal = screen.getByTestId('modal');
-    const rowActionBtns = within(modal).getAllByText('Row Actions');
-    await user.click(rowActionBtns[0]);
+    await user.click(within(modal).getByText('Grid & Actions'));
     await waitFor(() => { expect(screen.getByText('Add New Row Action')).toBeInTheDocument(); });
 
-    // Try adding filter with empty values - click the Add button near filter inputs
+    // Try adding filter with empty values - click the first "Add" button (action filter Add)
     const addBtns = within(modal).getAllByText('Add');
-    // The last Add button is for action filters
-    await user.click(addBtns[addBtns.length - 1]);
+    await user.click(addBtns[0]);
 
     // No filter should be added since both inputs are empty
     // Verify no filter row appears
@@ -2606,16 +2585,16 @@ describe('PlayboardsManagement', () => {
     await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
 
     const modal = screen.getByTestId('modal');
-    const rowActionBtns = within(modal).getAllByText('Row Actions');
-    await user.click(rowActionBtns[0]);
+    await user.click(within(modal).getByText('Grid & Actions'));
     await waitFor(() => { expect(screen.getByText('Add New Row Action')).toBeInTheDocument(); });
 
     // Add a filter first
     await user.type(screen.getByPlaceholderText('inputKey (e.g., query_customer)'), 'query_x');
     await user.type(screen.getByPlaceholderText('dataKey (e.g., customer)'), 'data_x');
 
+    // Click the first "Add" button (action filter Add, not grid column Add)
     const addBtns = within(modal).getAllByText('Add');
-    await user.click(addBtns[addBtns.length - 1]);
+    await user.click(addBtns[0]);
 
     await waitFor(() => { expect(screen.getByText(/query_x/)).toBeInTheDocument(); });
 
@@ -2858,7 +2837,7 @@ describe('PlayboardsManagement', () => {
     await user.click(screen.getByText(/Build Playboard/));
     await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
 
-    await user.click(screen.getByText('Grid Settings'));
+    await user.click(screen.getByText('Grid & Actions'));
     await waitFor(() => { expect(screen.getByText('Row Actions Render As')).toBeInTheDocument(); });
 
     const modal = screen.getByTestId('modal');
@@ -2880,7 +2859,7 @@ describe('PlayboardsManagement', () => {
     await user.click(screen.getByText(/Build Playboard/));
     await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
 
-    await user.click(screen.getByText('Grid Settings'));
+    await user.click(screen.getByText('Grid & Actions'));
     await waitFor(() => { expect(screen.getByText('Default Page Size')).toBeInTheDocument(); });
 
     const defaultSizeInput = screen.getByText('Default Page Size').parentElement.querySelector('input');
@@ -2901,7 +2880,7 @@ describe('PlayboardsManagement', () => {
     await user.click(screen.getByText(/Build Playboard/));
     await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
 
-    await user.click(screen.getByText('Grid Settings'));
+    await user.click(screen.getByText('Grid & Actions'));
     await waitFor(() => { expect(screen.getByText('Pagination Widget')).toBeInTheDocument(); });
 
     // Update pagination widget name
@@ -2964,7 +2943,7 @@ describe('PlayboardsManagement', () => {
     await user.click(screen.getByText(/Build Playboard/));
     await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
 
-    await user.click(screen.getByText('Grid Settings'));
+    await user.click(screen.getByText('Grid & Actions'));
     await waitFor(() => { expect(screen.getByText('Pagination Widget')).toBeInTheDocument(); });
 
     const modal = screen.getByTestId('modal');
@@ -2987,7 +2966,7 @@ describe('PlayboardsManagement', () => {
     await user.click(screen.getByText(/Build Playboard/));
     await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
 
-    await user.click(screen.getByText('Grid Settings'));
+    await user.click(screen.getByText('Grid & Actions'));
     await waitFor(() => { expect(screen.getByText('Pagination Widget')).toBeInTheDocument(); });
 
     // The default formData has pagination attributes including 'type', 'options', 'defaultValue', 'width'
@@ -3147,8 +3126,7 @@ describe('PlayboardsManagement', () => {
     await waitFor(() => { expect(screen.getByText('Edit Playboard')).toBeInTheDocument(); });
 
     const modal = screen.getByTestId('modal');
-    const rowActionBtns = within(modal).getAllByText('Row Actions');
-    await user.click(rowActionBtns[0]);
+    await user.click(within(modal).getByText('Grid & Actions'));
 
     await waitFor(() => {
       expect(screen.getByText(/Configured Row Actions/)).toBeInTheDocument();
@@ -3203,8 +3181,7 @@ describe('PlayboardsManagement', () => {
     await waitFor(() => { expect(screen.getByText('Edit Playboard')).toBeInTheDocument(); });
 
     const modal = screen.getByTestId('modal');
-    const rowActionBtns = within(modal).getAllByText('Row Actions');
-    await user.click(rowActionBtns[0]);
+    await user.click(within(modal).getByText('Grid & Actions'));
 
     await waitFor(() => {
       expect(screen.getByText(/Configured Row Actions/)).toBeInTheDocument();
@@ -3227,8 +3204,7 @@ describe('PlayboardsManagement', () => {
     await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
 
     const modal = screen.getByTestId('modal');
-    const rowActionBtns = within(modal).getAllByText('Row Actions');
-    await user.click(rowActionBtns[0]);
+    await user.click(within(modal).getByText('Grid & Actions'));
     await waitFor(() => { expect(screen.getByText('Add New Row Action')).toBeInTheDocument(); });
 
     // No row actions exist, so editing index 0 should do nothing (early return)
@@ -3249,6 +3225,9 @@ describe('PlayboardsManagement', () => {
     const modal = screen.getByTestId('modal');
     const filtersTabBtns = within(modal).getAllByText('Filters');
     await user.click(filtersTabBtns[0]);
+
+    // Expand Advanced Attributes section
+    await user.click(screen.getByText('Advanced Attributes'));
 
     // Add an attribute
     await user.type(screen.getByPlaceholderText('Name (e.g., width)'), 'width');
@@ -3285,6 +3264,9 @@ describe('PlayboardsManagement', () => {
     const modal = screen.getByTestId('modal');
     const filtersTabBtns = within(modal).getAllByText('Filters');
     await user.click(filtersTabBtns[0]);
+
+    // Expand Advanced Attributes section
+    await user.click(screen.getByText('Advanced Attributes'));
 
     // Try adding with only name but no value
     await user.type(screen.getByPlaceholderText('Name (e.g., width)'), 'width');
@@ -3340,8 +3322,7 @@ describe('PlayboardsManagement', () => {
     await waitFor(() => { expect(screen.getByText('Edit Playboard')).toBeInTheDocument(); });
 
     const modal = screen.getByTestId('modal');
-    const rowActionBtns = within(modal).getAllByText('Row Actions');
-    await user.click(rowActionBtns[0]);
+    await user.click(within(modal).getByText('Grid & Actions'));
 
     await waitFor(() => { expect(screen.getByText(/Configured Row Actions/)).toBeInTheDocument(); });
 
@@ -3490,7 +3471,7 @@ describe('PlayboardsManagement', () => {
     await waitFor(() => { expect(screen.getByText('Edit Playboard')).toBeInTheDocument(); });
 
     // Switch to Grid Settings to verify ispaginated defaults to true
-    await user.click(screen.getByText('Grid Settings'));
+    await user.click(screen.getByText('Grid & Actions'));
     await waitFor(() => {
       const paginationCheckbox = screen.getByLabelText('Enable Pagination');
       expect(paginationCheckbox.checked).toBe(true);
@@ -3540,7 +3521,7 @@ describe('PlayboardsManagement', () => {
     await user.click(editButtons[0]);
     await waitFor(() => { expect(screen.getByText('Edit Playboard')).toBeInTheDocument(); });
 
-    await user.click(screen.getByText('Grid Settings'));
+    await user.click(screen.getByText('Grid & Actions'));
     await waitFor(() => {
       const paginationCheckbox = screen.getByLabelText('Enable Pagination');
       expect(paginationCheckbox.checked).toBe(false);
@@ -3666,7 +3647,7 @@ describe('PlayboardsManagement', () => {
     await user.click(screen.getByText(/Build Playboard/));
     await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
 
-    await user.click(screen.getByText('Grid Settings'));
+    await user.click(screen.getByText('Grid & Actions'));
     await waitFor(() => { expect(screen.getByText('Pagination Widget')).toBeInTheDocument(); });
 
     // Default formData has pagination attributes, so All Attributes section should be visible
@@ -3802,8 +3783,11 @@ describe('PlayboardsManagement', () => {
     await user.click(filtersTabBtns[0]);
 
     // Fill filter fields
-    await user.type(screen.getByPlaceholderText('query_text'), 'my_filter');
+    await user.type(screen.getAllByPlaceholderText('query_text')[0], 'my_filter');
     await user.type(screen.getByPlaceholderText('Customer#'), 'My Filter');
+
+    // Expand Advanced Attributes section
+    await user.click(screen.getByText('Advanced Attributes'));
 
     // Add a custom attribute with name 'type' (conflicts with standard)
     await user.type(screen.getByPlaceholderText('Name (e.g., width)'), 'type');
@@ -3851,7 +3835,7 @@ describe('PlayboardsManagement', () => {
     await user.click(screen.getByText(/Build Playboard/));
     await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
 
-    await user.click(screen.getByText('Grid Settings'));
+    await user.click(screen.getByText('Grid & Actions'));
     await waitFor(() => { expect(screen.getByText('Default Page Size')).toBeInTheDocument(); });
 
     const defaultSizeInput = screen.getByText('Default Page Size').parentElement.querySelector('input');
@@ -3915,6 +3899,9 @@ describe('PlayboardsManagement', () => {
     const filtersTabBtns = within(modal).getAllByText('Filters');
     await user.click(filtersTabBtns[0]);
 
+    // Expand Appearance section
+    await user.click(screen.getByText('Appearance'));
+
     // Toggle visibility
     const visibleCheckboxes = screen.getAllByRole('checkbox');
     const filterVisibleCheckbox = visibleCheckboxes.find(cb => {
@@ -3941,6 +3928,9 @@ describe('PlayboardsManagement', () => {
     const filtersTabBtns = within(modal).getAllByText('Filters');
     await user.click(filtersTabBtns[0]);
 
+    // Expand Appearance section
+    await user.click(screen.getByText('Appearance'));
+
     // Fill input hint
     const hintInput = screen.getByPlaceholderText('Enter Customer# or name');
     await user.type(hintInput, 'Type here');
@@ -3963,8 +3953,7 @@ describe('PlayboardsManagement', () => {
     await waitFor(() => { expect(screen.getByTestId('modal')).toBeInTheDocument(); });
 
     const modal = screen.getByTestId('modal');
-    const rowActionBtns = within(modal).getAllByText('Row Actions');
-    await user.click(rowActionBtns[0]);
+    await user.click(within(modal).getByText('Grid & Actions'));
 
     // Fill path
     const pathInput = screen.getByPlaceholderText('/report/orders_scenario_6');
@@ -4033,7 +4022,7 @@ describe('PlayboardsManagement', () => {
     await user.click(filtersTabBtns[0]);
 
     // The name input auto-fills dataKey with the same value
-    await user.type(screen.getByPlaceholderText('query_text'), 'auto_key');
+    await user.type(screen.getAllByPlaceholderText('query_text')[0], 'auto_key');
     await user.type(screen.getByPlaceholderText('Customer#'), 'Auto Key Filter');
 
     await user.click(screen.getByText('Add Filter'));
@@ -4209,7 +4198,7 @@ describe('PlayboardsManagement', () => {
     await user.click(editButtons[0]);
     await waitFor(() => { expect(screen.getByText('Edit Playboard')).toBeInTheDocument(); });
 
-    await user.click(screen.getByText('Grid Settings'));
+    await user.click(screen.getByText('Grid & Actions'));
     await waitFor(() => {
       expect(screen.getByText('Pagination Widget')).toBeInTheDocument();
       expect(screen.getByText('All Attributes')).toBeInTheDocument();
@@ -4272,6 +4261,12 @@ describe('PlayboardsManagement', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Editing')).toBeInTheDocument();
+    });
+
+    // Expand Advanced Attributes section to see attribute values
+    await user.click(screen.getByText('Advanced Attributes'));
+
+    await waitFor(() => {
       // Object attribute values should be JSON-stringified
       expect(modal.textContent).toContain('{"nested":"object"}');
     });

@@ -2,7 +2,78 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Input, Table, Modal, Badge, SearchInput, Select, Toggle, FileUpload, Pagination } from '../../components/shared';
 import { playboardsAPI, scenariosAPI, domainsAPI } from '../../services/api';
 import toast from 'react-hot-toast';
-import { Eye, Download, Pencil, Trash2, X, Plus, Upload } from 'lucide-react';
+import { Eye, Download, Pencil, Trash2, X, Plus, Upload, ChevronUp, ChevronDown, Copy, ChevronRight } from 'lucide-react';
+
+// Collapsible section component
+const CollapsibleSection = ({ title, defaultOpen = false, children, badge }) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  return (
+    <div className="border rounded-lg">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between p-3 text-sm font-medium text-content-secondary hover:bg-surface-secondary rounded-t-lg"
+      >
+        <div className="flex items-center gap-2">
+          <ChevronRight size={14} className={`transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+          {title}
+          {badge}
+        </div>
+      </button>
+      {isOpen && <div className="p-3 pt-0 border-t">{children}</div>}
+    </div>
+  );
+};
+
+// Filter type icon helper
+const filterTypeIcon = (type) => {
+  const icons = {
+    'input': 'Aa',
+    'select': '\u25BC',
+    'dropdown': '\u25BC',
+    'multi-select': '\u2630',
+    'date-picker': '\uD83D\uDCC5',
+    'date-range': '\uD83D\uDCC5\u2194',
+    'radioButton': '\u25C9',
+    'toggleButton': '\u21C6',
+    'checkbox': '\u2611',
+  };
+  return icons[type] || '\u25A0';
+};
+
+// Types that support value/name options
+const OPTION_TYPES = ['select', 'dropdown', 'multi-select', 'radioButton'];
+// Toggle button has special options
+const TOGGLE_TYPE = 'toggleButton';
+
+// All available filter types
+const FILTER_TYPE_OPTIONS = [
+  { value: 'input', label: 'Text Input' },
+  { value: 'select', label: 'Select Dropdown' },
+  { value: 'dropdown', label: 'Dropdown' },
+  { value: 'multi-select', label: 'Multi-Select' },
+  { value: 'date-picker', label: 'Date Picker' },
+  { value: 'date-range', label: 'Date Range' },
+  { value: 'radioButton', label: 'Radio Button' },
+  { value: 'toggleButton', label: 'Toggle Button' },
+  { value: 'checkbox', label: 'Checkbox' },
+];
+
+// Validator type options
+const VALIDATOR_TYPE_OPTIONS = [
+  { value: 'number', label: 'Number' },
+  { value: 'regex', label: 'Regex' },
+  { value: 'multi-select', label: 'Multi-Select' },
+  { value: 'text', label: 'Text' },
+  { value: 'userIdOrEmail', label: 'User ID or Email' },
+  { value: 'stringValidator', label: 'String Validator' },
+  { value: 'numberOfDigits', label: 'Number of Digits' },
+  { value: 'customerNumber', label: 'Customer Number' },
+  { value: 'greaterThan', label: 'Greater Than' },
+  { value: 'lessThan', label: 'Less Than' },
+  { value: 'range', label: 'Range' },
+  { value: 'format', label: 'Format' },
+];
 
 const PlayboardsManagement = () => {
   const [playboards, setPlayboards] = useState([]);
@@ -62,7 +133,7 @@ const PlayboardsManagement = () => {
         displayName: 'Pagination',
         index: 0,
         visible: true,
-        attributes: [ 
+        attributes: [
           {key: 'type', value: 'dropdown'},
           {key: 'options', value: '25,50,75,100'},
           {key: 'defaultValue', value: '25'},
@@ -87,7 +158,9 @@ const PlayboardsManagement = () => {
     defaultValue: '',
     regex: '',
     options: [],
-    attributes: []
+    attributes: [],
+    validators: [],
+    styleClasses: ''
   });
 
   // Filter editing state
@@ -95,6 +168,9 @@ const PlayboardsManagement = () => {
 
   // Filter attribute input state
   const [filterAttributeInput, setFilterAttributeInput] = useState({ name: '', value: '' });
+
+  // Validator input state
+  const [validatorInput, setValidatorInput] = useState({ type: 'number', expression: '', message: '' });
 
   // Row action builder state
   const [currentRowAction, setCurrentRowAction] = useState({
@@ -120,6 +196,12 @@ const PlayboardsManagement = () => {
     text: '',
     nodes: []
   });
+
+  // Grid column input state
+  const [columnInput, setColumnInput] = useState({ key: '', header: '' });
+
+  // Toggle button option input state
+  const [toggleOptionInput, setToggleOptionInput] = useState({ dataKey: '', name: '', onValue: '', offValue: '' });
 
   const fetchData = useCallback(async () => {
     try {
@@ -185,7 +267,7 @@ const PlayboardsManagement = () => {
               displayName: 'Pagination',
               index: 0,
               visible: true,
-              attributes: [ 
+              attributes: [
                 {key: 'type', value: 'dropdown'},
                 {key: 'options', value: '25,50,75,100'},
                 {key: 'defaultValue', value: '25'},
@@ -298,7 +380,12 @@ const PlayboardsManagement = () => {
     const sourceWidgets = item.widgets || data.widgets;
 
     const widgets = sourceWidgets ? {
-      filters: sourceWidgets.filters || [],
+      filters: (sourceWidgets.filters || []).map(f => ({
+        ...f,
+        validators: f.validators || [],
+        description: f.description || [],
+        styleClasses: f.styleClasses || ''
+      })),
       grid: {
         actions: {
           rowActions: {
@@ -426,10 +513,13 @@ const PlayboardsManagement = () => {
       defaultValue: '',
       regex: '',
       options: [],
-      attributes: []
+      attributes: [],
+      validators: [],
+      styleClasses: ''
     });
     setEditingFilterIndex(null);
     setFilterAttributeInput({ name: '', value: '' });
+    setValidatorInput({ type: 'number', expression: '', message: '' });
   };
 
   // Available attribute names from WidgetAttributeKeyTypes enum
@@ -443,12 +533,10 @@ const PlayboardsManagement = () => {
       // Check if name already exists
       const existingIndex = currentFilter.attributes.findIndex(a => a.name === filterAttributeInput.name);
       if (existingIndex >= 0) {
-        // Update existing attribute (include both name and key for backend compatibility)
         const newAttrs = [...currentFilter.attributes];
         newAttrs[existingIndex] = { name: filterAttributeInput.name, key: filterAttributeInput.name, value: filterAttributeInput.value };
         setCurrentFilter({ ...currentFilter, attributes: newAttrs });
       } else {
-        // Add new attribute (include both name and key for backend compatibility)
         setCurrentFilter({
           ...currentFilter,
           attributes: [...currentFilter.attributes, { name: filterAttributeInput.name, key: filterAttributeInput.name, value: filterAttributeInput.value }]
@@ -462,6 +550,28 @@ const PlayboardsManagement = () => {
     setCurrentFilter({
       ...currentFilter,
       attributes: currentFilter.attributes.filter((_, i) => i !== index)
+    });
+  };
+
+  // Validator management
+  const addValidator = () => {
+    if (validatorInput.type) {
+      setCurrentFilter({
+        ...currentFilter,
+        validators: [...currentFilter.validators, {
+          type: validatorInput.type,
+          expression: validatorInput.expression,
+          message: validatorInput.message
+        }]
+      });
+      setValidatorInput({ type: 'number', expression: '', message: '' });
+    }
+  };
+
+  const removeValidator = (index) => {
+    setCurrentFilter({
+      ...currentFilter,
+      validators: currentFilter.validators.filter((_, i) => i !== index)
     });
   };
 
@@ -496,8 +606,8 @@ const PlayboardsManagement = () => {
       updateOrAddAttr('regex', currentFilter.regex);
     }
 
-    // Update options for select type
-    if (currentFilter.type === 'select' && currentFilter.options.length > 0) {
+    // Update options for types that support them
+    if ([...OPTION_TYPES, TOGGLE_TYPE].includes(currentFilter.type) && currentFilter.options.length > 0) {
       updateOrAddAttr('options', currentFilter.options);
     }
 
@@ -513,7 +623,8 @@ const PlayboardsManagement = () => {
       type: currentFilter.type,
       attributes: attributes,
       description: [],
-      validators: []
+      validators: currentFilter.validators || [],
+      styleClasses: currentFilter.styleClasses || ''
     };
 
     if (editingFilterIndex !== null) {
@@ -557,7 +668,6 @@ const PlayboardsManagement = () => {
     const options = getAttrValue('options');
 
     // Get ALL attributes and map them properly (include both name and key)
-    // Show all attributes in the custom attributes section for visibility
     const allAttributes = Array.isArray(filter.attributes)
       ? filter.attributes.map(a => ({
           name: a.name || a.key,
@@ -579,7 +689,9 @@ const PlayboardsManagement = () => {
       defaultValue: getAttrValue('defaultValue'),
       regex: getAttrValue('regex'),
       options: Array.isArray(options) ? options : [],
-      attributes: allAttributes
+      attributes: allAttributes,
+      validators: filter.validators || [],
+      styleClasses: filter.styleClasses || ''
     });
     setEditingFilterIndex(index);
   };
@@ -593,10 +705,48 @@ const PlayboardsManagement = () => {
         filters: newFilters.map((f, i) => ({ ...f, index: i }))
       }
     });
-    // If we were editing this filter, reset
     if (editingFilterIndex === index) {
       resetCurrentFilter();
     }
+  };
+
+  // Reorder helpers
+  const moveFilter = (index, direction) => {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= formData.widgets.filters.length) return;
+    const newFilters = [...formData.widgets.filters];
+    [newFilters[index], newFilters[newIndex]] = [newFilters[newIndex], newFilters[index]];
+    setFormData({
+      ...formData,
+      widgets: {
+        ...formData.widgets,
+        filters: newFilters.map((f, i) => ({ ...f, index: i }))
+      }
+    });
+  };
+
+  const moveRowAction = (index, direction) => {
+    const events = formData.widgets?.grid?.actions?.rowActions?.events || [];
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= events.length) return;
+    const newEvents = [...events];
+    [newEvents[index], newEvents[newIndex]] = [newEvents[newIndex], newEvents[index]];
+    setFormData({
+      ...formData,
+      widgets: {
+        ...formData.widgets,
+        grid: {
+          ...formData.widgets.grid,
+          actions: {
+            ...formData.widgets.grid.actions,
+            rowActions: {
+              ...formData.widgets.grid.actions.rowActions,
+              events: newEvents.map((e, i) => ({ ...e, order: i }))
+            }
+          }
+        }
+      }
+    });
   };
 
   // Row action management
@@ -615,7 +765,6 @@ const PlayboardsManagement = () => {
   };
 
   const addRowAction = () => {
-    // Ensure the nested structure exists
     const currentEvents = formData.widgets?.grid?.actions?.rowActions?.events || [];
     const currentRowActionsObj = formData.widgets?.grid?.actions?.rowActions || { renderAs: 'button', attributes: [], events: [] };
     const currentActions = formData.widgets?.grid?.actions || { rowActions: currentRowActionsObj, headerActions: {} };
@@ -632,7 +781,6 @@ const PlayboardsManagement = () => {
     };
 
     if (editingRowActionIndex !== null) {
-      // Update existing action
       const newEvents = [...currentEvents];
       newEvents[editingRowActionIndex] = newAction;
       setFormData({
@@ -652,7 +800,6 @@ const PlayboardsManagement = () => {
         }
       });
     } else {
-      // Add new action
       setFormData({
         ...formData,
         widgets: {
@@ -714,7 +861,6 @@ const PlayboardsManagement = () => {
       }
     });
 
-    // If we were editing this action, reset
     if (editingRowActionIndex === index) {
       resetCurrentRowAction();
     }
@@ -735,6 +881,75 @@ const PlayboardsManagement = () => {
     setCurrentRowAction({
       ...currentRowAction,
       filters: currentRowAction.filters.filter((_, i) => i !== index)
+    });
+  };
+
+  // Grid column management
+  const addColumn = () => {
+    if (columnInput.key && columnInput.header) {
+      const currentLayout = formData.widgets?.grid?.layout || { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 };
+      const currentGrid = formData.widgets?.grid || { actions: { rowActions: { renderAs: 'button', attributes: [], events: [] }, headerActions: {} }, layout: currentLayout };
+      setFormData({
+        ...formData,
+        widgets: {
+          ...formData.widgets,
+          grid: {
+            ...currentGrid,
+            layout: {
+              ...currentLayout,
+              colums: [...(currentLayout.colums || []), columnInput.key],
+              headers: [...(currentLayout.headers || []), columnInput.header]
+            }
+          }
+        }
+      });
+      setColumnInput({ key: '', header: '' });
+    }
+  };
+
+  const removeColumn = (index) => {
+    const currentLayout = formData.widgets?.grid?.layout || { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 };
+    const currentGrid = formData.widgets?.grid || { actions: { rowActions: { renderAs: 'button', attributes: [], events: [] }, headerActions: {} }, layout: currentLayout };
+    const newColums = (currentLayout.colums || []).filter((_, i) => i !== index);
+    const newHeaders = (currentLayout.headers || []).filter((_, i) => i !== index);
+    setFormData({
+      ...formData,
+      widgets: {
+        ...formData.widgets,
+        grid: {
+          ...currentGrid,
+          layout: {
+            ...currentLayout,
+            colums: newColums,
+            headers: newHeaders
+          }
+        }
+      }
+    });
+  };
+
+  const moveColumn = (index, direction) => {
+    const currentLayout = formData.widgets?.grid?.layout || { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 };
+    const colums = [...(currentLayout.colums || [])];
+    const headers = [...(currentLayout.headers || [])];
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= colums.length) return;
+    [colums[index], colums[newIndex]] = [colums[newIndex], colums[index]];
+    [headers[index], headers[newIndex]] = [headers[newIndex], headers[index]];
+    const currentGrid = formData.widgets?.grid || { actions: { rowActions: { renderAs: 'button', attributes: [], events: [] }, headerActions: {} }, layout: currentLayout };
+    setFormData({
+      ...formData,
+      widgets: {
+        ...formData.widgets,
+        grid: {
+          ...currentGrid,
+          layout: {
+            ...currentLayout,
+            colums,
+            headers
+          }
+        }
+      }
     });
   };
 
@@ -788,6 +1003,22 @@ const PlayboardsManagement = () => {
     });
   };
 
+  // Toggle button options management
+  const addToggleOption = () => {
+    if (toggleOptionInput.dataKey && toggleOptionInput.name) {
+      setCurrentFilter({
+        ...currentFilter,
+        options: [...currentFilter.options, {
+          dataKey: toggleOptionInput.dataKey,
+          name: toggleOptionInput.name,
+          onValue: toggleOptionInput.onValue,
+          offValue: toggleOptionInput.offValue
+        }]
+      });
+      setToggleOptionInput({ dataKey: '', name: '', onValue: '', offValue: '' });
+    }
+  };
+
   // Addon configurations management
   const [addonInput, setAddonInput] = useState('');
 
@@ -805,6 +1036,30 @@ const PlayboardsManagement = () => {
     setFormData({
       ...formData,
       addon_configurations: formData.addon_configurations.filter((_, i) => i !== index)
+    });
+  };
+
+  // Copy JSON to clipboard
+  const copyJsonToClipboard = () => {
+    const jsonStr = JSON.stringify({
+      key: formData.key,
+      name: formData.name,
+      description: formData.description,
+      dataDomain: formData.dataDomain,
+      scenarioKey: formData.scenarioKey,
+      scenerioKey: formData.scenarioKey,
+      order: formData.order,
+      status: formData.status,
+      program_key: formData.program_key,
+      config_type: formData.config_type,
+      addon_configurations: formData.addon_configurations,
+      widgets: formData.widgets,
+      scenarioDescription: formData.scenarioDescription
+    }, null, 2);
+    navigator.clipboard.writeText(jsonStr).then(() => {
+      toast.success('JSON copied to clipboard');
+    }).catch(() => {
+      toast.error('Failed to copy JSON');
     });
   };
 
@@ -885,8 +1140,7 @@ const PlayboardsManagement = () => {
   const tabs = [
     { id: 'basic', label: 'Basic Info' },
     { id: 'filters', label: 'Filters' },
-    { id: 'actions', label: 'Row Actions' },
-    { id: 'grid', label: 'Grid Settings' },
+    { id: 'grid', label: 'Grid & Actions' },
     { id: 'description', label: 'Description' },
     { id: 'json', label: 'JSON Preview' }
   ];
@@ -1035,7 +1289,7 @@ const PlayboardsManagement = () => {
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   options={[
                     { value: 'active', label: 'Active' },
-                    { value: 'active', label: 'Inactive' }
+                    { value: 'inactive', label: 'Inactive' }
                   ]}
                 />
               </div>
@@ -1081,13 +1335,12 @@ const PlayboardsManagement = () => {
           {/* Filters Tab */}
           {activeTab === 'filters' && (
             <div className="space-y-4">
-              {/* Existing Filters */}
+              {/* Existing Filters - Compact Cards */}
               {formData.widgets.filters.length > 0 && (
                 <div className="bg-surface-secondary rounded-lg p-4 mb-4">
                   <h4 className="font-medium text-content mb-2">Configured Filters ({formData.widgets.filters.length})</h4>
                   <div className="space-y-2">
                     {formData.widgets.filters.map((filter, idx) => {
-                      // Handle both array and object formats for attributes (support both 'name' and 'key')
                       const getFilterType = () => {
                         if (filter.type) return filter.type;
                         if (Array.isArray(filter.attributes)) {
@@ -1099,41 +1352,49 @@ const PlayboardsManagement = () => {
                         }
                         return 'input';
                       };
+                      const filterType = getFilterType();
                       const attrCount = Array.isArray(filter.attributes) ? filter.attributes.length : 0;
+                      const validatorCount = Array.isArray(filter.validators) ? filter.validators.length : 0;
                       const isEditing = editingFilterIndex === idx;
                       return (
-                      <div key={idx} className={`flex items-center justify-between bg-surface p-3 rounded border ${isEditing ? 'ring-2 ring-blue-500' : ''}`}>
-                        <div>
-                          <span className="font-medium">{filter.displayName}</span>
-                          <span className="text-content-muted text-sm ml-2">({filter.name})</span>
-                          <Badge variant="default" className="ml-2">
-                            {getFilterType()}
-                          </Badge>
+                      <div
+                        key={idx}
+                        className={`flex items-center justify-between bg-surface p-3 rounded border cursor-pointer hover:bg-surface-secondary ${isEditing ? 'ring-2 ring-blue-500' : ''}`}
+                        onClick={() => editFilter(idx)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg w-6 text-center" title={filterType}>{filterTypeIcon(filterType)}</span>
+                          <div>
+                            <span className="font-medium">{filter.displayName}</span>
+                            <span className="text-content-muted text-xs ml-2">{filter.dataKey}</span>
+                          </div>
+                          <Badge variant="default" className="ml-1 text-xs">{filterType}</Badge>
                           {attrCount > 0 && (
-                            <Badge variant="primary" className="ml-2">
-                              {attrCount} attrs
-                            </Badge>
+                            <Badge variant="primary" className="text-xs">{attrCount} attrs</Badge>
+                          )}
+                          {validatorCount > 0 && (
+                            <Badge variant="warning" className="text-xs">{validatorCount} validators</Badge>
                           )}
                           {isEditing && (
-                            <Badge variant="warning" className="ml-2">Editing</Badge>
+                            <Badge variant="warning" className="text-xs">Editing</Badge>
                           )}
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <button
-                            type="button"
-                            onClick={() => editFilter(idx)}
-                            className="text-blue-500 hover:text-blue-700"
-                            title="Edit"
-                          >
-                            <Pencil size={16} />
+                        <div className="flex items-center space-x-1">
+                          {idx > 0 && (
+                            <button type="button" onClick={(e) => { e.stopPropagation(); moveFilter(idx, -1); }} className="p-1 text-content-muted hover:text-content" title="Move up">
+                              <ChevronUp size={14} />
+                            </button>
+                          )}
+                          {idx < formData.widgets.filters.length - 1 && (
+                            <button type="button" onClick={(e) => { e.stopPropagation(); moveFilter(idx, 1); }} className="p-1 text-content-muted hover:text-content" title="Move down">
+                              <ChevronDown size={14} />
+                            </button>
+                          )}
+                          <button type="button" onClick={(e) => { e.stopPropagation(); editFilter(idx); }} className="p-1 text-blue-500 hover:text-blue-700" title="Edit">
+                            <Pencil size={14} />
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => removeFilter(idx)}
-                            className="text-red-500 hover:text-red-700"
-                            title="Delete"
-                          >
-                            <X size={16} />
+                          <button type="button" onClick={(e) => { e.stopPropagation(); removeFilter(idx); }} className="p-1 text-red-500 hover:text-red-700" title="Delete">
+                            <X size={14} />
                           </button>
                         </div>
                       </div>
@@ -1143,157 +1404,292 @@ const PlayboardsManagement = () => {
                 </div>
               )}
 
-              {/* Add/Edit Filter */}
+              {/* Add/Edit Filter with Collapsible Sections */}
               <div className={`border rounded-lg p-4 ${editingFilterIndex !== null ? 'border-blue-500 bg-blue-50' : ''}`}>
                 <h4 className="font-medium text-content mb-3">
                   {editingFilterIndex !== null ? `Edit Filter: ${currentFilter.displayName || currentFilter.name}` : 'Add New Filter'}
                 </h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Name (key)"
-                    value={currentFilter.name}
-                    onChange={(e) => setCurrentFilter({ ...currentFilter, name: e.target.value, dataKey: e.target.value })}
-                    placeholder="query_text"
-                  />
-                  <Input
-                    label="Display Name"
-                    value={currentFilter.displayName}
-                    onChange={(e) => setCurrentFilter({ ...currentFilter, displayName: e.target.value })}
-                    placeholder="Customer#"
-                  />
+
+                {/* Core Section (always open) */}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      label="Name (key) *"
+                      value={currentFilter.name}
+                      onChange={(e) => setCurrentFilter({ ...currentFilter, name: e.target.value, dataKey: e.target.value })}
+                      placeholder="query_text"
+                    />
+                    <Input
+                      label="Display Name *"
+                      value={currentFilter.displayName}
+                      onChange={(e) => setCurrentFilter({ ...currentFilter, displayName: e.target.value })}
+                      placeholder="Customer#"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      label="Data Key"
+                      value={currentFilter.dataKey}
+                      onChange={(e) => setCurrentFilter({ ...currentFilter, dataKey: e.target.value })}
+                      placeholder="query_text"
+                    />
+                    <Select
+                      label="Type"
+                      value={currentFilter.type}
+                      onChange={(e) => setCurrentFilter({ ...currentFilter, type: e.target.value })}
+                      options={FILTER_TYPE_OPTIONS}
+                    />
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4 mt-4">
-                  <Select
-                    label="Type"
-                    value={currentFilter.type}
-                    onChange={(e) => setCurrentFilter({ ...currentFilter, type: e.target.value })}
-                    options={[
-                      { value: 'input', label: 'Text Input' },
-                      { value: 'select', label: 'Select Dropdown' },
-                      { value: 'date', label: 'Date Picker' },
-                      { value: 'checkbox', label: 'Checkbox' },
-                      { value: 'radio', label: 'Radio' }
-                    ]}
-                  />
-                  <Input
-                    label="Default Value"
-                    value={currentFilter.defaultValue}
-                    onChange={(e) => setCurrentFilter({ ...currentFilter, defaultValue: e.target.value })}
-                  />
-                  <Input
-                    label="Regex Pattern"
-                    value={currentFilter.regex}
-                    onChange={(e) => setCurrentFilter({ ...currentFilter, regex: e.target.value })}
-                    placeholder="[A-Za-z0-9]"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <Input
-                    label="Input Hint"
-                    value={currentFilter.inputHint}
-                    onChange={(e) => setCurrentFilter({ ...currentFilter, inputHint: e.target.value })}
-                    placeholder="Enter Customer# or name"
-                  />
-                  <Input
-                    label="Title"
-                    value={currentFilter.title}
-                    onChange={(e) => setCurrentFilter({ ...currentFilter, title: e.target.value })}
-                    placeholder="Enter Customer#'s or name"
-                  />
-                </div>
-
-                {/* Options for Select type */}
-                {currentFilter.type === 'select' && (
-                  <div className="mt-4 border-t pt-4">
-                    <label className="block text-sm font-medium text-content-secondary mb-2">Options</label>
-                    <div className="flex space-x-2 mb-2">
-                      <Input
-                        placeholder="Value (e.g., 01)"
-                        value={optionInput.value}
-                        onChange={(e) => setOptionInput({ ...optionInput, value: e.target.value })}
-                      />
-                      <Input
-                        placeholder="Display Name (e.g., 01 - Option)"
-                        value={optionInput.name}
-                        onChange={(e) => setOptionInput({ ...optionInput, name: e.target.value })}
-                      />
-                      <Button type="button" onClick={addOption} variant="secondary">Add</Button>
-                    </div>
-                    {currentFilter.options.length > 0 && (
-                      <div className="bg-surface-secondary rounded p-2 max-h-32 overflow-y-auto">
-                        {currentFilter.options.map((opt, idx) => (
-                          <div key={idx} className="flex items-center justify-between py-1">
-                            <span className="text-sm">{opt.value} - {opt.name}</span>
-                            <button type="button" onClick={() => removeOption(idx)} className="text-red-500">x</button>
-                          </div>
-                        ))}
+                {/* Appearance Section */}
+                <div className="mt-4">
+                  <CollapsibleSection title="Appearance" badge={
+                    (currentFilter.inputHint || currentFilter.title || currentFilter.styleClasses) ?
+                      <Badge variant="primary" className="text-xs">configured</Badge> : null
+                  }>
+                    <div className="space-y-4 mt-3">
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input
+                          label="Input Hint"
+                          value={currentFilter.inputHint}
+                          onChange={(e) => setCurrentFilter({ ...currentFilter, inputHint: e.target.value })}
+                          placeholder="Enter Customer# or name"
+                        />
+                        <Input
+                          label="Title"
+                          value={currentFilter.title}
+                          onChange={(e) => setCurrentFilter({ ...currentFilter, title: e.target.value })}
+                          placeholder="Enter Customer#'s or name"
+                        />
                       </div>
-                    )}
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input
+                          label="Default Value"
+                          value={currentFilter.defaultValue}
+                          onChange={(e) => setCurrentFilter({ ...currentFilter, defaultValue: e.target.value })}
+                        />
+                        <Input
+                          label="Regex Pattern"
+                          value={currentFilter.regex}
+                          onChange={(e) => setCurrentFilter({ ...currentFilter, regex: e.target.value })}
+                          placeholder="[A-Za-z0-9]"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input
+                          label="Style Classes"
+                          value={currentFilter.styleClasses}
+                          onChange={(e) => setCurrentFilter({ ...currentFilter, styleClasses: e.target.value })}
+                          placeholder="col-md-4 custom-filter"
+                        />
+                        <div className="flex items-end pb-2">
+                          <Toggle
+                            enabled={currentFilter.visible}
+                            onChange={(val) => setCurrentFilter({ ...currentFilter, visible: val })}
+                            label="Visible"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </CollapsibleSection>
+                </div>
+
+                {/* Options Section - auto-expand for applicable types */}
+                {(OPTION_TYPES.includes(currentFilter.type) || currentFilter.type === TOGGLE_TYPE) && (
+                  <div className="mt-3">
+                    <CollapsibleSection
+                      title="Options"
+                      defaultOpen={true}
+                      badge={currentFilter.options.length > 0 ?
+                        <Badge variant="primary" className="text-xs">{currentFilter.options.length}</Badge> : null
+                      }
+                    >
+                      <div className="mt-3">
+                        {/* Standard value/name options for select/dropdown/multi-select/radio */}
+                        {OPTION_TYPES.includes(currentFilter.type) && (
+                          <>
+                            <div className="flex space-x-2 mb-2">
+                              <Input
+                                placeholder="Value (e.g., 01)"
+                                value={optionInput.value}
+                                onChange={(e) => setOptionInput({ ...optionInput, value: e.target.value })}
+                              />
+                              <Input
+                                placeholder="Display Name (e.g., 01 - Option)"
+                                value={optionInput.name}
+                                onChange={(e) => setOptionInput({ ...optionInput, name: e.target.value })}
+                              />
+                              <Button type="button" onClick={addOption} variant="secondary">Add</Button>
+                            </div>
+                            {currentFilter.options.length > 0 && (
+                              <div className="bg-surface-secondary rounded p-2 max-h-32 overflow-y-auto">
+                                {currentFilter.options.map((opt, idx) => (
+                                  <div key={idx} className="flex items-center justify-between py-1">
+                                    <span className="text-sm">{opt.value} - {opt.name}</span>
+                                    <button type="button" onClick={() => removeOption(idx)} className="text-red-500">x</button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        )}
+
+                        {/* Toggle button specific options */}
+                        {currentFilter.type === TOGGLE_TYPE && (
+                          <>
+                            <div className="grid grid-cols-4 gap-2 mb-2">
+                              <Input
+                                placeholder="Data Key"
+                                value={toggleOptionInput.dataKey}
+                                onChange={(e) => setToggleOptionInput({ ...toggleOptionInput, dataKey: e.target.value })}
+                              />
+                              <Input
+                                placeholder="Name"
+                                value={toggleOptionInput.name}
+                                onChange={(e) => setToggleOptionInput({ ...toggleOptionInput, name: e.target.value })}
+                              />
+                              <Input
+                                placeholder="On Value"
+                                value={toggleOptionInput.onValue}
+                                onChange={(e) => setToggleOptionInput({ ...toggleOptionInput, onValue: e.target.value })}
+                              />
+                              <div className="flex space-x-2">
+                                <Input
+                                  placeholder="Off Value"
+                                  value={toggleOptionInput.offValue}
+                                  onChange={(e) => setToggleOptionInput({ ...toggleOptionInput, offValue: e.target.value })}
+                                />
+                                <Button type="button" onClick={addToggleOption} variant="secondary">Add</Button>
+                              </div>
+                            </div>
+                            {currentFilter.options.length > 0 && (
+                              <div className="bg-surface-secondary rounded p-2 max-h-32 overflow-y-auto">
+                                {currentFilter.options.map((opt, idx) => (
+                                  <div key={idx} className="flex items-center justify-between py-1 text-sm">
+                                    <span>{opt.dataKey || opt.value}: {opt.name} (on={opt.onValue}, off={opt.offValue})</span>
+                                    <button type="button" onClick={() => removeOption(idx)} className="text-red-500">x</button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </CollapsibleSection>
                   </div>
                 )}
 
-                <div className="flex items-center space-x-4 mt-4">
-                  <Toggle
-                    enabled={currentFilter.visible}
-                    onChange={(val) => setCurrentFilter({ ...currentFilter, visible: val })}
-                    label="Visible"
-                  />
+                {/* Validation Section */}
+                <div className="mt-3">
+                  <CollapsibleSection
+                    title="Validation"
+                    badge={currentFilter.validators.length > 0 ?
+                      <Badge variant="warning" className="text-xs">{currentFilter.validators.length}</Badge> : null
+                    }
+                  >
+                    <div className="mt-3 space-y-3">
+                      <div className="grid grid-cols-3 gap-2">
+                        <Select
+                          label="Type"
+                          value={validatorInput.type}
+                          onChange={(e) => setValidatorInput({ ...validatorInput, type: e.target.value })}
+                          options={VALIDATOR_TYPE_OPTIONS}
+                        />
+                        <Input
+                          label="Expression"
+                          value={validatorInput.expression}
+                          onChange={(e) => setValidatorInput({ ...validatorInput, expression: e.target.value })}
+                          placeholder="e.g., ^[0-9]+$"
+                        />
+                        <div className="flex items-end space-x-2">
+                          <Input
+                            label="Message"
+                            value={validatorInput.message}
+                            onChange={(e) => setValidatorInput({ ...validatorInput, message: e.target.value })}
+                            placeholder="Invalid input"
+                          />
+                          <Button type="button" onClick={addValidator} variant="secondary" className="mb-0">Add</Button>
+                        </div>
+                      </div>
+                      {currentFilter.validators.length > 0 && (
+                        <div className="bg-surface-secondary rounded p-2 max-h-32 overflow-y-auto space-y-1">
+                          {currentFilter.validators.map((v, idx) => (
+                            <div key={idx} className="flex items-center justify-between bg-surface p-2 rounded border text-sm">
+                              <span>
+                                <Badge variant="default" className="mr-2 text-xs">{v.type}</Badge>
+                                {v.expression && <span className="text-content-muted mr-2">{v.expression}</span>}
+                                {v.message && <span className="text-content-secondary italic">"{v.message}"</span>}
+                              </span>
+                              <button type="button" onClick={() => removeValidator(idx)} className="text-red-500 hover:text-red-700">
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </CollapsibleSection>
                 </div>
 
-                {/* Custom Attributes */}
-                <div className="mt-4 border-t pt-4">
-                  <label className="block text-sm font-medium text-content-secondary mb-2">
-                    Custom Attributes
-                    <span className="text-content-muted font-normal ml-2">(name-value pairs)</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-2 mb-2">
-                    <div>
-                      <input
-                        list="attribute-names"
-                        type="text"
-                        className="w-full px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        placeholder="Name (e.g., width)"
-                        value={filterAttributeInput.name}
-                        onChange={(e) => setFilterAttributeInput({ ...filterAttributeInput, name: e.target.value })}
-                      />
-                      <datalist id="attribute-names">
-                        {attributeNameOptions.map(opt => (
-                          <option key={opt} value={opt} />
-                        ))}
-                      </datalist>
-                    </div>
-                    <div className="flex space-x-2">
-                      <input
-                        type="text"
-                        className="flex-1 px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        placeholder="Value (e.g., 200px)"
-                        value={filterAttributeInput.value}
-                        onChange={(e) => setFilterAttributeInput({ ...filterAttributeInput, value: e.target.value })}
-                      />
-                      <Button type="button" onClick={addFilterAttribute} variant="secondary">Add</Button>
-                    </div>
-                  </div>
-                  {currentFilter.attributes.length > 0 && (
-                    <div className="bg-surface-secondary rounded p-2 max-h-32 overflow-y-auto space-y-1">
-                      {currentFilter.attributes.map((attr, idx) => (
-                        <div key={idx} className="flex items-center justify-between bg-surface p-2 rounded border text-sm">
-                          <span>
-                            <span className="font-medium text-content-secondary">{attr.name}</span>
-                            <span className="mx-2">:</span>
-                            <span className="text-content-muted">{typeof attr.value === 'object' ? JSON.stringify(attr.value) : attr.value}</span>
-                          </span>
-                          <button type="button" onClick={() => removeFilterAttribute(idx)} className="text-red-500 hover:text-red-700">
-                            <X size={16} />
-                          </button>
+                {/* Advanced Attributes Section */}
+                <div className="mt-3">
+                  <CollapsibleSection
+                    title="Advanced Attributes"
+                    badge={currentFilter.attributes.length > 0 ?
+                      <Badge variant="primary" className="text-xs">{currentFilter.attributes.length}</Badge> : null
+                    }
+                  >
+                    <div className="mt-3">
+                      <div className="grid grid-cols-2 gap-2 mb-2">
+                        <div>
+                          <input
+                            list="attribute-names"
+                            type="text"
+                            className="w-full px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                            placeholder="Name (e.g., width)"
+                            value={filterAttributeInput.name}
+                            onChange={(e) => setFilterAttributeInput({ ...filterAttributeInput, name: e.target.value })}
+                          />
+                          <datalist id="attribute-names">
+                            {attributeNameOptions.map(opt => (
+                              <option key={opt} value={opt} />
+                            ))}
+                          </datalist>
                         </div>
-                      ))}
+                        <div className="flex space-x-2">
+                          <input
+                            type="text"
+                            className="flex-1 px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                            placeholder="Value (e.g., 200px)"
+                            value={filterAttributeInput.value}
+                            onChange={(e) => setFilterAttributeInput({ ...filterAttributeInput, value: e.target.value })}
+                          />
+                          <Button type="button" onClick={addFilterAttribute} variant="secondary">Add</Button>
+                        </div>
+                      </div>
+                      {currentFilter.attributes.length > 0 && (
+                        <div className="bg-surface-secondary rounded p-2 max-h-32 overflow-y-auto space-y-1">
+                          {currentFilter.attributes.map((attr, idx) => (
+                            <div key={idx} className="flex items-center justify-between bg-surface p-2 rounded border text-sm">
+                              <span>
+                                <span className="font-medium text-content-secondary">{attr.name}</span>
+                                <span className="mx-2">:</span>
+                                <span className="text-content-muted">{typeof attr.value === 'object' ? JSON.stringify(attr.value) : attr.value}</span>
+                              </span>
+                              <button type="button" onClick={() => removeFilterAttribute(idx)} className="text-red-500 hover:text-red-700">
+                                <X size={16} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-xs text-content-muted mt-1">
+                        Standard attributes (type, defaultValue, regex, options) are auto-managed from the form fields above.
+                      </p>
                     </div>
-                  )}
-                  <p className="text-xs text-content-muted mt-1">
-                    All filter attributes are shown here. Standard attributes (type, defaultValue, regex, options) are also editable via the form fields above.
-                  </p>
+                  </CollapsibleSection>
                 </div>
 
                 <div className="flex space-x-2 mt-4">
@@ -1319,388 +1715,449 @@ const PlayboardsManagement = () => {
             </div>
           )}
 
-          {/* Row Actions Tab */}
-          {activeTab === 'actions' && (
-            <div className="space-y-4">
-              {/* Existing Actions */}
-              {(formData.widgets?.grid?.actions?.rowActions?.events?.length || 0) > 0 && (
-                <div className="bg-surface-secondary rounded-lg p-4 mb-4">
-                  <h4 className="font-medium text-content mb-2">Configured Row Actions ({formData.widgets?.grid?.actions?.rowActions?.events?.length || 0})</h4>
-                  <div className="space-y-2">
-                    {(formData.widgets?.grid?.actions?.rowActions?.events || []).map((action, idx) => {
-                      const isEditing = editingRowActionIndex === idx;
-                      return (
-                      <div key={idx} className={`bg-surface p-3 rounded border ${isEditing ? 'ring-2 ring-blue-500' : ''}`}>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="font-medium">{action.name}</span>
-                            <span className="text-content-muted text-sm ml-2">({action.key})</span>
-                            <span className="text-content-muted text-sm ml-2">-&gt; {action.path}</span>
-                            <Badge variant={action.status === 'active' ? 'success' : 'danger'} className="ml-2">
-                              {action.status === 'active' ? 'Active' : 'Inactive'}
-                            </Badge>
-                            {action.filters && action.filters.length > 0 && (
-                              <Badge variant="primary" className="ml-2">{action.filters.length} filters</Badge>
-                            )}
-                            {isEditing && (
-                              <Badge variant="warning" className="ml-2">Editing</Badge>
-                            )}
+          {/* Grid & Actions Tab (merged) */}
+          {activeTab === 'grid' && (
+            <div className="space-y-6">
+              {/* Row Actions Section */}
+              <div>
+                <h3 className="text-lg font-medium text-content mb-3">Row Actions</h3>
+                {/* Existing Actions */}
+                {(formData.widgets?.grid?.actions?.rowActions?.events?.length || 0) > 0 && (
+                  <div className="bg-surface-secondary rounded-lg p-4 mb-4">
+                    <h4 className="font-medium text-content mb-2">Configured Row Actions ({formData.widgets?.grid?.actions?.rowActions?.events?.length || 0})</h4>
+                    <div className="space-y-2">
+                      {(formData.widgets?.grid?.actions?.rowActions?.events || []).map((action, idx) => {
+                        const isEditing = editingRowActionIndex === idx;
+                        const events = formData.widgets?.grid?.actions?.rowActions?.events || [];
+                        return (
+                        <div
+                          key={idx}
+                          className={`bg-surface p-3 rounded border cursor-pointer hover:bg-surface-secondary ${isEditing ? 'ring-2 ring-blue-500' : ''}`}
+                          onClick={() => editRowAction(idx)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{action.name}</span>
+                              <span className="text-content-muted text-xs">({action.key})</span>
+                              <span className="text-content-muted text-xs">-&gt; {action.path}</span>
+                              <Badge variant={action.status === 'active' ? 'success' : 'danger'} className="text-xs">
+                                {action.status === 'active' ? 'Active' : 'Inactive'}
+                              </Badge>
+                              {action.filters && action.filters.length > 0 && (
+                                <Badge variant="primary" className="text-xs">{action.filters.length} filters</Badge>
+                              )}
+                              {isEditing && (
+                                <Badge variant="warning" className="text-xs">Editing</Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              {idx > 0 && (
+                                <button type="button" onClick={(e) => { e.stopPropagation(); moveRowAction(idx, -1); }} className="p-1 text-content-muted hover:text-content" title="Move up">
+                                  <ChevronUp size={14} />
+                                </button>
+                              )}
+                              {idx < events.length - 1 && (
+                                <button type="button" onClick={(e) => { e.stopPropagation(); moveRowAction(idx, 1); }} className="p-1 text-content-muted hover:text-content" title="Move down">
+                                  <ChevronDown size={14} />
+                                </button>
+                              )}
+                              <button type="button" onClick={(e) => { e.stopPropagation(); editRowAction(idx); }} className="p-1 text-blue-500 hover:text-blue-700" title="Edit">
+                                <Pencil size={14} />
+                              </button>
+                              <button type="button" onClick={(e) => { e.stopPropagation(); removeRowAction(idx); }} className="p-1 text-red-500 hover:text-red-700" title="Delete">
+                                <X size={14} />
+                              </button>
+                            </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <button
-                              type="button"
-                              onClick={() => editRowAction(idx)}
-                              className="text-blue-500 hover:text-blue-700"
-                              title="Edit"
-                            >
-                              <Pencil size={16} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => removeRowAction(idx)}
-                              className="text-red-500 hover:text-red-700"
-                              title="Delete"
-                            >
-                              <X size={16} />
-                            </button>
-                          </div>
+                          {action.filters && action.filters.length > 0 && (
+                            <div className="mt-2 pt-2 border-t text-xs text-content-muted">
+                              {action.filters.map((f, i) => (
+                                <span key={i} className="mr-3">
+                                  {f.inputKey} -&gt; {f.dataKey}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        {action.filters && action.filters.length > 0 && (
-                          <div className="mt-2 pt-2 border-t text-xs text-content-muted">
-                            {action.filters.map((f, i) => (
-                              <span key={i} className="mr-3">
-                                {f.inputKey} -&gt; {f.dataKey}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Add/Edit Action */}
-              <div className={`border rounded-lg p-4 ${editingRowActionIndex !== null ? 'border-blue-500 bg-blue-50' : ''}`}>
-                <h4 className="font-medium text-content mb-3">
-                  {editingRowActionIndex !== null ? `Edit Row Action: ${currentRowAction.name}` : 'Add New Row Action'}
-                </h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Key"
-                    value={currentRowAction.key}
-                    onChange={(e) => setCurrentRowAction({ ...currentRowAction, key: e.target.value })}
-                    placeholder="orders_scenario_6"
-                  />
-                  <Input
-                    label="Button Name"
-                    value={currentRowAction.name}
-                    onChange={(e) => setCurrentRowAction({ ...currentRowAction, name: e.target.value })}
-                    placeholder="Orders"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <Input
-                    label="Path"
-                    value={currentRowAction.path}
-                    onChange={(e) => setCurrentRowAction({ ...currentRowAction, path: e.target.value })}
-                    placeholder="/report/orders_scenario_6"
-                  />
-                  <Select
-                    label="Data Domain"
-                    value={currentRowAction.dataDomain}
-                    onChange={(e) => setCurrentRowAction({ ...currentRowAction, dataDomain: e.target.value })}
-                    options={[
-                      { value: '', label: 'Select Domain' },
-                      ...domains.map(d => ({ value: d.key, label: d.name }))
-                    ]}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <Select
-                    label="Status"
-                    value={currentRowAction.status}
-                    onChange={(e) => setCurrentRowAction({ ...currentRowAction, status: e.target.value })}
-                    options={[
-                      { value: 'active', label: 'Active' },
-                      { value: 'inactive', label: 'Inactive' }
-                    ]}
-                  />
-                </div>
-
-                {/* Action Filters */}
-                <div className="mt-4 border-t pt-4">
-                  <label className="block text-sm font-medium text-content-secondary mb-2">
-                    Filters (maps row data to navigation params)
-                  </label>
-                  <div className="flex space-x-2 mb-2">
-                    <Input
-                      placeholder="inputKey (e.g., query_customer)"
-                      value={actionFilterInput.inputKey}
-                      onChange={(e) => setActionFilterInput({ ...actionFilterInput, inputKey: e.target.value })}
-                    />
-                    <Input
-                      placeholder="dataKey (e.g., customer)"
-                      value={actionFilterInput.dataKey}
-                      onChange={(e) => setActionFilterInput({ ...actionFilterInput, dataKey: e.target.value })}
-                    />
-                    <Button type="button" onClick={addActionFilter} variant="secondary">Add</Button>
-                  </div>
-                  {currentRowAction.filters.length > 0 && (
-                    <div className="bg-surface-secondary rounded p-2 space-y-1">
-                      {currentRowAction.filters.map((filter, idx) => (
-                        <div key={idx} className="flex items-center justify-between bg-surface p-2 rounded border text-sm">
-                          <span>
-                            <span className="text-content-muted">inputKey:</span> <span className="font-medium">{filter.inputKey}</span>
-                            <span className="mx-2">-&gt;</span>
-                            <span className="text-content-muted">dataKey:</span> <span className="font-medium">{filter.dataKey}</span>
-                          </span>
-                          <button type="button" onClick={() => removeActionFilter(idx)} className="text-red-500 hover:text-red-700">x</button>
-                        </div>
-                      ))}
+                      );
+                      })}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
-                <div className="flex space-x-2 mt-4">
-                  <Button
-                    type="button"
-                    onClick={addRowAction}
-                    variant={editingRowActionIndex !== null ? 'primary' : 'secondary'}
-                    disabled={!currentRowAction.key || !currentRowAction.name}
-                  >
-                    {editingRowActionIndex !== null ? 'Update Row Action' : 'Add Row Action'}
-                  </Button>
-                  {editingRowActionIndex !== null && (
+                {/* Add/Edit Action */}
+                <div className={`border rounded-lg p-4 ${editingRowActionIndex !== null ? 'border-blue-500 bg-blue-50' : ''}`}>
+                  <h4 className="font-medium text-content mb-3">
+                    {editingRowActionIndex !== null ? `Edit Row Action: ${currentRowAction.name}` : 'Add New Row Action'}
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      label="Key"
+                      value={currentRowAction.key}
+                      onChange={(e) => setCurrentRowAction({ ...currentRowAction, key: e.target.value })}
+                      placeholder="orders_scenario_6"
+                    />
+                    <Input
+                      label="Button Name"
+                      value={currentRowAction.name}
+                      onChange={(e) => setCurrentRowAction({ ...currentRowAction, name: e.target.value })}
+                      placeholder="Orders"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    <Input
+                      label="Path"
+                      value={currentRowAction.path}
+                      onChange={(e) => setCurrentRowAction({ ...currentRowAction, path: e.target.value })}
+                      placeholder="/report/orders_scenario_6"
+                    />
+                    <Select
+                      label="Data Domain"
+                      value={currentRowAction.dataDomain}
+                      onChange={(e) => setCurrentRowAction({ ...currentRowAction, dataDomain: e.target.value })}
+                      options={[
+                        { value: '', label: 'Select Domain' },
+                        ...domains.map(d => ({ value: d.key, label: d.name }))
+                      ]}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    <Select
+                      label="Status"
+                      value={currentRowAction.status}
+                      onChange={(e) => setCurrentRowAction({ ...currentRowAction, status: e.target.value })}
+                      options={[
+                        { value: 'active', label: 'Active' },
+                        { value: 'inactive', label: 'Inactive' }
+                      ]}
+                    />
+                  </div>
+
+                  {/* Action Filters */}
+                  <div className="mt-4 border-t pt-4">
+                    <label className="block text-sm font-medium text-content-secondary mb-2">
+                      Filters (maps row data to navigation params)
+                    </label>
+                    <div className="flex space-x-2 mb-2">
+                      <Input
+                        placeholder="inputKey (e.g., query_customer)"
+                        value={actionFilterInput.inputKey}
+                        onChange={(e) => setActionFilterInput({ ...actionFilterInput, inputKey: e.target.value })}
+                      />
+                      <Input
+                        placeholder="dataKey (e.g., customer)"
+                        value={actionFilterInput.dataKey}
+                        onChange={(e) => setActionFilterInput({ ...actionFilterInput, dataKey: e.target.value })}
+                      />
+                      <Button type="button" onClick={addActionFilter} variant="secondary">Add</Button>
+                    </div>
+                    {currentRowAction.filters.length > 0 && (
+                      <div className="bg-surface-secondary rounded p-2 space-y-1">
+                        {currentRowAction.filters.map((filter, idx) => (
+                          <div key={idx} className="flex items-center justify-between bg-surface p-2 rounded border text-sm">
+                            <span>
+                              <span className="text-content-muted">inputKey:</span> <span className="font-medium">{filter.inputKey}</span>
+                              <span className="mx-2">-&gt;</span>
+                              <span className="text-content-muted">dataKey:</span> <span className="font-medium">{filter.dataKey}</span>
+                            </span>
+                            <button type="button" onClick={() => removeActionFilter(idx)} className="text-red-500 hover:text-red-700">x</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex space-x-2 mt-4">
                     <Button
                       type="button"
-                      onClick={resetCurrentRowAction}
-                      variant="secondary"
+                      onClick={addRowAction}
+                      variant={editingRowActionIndex !== null ? 'primary' : 'secondary'}
+                      disabled={!currentRowAction.key || !currentRowAction.name}
                     >
-                      Cancel Edit
+                      {editingRowActionIndex !== null ? 'Update Row Action' : 'Add Row Action'}
                     </Button>
-                  )}
+                    {editingRowActionIndex !== null && (
+                      <Button
+                        type="button"
+                        onClick={resetCurrentRowAction}
+                        variant="secondary"
+                      >
+                        Cancel Edit
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Grid Settings Tab */}
-          {activeTab === 'grid' && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Select
-                  label="Row Actions Render As"
-                  value={formData.widgets?.grid?.actions?.rowActions?.renderAs || 'button'}
-                  onChange={(e) => {
-                    const currentRowActions = formData.widgets?.grid?.actions?.rowActions || { renderAs: 'button', attributes: [], events: [] };
-                    const currentActions = formData.widgets?.grid?.actions || { rowActions: currentRowActions, headerActions: {} };
-                    const currentGrid = formData.widgets?.grid || { actions: currentActions, layout: { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 } };
-                    setFormData({
-                      ...formData,
-                      widgets: {
-                        ...formData.widgets,
-                        grid: {
-                          ...currentGrid,
-                          actions: {
-                            ...currentActions,
-                            rowActions: {
-                              ...currentRowActions,
-                              renderAs: e.target.value
+              {/* Grid Settings Section */}
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-medium text-content mb-3">Grid Settings</h3>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Select
+                      label="Row Actions Render As"
+                      value={formData.widgets?.grid?.actions?.rowActions?.renderAs || 'button'}
+                      onChange={(e) => {
+                        const currentRowActions = formData.widgets?.grid?.actions?.rowActions || { renderAs: 'button', attributes: [], events: [] };
+                        const currentActions = formData.widgets?.grid?.actions || { rowActions: currentRowActions, headerActions: {} };
+                        const currentGrid = formData.widgets?.grid || { actions: currentActions, layout: { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 } };
+                        setFormData({
+                          ...formData,
+                          widgets: {
+                            ...formData.widgets,
+                            grid: {
+                              ...currentGrid,
+                              actions: {
+                                ...currentActions,
+                                rowActions: {
+                                  ...currentRowActions,
+                                  renderAs: e.target.value
+                                }
+                              }
+                            }
+                          }
+                        });
+                      }}
+                      options={[
+                        { value: 'button', label: 'Buttons' },
+                        { value: 'dropdown', label: 'Dropdown Menu' },
+                        { value: 'icons', label: 'Icon Buttons' }
+                      ]}
+                    />
+                    <Input
+                      label="Default Page Size"
+                      type="number"
+                      value={formData.widgets?.grid?.layout?.defaultSize || 25}
+                      onChange={(e) => {
+                        const currentLayout = formData.widgets?.grid?.layout || { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 };
+                        const currentGrid = formData.widgets?.grid || { actions: { rowActions: { renderAs: 'button', attributes: [], events: [] }, headerActions: {} }, layout: currentLayout };
+                        setFormData({
+                          ...formData,
+                          widgets: {
+                            ...formData.widgets,
+                            grid: {
+                              ...currentGrid,
+                              layout: {
+                                ...currentLayout,
+                                defaultSize: parseInt(e.target.value) || 25
+                              }
+                            }
+                          }
+                        });
+                      }}
+                    />
+                  </div>
+
+                  <Toggle
+                    enabled={formData.widgets?.grid?.layout?.ispaginated === true}
+                    onChange={(val) => {
+                      const currentLayout = formData.widgets?.grid?.layout || { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 };
+                      const currentGrid = formData.widgets?.grid || { actions: { rowActions: { renderAs: 'button', attributes: [], events: [] }, headerActions: {} }, layout: currentLayout };
+                      setFormData({
+                        ...formData,
+                        widgets: {
+                          ...formData.widgets,
+                          grid: {
+                            ...currentGrid,
+                            layout: {
+                              ...currentLayout,
+                              ispaginated: val
                             }
                           }
                         }
-                      }
-                    });
-                  }}
-                  options={[
-                    { value: 'button', label: 'Buttons' },
-                    { value: 'dropdown', label: 'Dropdown Menu' },
-                    { value: 'icons', label: 'Icon Buttons' }
-                  ]}
-                />
-                <Input
-                  label="Default Page Size"
-                  type="number"
-                  value={formData.widgets?.grid?.layout?.defaultSize || 25}
-                  onChange={(e) => {
-                    const currentLayout = formData.widgets?.grid?.layout || { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 };
-                    const currentGrid = formData.widgets?.grid || { actions: { rowActions: { renderAs: 'button', attributes: [], events: [] }, headerActions: {} }, layout: currentLayout };
-                    setFormData({
-                      ...formData,
-                      widgets: {
-                        ...formData.widgets,
-                        grid: {
-                          ...currentGrid,
-                          layout: {
-                            ...currentLayout,
-                            defaultSize: parseInt(e.target.value) || 25
-                          }
-                        }
-                      }
-                    });
-                  }}
-                />
-              </div>
+                      });
+                    }}
+                    label="Enable Pagination"
+                  />
 
-              <Toggle
-                enabled={formData.widgets?.grid?.layout?.ispaginated === true}
-                onChange={(val) => {
-                  const currentLayout = formData.widgets?.grid?.layout || { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 };
-                  const currentGrid = formData.widgets?.grid || { actions: { rowActions: { renderAs: 'button', attributes: [], events: [] }, headerActions: {} }, layout: currentLayout };
-                  setFormData({
-                    ...formData,
-                    widgets: {
-                      ...formData.widgets,
-                      grid: {
-                        ...currentGrid,
-                        layout: {
-                          ...currentLayout,
-                          ispaginated: val
-                        }
-                      }
-                    }
-                  });
-                }}
-                label="Enable Pagination"
-              />
-
-              {/* Pagination Widget Settings */}
-              <div className="border-t pt-4 mt-4">
-                <h4 className="font-medium text-content mb-3">Pagination Widget</h4>
-                {(() => {
-                  const paginationItem = formData.widgets?.pagination?.[0] || {
-                    name: 'pagination_limit',
-                    dataKey: 'pagination_limit',
-                    displayName: 'Pagination',
-                    index: 0,
-                    visible: true,
-                    attributes: []
-                  };
-
-                  const getAttrValue = (attrName) => {
-                    const attr = paginationItem.attributes?.find(a => (a.name === attrName || a.key === attrName));
-                    return attr?.value || '';
-                  };
-
-                  const updatePaginationAttr = (attrName, value) => {
-                    const currentAttrs = paginationItem.attributes || [];
-                    const existingIdx = currentAttrs.findIndex(a => (a.name === attrName || a.key === attrName));
-                    let newAttrs;
-                    if (existingIdx >= 0) {
-                      newAttrs = [...currentAttrs];
-                      newAttrs[existingIdx] = { name: attrName, key: attrName, value };
-                    } else {
-                      newAttrs = [...currentAttrs, { name: attrName, key: attrName, value }];
-                    }
-
-                    const newPaginationItem = { ...paginationItem, attributes: newAttrs };
-                    setFormData({
-                      ...formData,
-                      widgets: {
-                        ...formData.widgets,
-                        pagination: [newPaginationItem]
-                      }
-                    });
-                  };
-
-                  const updatePaginationField = (field, value) => {
-                    const newPaginationItem = { ...paginationItem, [field]: value };
-                    setFormData({
-                      ...formData,
-                      widgets: {
-                        ...formData.widgets,
-                        pagination: [newPaginationItem]
-                      }
-                    });
-                  };
-
-                  return (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-3 gap-4">
-                        <Input
-                          label="Name"
-                          value={paginationItem.name || ''}
-                          onChange={(e) => updatePaginationField('name', e.target.value)}
-                          placeholder="pagination_limit"
-                        />
-                        <Input
-                          label="Data Key"
-                          value={paginationItem.dataKey || ''}
-                          onChange={(e) => updatePaginationField('dataKey', e.target.value)}
-                          placeholder="pagination_limit"
-                        />
-                        <Input
-                          label="Display Name"
-                          value={paginationItem.displayName || ''}
-                          onChange={(e) => updatePaginationField('displayName', e.target.value)}
-                          placeholder="Pagination"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <Select
-                          label="Type"
-                          value={getAttrValue('type') || 'dropdown'}
-                          onChange={(e) => updatePaginationAttr('type', e.target.value)}
-                          options={[
-                            { value: 'dropdown', label: 'Dropdown' },
-                            { value: 'input', label: 'Input' },
-                            { value: 'buttons', label: 'Buttons' }
-                          ]}
-                        />
-                        <Input
-                          label="Width"
-                          value={getAttrValue('width') || ''}
-                          onChange={(e) => updatePaginationAttr('width', e.target.value)}
-                          placeholder="10em"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <Input
-                          label="Options (comma-separated)"
-                          value={getAttrValue('options') || ''}
-                          onChange={(e) => updatePaginationAttr('options', e.target.value)}
-                          placeholder="25,50,75,100"
-                        />
-                        <Input
-                          label="Default Value"
-                          value={getAttrValue('defaultValue') || ''}
-                          onChange={(e) => updatePaginationAttr('defaultValue', e.target.value)}
-                          placeholder="25"
-                        />
-                      </div>
-
-                      <Toggle
-                        enabled={paginationItem.visible !== false}
-                        onChange={(val) => updatePaginationField('visible', val)}
-                        label="Visible"
-                      />
-
-                      {/* Show all pagination attributes */}
-                      {paginationItem.attributes && paginationItem.attributes.length > 0 && (
-                        <div className="mt-4">
-                          <label className="block text-sm font-medium text-content-secondary mb-2">All Attributes</label>
-                          <div className="bg-surface-secondary rounded p-2 max-h-32 overflow-y-auto space-y-1">
-                            {paginationItem.attributes.map((attr, idx) => (
-                              <div key={idx} className="flex items-center justify-between bg-surface p-2 rounded border text-sm">
-                                <span>
-                                  <span className="font-medium text-content-secondary">{attr.name || attr.key}</span>
-                                  <span className="mx-2">:</span>
-                                  <span className="text-content-muted">{typeof attr.value === 'object' ? JSON.stringify(attr.value) : attr.value}</span>
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
+                  {/* Grid Columns/Headers Builder */}
+                  <div className="border-t pt-4 mt-4">
+                    <h4 className="font-medium text-content mb-3">
+                      Grid Columns
+                      {(formData.widgets?.grid?.layout?.colums?.length || 0) > 0 && (
+                        <Badge variant="primary" className="ml-2 text-xs">{formData.widgets.grid.layout.colums.length}</Badge>
                       )}
+                    </h4>
+                    <div className="flex space-x-2 mb-3">
+                      <Input
+                        placeholder="Column Key (e.g., customerNumber)"
+                        value={columnInput.key}
+                        onChange={(e) => setColumnInput({ ...columnInput, key: e.target.value })}
+                      />
+                      <Input
+                        placeholder="Header Label (e.g., Customer #)"
+                        value={columnInput.header}
+                        onChange={(e) => setColumnInput({ ...columnInput, header: e.target.value })}
+                      />
+                      <Button type="button" onClick={addColumn} variant="secondary">Add</Button>
                     </div>
-                  );
-                })()}
+                    {(formData.widgets?.grid?.layout?.colums?.length || 0) > 0 && (
+                      <div className="bg-surface-secondary rounded p-2 max-h-48 overflow-y-auto space-y-1">
+                        {formData.widgets.grid.layout.colums.map((col, idx) => (
+                          <div key={idx} className="flex items-center justify-between bg-surface p-2 rounded border text-sm">
+                            <span>
+                              <span className="font-medium text-content-secondary">{col}</span>
+                              <span className="mx-2">&rarr;</span>
+                              <span className="text-content-muted">{formData.widgets.grid.layout.headers?.[idx] || '-'}</span>
+                            </span>
+                            <div className="flex items-center space-x-1">
+                              {idx > 0 && (
+                                <button type="button" onClick={() => moveColumn(idx, -1)} className="p-1 text-content-muted hover:text-content" title="Move up">
+                                  <ChevronUp size={14} />
+                                </button>
+                              )}
+                              {idx < formData.widgets.grid.layout.colums.length - 1 && (
+                                <button type="button" onClick={() => moveColumn(idx, 1)} className="p-1 text-content-muted hover:text-content" title="Move down">
+                                  <ChevronDown size={14} />
+                                </button>
+                              )}
+                              <button type="button" onClick={() => removeColumn(idx)} className="p-1 text-red-500 hover:text-red-700" title="Remove">
+                                <X size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Pagination Widget Settings */}
+                  <div className="border-t pt-4 mt-4">
+                    <h4 className="font-medium text-content mb-3">Pagination Widget</h4>
+                    {(() => {
+                      const paginationItem = formData.widgets?.pagination?.[0] || {
+                        name: 'pagination_limit',
+                        dataKey: 'pagination_limit',
+                        displayName: 'Pagination',
+                        index: 0,
+                        visible: true,
+                        attributes: []
+                      };
+
+                      const getAttrValue = (attrName) => {
+                        const attr = paginationItem.attributes?.find(a => (a.name === attrName || a.key === attrName));
+                        return attr?.value || '';
+                      };
+
+                      const updatePaginationAttr = (attrName, value) => {
+                        const currentAttrs = paginationItem.attributes || [];
+                        const existingIdx = currentAttrs.findIndex(a => (a.name === attrName || a.key === attrName));
+                        let newAttrs;
+                        if (existingIdx >= 0) {
+                          newAttrs = [...currentAttrs];
+                          newAttrs[existingIdx] = { name: attrName, key: attrName, value };
+                        } else {
+                          newAttrs = [...currentAttrs, { name: attrName, key: attrName, value }];
+                        }
+
+                        const newPaginationItem = { ...paginationItem, attributes: newAttrs };
+                        setFormData({
+                          ...formData,
+                          widgets: {
+                            ...formData.widgets,
+                            pagination: [newPaginationItem]
+                          }
+                        });
+                      };
+
+                      const updatePaginationField = (field, value) => {
+                        const newPaginationItem = { ...paginationItem, [field]: value };
+                        setFormData({
+                          ...formData,
+                          widgets: {
+                            ...formData.widgets,
+                            pagination: [newPaginationItem]
+                          }
+                        });
+                      };
+
+                      return (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-3 gap-4">
+                            <Input
+                              label="Name"
+                              value={paginationItem.name || ''}
+                              onChange={(e) => updatePaginationField('name', e.target.value)}
+                              placeholder="pagination_limit"
+                            />
+                            <Input
+                              label="Data Key"
+                              value={paginationItem.dataKey || ''}
+                              onChange={(e) => updatePaginationField('dataKey', e.target.value)}
+                              placeholder="pagination_limit"
+                            />
+                            <Input
+                              label="Display Name"
+                              value={paginationItem.displayName || ''}
+                              onChange={(e) => updatePaginationField('displayName', e.target.value)}
+                              placeholder="Pagination"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <Select
+                              label="Type"
+                              value={getAttrValue('type') || 'dropdown'}
+                              onChange={(e) => updatePaginationAttr('type', e.target.value)}
+                              options={[
+                                { value: 'dropdown', label: 'Dropdown' },
+                                { value: 'input', label: 'Input' },
+                                { value: 'buttons', label: 'Buttons' }
+                              ]}
+                            />
+                            <Input
+                              label="Width"
+                              value={getAttrValue('width') || ''}
+                              onChange={(e) => updatePaginationAttr('width', e.target.value)}
+                              placeholder="10em"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <Input
+                              label="Options (comma-separated)"
+                              value={getAttrValue('options') || ''}
+                              onChange={(e) => updatePaginationAttr('options', e.target.value)}
+                              placeholder="25,50,75,100"
+                            />
+                            <Input
+                              label="Default Value"
+                              value={getAttrValue('defaultValue') || ''}
+                              onChange={(e) => updatePaginationAttr('defaultValue', e.target.value)}
+                              placeholder="25"
+                            />
+                          </div>
+
+                          <Toggle
+                            enabled={paginationItem.visible !== false}
+                            onChange={(val) => updatePaginationField('visible', val)}
+                            label="Visible"
+                          />
+
+                          {/* Show all pagination attributes */}
+                          {paginationItem.attributes && paginationItem.attributes.length > 0 && (
+                            <div className="mt-4">
+                              <label className="block text-sm font-medium text-content-secondary mb-2">All Attributes</label>
+                              <div className="bg-surface-secondary rounded p-2 max-h-32 overflow-y-auto space-y-1">
+                                {paginationItem.attributes.map((attr, idx) => (
+                                  <div key={idx} className="flex items-center justify-between bg-surface p-2 rounded border text-sm">
+                                    <span>
+                                      <span className="font-medium text-content-secondary">{attr.name || attr.key}</span>
+                                      <span className="mx-2">:</span>
+                                      <span className="text-content-muted">{typeof attr.value === 'object' ? JSON.stringify(attr.value) : attr.value}</span>
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -1775,11 +2232,20 @@ const PlayboardsManagement = () => {
           {/* JSON Preview Tab */}
           {activeTab === 'json' && (
             <div>
+              <div className="flex justify-end mb-2">
+                <Button type="button" variant="secondary" onClick={copyJsonToClipboard} className="flex items-center gap-1">
+                  <Copy size={14} />
+                  Copy JSON
+                </Button>
+              </div>
               <pre className="bg-neutral-900 text-green-400 p-4 rounded-lg overflow-auto max-h-96 text-xs">
                 {JSON.stringify({
                   key: formData.key,
+                  name: formData.name,
+                  description: formData.description,
                   dataDomain: formData.dataDomain,
                   scenarioKey: formData.scenarioKey,
+                  scenerioKey: formData.scenarioKey,
                   order: formData.order,
                   status: formData.status,
                   program_key: formData.program_key,
