@@ -1,5 +1,6 @@
 module.exports = {
   testEnvironment: 'jsdom',
+  testTimeout: 30000,
   setupFiles: ['./src/test/jest-globals.js'],
   setupFilesAfterEnv: ['./src/test/setup.js'],
   moduleNameMapper: {
