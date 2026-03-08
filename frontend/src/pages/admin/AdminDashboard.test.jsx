@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter } from 'react-router-dom';
 import AdminDashboard from './AdminDashboard';
 
 jest.mock('../../contexts/AuthContext', () => ({

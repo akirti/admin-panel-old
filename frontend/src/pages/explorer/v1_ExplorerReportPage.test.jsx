@@ -1,6 +1,6 @@
 import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import V1ExplorerReportPage from './v1_ExplorerReportPage';
 
 // Mock lucide-react icons

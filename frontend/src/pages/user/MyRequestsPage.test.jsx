@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter } from 'react-router-dom';
 import MyRequestsPage from './MyRequestsPage';
 
 const mockNavigate = jest.fn();

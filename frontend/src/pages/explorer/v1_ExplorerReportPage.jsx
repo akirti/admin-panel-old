@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useParams, useLocation } from 'react-router';
+import { useParams, useLocation } from 'react-router-dom';
 import { Loader2, AlertCircle, BarChart3, BookOpen, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { useExplorer } from '../../components/explorer/v1_ExplorerContext';
 import V1Breadcrumbs from '../../components/explorer/v1_Breadcrumbs';

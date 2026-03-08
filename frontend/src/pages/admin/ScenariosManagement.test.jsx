@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter } from 'react-router-dom';
 import ScenariosManagement from './ScenariosManagement';
 
 jest.mock('../../contexts/AuthContext', () => ({

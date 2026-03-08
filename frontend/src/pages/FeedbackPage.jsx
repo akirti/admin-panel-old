@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import { MessageSquare, ArrowLeft } from 'lucide-react';
 import PublicFeedbackForm from '../components/feedback/PublicFeedbackForm';
 

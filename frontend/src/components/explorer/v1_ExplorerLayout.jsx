@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet } from 'react-router';
+import { Outlet } from 'react-router-dom';
 import { ExplorerProvider } from './v1_ExplorerContext';
 import V1ExplorerSidebar from './v1_ExplorerSidebar';
 

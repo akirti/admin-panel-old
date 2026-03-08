@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 import { Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet } from 'react-router';
+import { Outlet } from 'react-router-dom';
 import ThemeSwitcher from '../shared/ThemeSwitcher';
 
 function AuthLayout() {

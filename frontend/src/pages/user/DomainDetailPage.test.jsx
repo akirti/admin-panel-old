@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import DomainDetailPage from './DomainDetailPage';
 
 jest.mock('../../services/api', () => ({

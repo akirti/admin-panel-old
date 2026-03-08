@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter } from 'react-router-dom';
 import PlayboardsManagement from './PlayboardsManagement';
 
 jest.mock('../../services/api', () => ({

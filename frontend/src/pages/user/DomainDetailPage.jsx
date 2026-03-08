@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router';
+import { useParams, Link } from 'react-router-dom';
 import { domainAPI, scenarioAPI } from '../../services/api';
 import { ArrowLeft, Layers, FileText, ChevronRight } from 'lucide-react';
 import { Badge } from '../../components/shared';

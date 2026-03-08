@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, useNavigate, useParams } from 'react-router';
+import { NavLink, useNavigate, useParams } from 'react-router-dom';
 import { Layers, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useExplorer } from './v1_ExplorerContext';
 

@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter } from 'react-router-dom';
 import V1ExplorerLayout from './v1_ExplorerLayout';
 
 jest.mock('./v1_ExplorerContext', () => ({

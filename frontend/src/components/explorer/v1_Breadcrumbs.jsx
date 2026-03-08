@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import { ChevronRight, Home } from 'lucide-react';
 
 function V1Breadcrumbs({ items = [] }) {

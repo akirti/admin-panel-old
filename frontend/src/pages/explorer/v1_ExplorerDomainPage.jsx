@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Compass, FileText, Layers } from 'lucide-react';
 import { useExplorer } from '../../components/explorer/v1_ExplorerContext';
 import V1Breadcrumbs from '../../components/explorer/v1_Breadcrumbs';
