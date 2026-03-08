@@ -6,10 +6,10 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY package.json yarn.lock ./
 
 # Install dependencies
-RUN npm install
+RUN yarn install --frozen-lockfile --production=false
 
 # Copy source code
 COPY . .
@@ -18,7 +18,7 @@ COPY . .
 ENV NODE_ENV=production
 
 # Build the application
-RUN npm run build
+RUN yarn build
 
 # Stage 2: Production with Nginx
 FROM nginx:mainline-alpine AS production
