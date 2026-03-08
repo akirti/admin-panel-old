@@ -1,32 +1,31 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import ApiConfigsManagement from './ApiConfigsManagement';
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   apiConfigsAPI: {
-    list: vi.fn(),
-    getTags: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    toggleStatus: vi.fn(),
-    test: vi.fn(),
-    testById: vi.fn(),
-    getGCSStatus: vi.fn(),
-    uploadCert: vi.fn(),
+    list: jest.fn(),
+    getTags: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    toggleStatus: jest.fn(),
+    test: jest.fn(),
+    testById: jest.fn(),
+    getGCSStatus: jest.fn(),
+    uploadCert: jest.fn(),
   },
 }));
 
-vi.mock('react-hot-toast', () => ({
+jest.mock('react-hot-toast', () => ({ __esModule: true,
   default: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
-vi.mock('../../components/shared', () => ({
+jest.mock('../../components/shared', () => ({
   Card: ({ children, className }) => <div className={className}>{children}</div>,
   Button: ({ children, onClick, disabled, type, variant }) => (
     <button onClick={onClick} disabled={disabled} type={type}>{children}</button>
@@ -127,7 +126,7 @@ function renderApiConfigsManagement() {
 
 describe('ApiConfigsManagement', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders page header', async () => {
@@ -286,7 +285,7 @@ describe('ApiConfigsManagement', () => {
     const toast = await import('react-hot-toast');
     apiConfigsAPI.delete.mockResolvedValue({ data: {} });
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     renderApiConfigsManagement();
 
@@ -302,14 +301,14 @@ describe('ApiConfigsManagement', () => {
       expect(toast.default.success).toHaveBeenCalledWith('API configuration deleted successfully');
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('cancels delete when user declines', async () => {
     await setupMocks();
     const { apiConfigsAPI } = await import('../../services/api');
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    jest.spyOn(window, 'confirm').mockReturnValue(false);
 
     renderApiConfigsManagement();
 
@@ -321,7 +320,7 @@ describe('ApiConfigsManagement', () => {
     await user.click(deleteButtons[0]);
 
     expect(apiConfigsAPI.delete).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles toggle status', async () => {
@@ -423,7 +422,7 @@ describe('ApiConfigsManagement', () => {
     const toast = await import('react-hot-toast');
     apiConfigsAPI.delete.mockRejectedValue(new Error('Server error'));
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     renderApiConfigsManagement();
 
@@ -438,7 +437,7 @@ describe('ApiConfigsManagement', () => {
       expect(toast.default.error).toHaveBeenCalledWith('Failed to delete configuration');
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles toggle status failure', async () => {

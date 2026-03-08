@@ -6,12 +6,12 @@ describe('V1ColumnFilterDropdown', () => {
   const defaultProps = {
     options: ['Active', 'Inactive', 'Pending'],
     selectedOptions: [],
-    onChange: vi.fn(),
+    onChange: jest.fn(),
     columnLabel: 'Status',
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders filter button with aria-label', () => {
@@ -42,7 +42,7 @@ describe('V1ColumnFilterDropdown', () => {
 
   it('allows selecting options and applying', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     render(<V1ColumnFilterDropdown {...defaultProps} onChange={onChange} />);
 
     await user.click(screen.getByLabelText('Filter Status'));
@@ -54,7 +54,7 @@ describe('V1ColumnFilterDropdown', () => {
 
   it('clears all selections', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     render(
       <V1ColumnFilterDropdown
         {...defaultProps}

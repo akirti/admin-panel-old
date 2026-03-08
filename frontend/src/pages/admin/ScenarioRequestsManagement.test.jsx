@@ -1,31 +1,30 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import ScenarioRequestsManagement from './ScenarioRequestsManagement';
 
-const mockNavigate = vi.fn();
-vi.mock('react-router', async () => {
-  const actual = await vi.importActual('react-router');
+const mockNavigate = jest.fn();
+jest.mock('react-router', () => {
+  const actual = jest.requireActual('react-router');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
   };
 });
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   scenarioRequestAPI: {
-    getAll: vi.fn(),
-    getDomains: vi.fn(),
-    getStatuses: vi.fn(),
-    updateStatus: vi.fn(),
+    getAll: jest.fn(),
+    getDomains: jest.fn(),
+    getStatuses: jest.fn(),
+    updateStatus: jest.fn(),
   },
 }));
 
-vi.mock('react-hot-toast', () => ({
+jest.mock('react-hot-toast', () => ({ __esModule: true,
   default: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
@@ -85,7 +84,7 @@ function renderScenarioRequestsManagement() {
 
 describe('ScenarioRequestsManagement', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders page header', async () => {

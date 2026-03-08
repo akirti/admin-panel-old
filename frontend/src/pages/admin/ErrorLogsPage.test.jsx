@@ -1,29 +1,28 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import ErrorLogsPage from './ErrorLogsPage';
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   errorLogsAPI: {
-    list: vi.fn(),
-    getStats: vi.fn(),
-    getLevels: vi.fn(),
-    getTypes: vi.fn(),
-    listArchives: vi.fn(),
-    getCurrentFile: vi.fn(),
-    forceArchive: vi.fn(),
-    deleteArchive: vi.fn(),
-    cleanup: vi.fn(),
-    getArchiveDownloadUrl: vi.fn(),
+    list: jest.fn(),
+    getStats: jest.fn(),
+    getLevels: jest.fn(),
+    getTypes: jest.fn(),
+    listArchives: jest.fn(),
+    getCurrentFile: jest.fn(),
+    forceArchive: jest.fn(),
+    deleteArchive: jest.fn(),
+    cleanup: jest.fn(),
+    getArchiveDownloadUrl: jest.fn(),
   },
 }));
 
-vi.mock('react-hot-toast', () => ({
+jest.mock('react-hot-toast', () => ({ __esModule: true,
   default: {
-    success: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
   },
 }));
 
@@ -79,7 +78,7 @@ function renderErrorLogsPage() {
 
 describe('ErrorLogsPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders page header', async () => {
@@ -428,7 +427,7 @@ describe('ErrorLogsPage', () => {
     errorLogsAPI.forceArchive.mockResolvedValue({ data: { archived: true, message: 'Archived successfully' } });
     errorLogsAPI.listArchives.mockResolvedValue({ data: { archives: [] } });
     errorLogsAPI.getCurrentFile.mockResolvedValue({ data: { size: 1024, line_count: 50 } });
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
     const user = userEvent.setup();
 
     renderErrorLogsPage();
@@ -449,7 +448,7 @@ describe('ErrorLogsPage', () => {
       expect(errorLogsAPI.forceArchive).toHaveBeenCalled();
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles cleanup with prompt', async () => {
@@ -459,7 +458,7 @@ describe('ErrorLogsPage', () => {
     errorLogsAPI.cleanup.mockResolvedValue({ data: { deleted_count: 3 } });
     errorLogsAPI.listArchives.mockResolvedValue({ data: { archives: [] } });
     errorLogsAPI.getCurrentFile.mockResolvedValue({ data: { size: 1024, line_count: 50 } });
-    vi.spyOn(window, 'prompt').mockReturnValue('30');
+    jest.spyOn(window, 'prompt').mockReturnValue('30');
     const user = userEvent.setup();
 
     renderErrorLogsPage();
@@ -480,7 +479,7 @@ describe('ErrorLogsPage', () => {
       expect(errorLogsAPI.cleanup).toHaveBeenCalledWith(30);
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('shows today stats card', async () => {
@@ -522,7 +521,7 @@ describe('ErrorLogsPage', () => {
     errorLogsAPI.listArchives.mockResolvedValue({ data: { archives: mockArchives } });
     errorLogsAPI.getCurrentFile.mockResolvedValue({ data: { size: 1024, line_count: 50 } });
     errorLogsAPI.deleteArchive.mockResolvedValue({ data: {} });
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
     const user = userEvent.setup();
 
     renderErrorLogsPage();
@@ -545,7 +544,7 @@ describe('ErrorLogsPage', () => {
       expect(errorLogsAPI.deleteArchive).toHaveBeenCalledWith('arch1');
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles download archive', async () => {
@@ -557,7 +556,7 @@ describe('ErrorLogsPage', () => {
     errorLogsAPI.listArchives.mockResolvedValue({ data: { archives: mockArchives } });
     errorLogsAPI.getCurrentFile.mockResolvedValue({ data: { size: 1024, line_count: 50 } });
     errorLogsAPI.getArchiveDownloadUrl.mockResolvedValue({ data: { download_url: 'https://download.test/file' } });
-    vi.spyOn(window, 'open').mockImplementation(() => {});
+    jest.spyOn(window, 'open').mockImplementation(() => {});
     const user = userEvent.setup();
 
     renderErrorLogsPage();
@@ -580,7 +579,7 @@ describe('ErrorLogsPage', () => {
       expect(errorLogsAPI.getArchiveDownloadUrl).toHaveBeenCalledWith('arch1');
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('shows CRITICAL level badge correctly', async () => {
@@ -644,7 +643,7 @@ describe('ErrorLogsPage', () => {
     const { errorLogsAPI } = await import('../../services/api');
     errorLogsAPI.listArchives.mockResolvedValue({ data: { archives: [] } });
     errorLogsAPI.getCurrentFile.mockResolvedValue({ data: { size: 1024, line_count: 50 } });
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    jest.spyOn(window, 'confirm').mockReturnValue(false);
     const user = userEvent.setup();
 
     renderErrorLogsPage();
@@ -662,7 +661,7 @@ describe('ErrorLogsPage', () => {
     await user.click(screen.getByText('Force Archive'));
 
     expect(errorLogsAPI.forceArchive).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles cleanup cancellation', async () => {
@@ -670,7 +669,7 @@ describe('ErrorLogsPage', () => {
     const { errorLogsAPI } = await import('../../services/api');
     errorLogsAPI.listArchives.mockResolvedValue({ data: { archives: [] } });
     errorLogsAPI.getCurrentFile.mockResolvedValue({ data: { size: 1024, line_count: 50 } });
-    vi.spyOn(window, 'prompt').mockReturnValue(null);
+    jest.spyOn(window, 'prompt').mockReturnValue(null);
     const user = userEvent.setup();
 
     renderErrorLogsPage();
@@ -688,7 +687,7 @@ describe('ErrorLogsPage', () => {
     await user.click(screen.getByText('Cleanup Old'));
 
     expect(errorLogsAPI.cleanup).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles force archive error', async () => {
@@ -698,7 +697,7 @@ describe('ErrorLogsPage', () => {
     errorLogsAPI.forceArchive.mockRejectedValue(new Error('Archive failed'));
     errorLogsAPI.listArchives.mockResolvedValue({ data: { archives: [] } });
     errorLogsAPI.getCurrentFile.mockResolvedValue({ data: { size: 1024, line_count: 50 } });
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
     const user = userEvent.setup();
 
     renderErrorLogsPage();
@@ -719,7 +718,7 @@ describe('ErrorLogsPage', () => {
       expect(toast.default.error).toHaveBeenCalled();
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles delete archive cancellation', async () => {
@@ -730,7 +729,7 @@ describe('ErrorLogsPage', () => {
     ];
     errorLogsAPI.listArchives.mockResolvedValue({ data: { archives: mockArchives } });
     errorLogsAPI.getCurrentFile.mockResolvedValue({ data: { size: 1024, line_count: 50 } });
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    jest.spyOn(window, 'confirm').mockReturnValue(false);
     const user = userEvent.setup();
 
     renderErrorLogsPage();
@@ -749,7 +748,7 @@ describe('ErrorLogsPage', () => {
     await user.click(deleteButtons[0]);
 
     expect(errorLogsAPI.deleteArchive).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('expands and collapses log row', async () => {

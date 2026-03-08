@@ -7,9 +7,9 @@ describe('LucideIconPicker', () => {
   let mockOnClose;
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockOnChange = vi.fn();
-    mockOnClose = vi.fn();
+    jest.clearAllMocks();
+    mockOnChange = jest.fn();
+    mockOnClose = jest.fn();
   });
 
   it('renders the icon picker modal', () => {

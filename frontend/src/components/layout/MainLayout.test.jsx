@@ -3,22 +3,22 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import MainLayout from './MainLayout';
 
-const mockNavigate = vi.fn();
-const mockLogout = vi.fn().mockResolvedValue(undefined);
-const mockIsSuperAdmin = vi.fn(() => false);
-const mockCanManageUsers = vi.fn(() => false);
-const mockIsEditor = vi.fn(() => false);
+const mockNavigate = jest.fn();
+const mockLogout = jest.fn().mockResolvedValue(undefined);
+const mockIsSuperAdmin = jest.fn(() => false);
+const mockCanManageUsers = jest.fn(() => false);
+const mockIsEditor = jest.fn(() => false);
 
-vi.mock('react-router', async () => {
-  const actual = await vi.importActual('react-router');
+jest.mock('react-router', () => {
+  const actual = jest.requireActual('react-router');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
   };
 });
 
-vi.mock('../../contexts/AuthContext', () => ({
-  useAuth: vi.fn(() => ({
+jest.mock('../../contexts/AuthContext', () => ({
+  useAuth: jest.fn(() => ({
     user: {
       full_name: 'Test User',
       email: 'test@example.com',
@@ -32,11 +32,11 @@ vi.mock('../../contexts/AuthContext', () => ({
   })),
 }));
 
-vi.mock('../shared/ThemeSwitcher', () => ({
-  default: () => <div data-testid="theme-switcher">ThemeSwitcher</div>,
+jest.mock('../shared/ThemeSwitcher', () => ({
+  __esModule: true, default: () => <div data-testid="theme-switcher">ThemeSwitcher</div>,
 }));
 
-vi.mock('../shared', () => ({
+jest.mock('../shared', () => ({
   Badge: ({ children }) => <span data-testid="badge">{children}</span>,
 }));
 
@@ -52,7 +52,7 @@ function renderMainLayout(props = {}) {
 
 describe('MainLayout', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     mockIsSuperAdmin.mockReturnValue(false);
     mockCanManageUsers.mockReturnValue(false);
     mockIsEditor.mockReturnValue(false);

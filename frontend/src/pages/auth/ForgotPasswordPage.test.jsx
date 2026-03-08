@@ -1,19 +1,18 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import ForgotPasswordPage from './ForgotPasswordPage';
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   authAPI: {
-    forgotPassword: vi.fn(),
+    forgotPassword: jest.fn(),
   },
 }));
 
-vi.mock('react-hot-toast', () => ({
+jest.mock('react-hot-toast', () => ({ __esModule: true,
   default: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
@@ -27,7 +26,7 @@ function renderForgotPasswordPage() {
 
 describe('ForgotPasswordPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('rendering', () => {

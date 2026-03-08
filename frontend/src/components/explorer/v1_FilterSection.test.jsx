@@ -5,11 +5,10 @@
  * The component default `initialFilterValues = {}` creates a new object on every render,
  * which triggers the useEffect that depends on it, causing an infinite re-render loop.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-vi.mock('lucide-react', () => ({
+jest.mock('lucide-react', () => ({
   ChevronDown: () => null,
   ChevronUp: () => null,
   Filter: () => null,
@@ -18,10 +17,10 @@ vi.mock('lucide-react', () => ({
   Info: () => null,
   X: () => null,
 }));
-vi.mock('../../hooks/useAssignedCustomers', () => ({
-  default: () => ({ customers: [], tags: [], loading: false, hasAssigned: false, search: () => {}, filterByTag: () => {} }),
+jest.mock('../../hooks/useAssignedCustomers', () => ({
+  __esModule: true, default: () => ({ customers: [], tags: [], loading: false, hasAssigned: false, search: () => {}, filterByTag: () => {} }),
 }));
-vi.mock('../../utils/v1_reportUtils', () => ({
+jest.mock('../../utils/v1_reportUtils', () => ({
   getAttrValue: (attrs, key) => attrs?.find(a => a.key === key)?.value,
   parseCurrentDateString: (v) => v,
   getDefaultValue: () => '',
@@ -29,12 +28,12 @@ vi.mock('../../utils/v1_reportUtils', () => ({
   deepEqual: (a, b) => a === b,
   trimCellValue: (v) => v,
 }));
-vi.mock('../../utils/v1_filterValidators', () => ({
-  validateFilter: vi.fn(() => ({ valid: true })),
+jest.mock('../../utils/v1_filterValidators', () => ({
+  validateFilter: jest.fn(() => ({ valid: true })),
 }));
-vi.mock('./v1_DescriptionRenderer', () => ({ default: () => null }));
-vi.mock('./v1_DynamicFilterControl', () => ({
-  default: ({ filter, value, onChange }) => (
+jest.mock('./v1_DescriptionRenderer', () => ({ __esModule: true, default: () => null }));
+jest.mock('./v1_DynamicFilterControl', () => ({
+  __esModule: true, default: ({ filter, value, onChange }) => (
     <input
       data-testid={`filter-${filter.dataKey}`}
       value={value ?? ''}
@@ -60,30 +59,30 @@ const EMPTY_FILTERS = {};
 
 describe('V1FilterSection', () => {
   it('renders Filters header', () => {
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={baseConfig} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={baseConfig} initialFilterValues={EMPTY_FILTERS} />);
     expect(screen.getByText('Filters')).toBeInTheDocument();
   });
 
   it('renders Submit and Reset buttons', () => {
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={baseConfig} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={baseConfig} initialFilterValues={EMPTY_FILTERS} />);
     expect(screen.getByText('Submit')).toBeInTheDocument();
     expect(screen.getByText('Reset')).toBeInTheDocument();
   });
 
   it('shows no filters message for empty config', () => {
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={[]} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={[]} initialFilterValues={EMPTY_FILTERS} />);
     expect(screen.getByText('No filters available.')).toBeInTheDocument();
   });
 
   it('shows filterError', () => {
     render(
-      <V1FilterSection onSubmit={vi.fn()} filterConfig={baseConfig} filterError="Load failed" initialFilterValues={EMPTY_FILTERS} />
+      <V1FilterSection onSubmit={jest.fn()} filterConfig={baseConfig} filterError="Load failed" initialFilterValues={EMPTY_FILTERS} />
     );
     expect(screen.getByText('Load failed')).toBeInTheDocument();
   });
 
   it('calls onSubmit when Submit button is clicked', async () => {
-    const onSubmit = vi.fn();
+    const onSubmit = jest.fn();
     const user = userEvent.setup();
 
     render(<V1FilterSection onSubmit={onSubmit} filterConfig={baseConfig} initialFilterValues={EMPTY_FILTERS} />);
@@ -94,7 +93,7 @@ describe('V1FilterSection', () => {
   });
 
   it('resets form when Reset button is clicked', async () => {
-    const onSubmit = vi.fn();
+    const onSubmit = jest.fn();
     const user = userEvent.setup();
 
     render(<V1FilterSection onSubmit={onSubmit} filterConfig={baseConfig} initialFilterValues={EMPTY_FILTERS} />);
@@ -106,7 +105,7 @@ describe('V1FilterSection', () => {
   });
 
   it('renders filter label for each visible filter', () => {
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={baseConfig} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={baseConfig} initialFilterValues={EMPTY_FILTERS} />);
 
     expect(screen.getByText('Name')).toBeInTheDocument();
   });
@@ -122,7 +121,7 @@ describe('V1FilterSection', () => {
         attributes: [{ key: 'type', value: 'select' }],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
 
     expect(screen.getByText('Name')).toBeInTheDocument();
     expect(screen.getByText('Status')).toBeInTheDocument();
@@ -138,7 +137,7 @@ describe('V1FilterSection', () => {
         attributes: [{ key: 'type', value: 'input' }],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
 
     // Inactive filter should not render its label
     expect(screen.queryByText('Hidden Filter')).not.toBeInTheDocument();
@@ -154,14 +153,14 @@ describe('V1FilterSection', () => {
         attributes: [{ key: 'type', value: 'input' }],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
 
     expect(screen.queryByText('Invisible')).not.toBeInTheDocument();
   });
 
   it('shows loading state when filterLoading is true', () => {
     render(
-      <V1FilterSection onSubmit={vi.fn()} filterConfig={baseConfig} filterLoading={true} initialFilterValues={EMPTY_FILTERS} />
+      <V1FilterSection onSubmit={jest.fn()} filterConfig={baseConfig} filterLoading={true} initialFilterValues={EMPTY_FILTERS} />
     );
 
     // Loading should still render the filter section
@@ -181,7 +180,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
 
     expect(screen.getByText('Start Date')).toBeInTheDocument();
   });
@@ -199,13 +198,13 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
 
     expect(screen.getByText('Tags')).toBeInTheDocument();
   });
 
   it('handles autoSubmit mode', () => {
-    const onSubmit = vi.fn();
+    const onSubmit = jest.fn();
 
     render(
       <V1FilterSection
@@ -223,7 +222,7 @@ describe('V1FilterSection', () => {
   it('shows spinner instead of form when filterLoading is true', () => {
     const { container } = render(
       <V1FilterSection
-        onSubmit={vi.fn()}
+        onSubmit={jest.fn()}
         filterConfig={baseConfig}
         filterLoading={true}
         initialFilterValues={EMPTY_FILTERS}
@@ -238,7 +237,7 @@ describe('V1FilterSection', () => {
 
   it('shows validation error when filter is invalid', async () => {
     validateFilter.mockReturnValue({ valid: false, message: 'Required field.' });
-    const onSubmit = vi.fn();
+    const onSubmit = jest.fn();
     const user = userEvent.setup();
 
     render(
@@ -260,7 +259,7 @@ describe('V1FilterSection', () => {
 
   it('groups validation errors for multiple fields with same message', async () => {
     validateFilter.mockReturnValue({ valid: false, message: 'Value required.' });
-    const onSubmit = vi.fn();
+    const onSubmit = jest.fn();
     const user = userEvent.setup();
     const config = [
       ...baseConfig,
@@ -290,7 +289,7 @@ describe('V1FilterSection', () => {
 
   it('shows fallback error when no message', async () => {
     validateFilter.mockReturnValue({ valid: false });
-    const onSubmit = vi.fn();
+    const onSubmit = jest.fn();
     const user = userEvent.setup();
 
     render(
@@ -310,7 +309,7 @@ describe('V1FilterSection', () => {
 
   it('clears error on handleChange', async () => {
     validateFilter.mockReturnValueOnce({ valid: false, message: 'Bad value.' });
-    const onSubmit = vi.fn();
+    const onSubmit = jest.fn();
     const user = userEvent.setup();
 
     render(
@@ -337,7 +336,7 @@ describe('V1FilterSection', () => {
 
     render(
       <V1FilterSection
-        onSubmit={vi.fn()}
+        onSubmit={jest.fn()}
         filterConfig={baseConfig}
         initialFilterValues={EMPTY_FILTERS}
       />
@@ -367,7 +366,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     expect(screen.getByText('Date Range')).toBeInTheDocument();
   });
 
@@ -384,7 +383,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     expect(screen.getByText('Radio')).toBeInTheDocument();
   });
 
@@ -401,7 +400,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     expect(screen.getByText('Toggle')).toBeInTheDocument();
   });
 
@@ -418,7 +417,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     expect(screen.getByText('Generic')).toBeInTheDocument();
   });
 
@@ -436,7 +435,7 @@ describe('V1FilterSection', () => {
       },
     ];
     const initial = { name: 'initial_value' };
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={initial} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={initial} />);
     expect(screen.getByTestId('filter-name')).toHaveValue('initial_value');
   });
 
@@ -455,7 +454,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     await user.click(screen.getByText('Reset'));
     expect(screen.getByText('Date Range')).toBeInTheDocument();
   });
@@ -474,7 +473,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     await user.click(screen.getByText('Reset'));
     expect(screen.getByText('Tags')).toBeInTheDocument();
   });
@@ -493,13 +492,13 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     await user.click(screen.getByText('Reset'));
     expect(screen.getByText('Tags')).toBeInTheDocument();
   });
 
   it('submits with formatted values', async () => {
-    const onSubmit = vi.fn();
+    const onSubmit = jest.fn();
     const user = userEvent.setup();
 
     render(
@@ -528,7 +527,7 @@ describe('V1FilterSection', () => {
     ];
 
     render(
-      <V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />
+      <V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />
     );
 
     await user.click(screen.getByText('Submit'));
@@ -547,7 +546,7 @@ describe('V1FilterSection', () => {
         attributes: [{ key: 'type', value: 'input' }],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     expect(screen.getByText('No Status')).toBeInTheDocument();
   });
 
@@ -559,7 +558,7 @@ describe('V1FilterSection', () => {
     // But handleSubmit also checks externalLoading as first guard.
     // We test that the submit handler bails out by rendering without loading
     // then externally invoking submit while loading.
-    const onSubmit = vi.fn();
+    const onSubmit = jest.fn();
     const { rerender } = render(
       <V1FilterSection
         onSubmit={onSubmit}
@@ -596,7 +595,7 @@ describe('V1FilterSection', () => {
         attributes: [{ key: 'type', value: 'input' }],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
 
     // Info button should be present
     const infoBtn = screen.getByTitle('View filter info');
@@ -623,7 +622,7 @@ describe('V1FilterSection', () => {
         attributes: [{ key: 'type', value: 'input' }],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
 
     const infoBtn = screen.getByTitle('View filter info');
     expect(infoBtn).toBeInTheDocument();
@@ -644,7 +643,7 @@ describe('V1FilterSection', () => {
         attributes: [{ key: 'type', value: 'input' }],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
 
     expect(screen.queryByTitle('View filter info')).not.toBeInTheDocument();
   });
@@ -663,7 +662,7 @@ describe('V1FilterSection', () => {
         attributes: [{ key: 'type', value: 'input' }],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
 
     expect(screen.queryByTitle('View filter info')).not.toBeInTheDocument();
   });
@@ -680,7 +679,7 @@ describe('V1FilterSection', () => {
         attributes: [{ key: 'type', value: 'input' }],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
 
     expect(screen.queryByTitle('View filter info')).not.toBeInTheDocument();
   });
@@ -698,7 +697,7 @@ describe('V1FilterSection', () => {
         attributes: [{ key: 'type', value: 'input' }],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
 
     const infoBtn = screen.getByTitle('View filter info');
     await user.click(infoBtn);
@@ -722,7 +721,7 @@ describe('V1FilterSection', () => {
         attributes: [{ key: 'type', value: 'input' }],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
 
     const infoBtn = screen.getByTitle('View filter info');
     await user.click(infoBtn);
@@ -751,7 +750,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
 
     expect(screen.getByText('Search')).toBeInTheDocument();
   });
@@ -769,7 +768,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
 
     expect(screen.getByText('Search2')).toBeInTheDocument();
   });
@@ -788,7 +787,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
 
     expect(screen.getByText('Dropdown')).toBeInTheDocument();
   });
@@ -800,7 +799,7 @@ describe('V1FilterSection', () => {
 
     render(
       <V1FilterSection
-        onSubmit={vi.fn()}
+        onSubmit={jest.fn()}
         filterConfig={baseConfig}
         initialFilterValues={EMPTY_FILTERS}
       />
@@ -822,7 +821,7 @@ describe('V1FilterSection', () => {
       { dataKey: 'c', displayName: 'Gamma', visible: true, status: 'Y', attributes: [{ key: 'type', value: 'input' }] },
       { dataKey: 'd', displayName: 'Delta', visible: true, status: 'Y', attributes: [{ key: 'type', value: 'input' }] },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
 
     expect(screen.getByText('Alpha')).toBeInTheDocument();
     expect(screen.getByText('Beta')).toBeInTheDocument();
@@ -844,7 +843,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     expect(screen.getByText('Tags')).toBeInTheDocument();
   });
 
@@ -862,7 +861,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     expect(screen.getByText('Toggle')).toBeInTheDocument();
   });
 
@@ -880,7 +879,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     expect(screen.getByText('Toggle2')).toBeInTheDocument();
   });
 
@@ -897,7 +896,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     expect(screen.getByText('Date Pick')).toBeInTheDocument();
   });
 
@@ -914,7 +913,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     expect(screen.getByText('Date Range 2')).toBeInTheDocument();
   });
 
@@ -932,7 +931,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     expect(screen.getByText('Tags2')).toBeInTheDocument();
   });
 
@@ -950,7 +949,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     expect(screen.getByText('Radio2')).toBeInTheDocument();
   });
 
@@ -968,7 +967,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     expect(screen.getByText('Generic2')).toBeInTheDocument();
   });
 
@@ -987,7 +986,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     await user.click(screen.getByText('Reset'));
     expect(screen.getByText('Date Pick')).toBeInTheDocument();
   });
@@ -1007,7 +1006,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     await user.click(screen.getByText('Reset'));
     expect(screen.getByText('Date Fld')).toBeInTheDocument();
   });
@@ -1027,7 +1026,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     await user.click(screen.getByText('Reset'));
     expect(screen.getByText('Gen')).toBeInTheDocument();
   });
@@ -1046,7 +1045,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     await user.click(screen.getByText('Reset'));
     expect(screen.getByText('DR Empty')).toBeInTheDocument();
   });
@@ -1066,7 +1065,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     await user.click(screen.getByText('Reset'));
     expect(screen.getByText('MS Empty')).toBeInTheDocument();
   });
@@ -1085,7 +1084,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     await user.click(screen.getByText('Reset'));
     expect(screen.getByText('DP Empty')).toBeInTheDocument();
   });
@@ -1105,7 +1104,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     await user.click(screen.getByText('Reset'));
     expect(screen.getByText('Gen Null')).toBeInTheDocument();
   });
@@ -1121,7 +1120,7 @@ describe('V1FilterSection', () => {
         attributes: [{ key: 'type', value: 'input' }],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
 
     expect(screen.queryByText('Assigned Customers')).not.toBeInTheDocument();
     expect(screen.queryByText('No Preference')).not.toBeInTheDocument();
@@ -1138,7 +1137,7 @@ describe('V1FilterSection', () => {
         attributes: [{ key: 'type', value: 'input' }],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     // If hasAssigned were true, we'd see the toggle
     // At minimum this exercises the isCustomerFilter branch
     expect(screen.getByText('Customer #1')).toBeInTheDocument();
@@ -1155,13 +1154,13 @@ describe('V1FilterSection', () => {
         attributes: [{ key: 'type', value: 'input' }],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     expect(screen.getByText('QCustomer')).toBeInTheDocument();
   });
 
   // Submit collapses the filter section (setShow(false))
   it('collapses filter section after successful submit', async () => {
-    const onSubmit = vi.fn();
+    const onSubmit = jest.fn();
     const user = userEvent.setup();
 
     render(<V1FilterSection onSubmit={onSubmit} filterConfig={baseConfig} initialFilterValues={EMPTY_FILTERS} />);
@@ -1176,7 +1175,7 @@ describe('V1FilterSection', () => {
 
   // Re-open filter section after submit collapse
   it('can re-open filter section by clicking header after collapse', async () => {
-    const onSubmit = vi.fn();
+    const onSubmit = jest.fn();
     const user = userEvent.setup();
 
     render(<V1FilterSection onSubmit={onSubmit} filterConfig={baseConfig} initialFilterValues={EMPTY_FILTERS} />);
@@ -1203,7 +1202,7 @@ describe('V1FilterSection', () => {
         attributes: [{ key: 'type', value: 'input' }],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
 
     expect(screen.getByTitle('View filter info')).toBeInTheDocument();
   });
@@ -1219,13 +1218,13 @@ describe('V1FilterSection', () => {
         attributes: null,
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     expect(screen.getByText('No Attrs')).toBeInTheDocument();
   });
 
   // Empty filterConfig does not cause init effect to run
   it('does not initialize form when filterConfig is empty', () => {
-    const onSubmit = vi.fn();
+    const onSubmit = jest.fn();
     render(<V1FilterSection onSubmit={onSubmit} filterConfig={[]} initialFilterValues={EMPTY_FILTERS} />);
     expect(screen.getByText('No filters available.')).toBeInTheDocument();
   });
@@ -1244,7 +1243,7 @@ describe('V1FilterSection', () => {
         ],
       },
     ];
-    render(<V1FilterSection onSubmit={vi.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
+    render(<V1FilterSection onSubmit={jest.fn()} filterConfig={config} initialFilterValues={EMPTY_FILTERS} />);
     // The filter input should have the default value
     expect(screen.getByTestId('filter-inputVal')).toHaveValue('pre-filled');
   });
@@ -1256,7 +1255,7 @@ describe('V1FilterSection', () => {
 
     render(
       <V1FilterSection
-        onSubmit={vi.fn()}
+        onSubmit={jest.fn()}
         filterConfig={baseConfig}
         initialFilterValues={EMPTY_FILTERS}
       />
@@ -1285,7 +1284,7 @@ describe('V1FilterSection', () => {
 
     render(
       <V1FilterSection
-        onSubmit={vi.fn()}
+        onSubmit={jest.fn()}
         filterConfig={config}
         initialFilterValues={EMPTY_FILTERS}
       />

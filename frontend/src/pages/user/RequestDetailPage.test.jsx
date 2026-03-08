@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router';
@@ -6,9 +5,9 @@ import RequestDetailPage from './RequestDetailPage';
 
 // ---- mocks ----
 
-const mockNavigate = vi.fn();
-vi.mock('react-router', async () => {
-  const actual = await vi.importActual('react-router');
+const mockNavigate = jest.fn();
+jest.mock('react-router', () => {
+  const actual = jest.requireActual('react-router');
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
@@ -20,7 +19,7 @@ const mockUser = {
   roles: ['editor'],
 };
 
-vi.mock('../../contexts/AuthContext', () => ({
+jest.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({
     user: mockUser,
     isSuperAdmin: () => false,
@@ -29,11 +28,11 @@ vi.mock('../../contexts/AuthContext', () => ({
   }),
 }));
 
-vi.mock('react-hot-toast', () => ({
-  default: { success: vi.fn(), error: vi.fn() },
+jest.mock('react-hot-toast', () => ({ __esModule: true,
+  default: { success: jest.fn(), error: jest.fn() },
 }));
 
-vi.mock('lucide-react', () => ({
+jest.mock('lucide-react', () => ({
   ArrowLeft: (props) => null,
   Clock: (props) => null,
   CheckCircle: (props) => null,
@@ -59,24 +58,24 @@ vi.mock('lucide-react', () => ({
   Link: (props) => null,
 }));
 
-vi.mock('dompurify', () => ({
-  default: { sanitize: (html) => html },
+jest.mock('dompurify', () => ({
+  __esModule: true, default: { sanitize: (html) => html },
 }));
 
-vi.mock('../../components/shared', () => ({
+jest.mock('../../components/shared', () => ({
   Modal: ({ isOpen, onClose, title, children, size }) =>
     isOpen ? <div data-testid="modal" role="dialog"><h2>{title}</h2>{children}</div> : null,
 }));
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   scenarioRequestAPI: {
-    get: vi.fn(),
-    addComment: vi.fn(),
-    previewFile: vi.fn(),
-    downloadFile: vi.fn(),
-    uploadBucketFile: vi.fn(),
-    addJiraLink: vi.fn(),
-    removeJiraLink: vi.fn(),
+    get: jest.fn(),
+    addComment: jest.fn(),
+    previewFile: jest.fn(),
+    downloadFile: jest.fn(),
+    uploadBucketFile: jest.fn(),
+    addJiraLink: jest.fn(),
+    removeJiraLink: jest.fn(),
   },
 }));
 
@@ -136,7 +135,7 @@ async function setupMock(requestData = mockRequest) {
 
 describe('RequestDetailPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('shows loading spinner while request is loading', async () => {
@@ -545,8 +544,8 @@ describe('RequestDetailPage', () => {
   it('calls download file API when Download button is clicked', async () => {
     const api = await setupMock();
     api.downloadFile.mockResolvedValue({ data: new Blob(['data']) });
-    window.URL.createObjectURL = vi.fn(() => 'blob:test');
-    window.URL.revokeObjectURL = vi.fn();
+    window.URL.createObjectURL = jest.fn(() => 'blob:test');
+    window.URL.revokeObjectURL = jest.fn();
     const user = userEvent.setup();
 
     renderPage();
@@ -1255,8 +1254,8 @@ describe('RequestDetailPage', () => {
     };
     const api = await setupMock(requestWithBuckets);
     api.downloadFile.mockResolvedValue({ data: 'file content' });
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
     const user = userEvent.setup();
 
     renderPage();

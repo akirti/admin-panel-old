@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   getTotalPages,
   getCountEvaluated,
@@ -482,22 +481,22 @@ describe('downloadData', () => {
   let clickSpy;
 
   beforeEach(() => {
-    clickSpy = vi.fn();
-    createElementSpy = vi.spyOn(document, 'createElement').mockReturnValue({
+    clickSpy = jest.fn();
+    createElementSpy = jest.spyOn(document, 'createElement').mockReturnValue({
       href: '',
       download: '',
       click: clickSpy,
     });
-    appendChildSpy = vi.spyOn(document.body, 'appendChild').mockImplementation(() => {});
-    removeChildSpy = vi.spyOn(document.body, 'removeChild').mockImplementation(() => {});
-    createObjectURLSpy = vi.fn(() => 'blob:mock-url');
-    revokeObjectURLSpy = vi.fn();
+    appendChildSpy = jest.spyOn(document.body, 'appendChild').mockImplementation(() => {});
+    removeChildSpy = jest.spyOn(document.body, 'removeChild').mockImplementation(() => {});
+    createObjectURLSpy = jest.fn(() => 'blob:mock-url');
+    revokeObjectURLSpy = jest.fn();
     URL.createObjectURL = createObjectURLSpy;
     URL.revokeObjectURL = revokeObjectURLSpy;
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('does nothing when data is empty', () => {
@@ -605,28 +604,28 @@ describe('isDateString', () => {
 
 describe('handleArray', () => {
   it('filters out empty strings and calls onChange', () => {
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     const filter = { dataKey: 'colors' };
     handleArray(['red', '', 'blue'], filter, onChange);
     expect(onChange).toHaveBeenCalledWith('colors', ['red', 'blue']);
   });
 
   it('converts non-array to empty array', () => {
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     const filter = { dataKey: 'items' };
     handleArray(null, filter, onChange);
     expect(onChange).toHaveBeenCalledWith('items', []);
   });
 
   it('handles all-empty array', () => {
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     const filter = { dataKey: 'items' };
     handleArray(['', '', ''], filter, onChange);
     expect(onChange).toHaveBeenCalledWith('items', []);
   });
 
   it('passes through array with no empty values', () => {
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     const filter = { dataKey: 'tags' };
     handleArray(['a', 'b'], filter, onChange);
     expect(onChange).toHaveBeenCalledWith('tags', ['a', 'b']);

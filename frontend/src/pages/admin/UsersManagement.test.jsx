@@ -1,30 +1,29 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import UsersManagement from './UsersManagement';
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   usersAPI: {
-    list: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    toggleStatus: vi.fn(),
-    sendPasswordReset: vi.fn(),
+    list: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    toggleStatus: jest.fn(),
+    sendPasswordReset: jest.fn(),
   },
-  rolesAPI: { list: vi.fn() },
-  groupsAPI: { list: vi.fn() },
-  customersAPI: { list: vi.fn() },
+  rolesAPI: { list: jest.fn() },
+  groupsAPI: { list: jest.fn() },
+  customersAPI: { list: jest.fn() },
   exportAPI: {
-    users: { csv: vi.fn(), json: vi.fn() },
+    users: { csv: jest.fn(), json: jest.fn() },
   },
 }));
 
-vi.mock('react-hot-toast', () => ({
+jest.mock('react-hot-toast', () => ({ __esModule: true,
   default: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
@@ -84,7 +83,7 @@ function renderUsersManagement() {
 
 describe('UsersManagement', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders page header', async () => {
@@ -240,7 +239,7 @@ describe('UsersManagement', () => {
     const toast = await import('react-hot-toast');
     usersAPI.delete.mockResolvedValue({ data: {} });
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     renderUsersManagement();
 
@@ -256,14 +255,14 @@ describe('UsersManagement', () => {
       expect(toast.default.success).toHaveBeenCalledWith('User deleted successfully');
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('cancels delete when user declines', async () => {
     await setupMocks();
     const { usersAPI } = await import('../../services/api');
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    jest.spyOn(window, 'confirm').mockReturnValue(false);
 
     renderUsersManagement();
 
@@ -275,7 +274,7 @@ describe('UsersManagement', () => {
     await user.click(deleteButtons[0]);
 
     expect(usersAPI.delete).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles toggle status (disable active user)', async () => {
@@ -353,8 +352,8 @@ describe('UsersManagement', () => {
     exportAPI.users.csv.mockResolvedValue({ data: 'csv data' });
     const user = userEvent.setup();
 
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     renderUsersManagement();
 
@@ -376,8 +375,8 @@ describe('UsersManagement', () => {
     exportAPI.users.json.mockResolvedValue({ data: '{"users":[]}' });
     const user = userEvent.setup();
 
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     renderUsersManagement();
 
@@ -398,7 +397,7 @@ describe('UsersManagement', () => {
     const toast = await import('react-hot-toast');
     usersAPI.delete.mockRejectedValue(new Error('Server error'));
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     renderUsersManagement();
 
@@ -413,7 +412,7 @@ describe('UsersManagement', () => {
       expect(toast.default.error).toHaveBeenCalledWith('Failed to delete user');
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles toggle status failure', async () => {

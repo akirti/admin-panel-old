@@ -1,12 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { ExplorerProvider, useExplorer } from './v1_ExplorerContext';
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   domainAPI: {
-    getAll: vi.fn(),
+    getAll: jest.fn(),
   },
   scenarioAPI: {
-    getAll: vi.fn(),
+    getAll: jest.fn(),
   },
 }));
 
@@ -34,7 +34,7 @@ function TestConsumer() {
 
 describe('ExplorerContext', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('provides loading state initially', () => {
@@ -135,7 +135,7 @@ describe('ExplorerContext', () => {
 
   it('throws error when useExplorer is used outside provider', () => {
     // Suppress console.error for this test
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     expect(() => render(<TestConsumer />)).toThrow(
       'useExplorer must be used within an ExplorerProvider'

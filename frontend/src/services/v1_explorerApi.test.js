@@ -1,28 +1,23 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+const mockApi = {
+  get: jest.fn(() => Promise.resolve({ data: {} })),
+  post: jest.fn(() => Promise.resolve({ data: {} })),
+  put: jest.fn(() => Promise.resolve({ data: {} })),
+  delete: jest.fn(() => Promise.resolve({ data: {} })),
+};
 
-// Use vi.hoisted() so the mock value exists when the hoisted vi.mock factory runs
-const { mockApi } = vi.hoisted(() => {
-  const mock = {
-    get: vi.fn(() => Promise.resolve({ data: {} })),
-    post: vi.fn(() => Promise.resolve({ data: {} })),
-    put: vi.fn(() => Promise.resolve({ data: {} })),
-    delete: vi.fn(() => Promise.resolve({ data: {} })),
-  };
-  return { mockApi: mock };
-});
-
-vi.mock('./api', () => ({
+jest.mock('./api', () => ({
+  __esModule: true,
   default: mockApi,
 }));
 
-import { prevailAPI, downloadAPI } from './v1_explorerApi.js';
-import defaultExport from './v1_explorerApi.js';
+const { prevailAPI, downloadAPI } = require('./v1_explorerApi.js');
+const defaultExport = require('./v1_explorerApi.js').default;
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  jest.clearAllMocks();
 });
 
-// ─── Exports ─────────────────────────────────────────────────────────────────
+// --- Exports ---
 
 describe('v1_explorerApi exports', () => {
   it('exports prevailAPI object', () => {
@@ -42,7 +37,7 @@ describe('v1_explorerApi exports', () => {
   });
 });
 
-// ─── prevailAPI ──────────────────────────────────────────────────────────────
+// --- prevailAPI ---
 
 describe('prevailAPI', () => {
   it('has an execute method', () => {
@@ -64,7 +59,7 @@ describe('prevailAPI', () => {
   });
 });
 
-// ─── downloadAPI ─────────────────────────────────────────────────────────────
+// --- downloadAPI ---
 
 describe('downloadAPI', () => {
   describe('fullReport', () => {

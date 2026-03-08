@@ -3,10 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import V1ExplorerSidebar from './v1_ExplorerSidebar';
 
-const mockNavigate = vi.fn();
+const mockNavigate = jest.fn();
 
-vi.mock('react-router', async () => {
-  const actual = await vi.importActual('react-router');
+jest.mock('react-router', () => {
+  const actual = jest.requireActual('react-router');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
@@ -14,15 +14,15 @@ vi.mock('react-router', async () => {
   };
 });
 
-vi.mock('./v1_ExplorerContext', () => ({
-  useExplorer: vi.fn(),
+jest.mock('./v1_ExplorerContext', () => ({
+  useExplorer: jest.fn(),
 }));
 
 import { useExplorer } from './v1_ExplorerContext';
 
 describe('V1ExplorerSidebar', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('shows loading spinner when loading', () => {

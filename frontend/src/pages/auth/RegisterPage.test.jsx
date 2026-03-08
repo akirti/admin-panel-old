@@ -1,28 +1,27 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import RegisterPage from './RegisterPage';
 
-const mockRegister = vi.fn();
-const mockNavigate = vi.fn();
+const mockRegister = jest.fn();
+const mockNavigate = jest.fn();
 
-vi.mock('react-router', async () => {
-  const actual = await vi.importActual('react-router');
+jest.mock('react-router', () => {
+  const actual = jest.requireActual('react-router');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
   };
 });
 
-vi.mock('../../contexts/AuthContext', () => ({
+jest.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({ register: mockRegister }),
 }));
 
-vi.mock('react-hot-toast', () => ({
+jest.mock('react-hot-toast', () => ({ __esModule: true,
   default: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
@@ -36,7 +35,7 @@ function renderRegisterPage() {
 
 describe('RegisterPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('rendering', () => {

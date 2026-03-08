@@ -1,20 +1,19 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import FeedbackManagement from './FeedbackManagement';
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   feedbackAPI: {
-    getAdminList: vi.fn(),
-    getStats: vi.fn(),
+    getAdminList: jest.fn(),
+    getStats: jest.fn(),
   },
 }));
 
-vi.mock('react-hot-toast', () => ({
+jest.mock('react-hot-toast', () => ({ __esModule: true,
   default: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
@@ -70,7 +69,7 @@ function renderFeedbackManagement() {
 
 describe('FeedbackManagement', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders page header', async () => {

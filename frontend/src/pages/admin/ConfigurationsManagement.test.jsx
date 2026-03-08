@@ -1,31 +1,30 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import ConfigurationsManagement from './ConfigurationsManagement';
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   configurationsAPI: {
-    list: vi.fn(),
-    getTypes: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    upload: vi.fn(),
-    download: vi.fn(),
-    downloadJson: vi.fn(),
-    getVersions: vi.fn(),
+    list: jest.fn(),
+    getTypes: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    upload: jest.fn(),
+    download: jest.fn(),
+    downloadJson: jest.fn(),
+    getVersions: jest.fn(),
   },
 }));
 
-vi.mock('react-hot-toast', () => ({
+jest.mock('react-hot-toast', () => ({ __esModule: true,
   default: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
-vi.mock('../../components/shared', () => ({
+jest.mock('../../components/shared', () => ({
   Card: ({ children, className }) => <div className={className}>{children}</div>,
   Button: ({ children, onClick, disabled, type, variant, size }) => (
     <button onClick={onClick} disabled={disabled} type={type}>{children}</button>
@@ -121,7 +120,7 @@ function renderConfigurationsManagement() {
 
 describe('ConfigurationsManagement', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders page header', async () => {
@@ -286,7 +285,7 @@ describe('ConfigurationsManagement', () => {
     const toast = await import('react-hot-toast');
     configurationsAPI.delete.mockResolvedValue({ data: {} });
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     renderConfigurationsManagement();
 
@@ -302,14 +301,14 @@ describe('ConfigurationsManagement', () => {
       expect(toast.default.success).toHaveBeenCalledWith('Configuration deleted successfully');
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('cancels delete when user declines', async () => {
     await setupMocks();
     const { configurationsAPI } = await import('../../services/api');
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    jest.spyOn(window, 'confirm').mockReturnValue(false);
 
     renderConfigurationsManagement();
 
@@ -321,7 +320,7 @@ describe('ConfigurationsManagement', () => {
     await user.click(deleteButtons[0]);
 
     expect(configurationsAPI.delete).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles download', async () => {
@@ -331,8 +330,8 @@ describe('ConfigurationsManagement', () => {
     configurationsAPI.downloadJson.mockResolvedValue({ data: { key: 'test' } });
     const user = userEvent.setup();
 
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     renderConfigurationsManagement();
 
@@ -399,7 +398,7 @@ describe('ConfigurationsManagement', () => {
     const toast = await import('react-hot-toast');
     configurationsAPI.delete.mockRejectedValue(new Error('Server error'));
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     renderConfigurationsManagement();
 
@@ -414,7 +413,7 @@ describe('ConfigurationsManagement', () => {
       expect(toast.default.error).toHaveBeenCalledWith('Failed to delete configuration');
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles download failure', async () => {
@@ -566,8 +565,8 @@ describe('ConfigurationsManagement', () => {
     });
     configurationsAPI.getTypes.mockResolvedValue({ data: { types: mockConfigTypes } });
     configurationsAPI.download.mockResolvedValue({ data: 'csv,data' });
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
     const user = userEvent.setup();
 
     renderConfigurationsManagement();
@@ -1084,8 +1083,8 @@ describe('ConfigurationsManagement', () => {
     configurationsAPI.getTypes.mockResolvedValue({ data: { types: mockConfigTypes } });
     configurationsAPI.download.mockResolvedValue({ data: 'binary-data' });
 
-    global.URL.createObjectURL = vi.fn(() => 'blob:test-url');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test-url');
+    global.URL.revokeObjectURL = jest.fn();
 
     const user = userEvent.setup();
     renderConfigurationsManagement();
@@ -1107,8 +1106,8 @@ describe('ConfigurationsManagement', () => {
     const toast = await import('react-hot-toast');
     configurationsAPI.downloadJson.mockResolvedValue({ data: { queries: {}, logics: {} } });
 
-    global.URL.createObjectURL = vi.fn(() => 'blob:json-url');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:json-url');
+    global.URL.revokeObjectURL = jest.fn();
 
     const user = userEvent.setup();
     renderConfigurationsManagement();
@@ -1522,8 +1521,8 @@ describe('ConfigurationsManagement', () => {
       },
     });
     configurationsAPI.download.mockResolvedValue({ data: 'version-data' });
-    global.URL.createObjectURL = vi.fn(() => 'blob:ver-url');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:ver-url');
+    global.URL.revokeObjectURL = jest.fn();
 
     const user = userEvent.setup();
     renderConfigurationsManagement();

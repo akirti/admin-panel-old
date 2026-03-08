@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import React from 'react';
 import {
@@ -11,13 +10,13 @@ import {
 } from './AuthContext';
 
 // Mock the api module
-vi.mock('../services/api', () => ({
+jest.mock('../services/api', () => ({
   authAPI: {
-    login: vi.fn(),
-    register: vi.fn(),
-    logout: vi.fn(),
-    getProfile: vi.fn(),
-    updateProfile: vi.fn(),
+    login: jest.fn(),
+    register: jest.fn(),
+    logout: jest.fn(),
+    getProfile: jest.fn(),
+    updateProfile: jest.fn(),
   },
 }));
 
@@ -42,7 +41,7 @@ function makeUser(overrides = {}) {
 
 describe('AuthContext', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     // Default: getProfile rejects (no session)
     authAPI.getProfile.mockRejectedValue(new Error('No session'));
   });
@@ -540,7 +539,7 @@ describe('AuthContext', () => {
   describe('useAuth without provider', () => {
     it('throws an error when used outside AuthProvider', () => {
       // Suppress console.error for the expected error
-      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       expect(() => {
         renderHook(() => useAuth());

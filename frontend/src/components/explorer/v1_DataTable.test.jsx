@@ -1,10 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import V1DataTable from './v1_DataTable';
 
 // Mock lucide-react icons
-vi.mock('lucide-react', () => ({
+jest.mock('lucide-react', () => ({
   ArrowUpDown: (props) => <span data-testid="arrow-updown" {...props} />,
   ArrowUp: (props) => <span data-testid="arrow-up" {...props} />,
   ArrowDown: (props) => <span data-testid="arrow-down" {...props} />,
@@ -12,8 +11,8 @@ vi.mock('lucide-react', () => ({
 }));
 
 // Mock Pagination component
-vi.mock('./v1_Pagination', () => ({
-  default: ({
+jest.mock('./v1_Pagination', () => ({
+  __esModule: true, default: ({
     page,
     totalPages,
     pageSize,
@@ -48,8 +47,8 @@ vi.mock('./v1_Pagination', () => ({
 }));
 
 // Mock ColumnFilterDropdown
-vi.mock('./v1_ColumnFilterDropdown', () => ({
-  default: ({ options, selectedOptions, onChange, columnLabel }) => (
+jest.mock('./v1_ColumnFilterDropdown', () => ({
+  __esModule: true, default: ({ options, selectedOptions, onChange, columnLabel }) => (
     <div data-testid={`col-filter-${columnLabel}`}>
       <button
         data-testid={`col-filter-btn-${columnLabel}`}
@@ -89,13 +88,13 @@ describe('V1DataTable', () => {
     page: 1,
     pageSize: 10,
     pages: 1,
-    onSort: vi.fn(),
-    onPageChange: vi.fn(),
-    onPageSizeChange: vi.fn(),
+    onSort: jest.fn(),
+    onPageChange: jest.fn(),
+    onPageSizeChange: jest.fn(),
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   // --- Basic rendering ---
@@ -154,7 +153,7 @@ describe('V1DataTable', () => {
 
   it('calls onSort with column key when sort button is clicked', async () => {
     const user = userEvent.setup();
-    const onSort = vi.fn();
+    const onSort = jest.fn();
     render(<V1DataTable {...defaultProps} onSort={onSort} />);
 
     await user.click(screen.getByLabelText('Sort by name'));
@@ -290,7 +289,7 @@ describe('V1DataTable', () => {
   });
 
   it('passes onDownloadClick to pagination when provided', () => {
-    const onDownload = vi.fn();
+    const onDownload = jest.fn();
     render(
       <V1DataTable {...defaultProps} onDownloadClick={onDownload} />
     );
@@ -299,7 +298,7 @@ describe('V1DataTable', () => {
 
   it('forwards page change events', async () => {
     const user = userEvent.setup();
-    const onPageChange = vi.fn();
+    const onPageChange = jest.fn();
     render(<V1DataTable {...defaultProps} onPageChange={onPageChange} />);
 
     await user.click(screen.getByTestId('pag-next'));
@@ -308,7 +307,7 @@ describe('V1DataTable', () => {
 
   it('forwards page size change events', async () => {
     const user = userEvent.setup();
-    const onPageSizeChange = vi.fn();
+    const onPageSizeChange = jest.fn();
     render(<V1DataTable {...defaultProps} onPageSizeChange={onPageSizeChange} />);
 
     await user.click(screen.getByTestId('pag-size-change'));
@@ -542,7 +541,7 @@ describe('V1DataTable', () => {
 
   it('opens URL in new tab when action item clicked', async () => {
     const user = userEvent.setup();
-    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => {});
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => {});
 
     render(
       <V1DataTable
@@ -564,7 +563,7 @@ describe('V1DataTable', () => {
 
   it('includes row values in action URL', async () => {
     const user = userEvent.setup();
-    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => {});
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => {});
 
     render(
       <V1DataTable
@@ -585,7 +584,7 @@ describe('V1DataTable', () => {
 
   it('applies filter key mappings in action URL', async () => {
     const user = userEvent.setup();
-    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => {});
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => {});
 
     render(
       <V1DataTable
@@ -613,7 +612,7 @@ describe('V1DataTable', () => {
 
   it('closes menu after action click', async () => {
     const user = userEvent.setup();
-    vi.spyOn(window, 'open').mockImplementation(() => {});
+    jest.spyOn(window, 'open').mockImplementation(() => {});
 
     render(
       <V1DataTable
@@ -655,7 +654,7 @@ describe('V1DataTable', () => {
 
   it('includes active filters in action URL', async () => {
     const user = userEvent.setup();
-    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => {});
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => {});
     window.__activeFilters = { fromDate: '2026-01-01' };
 
     render(

@@ -1,33 +1,32 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import AdminDashboard from './AdminDashboard';
 
-vi.mock('../../contexts/AuthContext', () => ({
+jest.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({
     isSuperAdmin: () => true,
   }),
 }));
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   dashboardAPI: {
-    getStats: vi.fn(),
-    getSummary: vi.fn(),
-    getRecentLogins: vi.fn(),
-    getAnalytics: vi.fn(),
+    getStats: jest.fn(),
+    getSummary: jest.fn(),
+    getRecentLogins: jest.fn(),
+    getAnalytics: jest.fn(),
   },
   scenarioRequestAPI: {
-    getStats: vi.fn(),
+    getStats: jest.fn(),
   },
   feedbackAPI: {
-    getStats: vi.fn(),
+    getStats: jest.fn(),
   },
 }));
 
-vi.mock('react-hot-toast', () => ({
+jest.mock('react-hot-toast', () => ({ __esModule: true,
   default: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
@@ -106,7 +105,7 @@ async function setupMocks() {
 
 describe('AdminDashboard', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('shows loading state initially', async () => {

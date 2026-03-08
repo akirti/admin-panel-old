@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
@@ -13,25 +12,25 @@ const mockUser = {
   domains: ['finance'],
 };
 
-const mockUpdateProfile = vi.fn();
+const mockUpdateProfile = jest.fn();
 
-vi.mock('../../contexts/AuthContext', () => ({
+jest.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({
     user: mockUser,
     updateProfile: mockUpdateProfile,
   }),
 }));
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   authAPI: {
-    updatePassword: vi.fn(),
+    updatePassword: jest.fn(),
   },
 }));
 
-vi.mock('react-hot-toast', () => ({
+jest.mock('react-hot-toast', () => ({ __esModule: true,
   default: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
@@ -45,7 +44,7 @@ function renderProfilePage() {
 
 describe('ProfilePage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('rendering', () => {
@@ -223,7 +222,7 @@ describe('ProfilePage', () => {
       // Override mock for this test
       const { useAuth } = await import('../../contexts/AuthContext');
       const originalImpl = useAuth;
-      // We can't easily change the mock per test with vi.mock, but groups=[] should show the message
+      // We can't easily change the mock per test with jest.mock, but groups=[] should show the message
       // Let's render with modified user object through a fresh import trick
       // For simplicity, this test verifies the text exists with our mock (groups has items so won't show)
       renderProfilePage();

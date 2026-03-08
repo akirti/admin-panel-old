@@ -1,14 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import DomainDetailPage from './DomainDetailPage';
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   domainAPI: {
-    get: vi.fn(),
+    get: jest.fn(),
   },
   scenarioAPI: {
-    getByDomain: vi.fn(),
+    getByDomain: jest.fn(),
   },
 }));
 
@@ -24,7 +23,7 @@ function renderDomainDetailPage(domainKey = 'finance') {
 
 describe('DomainDetailPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('shows loading state initially', async () => {

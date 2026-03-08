@@ -1,12 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import useAssignedCustomers from './useAssignedCustomers';
 
 // Mock the API module
-vi.mock('../services/api', () => ({
+jest.mock('../services/api', () => ({
   usersAPI: {
-    getAssignedCustomers: vi.fn(),
-    getCustomerTags: vi.fn(),
+    getAssignedCustomers: jest.fn(),
+    getCustomerTags: jest.fn(),
   },
 }));
 
@@ -21,11 +20,11 @@ const mockCustomers = [
 const mockTags = ['vip', 'enterprise', 'startup'];
 
 // Helper: flush microtasks so resolved promises settle
-const flushPromises = () => new Promise((r) => setTimeout(r, 0));
+const flushPromises = () => new Promise((r) => process.nextTick(r));
 
 describe('useAssignedCustomers', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     usersAPI.getAssignedCustomers.mockResolvedValue({
       data: { customers: mockCustomers },
     });
@@ -35,7 +34,7 @@ describe('useAssignedCustomers', () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('starts in loading state', () => {
@@ -191,8 +190,8 @@ describe('useAssignedCustomers', () => {
 // Tests that require fake timers are separated so waitFor works in the main suite
 describe('useAssignedCustomers - debounce search', () => {
   beforeEach(() => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    vi.clearAllMocks();
+    jest.useFakeTimers({ advanceTimers: true });
+    jest.clearAllMocks();
     usersAPI.getAssignedCustomers.mockResolvedValue({
       data: { customers: mockCustomers },
     });
@@ -202,8 +201,8 @@ describe('useAssignedCustomers - debounce search', () => {
   });
 
   afterEach(() => {
-    vi.useRealTimers();
-    vi.restoreAllMocks();
+    jest.useRealTimers();
+    jest.restoreAllMocks();
   });
 
   it('search with debounce calls API after 300ms', async () => {
@@ -228,7 +227,7 @@ describe('useAssignedCustomers - debounce search', () => {
 
     // Advance timers past debounce threshold
     await act(async () => {
-      vi.advanceTimersByTime(300);
+      jest.advanceTimersByTime(300);
       await flushPromises();
     });
 
@@ -263,7 +262,7 @@ describe('useAssignedCustomers - debounce search', () => {
     });
 
     await act(async () => {
-      vi.advanceTimersByTime(300);
+      jest.advanceTimersByTime(300);
       await flushPromises();
     });
 
@@ -293,7 +292,7 @@ describe('useAssignedCustomers - debounce search', () => {
     });
 
     await act(async () => {
-      vi.advanceTimersByTime(300);
+      jest.advanceTimersByTime(300);
       await flushPromises();
     });
 

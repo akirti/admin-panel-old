@@ -12,11 +12,11 @@ describe('V1MultiSelectDropdown', () => {
   const defaultProps = {
     options,
     selectedOptions: [],
-    onChange: vi.fn(),
+    onChange: jest.fn(),
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders with placeholder', () => {
@@ -59,7 +59,7 @@ describe('V1MultiSelectDropdown', () => {
 
   it('calls onChange when option is toggled', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     render(<V1MultiSelectDropdown {...defaultProps} onChange={onChange} />);
 
     await user.click(screen.getByRole('button'));
@@ -70,7 +70,7 @@ describe('V1MultiSelectDropdown', () => {
 
   it('removes option when already selected', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     render(
       <V1MultiSelectDropdown
         {...defaultProps}
@@ -91,7 +91,7 @@ describe('V1MultiSelectDropdown', () => {
       <V1MultiSelectDropdown
         {...defaultProps}
         multiSelectFooter
-        handleToggleSelectAll={vi.fn()}
+        handleToggleSelectAll={jest.fn()}
         allSelected={false}
       />
     );
@@ -107,7 +107,7 @@ describe('V1MultiSelectDropdown', () => {
         {...defaultProps}
         selectedOptions={['red', 'green', 'blue']}
         multiSelectFooter
-        handleToggleSelectAll={vi.fn()}
+        handleToggleSelectAll={jest.fn()}
         allSelected={true}
       />
     );
@@ -118,7 +118,7 @@ describe('V1MultiSelectDropdown', () => {
 
   it('calls handleToggleSelectAll when Select All clicked', async () => {
     const user = userEvent.setup();
-    const handleToggleSelectAll = vi.fn();
+    const handleToggleSelectAll = jest.fn();
     render(
       <V1MultiSelectDropdown
         {...defaultProps}
@@ -185,7 +185,7 @@ describe('V1MultiSelectDropdown', () => {
       { name: 'Purple', value: 'purple' },
       { name: 'Orange', value: 'orange' },
     ];
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     render(
       <V1MultiSelectDropdown
         options={manyOptions}
@@ -224,7 +224,7 @@ describe('V1MultiSelectDropdown', () => {
       <V1MultiSelectDropdown
         options={manyOptions}
         selectedOptions={[]}
-        onChange={vi.fn()}
+        onChange={jest.fn()}
       />
     );
 
@@ -251,7 +251,7 @@ describe('V1MultiSelectDropdown', () => {
       <V1MultiSelectDropdown
         options={manyOptions}
         selectedOptions={[]}
-        onChange={vi.fn()}
+        onChange={jest.fn()}
       />
     );
 
@@ -279,7 +279,7 @@ describe('V1MultiSelectDropdown', () => {
       <V1MultiSelectDropdown
         options={[]}
         selectedOptions={[]}
-        onChange={vi.fn()}
+        onChange={jest.fn()}
       />
     );
 
@@ -322,7 +322,7 @@ describe('V1MultiSelectDropdown', () => {
       <V1MultiSelectDropdown
         options={longOptions}
         selectedOptions={['long']}
-        onChange={vi.fn()}
+        onChange={jest.fn()}
       />
     );
 
@@ -355,7 +355,7 @@ describe('V1MultiSelectDropdown', () => {
     render(
       <V1MultiSelectDropdown
         {...defaultProps}
-        handleToggleSelectAll={vi.fn()}
+        handleToggleSelectAll={jest.fn()}
         allSelected={false}
       />
     );
@@ -390,7 +390,7 @@ describe('V1MultiSelectDropdown', () => {
       <V1MultiSelectDropdown
         options={labelOptions}
         selectedOptions={[]}
-        onChange={vi.fn()}
+        onChange={jest.fn()}
       />
     );
 
@@ -410,7 +410,7 @@ describe('V1MultiSelectDropdown', () => {
       <V1MultiSelectDropdown
         options={valueOnlyOptions}
         selectedOptions={[]}
-        onChange={vi.fn()}
+        onChange={jest.fn()}
       />
     );
 
@@ -429,7 +429,7 @@ describe('V1MultiSelectDropdown', () => {
       <V1MultiSelectDropdown
         options={idOptions}
         selectedOptions={[]}
-        onChange={vi.fn()}
+        onChange={jest.fn()}
       />
     );
 
@@ -470,7 +470,7 @@ describe('V1MultiSelectDropdown', () => {
       <V1MultiSelectDropdown
         options={manyOptions}
         selectedOptions={[]}
-        onChange={vi.fn()}
+        onChange={jest.fn()}
       />
     );
 
@@ -510,7 +510,7 @@ describe('V1MultiSelectDropdown', () => {
 
     render(<V1MultiSelectDropdown {...defaultProps} />);
     const btn = screen.getByRole('button');
-    vi.spyOn(btn, 'getBoundingClientRect').mockReturnValue(mockRect);
+    jest.spyOn(btn, 'getBoundingClientRect').mockReturnValue(mockRect);
 
     await user.click(btn);
 
@@ -527,7 +527,7 @@ describe('V1MultiSelectDropdown', () => {
       <V1MultiSelectDropdown
         options={emptyNameOptions}
         selectedOptions={['']}
-        onChange={vi.fn()}
+        onChange={jest.fn()}
         placeholder="Fallback"
       />
     );
@@ -551,7 +551,7 @@ describe('V1MultiSelectDropdown', () => {
       <V1MultiSelectDropdown
         options={manyOptions}
         selectedOptions={[]}
-        onChange={vi.fn()}
+        onChange={jest.fn()}
       />
     );
 
@@ -578,7 +578,7 @@ describe('V1MultiSelectDropdown', () => {
       <V1MultiSelectDropdown
         options={nullishOptions}
         selectedOptions={[]}
-        onChange={vi.fn()}
+        onChange={jest.fn()}
       />
     );
 
@@ -598,7 +598,7 @@ describe('V1MultiSelectDropdown', () => {
       <V1MultiSelectDropdown
         options={[]}
         selectedOptions={[]}
-        onChange={vi.fn()}
+        onChange={jest.fn()}
         placeholder="Pick"
       />
     );

@@ -10,23 +10,23 @@ describe('V1CustomDropdown', () => {
   ];
 
   it('renders with placeholder when no value', () => {
-    render(<V1CustomDropdown options={options} onChange={vi.fn()} />);
+    render(<V1CustomDropdown options={options} onChange={jest.fn()} />);
     expect(screen.getByText('Select')).toBeInTheDocument();
   });
 
   it('renders with custom placeholder', () => {
-    render(<V1CustomDropdown options={options} onChange={vi.fn()} placeholder="Pick fruit" />);
+    render(<V1CustomDropdown options={options} onChange={jest.fn()} placeholder="Pick fruit" />);
     expect(screen.getByText('Pick fruit')).toBeInTheDocument();
   });
 
   it('shows selected value name', () => {
-    render(<V1CustomDropdown options={options} value="banana" onChange={vi.fn()} />);
+    render(<V1CustomDropdown options={options} value="banana" onChange={jest.fn()} />);
     expect(screen.getByText('Banana')).toBeInTheDocument();
   });
 
   it('opens dropdown on click', async () => {
     const user = userEvent.setup();
-    render(<V1CustomDropdown options={options} onChange={vi.fn()} />);
+    render(<V1CustomDropdown options={options} onChange={jest.fn()} />);
 
     await user.click(screen.getByRole('button'));
 
@@ -37,7 +37,7 @@ describe('V1CustomDropdown', () => {
 
   it('calls onChange when option selected', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     render(<V1CustomDropdown options={options} onChange={onChange} />);
 
     await user.click(screen.getByRole('button'));
@@ -48,7 +48,7 @@ describe('V1CustomDropdown', () => {
 
   it('does not call onChange when same value selected', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     render(<V1CustomDropdown options={options} value="banana" onChange={onChange} />);
 
     await user.click(screen.getByRole('button'));
@@ -61,7 +61,7 @@ describe('V1CustomDropdown', () => {
 
   it('does not show search when 5 or fewer options', async () => {
     const user = userEvent.setup();
-    render(<V1CustomDropdown options={options} onChange={vi.fn()} />);
+    render(<V1CustomDropdown options={options} onChange={jest.fn()} />);
 
     await user.click(screen.getByRole('button'));
     expect(screen.queryByPlaceholderText('Search...')).not.toBeInTheDocument();
@@ -73,7 +73,7 @@ describe('V1CustomDropdown', () => {
       name: `Option ${i}`,
       value: `opt${i}`,
     }));
-    render(<V1CustomDropdown options={manyOptions} onChange={vi.fn()} />);
+    render(<V1CustomDropdown options={manyOptions} onChange={jest.fn()} />);
 
     await user.click(screen.getByRole('button'));
     expect(screen.getByPlaceholderText('Search...')).toBeInTheDocument();
@@ -85,7 +85,7 @@ describe('V1CustomDropdown', () => {
       name: `Option ${i}`,
       value: `opt${i}`,
     }));
-    render(<V1CustomDropdown options={manyOptions} onChange={vi.fn()} />);
+    render(<V1CustomDropdown options={manyOptions} onChange={jest.fn()} />);
 
     await user.click(screen.getByRole('button'));
     await user.type(screen.getByPlaceholderText('Search...'), 'Option 3');
@@ -100,7 +100,7 @@ describe('V1CustomDropdown', () => {
       name: `Option ${i}`,
       value: `opt${i}`,
     }));
-    render(<V1CustomDropdown options={manyOptions} onChange={vi.fn()} />);
+    render(<V1CustomDropdown options={manyOptions} onChange={jest.fn()} />);
 
     await user.click(screen.getByRole('button'));
     await user.type(screen.getByPlaceholderText('Search...'), 'xyz');

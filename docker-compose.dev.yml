@@ -25,7 +25,7 @@ services:
       - ./backend:/app
     command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--timeout-graceful-shutdown", "5"]
 
-  # Frontend with Vite dev server
+  # Frontend with Webpack dev server
   frontend:
     build:
       context: ./frontend
@@ -34,12 +34,12 @@ services:
     ports:
       - "3000:5173"
     environment:
-      # Proxy target for Vite dev server (uses Docker network hostname)
-      VITE_PROXY_TARGET: http://backend:8000
+      # Proxy target for Webpack dev server (uses Docker network hostname)
+      WEBPACK_PROXY_TARGET: http://backend:8000
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    command: npm run dev -- --host 0.0.0.0
+    command: npm run dev
     depends_on:
       - backend
 

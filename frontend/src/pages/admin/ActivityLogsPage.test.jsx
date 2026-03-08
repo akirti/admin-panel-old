@@ -1,28 +1,28 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import ActivityLogsPage from './ActivityLogsPage';
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   activityLogsAPI: {
-    list: vi.fn(),
-    getStats: vi.fn(),
-    getActions: vi.fn(),
-    getEntityTypes: vi.fn(),
+    list: jest.fn(),
+    getStats: jest.fn(),
+    getActions: jest.fn(),
+    getEntityTypes: jest.fn(),
   },
   exportAPI: {
-    activityLogs: { csv: vi.fn(), json: vi.fn() },
+    activityLogs: { csv: jest.fn(), json: jest.fn() },
   },
 }));
 
-vi.mock('react-hot-toast', () => ({
+jest.mock('react-hot-toast', () => ({ __esModule: true,
   default: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
-vi.mock('../../components/shared', () => ({
+jest.mock('../../components/shared', () => ({
   ExportButton: ({ label }) => <button>{label}</button>,
 }));
 
@@ -81,7 +81,7 @@ function renderActivityLogsPage() {
 
 describe('ActivityLogsPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders page header', async () => {
@@ -180,7 +180,7 @@ describe('ActivityLogsPage', () => {
   it('handles user email filter', async () => {
     await setupMocks();
     const { activityLogsAPI } = await import('../../services/api');
-    const user = (await import('@testing-library/user-event')).default.setup();
+    const user = userEvent.setup();
 
     renderActivityLogsPage();
 
@@ -201,12 +201,14 @@ describe('ActivityLogsPage', () => {
   it('handles entity type filter', async () => {
     await setupMocks();
     const { activityLogsAPI } = await import('../../services/api');
-    const user = (await import('@testing-library/user-event')).default.setup();
+    const user = userEvent.setup();
 
     renderActivityLogsPage();
 
     await waitFor(() => {
       expect(screen.getByText('All Entity Types')).toBeInTheDocument();
+      // Wait for entity types to be populated from API
+      expect(screen.getByRole('option', { name: 'user' })).toBeInTheDocument();
     });
 
     const entitySelect = screen.getByDisplayValue('All Entity Types');
@@ -222,12 +224,13 @@ describe('ActivityLogsPage', () => {
   it('handles action filter', async () => {
     await setupMocks();
     const { activityLogsAPI } = await import('../../services/api');
-    const user = (await import('@testing-library/user-event')).default.setup();
+    const user = userEvent.setup();
 
     renderActivityLogsPage();
 
     await waitFor(() => {
       expect(screen.getByText('All Actions')).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: 'create' })).toBeInTheDocument();
     });
 
     const actionSelect = screen.getByDisplayValue('All Actions');
@@ -243,7 +246,7 @@ describe('ActivityLogsPage', () => {
   it('handles time range change', async () => {
     await setupMocks();
     const { activityLogsAPI } = await import('../../services/api');
-    const user = (await import('@testing-library/user-event')).default.setup();
+    const user = userEvent.setup();
 
     renderActivityLogsPage();
 

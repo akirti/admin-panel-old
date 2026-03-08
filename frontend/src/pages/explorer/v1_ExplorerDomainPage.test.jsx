@@ -1,21 +1,20 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import V1ExplorerDomainPage from './v1_ExplorerDomainPage';
 
 // Mock lucide-react icons
-vi.mock('lucide-react', () => ({
+jest.mock('lucide-react', () => ({
   Compass: (props) => <span data-testid="compass-icon" {...props} />,
   FileText: (props) => <span data-testid="filetext-icon" {...props} />,
   Layers: (props) => <span data-testid="layers-icon" {...props} />,
 }));
 
 // Mock the ExplorerContext
-const mockGetScenariosByDomain = vi.fn();
-const mockGetDomainByKey = vi.fn();
+const mockGetScenariosByDomain = jest.fn();
+const mockGetDomainByKey = jest.fn();
 
-vi.mock('../../components/explorer/v1_ExplorerContext', () => ({
+jest.mock('../../components/explorer/v1_ExplorerContext', () => ({
   useExplorer: () => ({
     getScenariosByDomain: mockGetScenariosByDomain,
     getDomainByKey: mockGetDomainByKey,
@@ -23,8 +22,8 @@ vi.mock('../../components/explorer/v1_ExplorerContext', () => ({
 }));
 
 // Mock sub-components
-vi.mock('../../components/explorer/v1_Breadcrumbs', () => ({
-  default: ({ items }) => (
+jest.mock('../../components/explorer/v1_Breadcrumbs', () => ({
+  __esModule: true, default: ({ items }) => (
     <nav data-testid="breadcrumbs">
       {items.map((item, i) => (
         <span key={i}>{item.label}</span>
@@ -33,8 +32,8 @@ vi.mock('../../components/explorer/v1_Breadcrumbs', () => ({
   ),
 }));
 
-vi.mock('../../components/explorer/v1_SearchBar', () => ({
-  default: ({ value, onChange }) => (
+jest.mock('../../components/explorer/v1_SearchBar', () => ({
+  __esModule: true, default: ({ value, onChange }) => (
     <input
       data-testid="search-bar"
       value={value}
@@ -44,9 +43,9 @@ vi.mock('../../components/explorer/v1_SearchBar', () => ({
   ),
 }));
 
-const mockNavigate = vi.fn();
-vi.mock('react-router', async () => {
-  const actual = await vi.importActual('react-router');
+const mockNavigate = jest.fn();
+jest.mock('react-router', () => {
+  const actual = jest.requireActual('react-router');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
@@ -78,7 +77,7 @@ describe('V1ExplorerDomainPage', () => {
   ];
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     mockGetDomainByKey.mockReturnValue(mockDomain);
     mockGetScenariosByDomain.mockReturnValue(mockScenarios);
   });

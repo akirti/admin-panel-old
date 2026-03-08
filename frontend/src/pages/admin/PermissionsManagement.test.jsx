@@ -1,30 +1,29 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import PermissionsManagement from './PermissionsManagement';
 
-const mockIsSuperAdmin = vi.fn(() => true);
+const mockIsSuperAdmin = jest.fn(() => true);
 
-vi.mock('../../contexts/AuthContext', () => ({
+jest.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({ isSuperAdmin: mockIsSuperAdmin }),
 }));
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   permissionsAPI: {
-    list: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    getModules: vi.fn(),
-    getRoles: vi.fn(),
-    getGroups: vi.fn(),
+    list: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    getModules: jest.fn(),
+    getRoles: jest.fn(),
+    getGroups: jest.fn(),
   },
   exportAPI: {
-    permissions: { csv: vi.fn(), json: vi.fn() },
+    permissions: { csv: jest.fn(), json: jest.fn() },
   },
 }));
 
-vi.mock('../../components/shared', () => ({
+jest.mock('../../components/shared', () => ({
   Modal: ({ isOpen, children, title }) =>
     isOpen ? <div data-testid="modal"><h2>{title}</h2>{children}</div> : null,
 }));
@@ -61,7 +60,7 @@ async function setupMocks() {
 
 describe('PermissionsManagement', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     mockIsSuperAdmin.mockReturnValue(true);
   });
 
@@ -278,7 +277,7 @@ describe('PermissionsManagement', () => {
     const { permissionsAPI } = await import('../../services/api');
     permissionsAPI.delete.mockResolvedValue({ data: {} });
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<PermissionsManagement />);
 
@@ -294,14 +293,14 @@ describe('PermissionsManagement', () => {
       expect(screen.getByText('Permission deleted successfully')).toBeInTheDocument();
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('cancels delete when user declines', async () => {
     await setupMocks();
     const { permissionsAPI } = await import('../../services/api');
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    jest.spyOn(window, 'confirm').mockReturnValue(false);
 
     render(<PermissionsManagement />);
 
@@ -313,7 +312,7 @@ describe('PermissionsManagement', () => {
     await user.click(deleteButtons[0]);
 
     expect(permissionsAPI.delete).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles delete failure', async () => {
@@ -321,7 +320,7 @@ describe('PermissionsManagement', () => {
     const { permissionsAPI } = await import('../../services/api');
     permissionsAPI.delete.mockRejectedValue(new Error('Server error'));
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<PermissionsManagement />);
 
@@ -336,7 +335,7 @@ describe('PermissionsManagement', () => {
       expect(screen.getByText('Failed to delete permission')).toBeInTheDocument();
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('shows relationships modal when View Roles & Groups clicked', async () => {
@@ -367,8 +366,8 @@ describe('PermissionsManagement', () => {
     exportAPI.permissions.csv.mockResolvedValue({ data: 'csv data' });
     const user = userEvent.setup();
 
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     render(<PermissionsManagement />);
 
@@ -390,8 +389,8 @@ describe('PermissionsManagement', () => {
     exportAPI.permissions.json.mockResolvedValue({ data: '{}' });
     const user = userEvent.setup();
 
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     render(<PermissionsManagement />);
 

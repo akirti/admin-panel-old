@@ -1,31 +1,30 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import ScenariosManagement from './ScenariosManagement';
 
-vi.mock('../../contexts/AuthContext', () => ({
+jest.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({
     isSuperAdmin: () => true,
   }),
 }));
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   scenarioAPI: {
-    getAll: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
+    getAll: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
   },
   domainAPI: {
-    getAll: vi.fn(),
+    getAll: jest.fn(),
   },
 }));
 
-vi.mock('react-hot-toast', () => ({
+jest.mock('react-hot-toast', () => ({ __esModule: true,
   default: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
@@ -70,7 +69,7 @@ function renderScenariosManagement() {
 
 describe('ScenariosManagement', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders page header', async () => {
@@ -158,8 +157,8 @@ describe('ScenariosManagement', () => {
   });
 
   it('shows access denied for non-super-admins', async () => {
-    const authModule = await import('../../contexts/AuthContext');
-    vi.spyOn(authModule, 'useAuth').mockReturnValueOnce({ isSuperAdmin: () => false });
+    const authModule = require('../../contexts/AuthContext');
+    jest.spyOn(authModule, 'useAuth').mockReturnValueOnce({ isSuperAdmin: () => false });
 
     await setupMocks();
     renderScenariosManagement();
@@ -271,7 +270,7 @@ describe('ScenariosManagement', () => {
     const toast = await import('react-hot-toast');
     scenarioAPI.delete.mockResolvedValue({ data: {} });
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     renderScenariosManagement();
 
@@ -287,14 +286,14 @@ describe('ScenariosManagement', () => {
       expect(toast.default.success).toHaveBeenCalledWith('Scenario deleted successfully');
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('cancels delete when user declines', async () => {
     await setupMocks();
     const { scenarioAPI } = await import('../../services/api');
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    jest.spyOn(window, 'confirm').mockReturnValue(false);
 
     renderScenariosManagement();
 
@@ -306,7 +305,7 @@ describe('ScenariosManagement', () => {
     await user.click(deleteButtons[0]);
 
     expect(scenarioAPI.delete).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles create failure', async () => {
@@ -343,7 +342,7 @@ describe('ScenariosManagement', () => {
     const toast = await import('react-hot-toast');
     scenarioAPI.delete.mockRejectedValue({ response: { data: { error: 'Cannot delete' } } });
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     renderScenariosManagement();
 
@@ -358,7 +357,7 @@ describe('ScenariosManagement', () => {
       expect(toast.default.error).toHaveBeenCalledWith('Cannot delete');
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('closes modal via cancel button', async () => {
@@ -641,7 +640,7 @@ describe('ScenariosManagement', () => {
     const { scenarioAPI } = await import('../../services/api');
     const toast = await import('react-hot-toast');
     scenarioAPI.delete.mockRejectedValue(new Error('Network error'));
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
     const user = userEvent.setup();
 
     renderScenariosManagement();
@@ -657,7 +656,7 @@ describe('ScenariosManagement', () => {
       expect(toast.default.error).toHaveBeenCalledWith('Failed to delete scenario');
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('creates modal defaults domain to first domain', async () => {

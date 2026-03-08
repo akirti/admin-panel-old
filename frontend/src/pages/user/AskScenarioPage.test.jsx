@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router';
@@ -6,9 +5,9 @@ import AskScenarioPage from './AskScenarioPage';
 
 // ---- mocks ----
 
-const mockNavigate = vi.fn();
-vi.mock('react-router', async () => {
-  const actual = await vi.importActual('react-router');
+const mockNavigate = jest.fn();
+jest.mock('react-router', () => {
+  const actual = jest.requireActual('react-router');
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
@@ -21,7 +20,7 @@ const mockUser = {
 };
 
 let mockIsEditor = true;
-vi.mock('../../contexts/AuthContext', () => ({
+jest.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({
     user: mockUser,
     isSuperAdmin: () => false,
@@ -30,11 +29,11 @@ vi.mock('../../contexts/AuthContext', () => ({
   }),
 }));
 
-vi.mock('react-hot-toast', () => ({
-  default: { success: vi.fn(), error: vi.fn() },
+jest.mock('react-hot-toast', () => ({ __esModule: true,
+  default: { success: jest.fn(), error: jest.fn() },
 }));
 
-vi.mock('lucide-react', () => ({
+jest.mock('lucide-react', () => ({
   Send: (props) => null,
   Plus: (props) => null,
   Trash2: (props) => null,
@@ -52,21 +51,21 @@ vi.mock('lucide-react', () => ({
   Save: (props) => null,
 }));
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   scenarioRequestAPI: {
-    getDomains: vi.fn(),
-    getRequestTypes: vi.fn(),
-    getDefaults: vi.fn(),
-    getStatuses: vi.fn(),
-    get: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    adminUpdate: vi.fn(),
-    uploadFile: vi.fn(),
+    getDomains: jest.fn(),
+    getRequestTypes: jest.fn(),
+    getDefaults: jest.fn(),
+    getStatuses: jest.fn(),
+    get: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    adminUpdate: jest.fn(),
+    uploadFile: jest.fn(),
   },
   jiraAPI: {
-    getBoards: vi.fn(),
-    getAssignableUsers: vi.fn(),
+    getBoards: jest.fn(),
+    getAssignableUsers: jest.fn(),
   },
 }));
 
@@ -107,7 +106,7 @@ async function setupLookupMocks() {
 
 describe('AskScenarioPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     mockIsEditor = true;
   });
 
@@ -1909,7 +1908,7 @@ describe('AskScenarioPage', () => {
 
   it('handles RichTextEditor paste event', async () => {
     await setupLookupMocks();
-    document.execCommand = vi.fn();
+    document.execCommand = jest.fn();
 
     renderNew();
 
@@ -1924,7 +1923,7 @@ describe('AskScenarioPage', () => {
       // Fire paste event using fireEvent which handles clipboardData properly
       fireEvent.paste(editorDiv, {
         clipboardData: {
-          getData: vi.fn().mockReturnValue('pasted text'),
+          getData: jest.fn().mockReturnValue('pasted text'),
         },
       });
 
@@ -1954,7 +1953,7 @@ describe('AskScenarioPage', () => {
 
   it('handles RichTextEditor toolbar bold button', async () => {
     await setupLookupMocks();
-    document.execCommand = vi.fn();
+    document.execCommand = jest.fn();
 
     renderNew();
 
@@ -1970,7 +1969,7 @@ describe('AskScenarioPage', () => {
 
   it('handles RichTextEditor toolbar italic button', async () => {
     await setupLookupMocks();
-    document.execCommand = vi.fn();
+    document.execCommand = jest.fn();
 
     renderNew();
 
@@ -1986,7 +1985,7 @@ describe('AskScenarioPage', () => {
 
   it('handles RichTextEditor toolbar list buttons', async () => {
     await setupLookupMocks();
-    document.execCommand = vi.fn();
+    document.execCommand = jest.fn();
 
     renderNew();
 
@@ -2005,7 +2004,7 @@ describe('AskScenarioPage', () => {
 
   it('handles RichTextEditor toolbar code block button', async () => {
     await setupLookupMocks();
-    document.execCommand = vi.fn();
+    document.execCommand = jest.fn();
 
     renderNew();
 
@@ -2021,9 +2020,9 @@ describe('AskScenarioPage', () => {
 
   it('handles RichTextEditor toolbar link button with URL', async () => {
     await setupLookupMocks();
-    document.execCommand = vi.fn();
+    document.execCommand = jest.fn();
     const originalPrompt = window.prompt;
-    window.prompt = vi.fn().mockReturnValue('https://example.com');
+    window.prompt = jest.fn().mockReturnValue('https://example.com');
 
     renderNew();
 
@@ -2042,9 +2041,9 @@ describe('AskScenarioPage', () => {
 
   it('handles RichTextEditor toolbar link button with cancelled prompt', async () => {
     await setupLookupMocks();
-    document.execCommand = vi.fn();
+    document.execCommand = jest.fn();
     const originalPrompt = window.prompt;
-    window.prompt = vi.fn().mockReturnValue(null);
+    window.prompt = jest.fn().mockReturnValue(null);
 
     renderNew();
 
@@ -2064,7 +2063,7 @@ describe('AskScenarioPage', () => {
 
   it('handles RichTextEditor list command on empty editor', async () => {
     await setupLookupMocks();
-    document.execCommand = vi.fn();
+    document.execCommand = jest.fn();
 
     renderNew();
 

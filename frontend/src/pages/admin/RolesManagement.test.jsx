@@ -1,31 +1,30 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, within, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import RolesManagement from './RolesManagement';
 
-const mockIsSuperAdmin = vi.fn(() => true);
+const mockIsSuperAdmin = jest.fn(() => true);
 
-vi.mock('../../contexts/AuthContext', () => ({
+jest.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({ isSuperAdmin: mockIsSuperAdmin }),
 }));
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   rolesAPI: {
-    list: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    toggleStatus: vi.fn(),
-    getUsers: vi.fn(),
+    list: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    toggleStatus: jest.fn(),
+    getUsers: jest.fn(),
   },
-  permissionsAPI: { list: vi.fn() },
-  domainsAPI: { list: vi.fn() },
+  permissionsAPI: { list: jest.fn() },
+  domainsAPI: { list: jest.fn() },
   exportAPI: {
-    roles: { csv: vi.fn(), json: vi.fn() },
+    roles: { csv: jest.fn(), json: jest.fn() },
   },
 }));
 
-vi.mock('../../components/shared', () => ({
+jest.mock('../../components/shared', () => ({
   Modal: ({ isOpen, children, title }) =>
     isOpen ? <div data-testid="modal"><h2>{title}</h2>{children}</div> : null,
 }));
@@ -69,7 +68,7 @@ async function setupMocks() {
 
 describe('RolesManagement', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     mockIsSuperAdmin.mockReturnValue(true);
   });
 
@@ -278,7 +277,7 @@ describe('RolesManagement', () => {
     const { rolesAPI } = await import('../../services/api');
     rolesAPI.delete.mockResolvedValue({ data: {} });
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<RolesManagement />);
 
@@ -294,14 +293,14 @@ describe('RolesManagement', () => {
       expect(screen.getByText('Role deleted successfully')).toBeInTheDocument();
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('cancels delete when user declines', async () => {
     await setupMocks();
     const { rolesAPI } = await import('../../services/api');
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    jest.spyOn(window, 'confirm').mockReturnValue(false);
 
     render(<RolesManagement />);
 
@@ -313,7 +312,7 @@ describe('RolesManagement', () => {
     await user.click(deleteButtons[0]);
 
     expect(rolesAPI.delete).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles delete failure', async () => {
@@ -321,7 +320,7 @@ describe('RolesManagement', () => {
     const { rolesAPI } = await import('../../services/api');
     rolesAPI.delete.mockRejectedValue(new Error('Server error'));
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<RolesManagement />);
 
@@ -336,7 +335,7 @@ describe('RolesManagement', () => {
       expect(screen.getByText('Failed to delete role')).toBeInTheDocument();
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles toggle status (deactivate)', async () => {
@@ -427,8 +426,8 @@ describe('RolesManagement', () => {
     exportAPI.roles.csv.mockResolvedValue({ data: 'csv data' });
     const user = userEvent.setup();
 
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     render(<RolesManagement />);
 
@@ -450,8 +449,8 @@ describe('RolesManagement', () => {
     exportAPI.roles.json.mockResolvedValue({ data: '{}' });
     const user = userEvent.setup();
 
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     render(<RolesManagement />);
 
@@ -1363,7 +1362,7 @@ describe('RolesManagement', () => {
       response: { data: { detail: 'Cannot delete system role' } },
     });
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<RolesManagement />);
 
@@ -1378,7 +1377,7 @@ describe('RolesManagement', () => {
       expect(screen.getByText('Cannot delete system role')).toBeInTheDocument();
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles toggle status error with detail from API', async () => {
@@ -1424,7 +1423,7 @@ describe('RolesManagement', () => {
     permissionsAPI.list.mockResolvedValue({ data: { data: [] } });
     domainsAPI.list.mockResolvedValue({ data: { data: [] } });
     rolesAPI.delete.mockResolvedValue({ data: {} });
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
     const user = userEvent.setup();
 
     render(<RolesManagement />);
@@ -1440,7 +1439,7 @@ describe('RolesManagement', () => {
       expect(rolesAPI.delete).toHaveBeenCalledWith('fallback-role');
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('uses roleId fallback when _id is missing for toggleStatus', async () => {
@@ -1567,8 +1566,8 @@ describe('RolesManagement', () => {
     exportAPI.roles.csv.mockResolvedValue({ data: 'csv content' });
     const user = userEvent.setup();
 
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     render(<RolesManagement />);
 
@@ -1590,8 +1589,8 @@ describe('RolesManagement', () => {
     exportAPI.roles.json.mockResolvedValue({ data: '{}' });
     const user = userEvent.setup();
 
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     render(<RolesManagement />);
 
@@ -2688,7 +2687,7 @@ describe('RolesManagement', () => {
     permissionsAPI.list.mockRejectedValue(new Error('Perm fetch fail'));
     domainsAPI.list.mockRejectedValue(new Error('Domain fetch fail'));
 
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     render(<RolesManagement />);
 

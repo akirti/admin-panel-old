@@ -2,10 +2,10 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ExportButton from './ExportButton';
 
-vi.mock('react-hot-toast', () => ({
+jest.mock('react-hot-toast', () => ({ __esModule: true,
   default: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
@@ -16,20 +16,20 @@ describe('ExportButton', () => {
   let mockClick;
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockExportFn = vi.fn();
-    mockClick = vi.fn();
+    jest.clearAllMocks();
+    mockExportFn = jest.fn();
+    mockClick = jest.fn();
 
     // Mock URL APIs
-    global.URL.createObjectURL = vi.fn(() => 'blob:http://localhost/test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:http://localhost/test');
+    global.URL.revokeObjectURL = jest.fn();
 
     // Mock anchor click to avoid jsdom navigation error
-    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(mockClick);
+    jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(mockClick);
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('renders with default label', () => {

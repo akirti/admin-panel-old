@@ -10,16 +10,16 @@ describe('V1CustomerSuggestInput', () => {
 
   const defaultProps = {
     value: '',
-    onChange: vi.fn(),
+    onChange: jest.fn(),
     customers,
     tags: ['VIP', 'Standard'],
     loading: false,
-    onSearch: vi.fn(),
-    onFilterByTag: vi.fn(),
+    onSearch: jest.fn(),
+    onFilterByTag: jest.fn(),
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders input with placeholder', () => {
@@ -50,8 +50,8 @@ describe('V1CustomerSuggestInput', () => {
 
   it('calls onChange and onSearch on input', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
-    const onSearch = vi.fn();
+    const onChange = jest.fn();
+    const onSearch = jest.fn();
     render(
       <V1CustomerSuggestInput {...defaultProps} onChange={onChange} onSearch={onSearch} />
     );
@@ -64,8 +64,8 @@ describe('V1CustomerSuggestInput', () => {
 
   it('clears input when clear button clicked', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
-    const onSearch = vi.fn();
+    const onChange = jest.fn();
+    const onSearch = jest.fn();
     render(
       <V1CustomerSuggestInput
         {...defaultProps}
@@ -121,7 +121,7 @@ describe('V1CustomerSuggestInput', () => {
 
   it('selects a customer from suggestions', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     render(<V1CustomerSuggestInput {...defaultProps} onChange={onChange} />);
 
     await user.click(screen.getByPlaceholderText(/type customer/i));
@@ -183,7 +183,7 @@ describe('V1CustomerSuggestInput', () => {
 
   it('calls onFilterByTag when tag selected', async () => {
     const user = userEvent.setup();
-    const onFilterByTag = vi.fn();
+    const onFilterByTag = jest.fn();
     render(<V1CustomerSuggestInput {...defaultProps} onFilterByTag={onFilterByTag} />);
 
     await user.click(screen.getByPlaceholderText(/type customer/i));

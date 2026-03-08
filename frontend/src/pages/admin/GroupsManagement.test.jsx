@@ -1,33 +1,32 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import GroupsManagement from './GroupsManagement';
 
-const mockIsSuperAdmin = vi.fn(() => true);
+const mockIsSuperAdmin = jest.fn(() => true);
 
-vi.mock('../../contexts/AuthContext', () => ({
+jest.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({ isSuperAdmin: mockIsSuperAdmin }),
 }));
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   groupsAPI: {
-    list: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    toggleStatus: vi.fn(),
-    getUsers: vi.fn(),
-    getTypes: vi.fn(),
+    list: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    toggleStatus: jest.fn(),
+    getUsers: jest.fn(),
+    getTypes: jest.fn(),
   },
-  permissionsAPI: { list: vi.fn() },
-  domainsAPI: { list: vi.fn() },
-  customersAPI: { list: vi.fn() },
+  permissionsAPI: { list: jest.fn() },
+  domainsAPI: { list: jest.fn() },
+  customersAPI: { list: jest.fn() },
   exportAPI: {
-    groups: { csv: vi.fn(), json: vi.fn() },
+    groups: { csv: jest.fn(), json: jest.fn() },
   },
 }));
 
-vi.mock('../../components/shared', () => ({
+jest.mock('../../components/shared', () => ({
   Modal: ({ isOpen, children, title }) =>
     isOpen ? <div data-testid="modal"><h2>{title}</h2>{children}</div> : null,
 }));
@@ -79,7 +78,7 @@ async function setupMocks() {
 
 describe('GroupsManagement', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     mockIsSuperAdmin.mockReturnValue(true);
   });
 
@@ -293,7 +292,7 @@ describe('GroupsManagement', () => {
     const { groupsAPI } = await import('../../services/api');
     groupsAPI.delete.mockResolvedValue({ data: {} });
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<GroupsManagement />);
 
@@ -309,14 +308,14 @@ describe('GroupsManagement', () => {
       expect(screen.getByText('Group deleted successfully')).toBeInTheDocument();
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('cancels delete when user declines', async () => {
     await setupMocks();
     const { groupsAPI } = await import('../../services/api');
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    jest.spyOn(window, 'confirm').mockReturnValue(false);
 
     render(<GroupsManagement />);
 
@@ -328,7 +327,7 @@ describe('GroupsManagement', () => {
     await user.click(deleteButtons[0]);
 
     expect(groupsAPI.delete).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles delete failure', async () => {
@@ -336,7 +335,7 @@ describe('GroupsManagement', () => {
     const { groupsAPI } = await import('../../services/api');
     groupsAPI.delete.mockRejectedValue(new Error('Server error'));
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<GroupsManagement />);
 
@@ -351,7 +350,7 @@ describe('GroupsManagement', () => {
       expect(screen.getByText('Failed to delete group')).toBeInTheDocument();
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles toggle status (deactivate)', async () => {
@@ -442,8 +441,8 @@ describe('GroupsManagement', () => {
     exportAPI.groups.csv.mockResolvedValue({ data: 'csv data' });
     const user = userEvent.setup();
 
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     render(<GroupsManagement />);
 
@@ -465,8 +464,8 @@ describe('GroupsManagement', () => {
     exportAPI.groups.json.mockResolvedValue({ data: '{}' });
     const user = userEvent.setup();
 
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     render(<GroupsManagement />);
 
@@ -1157,7 +1156,7 @@ describe('GroupsManagement', () => {
     customersAPI.list.mockResolvedValue({ data: { data: [] } });
 
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<GroupsManagement />);
 
@@ -1170,7 +1169,7 @@ describe('GroupsManagement', () => {
     await waitFor(() => {
       expect(groupsAPI.delete).toHaveBeenCalledWith('no-id-group');
     });
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('uses groupId fallback when _id is missing for toggleStatus', async () => {
@@ -1290,7 +1289,7 @@ describe('GroupsManagement', () => {
     const { groupsAPI } = await import('../../services/api');
     groupsAPI.delete.mockRejectedValue({ response: { data: { detail: 'Cannot delete system group' } } });
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<GroupsManagement />);
 
@@ -1303,7 +1302,7 @@ describe('GroupsManagement', () => {
     await waitFor(() => {
       expect(screen.getByText('Cannot delete system group')).toBeInTheDocument();
     });
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles toggle status error with response.data.detail', async () => {
@@ -2170,7 +2169,7 @@ describe('GroupsManagement', () => {
     domainsAPI.list.mockRejectedValue(new Error('Domains error'));
     customersAPI.list.mockRejectedValue(new Error('Customers error'));
 
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     render(<GroupsManagement />);
 
     await waitFor(() => {
@@ -2230,8 +2229,8 @@ describe('GroupsManagement', () => {
     exportAPI.groups.csv.mockResolvedValue({ data: 'col1,col2\n1,2' });
     const user = userEvent.setup();
 
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     render(<GroupsManagement />);
 
@@ -2253,8 +2252,8 @@ describe('GroupsManagement', () => {
     exportAPI.groups.json.mockResolvedValue({ data: '{"data":[]}' });
     const user = userEvent.setup();
 
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     render(<GroupsManagement />);
 

@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import DashboardPage from './DashboardPage';
@@ -12,21 +11,21 @@ const mockUser = {
   domains: ['domain1'],
 };
 
-vi.mock('../../contexts/AuthContext', () => ({
+jest.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({
     user: mockUser,
-    isSuperAdmin: vi.fn(() => false),
-    canManageUsers: vi.fn(() => false),
-    isEditor: vi.fn(() => false),
+    isSuperAdmin: jest.fn(() => false),
+    canManageUsers: jest.fn(() => false),
+    isEditor: jest.fn(() => false),
   }),
 }));
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   domainAPI: {
-    getAll: vi.fn(),
+    getAll: jest.fn(),
   },
   scenarioRequestAPI: {
-    getStats: vi.fn(),
+    getStats: jest.fn(),
   },
 }));
 
@@ -40,7 +39,7 @@ function renderDashboardPage() {
 
 describe('DashboardPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders welcome message with user name', async () => {

@@ -2,9 +2,9 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import PublicFeedbackForm from './PublicFeedbackForm';
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   feedbackAPI: {
-    submitPublic: vi.fn(),
+    submitPublic: jest.fn(),
   },
 }));
 
@@ -12,7 +12,7 @@ import { feedbackAPI } from '../../services/api';
 
 describe('PublicFeedbackForm', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders the form with all fields', () => {
@@ -78,7 +78,7 @@ describe('PublicFeedbackForm', () => {
 
   it('submits form successfully', async () => {
     const user = userEvent.setup();
-    const onSuccess = vi.fn();
+    const onSuccess = jest.fn();
     feedbackAPI.submitPublic.mockResolvedValue({ data: {} });
 
     render(<PublicFeedbackForm onSuccess={onSuccess} />);

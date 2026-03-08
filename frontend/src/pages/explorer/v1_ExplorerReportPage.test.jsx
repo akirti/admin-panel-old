@@ -1,11 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import V1ExplorerReportPage from './v1_ExplorerReportPage';
 
 // Mock lucide-react icons
-vi.mock('lucide-react', () => ({
+jest.mock('lucide-react', () => ({
   Loader2: (props) => <span data-testid="loader-icon" {...props} />,
   AlertCircle: (props) => <span data-testid="alert-icon" {...props} />,
   BarChart3: (props) => <span data-testid="barchart-icon" {...props} />,
@@ -16,14 +15,14 @@ vi.mock('lucide-react', () => ({
 }));
 
 // Mock config/env
-vi.mock('../../config/env', () => ({
+jest.mock('../../config/env', () => ({
   ENV: 'test',
 }));
 
 // Mock ExplorerContext
-const mockGetDomainByKey = vi.fn();
+const mockGetDomainByKey = jest.fn();
 const mockScenarios = [];
-vi.mock('../../components/explorer/v1_ExplorerContext', () => ({
+jest.mock('../../components/explorer/v1_ExplorerContext', () => ({
   useExplorer: () => ({
     getDomainByKey: mockGetDomainByKey,
     scenarios: mockScenarios,
@@ -31,23 +30,23 @@ vi.mock('../../components/explorer/v1_ExplorerContext', () => ({
 }));
 
 // Mock playboardAPI and prevailAPI
-const mockPlayboardGet = vi.fn();
-const mockPrevailExecute = vi.fn();
+const mockPlayboardGet = jest.fn();
+const mockPrevailExecute = jest.fn();
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   playboardAPI: {
     get: (...args) => mockPlayboardGet(...args),
   },
 }));
 
-vi.mock('../../services/v1_explorerApi', () => ({
+jest.mock('../../services/v1_explorerApi', () => ({
   prevailAPI: {
     execute: (...args) => mockPrevailExecute(...args),
   },
 }));
 
 // Mock reportUtils
-vi.mock('../../utils/v1_reportUtils', () => ({
+jest.mock('../../utils/v1_reportUtils', () => ({
   getColumnsFromData: (data) => {
     if (!data || data.length === 0) return [];
     return Object.keys(data[0]).map((key) => ({ key, label: key }));
@@ -58,8 +57,8 @@ vi.mock('../../utils/v1_reportUtils', () => ({
 let capturedFilterSubmit = null;
 
 // Mock Breadcrumbs
-vi.mock('../../components/explorer/v1_Breadcrumbs', () => ({
-  default: ({ items }) => (
+jest.mock('../../components/explorer/v1_Breadcrumbs', () => ({
+  __esModule: true, default: ({ items }) => (
     <nav data-testid="breadcrumbs">
       {items.map((item, i) => (
         <span key={i} data-testid={`breadcrumb-${i}`}>
@@ -71,8 +70,8 @@ vi.mock('../../components/explorer/v1_Breadcrumbs', () => ({
 }));
 
 // Mock FilterSection
-vi.mock('../../components/explorer/v1_FilterSection', () => ({
-  default: ({ filterConfig, onSubmit, initialFilterValues }) => {
+jest.mock('../../components/explorer/v1_FilterSection', () => ({
+  __esModule: true, default: ({ filterConfig, onSubmit, initialFilterValues }) => {
     capturedFilterSubmit = onSubmit;
     return (
       <div data-testid="filter-section">
@@ -89,8 +88,8 @@ vi.mock('../../components/explorer/v1_FilterSection', () => ({
 }));
 
 // Mock DataTable
-vi.mock('../../components/explorer/v1_DataTable', () => ({
-  default: ({
+jest.mock('../../components/explorer/v1_DataTable', () => ({
+  __esModule: true, default: ({
     columns,
     data,
     page,
@@ -126,8 +125,8 @@ vi.mock('../../components/explorer/v1_DataTable', () => ({
 }));
 
 // Mock DescriptionRenderer
-vi.mock('../../components/explorer/v1_DescriptionRenderer', () => ({
-  default: ({ description }) => (
+jest.mock('../../components/explorer/v1_DescriptionRenderer', () => ({
+  __esModule: true, default: ({ description }) => (
     <div data-testid="description-renderer">{typeof description === 'string' ? description : 'rendered'}</div>
   ),
 }));
@@ -208,7 +207,7 @@ function makeReportResponse(data = [], pagination = {}) {
 
 describe('V1ExplorerReportPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     capturedFilterSubmit = null;
     mockGetDomainByKey.mockReturnValue({ key: 'finance', name: 'Finance' });
     mockScenarios.length = 0;

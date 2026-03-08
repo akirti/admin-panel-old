@@ -1,21 +1,20 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import BulkUploadPage from './BulkUploadPage';
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   bulkAPI: {
-    upload: vi.fn(),
-    getTemplate: vi.fn(),
-    getGCSStatus: vi.fn(),
+    upload: jest.fn(),
+    getTemplate: jest.fn(),
+    getGCSStatus: jest.fn(),
   },
 }));
 
-vi.mock('react-hot-toast', () => ({
+jest.mock('react-hot-toast', () => ({ __esModule: true,
   default: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
@@ -29,7 +28,7 @@ function renderBulkUploadPage() {
 
 describe('BulkUploadPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders page header', async () => {
@@ -212,8 +211,8 @@ describe('BulkUploadPage', () => {
     const user = userEvent.setup();
 
     // Mock URL.createObjectURL and URL.revokeObjectURL
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     renderBulkUploadPage();
 
@@ -232,8 +231,8 @@ describe('BulkUploadPage', () => {
     bulkAPI.getTemplate.mockResolvedValue({ data: 'csv,data' });
     const user = userEvent.setup();
 
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     renderBulkUploadPage();
 

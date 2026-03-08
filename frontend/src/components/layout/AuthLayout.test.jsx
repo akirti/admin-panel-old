@@ -2,8 +2,8 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import AuthLayout from './AuthLayout';
 
-vi.mock('../shared/ThemeSwitcher', () => ({
-  default: ({ compact }) => (
+jest.mock('../shared/ThemeSwitcher', () => ({
+  __esModule: true, default: ({ compact }) => (
     <div data-testid="theme-switcher" data-compact={compact}>
       ThemeSwitcher
     </div>

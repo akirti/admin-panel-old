@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router';
@@ -6,13 +5,13 @@ import ScenarioDetailPage from './ScenarioDetailPage';
 
 // ---- mocks ----
 
-const mockNavigate = vi.fn();
-vi.mock('react-router', async () => {
-  const actual = await vi.importActual('react-router');
+const mockNavigate = jest.fn();
+jest.mock('react-router', () => {
+  const actual = jest.requireActual('react-router');
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-vi.mock('../../contexts/AuthContext', () => ({
+jest.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({
     user: { user_id: 'u1', full_name: 'Test User', username: 'testuser' },
     isSuperAdmin: () => false,
@@ -25,11 +24,11 @@ vi.mock('../../contexts/AuthContext', () => ({
   }),
 }));
 
-vi.mock('react-hot-toast', () => ({
-  default: { success: vi.fn(), error: vi.fn() },
+jest.mock('react-hot-toast', () => ({ __esModule: true,
+  default: { success: jest.fn(), error: jest.fn() },
 }));
 
-vi.mock('lucide-react', () => ({
+jest.mock('lucide-react', () => ({
   ArrowLeft: (props) => null,
   FileText: (props) => null,
   ChevronRight: (props) => null,
@@ -44,7 +43,7 @@ vi.mock('lucide-react', () => ({
   X: (props) => null,
 }));
 
-vi.mock('../../components/shared', () => ({
+jest.mock('../../components/shared', () => ({
   Card: ({ children, className, ...props }) => <div data-testid="card" className={className} {...props}>{children}</div>,
   Button: ({ children, onClick, disabled, variant, type, className, ...props }) => (
     <button onClick={onClick} disabled={disabled} type={type || 'button'} className={className} {...props}>{children}</button>
@@ -78,21 +77,21 @@ vi.mock('../../components/shared', () => ({
   ),
 }));
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   scenariosAPI: {
-    get: vi.fn(),
-    getPlayboards: vi.fn(),
+    get: jest.fn(),
+    getPlayboards: jest.fn(),
   },
   playboardsAPI: {
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    download: vi.fn(),
-    toggleStatus: vi.fn(),
-    upload: vi.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    download: jest.fn(),
+    toggleStatus: jest.fn(),
+    upload: jest.fn(),
   },
   domainsAPI: {
-    list: vi.fn(),
+    list: jest.fn(),
   },
 }));
 
@@ -146,7 +145,7 @@ async function setupMocks(scenario = mockScenario, playboards = mockPlayboards) 
 
 describe('ScenarioDetailPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('shows loading spinner initially', async () => {
@@ -484,7 +483,7 @@ describe('ScenarioDetailPage', () => {
     scenariosAPI.getPlayboards.mockResolvedValue({ data: mockPlayboards });
     const toast = (await import('react-hot-toast')).default;
     const user = userEvent.setup();
-    window.confirm = vi.fn(() => true);
+    window.confirm = jest.fn(() => true);
 
     renderPage();
 
@@ -506,7 +505,7 @@ describe('ScenarioDetailPage', () => {
     await setupMocks();
     const { playboardsAPI } = await import('../../services/api');
     const user = userEvent.setup();
-    window.confirm = vi.fn(() => false);
+    window.confirm = jest.fn(() => false);
 
     renderPage();
 
@@ -526,8 +525,8 @@ describe('ScenarioDetailPage', () => {
     const toast = (await import('react-hot-toast')).default;
     const user = userEvent.setup();
 
-    window.URL.createObjectURL = vi.fn(() => 'blob:test');
-    window.URL.revokeObjectURL = vi.fn();
+    window.URL.createObjectURL = jest.fn(() => 'blob:test');
+    window.URL.revokeObjectURL = jest.fn();
 
     renderPage();
 
@@ -606,7 +605,7 @@ describe('ScenarioDetailPage', () => {
     playboardsAPI.delete.mockRejectedValue({ response: { data: { detail: 'Cannot delete' } } });
     const toast = (await import('react-hot-toast')).default;
     const user = userEvent.setup();
-    window.confirm = vi.fn(() => true);
+    window.confirm = jest.fn(() => true);
 
     renderPage();
 
@@ -2135,7 +2134,7 @@ describe('ScenarioDetailPage', () => {
     playboardsAPI.delete.mockRejectedValue(new Error('Network error'));
     const toast = (await import('react-hot-toast')).default;
     const user = userEvent.setup();
-    window.confirm = vi.fn(() => true);
+    window.confirm = jest.fn(() => true);
 
     renderPage();
 
@@ -2564,8 +2563,8 @@ describe('ScenarioDetailPage', () => {
     const toast = (await import('react-hot-toast')).default;
     const user = userEvent.setup();
 
-    window.URL.createObjectURL = vi.fn(() => 'blob:test');
-    window.URL.revokeObjectURL = vi.fn();
+    window.URL.createObjectURL = jest.fn(() => 'blob:test');
+    window.URL.revokeObjectURL = jest.fn();
 
     renderPage();
 

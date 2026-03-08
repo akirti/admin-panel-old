@@ -37,10 +37,10 @@ describe('Button', () => {
 
   it('handles click events', async () => {
     const user = userEvent.setup();
-    const onClick = vi.fn();
+    const onClick = jest.fn();
     render(<Button onClick={onClick}>Click</Button>);
     await user.click(screen.getByRole('button'));
-    expect(onClick).toHaveBeenCalledOnce();
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -131,7 +131,7 @@ describe('Badge', () => {
 describe('Modal', () => {
   it('renders nothing when not open', () => {
     const { container } = render(
-      <Modal isOpen={false} onClose={vi.fn()} title="Test">
+      <Modal isOpen={false} onClose={jest.fn()} title="Test">
         Content
       </Modal>
     );
@@ -140,7 +140,7 @@ describe('Modal', () => {
 
   it('renders title and children when open', () => {
     render(
-      <Modal isOpen={true} onClose={vi.fn()} title="My Modal">
+      <Modal isOpen={true} onClose={jest.fn()} title="My Modal">
         <p>Modal body</p>
       </Modal>
     );
@@ -150,7 +150,7 @@ describe('Modal', () => {
 
   it('calls onClose when close button is clicked', async () => {
     const user = userEvent.setup();
-    const onClose = vi.fn();
+    const onClose = jest.fn();
     render(
       <Modal isOpen={true} onClose={onClose} title="Modal">
         Content
@@ -164,7 +164,7 @@ describe('Modal', () => {
 
   it('calls onClose when backdrop is clicked', async () => {
     const user = userEvent.setup();
-    const onClose = vi.fn();
+    const onClose = jest.fn();
     const { container } = render(
       <Modal isOpen={true} onClose={onClose} title="Modal">
         Content
@@ -210,7 +210,7 @@ describe('Table', () => {
 
   it('calls onRowClick when row is clicked', async () => {
     const user = userEvent.setup();
-    const onRowClick = vi.fn();
+    const onRowClick = jest.fn();
     const data = [{ _id: '1', name: 'Alice', email: 'alice@test.com' }];
     render(<Table columns={columns} data={data} onRowClick={onRowClick} />);
     await user.click(screen.getByText('Alice'));
@@ -228,30 +228,30 @@ describe('Table', () => {
 
 describe('Toggle', () => {
   it('renders toggle button', () => {
-    render(<Toggle enabled={false} onChange={vi.fn()} />);
+    render(<Toggle enabled={false} onChange={jest.fn()} />);
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
 
   it('renders label when provided', () => {
-    render(<Toggle enabled={false} onChange={vi.fn()} label="Dark Mode" />);
+    render(<Toggle enabled={false} onChange={jest.fn()} label="Dark Mode" />);
     expect(screen.getByText('Dark Mode')).toBeInTheDocument();
   });
 
   it('calls onChange with toggled value', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     render(<Toggle enabled={false} onChange={onChange} />);
     await user.click(screen.getByRole('button'));
     expect(onChange).toHaveBeenCalledWith(true);
   });
 
   it('applies active class when enabled', () => {
-    render(<Toggle enabled={true} onChange={vi.fn()} />);
+    render(<Toggle enabled={true} onChange={jest.fn()} />);
     expect(screen.getByRole('button')).toHaveClass('bg-primary-600');
   });
 
   it('applies inactive class when disabled', () => {
-    render(<Toggle enabled={false} onChange={vi.fn()} />);
+    render(<Toggle enabled={false} onChange={jest.fn()} />);
     expect(screen.getByRole('button')).toHaveClass('bg-neutral-200');
   });
 });
@@ -282,18 +282,18 @@ describe('StatCard', () => {
 
 describe('SearchInput', () => {
   it('renders input with placeholder', () => {
-    render(<SearchInput value="" onChange={vi.fn()} />);
+    render(<SearchInput value="" onChange={jest.fn()} />);
     expect(screen.getByPlaceholderText('Search...')).toBeInTheDocument();
   });
 
   it('uses custom placeholder', () => {
-    render(<SearchInput value="" onChange={vi.fn()} placeholder="Find users..." />);
+    render(<SearchInput value="" onChange={jest.fn()} placeholder="Find users..." />);
     expect(screen.getByPlaceholderText('Find users...')).toBeInTheDocument();
   });
 
   it('calls onChange on input', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     render(<SearchInput value="" onChange={onChange} />);
     await user.type(screen.getByPlaceholderText('Search...'), 'a');
     expect(onChange).toHaveBeenCalledWith('a');
@@ -303,13 +303,13 @@ describe('SearchInput', () => {
 describe('Pagination', () => {
   it('renders nothing when totalPages <= 1', () => {
     const { container } = render(
-      <Pagination currentPage={0} totalPages={1} total={10} onPageChange={vi.fn()} />
+      <Pagination currentPage={0} totalPages={1} total={10} onPageChange={jest.fn()} />
     );
     expect(container).toBeEmptyDOMElement();
   });
 
   it('renders page buttons when multiple pages', () => {
-    render(<Pagination currentPage={0} totalPages={3} total={75} onPageChange={vi.fn()} />);
+    render(<Pagination currentPage={0} totalPages={3} total={75} onPageChange={jest.fn()} />);
     // Multiple elements may have "1" text (page button + "Showing 1 to..."), so use getAllByText
     expect(screen.getAllByText('1').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('2')).toBeInTheDocument();
@@ -317,18 +317,18 @@ describe('Pagination', () => {
   });
 
   it('disables Previous button on first page', () => {
-    render(<Pagination currentPage={0} totalPages={3} total={75} onPageChange={vi.fn()} />);
+    render(<Pagination currentPage={0} totalPages={3} total={75} onPageChange={jest.fn()} />);
     expect(screen.getByText('Previous')).toBeDisabled();
   });
 
   it('disables Next button on last page', () => {
-    render(<Pagination currentPage={2} totalPages={3} total={75} onPageChange={vi.fn()} />);
+    render(<Pagination currentPage={2} totalPages={3} total={75} onPageChange={jest.fn()} />);
     expect(screen.getByText('Next')).toBeDisabled();
   });
 
   it('calls onPageChange when clicking page number', async () => {
     const user = userEvent.setup();
-    const onPageChange = vi.fn();
+    const onPageChange = jest.fn();
     render(<Pagination currentPage={0} totalPages={3} total={75} onPageChange={onPageChange} />);
     await user.click(screen.getByText('2'));
     expect(onPageChange).toHaveBeenCalledWith(1);
@@ -336,14 +336,14 @@ describe('Pagination', () => {
 
   it('calls onPageChange with next page', async () => {
     const user = userEvent.setup();
-    const onPageChange = vi.fn();
+    const onPageChange = jest.fn();
     render(<Pagination currentPage={0} totalPages={3} total={75} onPageChange={onPageChange} />);
     await user.click(screen.getByText('Next'));
     expect(onPageChange).toHaveBeenCalledWith(1);
   });
 
   it('shows item range info', () => {
-    render(<Pagination currentPage={0} totalPages={3} total={75} onPageChange={vi.fn()} />);
+    render(<Pagination currentPage={0} totalPages={3} total={75} onPageChange={jest.fn()} />);
     expect(screen.getByText(/showing/i)).toBeInTheDocument();
     expect(screen.getByText('75')).toBeInTheDocument();
   });
@@ -351,17 +351,17 @@ describe('Pagination', () => {
 
 describe('FileUpload', () => {
   it('renders upload label', () => {
-    render(<FileUpload onFileSelect={vi.fn()} />);
+    render(<FileUpload onFileSelect={jest.fn()} />);
     expect(screen.getByText('Upload File')).toBeInTheDocument();
   });
 
   it('renders custom label', () => {
-    render(<FileUpload onFileSelect={vi.fn()} label="Upload CSV" />);
+    render(<FileUpload onFileSelect={jest.fn()} label="Upload CSV" />);
     expect(screen.getByText('Upload CSV')).toBeInTheDocument();
   });
 
   it('calls onFileSelect when file is selected', async () => {
-    const onFileSelect = vi.fn();
+    const onFileSelect = jest.fn();
     const { container } = render(<FileUpload onFileSelect={onFileSelect} />);
 
     const input = container.querySelector('input[type="file"]');

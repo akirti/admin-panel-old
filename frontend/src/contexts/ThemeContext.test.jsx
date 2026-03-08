@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import React from 'react';
 import { ThemeProvider, useTheme, THEMES } from './ThemeContext';
@@ -10,7 +9,7 @@ function wrapper({ children }) {
 
 describe('ThemeContext', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     // Reset localStorage
     localStorage.clear();
     // Reset data-theme attribute
@@ -197,7 +196,7 @@ describe('ThemeContext', () => {
   // -------------------------------------------------------------------
   describe('useTheme without provider', () => {
     it('throws an error when used outside ThemeProvider', () => {
-      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       expect(() => {
         renderHook(() => useTheme());

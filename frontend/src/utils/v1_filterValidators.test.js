@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { validateFilter } from './v1_filterValidators';
 
 // Helper to create a filter with validators

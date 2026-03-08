@@ -1,11 +1,10 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import FeedbackPage from './FeedbackPage';
 
 // Mock the PublicFeedbackForm since it's tested separately
-vi.mock('../components/feedback/PublicFeedbackForm', () => ({
-  default: () => <div data-testid="feedback-form">Mock Feedback Form</div>,
+jest.mock('../components/feedback/PublicFeedbackForm', () => ({
+  __esModule: true, default: () => <div data-testid="feedback-form">Mock Feedback Form</div>,
 }));
 
 function renderFeedbackPage() {

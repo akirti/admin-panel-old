@@ -8,12 +8,12 @@ describe('V1Pagination', () => {
     totalPages: 5,
     pageSize: 10,
     totalRecords: 50,
-    onPageChange: vi.fn(),
-    onPageSizeChange: vi.fn(),
+    onPageChange: jest.fn(),
+    onPageSizeChange: jest.fn(),
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders page info', () => {
@@ -45,7 +45,7 @@ describe('V1Pagination', () => {
 
   it('calls onPageChange with prev page', async () => {
     const user = userEvent.setup();
-    const onPageChange = vi.fn();
+    const onPageChange = jest.fn();
     render(<V1Pagination {...defaultProps} page={3} onPageChange={onPageChange} />);
 
     await user.click(screen.getByLabelText('Previous page'));
@@ -54,7 +54,7 @@ describe('V1Pagination', () => {
 
   it('calls onPageChange with next page', async () => {
     const user = userEvent.setup();
-    const onPageChange = vi.fn();
+    const onPageChange = jest.fn();
     render(<V1Pagination {...defaultProps} page={3} onPageChange={onPageChange} />);
 
     await user.click(screen.getByLabelText('Next page'));
@@ -73,7 +73,7 @@ describe('V1Pagination', () => {
 
   it('opens page size dropdown and selects new size', async () => {
     const user = userEvent.setup();
-    const onPageSizeChange = vi.fn();
+    const onPageSizeChange = jest.fn();
     render(<V1Pagination {...defaultProps} onPageSizeChange={onPageSizeChange} />);
 
     // Click the page size dropdown button
@@ -85,7 +85,7 @@ describe('V1Pagination', () => {
   });
 
   it('shows download button when onDownloadClick provided', () => {
-    render(<V1Pagination {...defaultProps} onDownloadClick={vi.fn()} />);
+    render(<V1Pagination {...defaultProps} onDownloadClick={jest.fn()} />);
     expect(screen.getByText('Download')).toBeInTheDocument();
   });
 
@@ -96,7 +96,7 @@ describe('V1Pagination', () => {
 
   it('calls onDownloadClick when download clicked', async () => {
     const user = userEvent.setup();
-    const onDownloadClick = vi.fn();
+    const onDownloadClick = jest.fn();
     render(<V1Pagination {...defaultProps} onDownloadClick={onDownloadClick} />);
 
     await user.click(screen.getByText('Download'));

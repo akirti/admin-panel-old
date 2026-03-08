@@ -1,34 +1,33 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import DomainsManagement from './DomainsManagement';
 
-vi.mock('../../contexts/AuthContext', () => ({
+jest.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({
     isEditor: () => true,
   }),
 }));
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   domainAPI: {
-    getAll: vi.fn(),
-    getTypes: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
+    getAll: jest.fn(),
+    getTypes: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
   },
 }));
 
-vi.mock('react-hot-toast', () => ({
+jest.mock('react-hot-toast', () => ({ __esModule: true,
   default: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
-vi.mock('../../components/shared/LucideIconPicker', () => ({
-  default: () => <div data-testid="icon-picker">Icon Picker</div>,
+jest.mock('../../components/shared/LucideIconPicker', () => ({
+  __esModule: true, default: () => <div data-testid="icon-picker">Icon Picker</div>,
 }));
 
 const mockDomains = [
@@ -72,7 +71,7 @@ function renderDomainsManagement() {
 
 describe('DomainsManagement', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders page header', async () => {
@@ -174,8 +173,8 @@ describe('DomainsManagement', () => {
 
   it('shows access denied for non-editors', async () => {
     // Override useAuth mock for this test
-    const authModule = await import('../../contexts/AuthContext');
-    vi.spyOn(authModule, 'useAuth').mockReturnValueOnce({ isEditor: () => false });
+    const authModule = require('../../contexts/AuthContext');
+    jest.spyOn(authModule, 'useAuth').mockReturnValueOnce({ isEditor: () => false });
 
     await setupMocks();
     renderDomainsManagement();
@@ -274,7 +273,7 @@ describe('DomainsManagement', () => {
     const toast = await import('react-hot-toast');
     domainAPI.delete.mockResolvedValue({ data: {} });
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     renderDomainsManagement();
 
@@ -290,14 +289,14 @@ describe('DomainsManagement', () => {
       expect(toast.default.success).toHaveBeenCalledWith('Domain deleted successfully');
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('cancels delete when user declines', async () => {
     await setupMocks();
     const { domainAPI } = await import('../../services/api');
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    jest.spyOn(window, 'confirm').mockReturnValue(false);
 
     renderDomainsManagement();
 
@@ -309,7 +308,7 @@ describe('DomainsManagement', () => {
     await user.click(deleteButtons[0]);
 
     expect(domainAPI.delete).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles create failure', async () => {
@@ -347,7 +346,7 @@ describe('DomainsManagement', () => {
     const toast = await import('react-hot-toast');
     domainAPI.delete.mockRejectedValue({ response: { data: { error: 'Cannot delete' } } });
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     renderDomainsManagement();
 
@@ -362,7 +361,7 @@ describe('DomainsManagement', () => {
       expect(toast.default.error).toHaveBeenCalledWith('Cannot delete');
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('closes modal via cancel button', async () => {

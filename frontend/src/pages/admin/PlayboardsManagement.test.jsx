@@ -1,30 +1,29 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import PlayboardsManagement from './PlayboardsManagement';
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   playboardsAPI: {
-    list: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    upload: vi.fn(),
-    download: vi.fn(),
+    list: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    upload: jest.fn(),
+    download: jest.fn(),
   },
-  scenariosAPI: { list: vi.fn() },
-  domainsAPI: { list: vi.fn() },
+  scenariosAPI: { list: jest.fn() },
+  domainsAPI: { list: jest.fn() },
 }));
 
-vi.mock('react-hot-toast', () => ({
+jest.mock('react-hot-toast', () => ({ __esModule: true,
   default: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
-vi.mock('../../components/shared', () => ({
+jest.mock('../../components/shared', () => ({
   Card: ({ children, className }) => <div className={className}>{children}</div>,
   Button: ({ children, onClick, disabled, type, variant }) => (
     <button onClick={onClick} disabled={disabled} type={type}>{children}</button>
@@ -121,7 +120,7 @@ function renderPlayboardsManagement() {
 
 describe('PlayboardsManagement', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders page header', async () => {
@@ -294,7 +293,7 @@ describe('PlayboardsManagement', () => {
     const toast = await import('react-hot-toast');
     playboardsAPI.delete.mockResolvedValue({ data: {} });
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     renderPlayboardsManagement();
 
@@ -310,14 +309,14 @@ describe('PlayboardsManagement', () => {
       expect(toast.default.success).toHaveBeenCalledWith('Playboard deleted successfully');
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('cancels delete when user declines confirmation', async () => {
     await setupMocks();
     const { playboardsAPI } = await import('../../services/api');
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    jest.spyOn(window, 'confirm').mockReturnValue(false);
 
     renderPlayboardsManagement();
 
@@ -329,7 +328,7 @@ describe('PlayboardsManagement', () => {
     await user.click(deleteButtons[0]);
 
     expect(playboardsAPI.delete).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('opens view details modal', async () => {
@@ -358,8 +357,8 @@ describe('PlayboardsManagement', () => {
     const user = userEvent.setup();
 
     // Mock URL.createObjectURL and URL.revokeObjectURL
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     renderPlayboardsManagement();
 
@@ -457,7 +456,7 @@ describe('PlayboardsManagement', () => {
     const toast = await import('react-hot-toast');
     playboardsAPI.delete.mockRejectedValue(new Error('Server error'));
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     renderPlayboardsManagement();
 
@@ -472,7 +471,7 @@ describe('PlayboardsManagement', () => {
       expect(toast.default.error).toHaveBeenCalledWith('Failed to delete playboard');
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('renders tabs in create modal', async () => {
@@ -1438,8 +1437,8 @@ describe('PlayboardsManagement', () => {
     const { playboardsAPI } = await import('../../services/api');
     playboardsAPI.download.mockResolvedValue({ data: { key: 'customer_search_1' } });
     const user = userEvent.setup();
-    global.URL.createObjectURL = vi.fn(() => 'blob:url');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:url');
+    global.URL.revokeObjectURL = jest.fn();
 
     renderPlayboardsManagement();
     await waitFor(() => { expect(screen.getByText('Customer Search')).toBeInTheDocument(); });
@@ -1776,7 +1775,7 @@ describe('PlayboardsManagement', () => {
     scenariosAPI.list.mockResolvedValue({ data: { data: [] } });
     domainsAPI.list.mockResolvedValue({ data: { data: [] } });
     playboardsAPI.delete.mockResolvedValue({ data: {} });
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     const user = userEvent.setup();
     renderPlayboardsManagement();
@@ -1788,7 +1787,7 @@ describe('PlayboardsManagement', () => {
     await waitFor(() => {
       expect(playboardsAPI.delete).toHaveBeenCalledWith('pb_only_underscore');
     });
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('openEditModal with item having widgets directly (not nested in data)', async () => {
@@ -2030,8 +2029,8 @@ describe('PlayboardsManagement', () => {
     scenariosAPI.list.mockResolvedValue({ data: { data: [] } });
     domainsAPI.list.mockResolvedValue({ data: { data: [] } });
     playboardsAPI.download.mockResolvedValue({ data: { key: 'test' } });
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     const user = userEvent.setup();
     renderPlayboardsManagement();
@@ -2065,12 +2064,14 @@ describe('PlayboardsManagement', () => {
     scenariosAPI.list.mockResolvedValue({ data: { data: [] } });
     domainsAPI.list.mockResolvedValue({ data: { data: [] } });
     playboardsAPI.download.mockResolvedValue({ data: { test: true } });
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     const user = userEvent.setup();
     renderPlayboardsManagement();
-    await waitFor(() => { expect(screen.queryByText('Customer Search')).not.toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getAllByTitle('Download JSON')).toBeDefined();
+    });
 
     const downloadButtons = screen.getAllByTitle('Download JSON');
     await user.click(downloadButtons[0]);

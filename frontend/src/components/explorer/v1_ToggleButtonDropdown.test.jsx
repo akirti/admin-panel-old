@@ -11,11 +11,11 @@ describe('V1ToggleButtonDropdown', () => {
   const defaultProps = {
     options,
     togglesState: { opt1: false, opt2: false },
-    onChange: vi.fn(),
+    onChange: jest.fn(),
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders with placeholder when nothing selected', () => {
@@ -45,7 +45,7 @@ describe('V1ToggleButtonDropdown', () => {
 
   it('calls onChange when toggle is clicked', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     render(<V1ToggleButtonDropdown {...defaultProps} onChange={onChange} />);
 
     await user.click(screen.getByRole('button', { name: /select toggle/i }));
@@ -61,7 +61,7 @@ describe('V1ToggleButtonDropdown', () => {
     render(
       <V1ToggleButtonDropdown
         {...defaultProps}
-        handleToggleSelectAll={vi.fn()}
+        handleToggleSelectAll={jest.fn()}
         allSelected={false}
       />
     );
@@ -76,7 +76,7 @@ describe('V1ToggleButtonDropdown', () => {
       <V1ToggleButtonDropdown
         {...defaultProps}
         togglesState={{ opt1: true, opt2: true }}
-        handleToggleSelectAll={vi.fn()}
+        handleToggleSelectAll={jest.fn()}
         allSelected={true}
       />
     );
@@ -132,7 +132,7 @@ describe('V1ToggleButtonDropdown', () => {
 
   it('toggles via keyboard (Enter)', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     render(<V1ToggleButtonDropdown {...defaultProps} onChange={onChange} />);
 
     // Open dropdown
@@ -147,7 +147,7 @@ describe('V1ToggleButtonDropdown', () => {
 
   it('toggles via keyboard (Space)', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     render(<V1ToggleButtonDropdown {...defaultProps} onChange={onChange} />);
 
     await user.click(screen.getByRole('button', { name: /select toggle/i }));
@@ -160,7 +160,7 @@ describe('V1ToggleButtonDropdown', () => {
 
   it('calls handleToggleSelectAll when Enable All clicked', async () => {
     const user = userEvent.setup();
-    const handleToggleSelectAll = vi.fn();
+    const handleToggleSelectAll = jest.fn();
     render(
       <V1ToggleButtonDropdown
         {...defaultProps}
@@ -201,7 +201,7 @@ describe('V1ToggleButtonDropdown', () => {
 
   it('does not toggle when disabled and row clicked', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     // Force dropdown open by not disabling initially, then re-render
     const { rerender } = render(
       <V1ToggleButtonDropdown {...defaultProps} onChange={onChange} />

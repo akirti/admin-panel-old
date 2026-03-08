@@ -1,29 +1,28 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import MyRequestsPage from './MyRequestsPage';
 
-const mockNavigate = vi.fn();
+const mockNavigate = jest.fn();
 
-vi.mock('react-router', async () => {
-  const actual = await vi.importActual('react-router');
+jest.mock('react-router', () => {
+  const actual = jest.requireActual('react-router');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
   };
 });
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   scenarioRequestAPI: {
-    getAll: vi.fn(),
+    getAll: jest.fn(),
   },
 }));
 
-vi.mock('react-hot-toast', () => ({
+jest.mock('react-hot-toast', () => ({ __esModule: true,
   default: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
@@ -58,7 +57,7 @@ function renderMyRequestsPage() {
 
 describe('MyRequestsPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders page header and new request link', async () => {

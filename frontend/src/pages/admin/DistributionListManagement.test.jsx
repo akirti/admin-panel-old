@@ -1,28 +1,27 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import DistributionListManagement from './DistributionListManagement';
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   distributionListsAPI: {
-    list: vi.fn(),
-    getTypes: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    toggleStatus: vi.fn(),
+    list: jest.fn(),
+    getTypes: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    toggleStatus: jest.fn(),
   },
 }));
 
-vi.mock('react-hot-toast', () => ({
+jest.mock('react-hot-toast', () => ({ __esModule: true,
   default: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
-vi.mock('../../components/shared', () => ({
+jest.mock('../../components/shared', () => ({
   Input: ({ label, value, onChange, placeholder }) => (
     <div>{label && <label>{label}</label>}<input value={value} onChange={onChange} placeholder={placeholder} /></div>
   ),
@@ -77,7 +76,7 @@ function renderDistributionListManagement() {
 
 describe('DistributionListManagement', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders page header', async () => {
@@ -240,7 +239,7 @@ describe('DistributionListManagement', () => {
     const toast = await import('react-hot-toast');
     distributionListsAPI.delete.mockResolvedValue({ data: {} });
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     renderDistributionListManagement();
 
@@ -256,14 +255,14 @@ describe('DistributionListManagement', () => {
       expect(toast.default.success).toHaveBeenCalledWith('Distribution list deleted');
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('cancels delete when user declines', async () => {
     await setupMocks();
     const { distributionListsAPI } = await import('../../services/api');
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    jest.spyOn(window, 'confirm').mockReturnValue(false);
 
     renderDistributionListManagement();
 
@@ -275,7 +274,7 @@ describe('DistributionListManagement', () => {
     await user.click(deleteButtons[0]);
 
     expect(distributionListsAPI.delete).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles toggle status', async () => {
@@ -335,7 +334,7 @@ describe('DistributionListManagement', () => {
     const toast = await import('react-hot-toast');
     distributionListsAPI.delete.mockRejectedValue(new Error('Server error'));
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     renderDistributionListManagement();
 
@@ -350,7 +349,7 @@ describe('DistributionListManagement', () => {
       expect(toast.default.error).toHaveBeenCalledWith('Failed to delete distribution list');
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles toggle status failure', async () => {

@@ -1,33 +1,32 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CustomersManagement from './CustomersManagement';
 
-const mockIsSuperAdmin = vi.fn(() => true);
+const mockIsSuperAdmin = jest.fn(() => true);
 
-vi.mock('../../contexts/AuthContext', () => ({
+jest.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({ isSuperAdmin: mockIsSuperAdmin }),
 }));
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   customersAPI: {
-    list: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    toggleStatus: vi.fn(),
-    getUsers: vi.fn(),
-    getFilters: vi.fn(),
-    assignUsers: vi.fn(),
-    removeUsers: vi.fn(),
+    list: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    toggleStatus: jest.fn(),
+    getUsers: jest.fn(),
+    getFilters: jest.fn(),
+    assignUsers: jest.fn(),
+    removeUsers: jest.fn(),
   },
-  usersAPI: { list: vi.fn() },
+  usersAPI: { list: jest.fn() },
   exportAPI: {
-    customers: { csv: vi.fn(), json: vi.fn() },
+    customers: { csv: jest.fn(), json: jest.fn() },
   },
 }));
 
-vi.mock('../../components/shared', () => ({
+jest.mock('../../components/shared', () => ({
   Modal: ({ isOpen, children, title }) =>
     isOpen ? <div data-testid="modal"><h2>{title}</h2>{children}</div> : null,
   Badge: ({ children, variant }) => <span data-variant={variant}>{children}</span>,
@@ -75,7 +74,7 @@ async function setupMocks() {
 
 describe('CustomersManagement', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     mockIsSuperAdmin.mockReturnValue(true);
   });
 
@@ -308,7 +307,7 @@ describe('CustomersManagement', () => {
     const { customersAPI } = await import('../../services/api');
     customersAPI.delete.mockResolvedValue({ data: {} });
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<CustomersManagement />);
 
@@ -324,14 +323,14 @@ describe('CustomersManagement', () => {
       expect(screen.getByText('Customer deleted successfully')).toBeInTheDocument();
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('cancels delete when user declines', async () => {
     await setupMocks();
     const { customersAPI } = await import('../../services/api');
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    jest.spyOn(window, 'confirm').mockReturnValue(false);
 
     render(<CustomersManagement />);
 
@@ -343,7 +342,7 @@ describe('CustomersManagement', () => {
     await user.click(deleteButtons[0]);
 
     expect(customersAPI.delete).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles delete failure', async () => {
@@ -351,7 +350,7 @@ describe('CustomersManagement', () => {
     const { customersAPI } = await import('../../services/api');
     customersAPI.delete.mockRejectedValue(new Error('Server error'));
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<CustomersManagement />);
 
@@ -366,7 +365,7 @@ describe('CustomersManagement', () => {
       expect(screen.getByText('Failed to delete customer')).toBeInTheDocument();
     });
 
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('handles toggle status (deactivate)', async () => {
@@ -457,8 +456,8 @@ describe('CustomersManagement', () => {
     exportAPI.customers.csv.mockResolvedValue({ data: 'csv data' });
     const user = userEvent.setup();
 
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     render(<CustomersManagement />);
 
@@ -480,8 +479,8 @@ describe('CustomersManagement', () => {
     exportAPI.customers.json.mockResolvedValue({ data: '{}' });
     const user = userEvent.setup();
 
-    global.URL.createObjectURL = vi.fn(() => 'blob:test');
-    global.URL.revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = jest.fn(() => 'blob:test');
+    global.URL.revokeObjectURL = jest.fn();
 
     render(<CustomersManagement />);
 
@@ -1559,7 +1558,7 @@ describe('CustomersManagement', () => {
     const { customersAPI } = await import('../../services/api');
     customersAPI.delete.mockRejectedValue({ response: { data: { detail: 'Cannot delete active customer' } } });
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<CustomersManagement />);
     await waitFor(() => {
@@ -1572,7 +1571,7 @@ describe('CustomersManagement', () => {
     await waitFor(() => {
       expect(screen.getByText('Cannot delete active customer')).toBeInTheDocument();
     });
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('toggle status failure with response.data.detail shows specific error', async () => {
@@ -1648,7 +1647,7 @@ describe('CustomersManagement', () => {
     usersAPI.list.mockResolvedValue({ data: { data: [] } });
     customersAPI.delete.mockResolvedValue({ data: {} });
     const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<CustomersManagement />);
     await waitFor(() => {
@@ -1661,7 +1660,7 @@ describe('CustomersManagement', () => {
     await waitFor(() => {
       expect(customersAPI.delete).toHaveBeenCalledWith('del-no-id');
     });
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('uses customerId fallback when _id is missing for toggleStatus', async () => {
@@ -2307,13 +2306,13 @@ describe('CustomersManagement', () => {
     exportAPI.customers.csv.mockResolvedValue({ data: 'col1,col2\nval1,val2' });
     const user = userEvent.setup();
 
-    const mockCreateObjectURL = vi.fn(() => 'blob:test-url');
-    const mockRevokeObjectURL = vi.fn();
+    const mockCreateObjectURL = jest.fn(() => 'blob:test-url');
+    const mockRevokeObjectURL = jest.fn();
     global.URL.createObjectURL = mockCreateObjectURL;
     global.URL.revokeObjectURL = mockRevokeObjectURL;
 
-    const mockAppendChild = vi.spyOn(document.body, 'appendChild');
-    const mockRemoveChild = vi.spyOn(document.body, 'removeChild');
+    const mockAppendChild = jest.spyOn(document.body, 'appendChild');
+    const mockRemoveChild = jest.spyOn(document.body, 'removeChild');
 
     render(<CustomersManagement />);
     await waitFor(() => {
@@ -2339,8 +2338,8 @@ describe('CustomersManagement', () => {
     exportAPI.customers.json.mockResolvedValue({ data: '{"customers":[]}' });
     const user = userEvent.setup();
 
-    const mockCreateObjectURL = vi.fn(() => 'blob:test-url');
-    const mockRevokeObjectURL = vi.fn();
+    const mockCreateObjectURL = jest.fn(() => 'blob:test-url');
+    const mockRevokeObjectURL = jest.fn();
     global.URL.createObjectURL = mockCreateObjectURL;
     global.URL.revokeObjectURL = mockRevokeObjectURL;
 

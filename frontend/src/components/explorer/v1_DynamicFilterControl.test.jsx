@@ -2,22 +2,22 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import V1DynamicFilterControl from './v1_DynamicFilterControl';
 
-vi.mock('../../utils/v1_reportUtils', () => ({
-  getAttrValue: vi.fn((attrs, key) => {
+jest.mock('../../utils/v1_reportUtils', () => ({
+  getAttrValue: jest.fn((attrs, key) => {
     const attr = attrs?.find(a => a.key === key);
     return attr?.value;
   }),
-  formatApiDateForInput: vi.fn((val) => val),
-  getCurrentDate: vi.fn(() => '2026-01-01'),
-  addDays: vi.fn((date, days) => '2025-11-02'),
-  handleArray: vi.fn((vals, filter, onChange) => onChange(filter.dataKey, vals)),
+  formatApiDateForInput: jest.fn((val) => val),
+  getCurrentDate: jest.fn(() => '2026-01-01'),
+  addDays: jest.fn((date, days) => '2025-11-02'),
+  handleArray: jest.fn((vals, filter, onChange) => onChange(filter.dataKey, vals)),
 }));
 
 describe('V1DynamicFilterControl', () => {
-  const onChange = vi.fn();
+  const onChange = jest.fn();
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders text input for default/input type', () => {
@@ -409,8 +409,8 @@ describe('V1DynamicFilterControl', () => {
       customers: [{ id: '1', name: 'Cust 1' }],
       tags: ['vip'],
       loading: false,
-      search: vi.fn(),
-      filterByTag: vi.fn(),
+      search: jest.fn(),
+      filterByTag: jest.fn(),
     };
     render(
       <V1DynamicFilterControl
@@ -452,8 +452,8 @@ describe('V1DynamicFilterControl', () => {
       customers: [],
       tags: [],
       loading: false,
-      search: vi.fn(),
-      filterByTag: vi.fn(),
+      search: jest.fn(),
+      filterByTag: jest.fn(),
     };
     render(
       <V1DynamicFilterControl

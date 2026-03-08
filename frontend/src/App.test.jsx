@@ -1,65 +1,67 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Outlet } from 'react-router';
+import { MemoryRouter } from 'react-router';
 import App from './App';
 
 // Mock all page components
-vi.mock('./pages/auth/LoginPage', () => ({ default: () => <div>Login Page</div> }));
-vi.mock('./pages/auth/RegisterPage', () => ({ default: () => <div>Register Page</div> }));
-vi.mock('./pages/auth/ForgotPasswordPage', () => ({ default: () => <div>Forgot Password Page</div> }));
-vi.mock('./pages/auth/ResetPasswordPage', () => ({ default: () => <div>Reset Password Page</div> }));
-vi.mock('./pages/user/DashboardPage', () => ({ default: () => <div>Dashboard Page</div> }));
-vi.mock('./pages/user/ProfilePage', () => ({ default: () => <div>Profile Page</div> }));
-vi.mock('./pages/user/DomainsPage', () => ({ default: () => <div>Domains Page</div> }));
-vi.mock('./pages/user/DomainDetailPage', () => ({ default: () => <div>Domain Detail</div> }));
-vi.mock('./pages/user/ScenarioDetailPage', () => ({ default: () => <div>Scenario Detail</div> }));
-vi.mock('./pages/user/AskScenarioPage', () => ({ default: () => <div>Ask Scenario</div> }));
-vi.mock('./pages/user/MyRequestsPage', () => ({ default: () => <div>My Requests</div> }));
-vi.mock('./pages/user/RequestDetailPage', () => ({ default: () => <div>Request Detail</div> }));
-vi.mock('./pages/explorer/v1_ExplorerDomainPage', () => ({ default: () => <div>Explorer Domain</div> }));
-vi.mock('./pages/explorer/v1_ExplorerReportPage', () => ({ default: () => <div>Explorer Report</div> }));
-vi.mock('./pages/admin/AdminDashboard', () => ({ default: () => <div>Admin Dashboard</div> }));
-vi.mock('./pages/admin/UsersManagement', () => ({ default: () => <div>Users Management</div> }));
-vi.mock('./pages/admin/RolesManagement', () => ({ default: () => <div>Roles Management</div> }));
-vi.mock('./pages/admin/DomainsManagement', () => ({ default: () => <div>Domains Management</div> }));
-vi.mock('./pages/admin/ScenariosManagement', () => ({ default: () => <div>Scenarios Management</div> }));
-vi.mock('./pages/admin/ScenarioRequestsManagement', () => ({ default: () => <div>Scenario Requests</div> }));
-vi.mock('./pages/admin/GroupsManagement', () => ({ default: () => <div>Groups Management</div> }));
-vi.mock('./pages/admin/PermissionsManagement', () => ({ default: () => <div>Permissions Management</div> }));
-vi.mock('./pages/admin/ConfigurationsManagement', () => ({ default: () => <div>Configurations</div> }));
-vi.mock('./pages/admin/PlayboardsManagement', () => ({ default: () => <div>Playboards</div> }));
-vi.mock('./pages/admin/ActivityLogsPage', () => ({ default: () => <div>Activity Logs</div> }));
-vi.mock('./pages/admin/ErrorLogsPage', () => ({ default: () => <div>Error Logs</div> }));
-vi.mock('./pages/admin/BulkUploadPage', () => ({ default: () => <div>Bulk Upload</div> }));
-vi.mock('./pages/admin/CustomersManagement', () => ({ default: () => <div>Customers</div> }));
-vi.mock('./pages/admin/FeedbackManagement', () => ({ default: () => <div>Feedback Management</div> }));
-vi.mock('./pages/admin/ApiConfigsManagement', () => ({ default: () => <div>API Configs</div> }));
-vi.mock('./pages/admin/DistributionListManagement', () => ({ default: () => <div>Distribution Lists</div> }));
-vi.mock('./pages/FeedbackPage', () => ({ default: () => <div>Feedback Page</div> }));
+jest.mock('./pages/auth/LoginPage', () => ({ __esModule: true, default: () => <div>Login Page</div> }));
+jest.mock('./pages/auth/RegisterPage', () => ({ __esModule: true, default: () => <div>Register Page</div> }));
+jest.mock('./pages/auth/ForgotPasswordPage', () => ({ __esModule: true, default: () => <div>Forgot Password Page</div> }));
+jest.mock('./pages/auth/ResetPasswordPage', () => ({ __esModule: true, default: () => <div>Reset Password Page</div> }));
+jest.mock('./pages/user/DashboardPage', () => ({ __esModule: true, default: () => <div>Dashboard Page</div> }));
+jest.mock('./pages/user/ProfilePage', () => ({ __esModule: true, default: () => <div>Profile Page</div> }));
+jest.mock('./pages/user/DomainsPage', () => ({ __esModule: true, default: () => <div>Domains Page</div> }));
+jest.mock('./pages/user/DomainDetailPage', () => ({ __esModule: true, default: () => <div>Domain Detail</div> }));
+jest.mock('./pages/user/ScenarioDetailPage', () => ({ __esModule: true, default: () => <div>Scenario Detail</div> }));
+jest.mock('./pages/user/AskScenarioPage', () => ({ __esModule: true, default: () => <div>Ask Scenario</div> }));
+jest.mock('./pages/user/MyRequestsPage', () => ({ __esModule: true, default: () => <div>My Requests</div> }));
+jest.mock('./pages/user/RequestDetailPage', () => ({ __esModule: true, default: () => <div>Request Detail</div> }));
+jest.mock('./pages/explorer/v1_ExplorerDomainPage', () => ({ __esModule: true, default: () => <div>Explorer Domain</div> }));
+jest.mock('./pages/explorer/v1_ExplorerReportPage', () => ({ __esModule: true, default: () => <div>Explorer Report</div> }));
+jest.mock('./pages/admin/AdminDashboard', () => ({ __esModule: true, default: () => <div>Admin Dashboard</div> }));
+jest.mock('./pages/admin/UsersManagement', () => ({ __esModule: true, default: () => <div>Users Management</div> }));
+jest.mock('./pages/admin/RolesManagement', () => ({ __esModule: true, default: () => <div>Roles Management</div> }));
+jest.mock('./pages/admin/DomainsManagement', () => ({ __esModule: true, default: () => <div>Domains Management</div> }));
+jest.mock('./pages/admin/ScenariosManagement', () => ({ __esModule: true, default: () => <div>Scenarios Management</div> }));
+jest.mock('./pages/admin/ScenarioRequestsManagement', () => ({ __esModule: true, default: () => <div>Scenario Requests</div> }));
+jest.mock('./pages/admin/GroupsManagement', () => ({ __esModule: true, default: () => <div>Groups Management</div> }));
+jest.mock('./pages/admin/PermissionsManagement', () => ({ __esModule: true, default: () => <div>Permissions Management</div> }));
+jest.mock('./pages/admin/ConfigurationsManagement', () => ({ __esModule: true, default: () => <div>Configurations</div> }));
+jest.mock('./pages/admin/PlayboardsManagement', () => ({ __esModule: true, default: () => <div>Playboards</div> }));
+jest.mock('./pages/admin/ActivityLogsPage', () => ({ __esModule: true, default: () => <div>Activity Logs</div> }));
+jest.mock('./pages/admin/ErrorLogsPage', () => ({ __esModule: true, default: () => <div>Error Logs</div> }));
+jest.mock('./pages/admin/BulkUploadPage', () => ({ __esModule: true, default: () => <div>Bulk Upload</div> }));
+jest.mock('./pages/admin/CustomersManagement', () => ({ __esModule: true, default: () => <div>Customers</div> }));
+jest.mock('./pages/admin/FeedbackManagement', () => ({ __esModule: true, default: () => <div>Feedback Management</div> }));
+jest.mock('./pages/admin/ApiConfigsManagement', () => ({ __esModule: true, default: () => <div>API Configs</div> }));
+jest.mock('./pages/admin/DistributionListManagement', () => ({ __esModule: true, default: () => <div>Distribution Lists</div> }));
+jest.mock('./pages/FeedbackPage', () => ({ __esModule: true, default: () => <div>Feedback Page</div> }));
 
-// Layout mocks that render Outlet
-vi.mock('./components/layout/MainLayout', () => ({
-  default: () => <div data-testid="main-layout"><Outlet /></div>,
-}));
-vi.mock('./components/layout/AuthLayout', () => ({
-  default: () => <div data-testid="auth-layout"><Outlet /></div>,
-}));
-vi.mock('./components/explorer/v1_ExplorerLayout', () => ({
-  default: () => <div data-testid="explorer-layout"><Outlet /></div>,
-}));
+// Layout mocks that render Outlet (require inside factory to avoid out-of-scope reference)
+jest.mock('./components/layout/MainLayout', () => {
+  const { Outlet } = require('react-router');
+  return { __esModule: true, default: () => <div data-testid="main-layout"><Outlet /></div> };
+});
+jest.mock('./components/layout/AuthLayout', () => {
+  const { Outlet } = require('react-router');
+  return { __esModule: true, default: () => <div data-testid="auth-layout"><Outlet /></div> };
+});
+jest.mock('./components/explorer/v1_ExplorerLayout', () => {
+  const { Outlet } = require('react-router');
+  return { __esModule: true, default: () => <div data-testid="explorer-layout"><Outlet /></div> };
+});
 
 let mockAuthValue = {};
-vi.mock('./contexts/AuthContext', () => ({
+jest.mock('./contexts/AuthContext', () => ({
   useAuth: () => mockAuthValue,
 }));
 
-vi.mock('react-hot-toast', () => ({
+jest.mock('react-hot-toast', () => ({ __esModule: true,
   Toaster: () => null,
 }));
 
 describe('App', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('public routes', () => {

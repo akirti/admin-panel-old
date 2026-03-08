@@ -2,15 +2,15 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ThemeSwitcher from './ThemeSwitcher';
 
-const mockSetTheme = vi.fn();
+const mockSetTheme = jest.fn();
 const mockThemes = [
   { id: 'original', label: 'Original', description: 'Classic red theme', colors: { primary: '#dc2626', bg: '#ffffff', accent: '#fef2f2' } },
   { id: 'dark', label: 'Dark', description: 'Easy on the eyes', colors: { primary: '#818cf8', bg: '#0f0f1a', accent: '#1e1e2e' } },
   { id: 'ocean', label: 'Ocean Breeze', description: 'Cool teal tones', colors: { primary: '#0891b2', bg: '#f0f9ff', accent: '#ecfeff' } },
 ];
 
-vi.mock('../../contexts/ThemeContext', () => ({
-  useTheme: vi.fn(() => ({
+jest.mock('../../contexts/ThemeContext', () => ({
+  useTheme: jest.fn(() => ({
     theme: 'original',
     setTheme: mockSetTheme,
     themes: mockThemes,
@@ -21,7 +21,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 
 describe('ThemeSwitcher', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     useTheme.mockReturnValue({
       theme: 'original',
       setTheme: mockSetTheme,

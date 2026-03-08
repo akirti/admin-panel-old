@@ -10,23 +10,23 @@ describe('V1RadioButtonDropdown', () => {
   ];
 
   it('renders with placeholder when no value', () => {
-    render(<V1RadioButtonDropdown options={options} onChange={vi.fn()} name="test" />);
+    render(<V1RadioButtonDropdown options={options} onChange={jest.fn()} name="test" />);
     expect(screen.getByText('Select an option')).toBeInTheDocument();
   });
 
   it('renders with custom placeholder', () => {
-    render(<V1RadioButtonDropdown options={options} onChange={vi.fn()} name="test" placeholder="Pick one" />);
+    render(<V1RadioButtonDropdown options={options} onChange={jest.fn()} name="test" placeholder="Pick one" />);
     expect(screen.getByText('Pick one')).toBeInTheDocument();
   });
 
   it('shows selected value label', () => {
-    render(<V1RadioButtonDropdown options={options} value="b" onChange={vi.fn()} name="test" />);
+    render(<V1RadioButtonDropdown options={options} value="b" onChange={jest.fn()} name="test" />);
     expect(screen.getByText('Option B')).toBeInTheDocument();
   });
 
   it('opens dropdown on click', async () => {
     const user = userEvent.setup();
-    render(<V1RadioButtonDropdown options={options} onChange={vi.fn()} name="test" />);
+    render(<V1RadioButtonDropdown options={options} onChange={jest.fn()} name="test" />);
 
     await user.click(screen.getByRole('button'));
 
@@ -37,7 +37,7 @@ describe('V1RadioButtonDropdown', () => {
 
   it('calls onChange and closes on selection', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     render(<V1RadioButtonDropdown options={options} onChange={onChange} name="test" />);
 
     await user.click(screen.getByRole('button'));
@@ -48,7 +48,7 @@ describe('V1RadioButtonDropdown', () => {
 
   it('highlights selected radio option', async () => {
     const user = userEvent.setup();
-    render(<V1RadioButtonDropdown options={options} value="a" onChange={vi.fn()} name="test" />);
+    render(<V1RadioButtonDropdown options={options} value="a" onChange={jest.fn()} name="test" />);
 
     await user.click(screen.getByRole('button'));
 
@@ -59,7 +59,7 @@ describe('V1RadioButtonDropdown', () => {
 
   it('toggles dropdown open and closed', async () => {
     const user = userEvent.setup();
-    render(<V1RadioButtonDropdown options={options} onChange={vi.fn()} name="test" />);
+    render(<V1RadioButtonDropdown options={options} onChange={jest.fn()} name="test" />);
 
     await user.click(screen.getByRole('button'));
     expect(screen.getByText('Option A')).toBeInTheDocument();

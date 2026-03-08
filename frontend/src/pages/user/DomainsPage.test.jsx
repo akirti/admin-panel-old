@@ -1,18 +1,17 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import DomainsPage from './DomainsPage';
 
-vi.mock('../../contexts/AuthContext', () => ({
+jest.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({
-    hasAccessToDomain: vi.fn(() => true),
+    hasAccessToDomain: jest.fn(() => true),
   }),
 }));
 
-vi.mock('../../services/api', () => ({
+jest.mock('../../services/api', () => ({
   domainAPI: {
-    getAll: vi.fn(),
+    getAll: jest.fn(),
   },
 }));
 
@@ -26,7 +25,7 @@ function renderDomainsPage() {
 
 describe('DomainsPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('shows loading state initially', async () => {
