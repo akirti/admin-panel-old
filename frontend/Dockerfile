@@ -21,7 +21,7 @@ ENV NODE_ENV=production
 RUN npm run build
 
 # Stage 2: Production with Nginx
-FROM nginx:alpine AS production
+FROM nginx:mainline-alpine AS production
 
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
