@@ -9,7 +9,7 @@ const isDev = process.env.NODE_ENV !== 'production';
 
 module.exports = {
   mode: isDev ? 'development' : 'production',
-  entry: path.resolve(__dirname, 'src/main.jsx'),
+  entry: path.resolve(__dirname, 'src/index.js'),
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: isDev ? 'assets/js/[name].js' : 'assets/js/[name].[contenthash:8].js',
@@ -18,7 +18,7 @@ module.exports = {
     clean: true,
   },
   resolve: {
-    extensions: ['.js', '.jsx', '.json'],
+    extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
     symlinks: false,
     modules: [path.resolve(__dirname, 'node_modules'), 'node_modules'],
   },
