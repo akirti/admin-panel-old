@@ -7,10 +7,10 @@
     "build": "node scripts/build.js",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "webpack serve --mode production",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:ui": "jest --verbose"
+    "test": "jest --config jest/jest.config.js",
+    "test:watch": "jest --config jest/jest.config.js --watch",
+    "test:coverage": "jest --config jest/jest.config.js --coverage",
+    "test:ui": "jest --config jest/jest.config.js --verbose"
   },
   "dependencies": {
     "axios": "^1.7.9",
