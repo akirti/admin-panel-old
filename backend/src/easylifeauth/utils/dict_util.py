@@ -31,13 +31,15 @@ def parse_ruby_hash(raw: str) -> Optional[Dict[str, Any]]:
     for match in pattern.finditer(inner):
         key = match.group(1)
         value = match.group(2)
-        # Unescape common Ruby string escape sequences
-        value = (
-            value
-            .replace('\\"', '"')
-            .replace("\\\\", "\\")
-            .replace("\\n", "\n")
-        )
+        # Certificate/PEM values pass through as-is
+        if "-----BEGIN" not in value:
+            # Unescape common Ruby string escape sequences
+            value = (
+                value
+                .replace('\\"', '"')
+                .replace("\\\\", "\\")
+                .replace("\\n", "\n")
+            )
         result[key] = value
 
     return result if result else None

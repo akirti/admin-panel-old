@@ -131,6 +131,12 @@ class TestParseRubyHash:
         result = parse_ruby_hash(raw)
         assert result == {"name": "alice"}
 
+    def test_certificate_value_passes_as_is(self):
+        """PEM certificate/key values are not unescaped."""
+        raw = '{:private_key=>"-----BEGIN PRIVATE KEY-----\\nMIIEvg\\n-----END PRIVATE KEY-----\\n"}'
+        result = parse_ruby_hash(raw)
+        assert result[KEY_PRIVATE_KEY] == "-----BEGIN PRIVATE KEY-----\\nMIIEvg\\n-----END PRIVATE KEY-----\\n"
+
     # --- None / fallthrough cases ---
 
     def test_returns_none_for_empty_string(self):
