@@ -108,13 +108,8 @@ function LucideIconPicker({ onChange, onClose }) {
 
   const renderIcon = (iconName) => {
     const IconComponent = LucideIcons[iconName];
-    if (!IconComponent) return null;
-
-    try {
-      return <IconComponent size={24} />;
-    } catch {
-      return null;
-    }
+    if (!IconComponent || typeof IconComponent !== 'function') return null;
+    return <IconComponent size={24} />;
   };
 
   return (

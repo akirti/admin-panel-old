@@ -22,6 +22,13 @@ jest.mock('../services/api', () => ({
 
 import { authAPI } from '../services/api';
 
+// Test constants
+const TEST_EMAIL = 'user@test.com';
+const TEST_NAME = 'Test User';
+const TEST_PASSWORD = 'testpass';
+const TEST_ACCESS_TOKEN = 'test-access-token';
+const TEST_REFRESH_TOKEN = 'test-refresh-token';
+
 // Helper wrapper for renderHook
 function wrapper({ children }) {
   return <AuthProvider>{children}</AuthProvider>;
@@ -30,8 +37,8 @@ function wrapper({ children }) {
 // Helper to create a user with specific roles/domains/permissions
 function makeUser(overrides = {}) {
   return {
-    email: 'user@test.com',
-    name: 'Test User',
+    email: TEST_EMAIL,
+    name: TEST_NAME,
     roles: [],
     domains: [],
     permissions: [],
@@ -125,7 +132,7 @@ describe('AuthContext', () => {
     it('calls authAPI.login and sets user (stripping tokens)', async () => {
       const userData = makeUser({ name: 'Logged In' });
       authAPI.login.mockResolvedValueOnce({
-        data: { access_token: 'at', refresh_token: 'rt', ...userData },
+        data: { access_token: TEST_ACCESS_TOKEN, refresh_token: TEST_REFRESH_TOKEN, ...userData },
       });
 
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -133,10 +140,10 @@ describe('AuthContext', () => {
 
       let returnedUser;
       await act(async () => {
-        returnedUser = await result.current.login('a@b.com', 'pass');
+        returnedUser = await result.current.login(TEST_EMAIL, TEST_PASSWORD);
       });
 
-      expect(authAPI.login).toHaveBeenCalledWith('a@b.com', 'pass');
+      expect(authAPI.login).toHaveBeenCalledWith(TEST_EMAIL, TEST_PASSWORD);
       expect(result.current.user).toEqual(expect.objectContaining({ name: 'Logged In' }));
       // Tokens should not be in user state
       expect(result.current.user).not.toHaveProperty('access_token');
@@ -152,8 +159,9 @@ describe('AuthContext', () => {
   describe('register', () => {
     it('calls authAPI.register, sets user, and returns user data', async () => {
       const userData = makeUser({ name: 'New User' });
+      const registerEmail = 'newuser@test.com';
       authAPI.register.mockResolvedValueOnce({
-        data: { access_token: 'at', refresh_token: 'rt', ...userData },
+        data: { access_token: TEST_ACCESS_TOKEN, refresh_token: TEST_REFRESH_TOKEN, ...userData },
       });
 
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -161,10 +169,10 @@ describe('AuthContext', () => {
 
       let returnedUser;
       await act(async () => {
-        returnedUser = await result.current.register({ email: 'new@b.com', password: 'p' });
+        returnedUser = await result.current.register({ email: registerEmail, password: TEST_PASSWORD });
       });
 
-      expect(authAPI.register).toHaveBeenCalledWith({ email: 'new@b.com', password: 'p' });
+      expect(authAPI.register).toHaveBeenCalledWith({ email: registerEmail, password: TEST_PASSWORD });
       expect(result.current.user).toEqual(expect.objectContaining({ name: 'New User' }));
       expect(returnedUser).toEqual(expect.objectContaining({ name: 'New User' }));
     });

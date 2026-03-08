@@ -63,6 +63,14 @@ const HTTP_METHODS = [
   { value: 'PATCH', label: 'PATCH' },
 ];
 
+const DEFAULT_TIMEOUT = 30;
+const DEFAULT_RETRY_COUNT = 0;
+const DEFAULT_RETRY_DELAY = 1;
+const DEFAULT_PING_EXPECTED_STATUS = 200;
+const DEFAULT_PING_TIMEOUT = 5;
+const DEFAULT_CACHE_TTL = 300;
+const DEFAULT_PAGE_LIMIT = 25;
+
 const ApiConfigsManagement = () => {
   const [configs, setConfigs] = useState([]);
   const [tags, setTags] = useState([]);
@@ -79,7 +87,7 @@ const ApiConfigsManagement = () => {
   const [testResult, setTestResult] = useState(null);
   const [testLoading, setTestLoading] = useState(false);
   const [gcsStatus, setGcsStatus] = useState(null);
-  const [pagination, setPagination] = useState({ page: 0, limit: 25, total: 0, pages: 0 });
+  const [pagination, setPagination] = useState({ page: 0, limit: DEFAULT_PAGE_LIMIT, total: 0, pages: 0 });
 
   const [formData, setFormData] = useState({
     key: '',
@@ -93,17 +101,17 @@ const ApiConfigsManagement = () => {
     auth_type: 'none',
     auth_config: {},
     ssl_verify: true,
-    timeout: 30,
-    retry_count: 0,
-    retry_delay: 1,
+    timeout: DEFAULT_TIMEOUT,
+    retry_count: DEFAULT_RETRY_COUNT,
+    retry_delay: DEFAULT_RETRY_DELAY,
     use_proxy: false,
     proxy_url: '',
     ping_endpoint: '',
     ping_method: 'GET',
-    ping_expected_status: 200,
-    ping_timeout: 5,
+    ping_expected_status: DEFAULT_PING_EXPECTED_STATUS,
+    ping_timeout: DEFAULT_PING_TIMEOUT,
     cache_enabled: false,
-    cache_ttl: 300,
+    cache_ttl: DEFAULT_CACHE_TTL,
     status: 'active',
     tags: [],
   });
@@ -176,7 +184,7 @@ const ApiConfigsManagement = () => {
       ping_expected_status: 200,
       ping_timeout: 5,
       cache_enabled: false,
-      cache_ttl: 300,
+      cache_ttl: DEFAULT_CACHE_TTL,
       status: 'active',
       tags: [],
     });
@@ -202,17 +210,17 @@ const ApiConfigsManagement = () => {
       auth_type: item.auth_type || 'none',
       auth_config: item.auth_config || {},
       ssl_verify: item.ssl_verify !== false,
-      timeout: item.timeout || 30,
-      retry_count: item.retry_count || 0,
-      retry_delay: item.retry_delay || 1,
+      timeout: item.timeout || DEFAULT_TIMEOUT,
+      retry_count: item.retry_count || DEFAULT_RETRY_COUNT,
+      retry_delay: item.retry_delay || DEFAULT_RETRY_DELAY,
       use_proxy: item.use_proxy || false,
       proxy_url: item.proxy_url || '',
       ping_endpoint: item.ping_endpoint || '',
       ping_method: item.ping_method || 'GET',
-      ping_expected_status: item.ping_expected_status || 200,
-      ping_timeout: item.ping_timeout || 5,
+      ping_expected_status: item.ping_expected_status || DEFAULT_PING_EXPECTED_STATUS,
+      ping_timeout: item.ping_timeout || DEFAULT_PING_TIMEOUT,
       cache_enabled: item.cache_enabled || false,
-      cache_ttl: item.cache_ttl || 300,
+      cache_ttl: item.cache_ttl || DEFAULT_CACHE_TTL,
       status: item.status || 'active',
       tags: item.tags || [],
     });
@@ -891,7 +899,7 @@ const ApiConfigsManagement = () => {
               label="Timeout (sec)"
               type="number"
               value={formData.timeout}
-              onChange={(e) => setFormData({ ...formData, timeout: parseInt(e.target.value) || 30 })}
+              onChange={(e) => setFormData({ ...formData, timeout: parseInt(e.target.value) || DEFAULT_TIMEOUT })}
             />
             <Input
               label="Retry Count"
@@ -903,7 +911,7 @@ const ApiConfigsManagement = () => {
               label="Retry Delay (sec)"
               type="number"
               value={formData.retry_delay}
-              onChange={(e) => setFormData({ ...formData, retry_delay: parseInt(e.target.value) || 1 })}
+              onChange={(e) => setFormData({ ...formData, retry_delay: parseInt(e.target.value) || DEFAULT_RETRY_DELAY })}
             />
           </div>
 
@@ -929,7 +937,7 @@ const ApiConfigsManagement = () => {
                 label="Expected Status"
                 type="number"
                 value={formData.ping_expected_status}
-                onChange={(e) => setFormData({ ...formData, ping_expected_status: parseInt(e.target.value) || 200 })}
+                onChange={(e) => setFormData({ ...formData, ping_expected_status: parseInt(e.target.value) || DEFAULT_PING_EXPECTED_STATUS })}
               />
             </div>
           </div>
@@ -950,7 +958,7 @@ const ApiConfigsManagement = () => {
                 label="Cache TTL (sec)"
                 type="number"
                 value={formData.cache_ttl}
-                onChange={(e) => setFormData({ ...formData, cache_ttl: parseInt(e.target.value) || 300 })}
+                onChange={(e) => setFormData({ ...formData, cache_ttl: parseInt(e.target.value) || DEFAULT_CACHE_TTL })}
                 className="w-32"
               />
             )}

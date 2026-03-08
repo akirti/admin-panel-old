@@ -6,6 +6,16 @@ import RegisterPage from './RegisterPage';
 const mockRegister = jest.fn();
 const mockNavigate = jest.fn();
 
+// Test constants
+const TEST_FULL_NAME = 'John Doe';
+const TEST_USERNAME = 'johndoe';
+const TEST_EMAIL = 'john@example.com';
+const TEST_PASSWORD = 'Password123';
+const TEST_WEAK_PASSWORD = 'Password1';
+const TEST_SHORT_PASSWORD = 'short';
+const TEST_MISMATCHED_PASSWORD = 'Different1';
+const DASHBOARD_ROUTE = '/dashboard';
+
 jest.mock('react-router', () => {
   const actual = jest.requireActual('react-router');
   return {
@@ -61,17 +71,17 @@ describe('RegisterPage', () => {
       const user = userEvent.setup();
       renderRegisterPage();
 
-      await user.type(screen.getByPlaceholderText('Enter your full name'), 'John Doe');
-      await user.type(screen.getByPlaceholderText('Choose a username'), 'johndoe');
-      await user.type(screen.getByPlaceholderText('Enter your email'), 'john@example.com');
-      await user.type(screen.getByPlaceholderText('Create a password'), 'Password1');
-      await user.type(screen.getByPlaceholderText('Confirm your password'), 'Password1');
+      await user.type(screen.getByPlaceholderText('Enter your full name'), TEST_FULL_NAME);
+      await user.type(screen.getByPlaceholderText('Choose a username'), TEST_USERNAME);
+      await user.type(screen.getByPlaceholderText('Enter your email'), TEST_EMAIL);
+      await user.type(screen.getByPlaceholderText('Create a password'), TEST_WEAK_PASSWORD);
+      await user.type(screen.getByPlaceholderText('Confirm your password'), TEST_WEAK_PASSWORD);
 
-      expect(screen.getByPlaceholderText('Enter your full name')).toHaveValue('John Doe');
-      expect(screen.getByPlaceholderText('Choose a username')).toHaveValue('johndoe');
-      expect(screen.getByPlaceholderText('Enter your email')).toHaveValue('john@example.com');
-      expect(screen.getByPlaceholderText('Create a password')).toHaveValue('Password1');
-      expect(screen.getByPlaceholderText('Confirm your password')).toHaveValue('Password1');
+      expect(screen.getByPlaceholderText('Enter your full name')).toHaveValue(TEST_FULL_NAME);
+      expect(screen.getByPlaceholderText('Choose a username')).toHaveValue(TEST_USERNAME);
+      expect(screen.getByPlaceholderText('Enter your email')).toHaveValue(TEST_EMAIL);
+      expect(screen.getByPlaceholderText('Create a password')).toHaveValue(TEST_WEAK_PASSWORD);
+      expect(screen.getByPlaceholderText('Confirm your password')).toHaveValue(TEST_WEAK_PASSWORD);
     });
 
     it('toggles password visibility for both fields', async () => {
@@ -98,10 +108,10 @@ describe('RegisterPage', () => {
       const user = userEvent.setup();
       renderRegisterPage();
 
-      await user.type(screen.getByPlaceholderText('Choose a username'), 'johndoe');
-      await user.type(screen.getByPlaceholderText('Enter your email'), 'john@example.com');
-      await user.type(screen.getByPlaceholderText('Create a password'), 'Password1');
-      await user.type(screen.getByPlaceholderText('Confirm your password'), 'Different1');
+      await user.type(screen.getByPlaceholderText('Choose a username'), TEST_USERNAME);
+      await user.type(screen.getByPlaceholderText('Enter your email'), TEST_EMAIL);
+      await user.type(screen.getByPlaceholderText('Create a password'), TEST_WEAK_PASSWORD);
+      await user.type(screen.getByPlaceholderText('Confirm your password'), TEST_MISMATCHED_PASSWORD);
       await user.click(screen.getByRole('button', { name: 'Create Account' }));
 
       expect(toast.default.error).toHaveBeenCalledWith('Passwords do not match');
@@ -113,10 +123,10 @@ describe('RegisterPage', () => {
       const user = userEvent.setup();
       renderRegisterPage();
 
-      await user.type(screen.getByPlaceholderText('Choose a username'), 'johndoe');
-      await user.type(screen.getByPlaceholderText('Enter your email'), 'john@example.com');
-      await user.type(screen.getByPlaceholderText('Create a password'), 'short');
-      await user.type(screen.getByPlaceholderText('Confirm your password'), 'short');
+      await user.type(screen.getByPlaceholderText('Choose a username'), TEST_USERNAME);
+      await user.type(screen.getByPlaceholderText('Enter your email'), TEST_EMAIL);
+      await user.type(screen.getByPlaceholderText('Create a password'), TEST_SHORT_PASSWORD);
+      await user.type(screen.getByPlaceholderText('Confirm your password'), TEST_SHORT_PASSWORD);
       await user.click(screen.getByRole('button', { name: 'Create Account' }));
 
       expect(toast.default.error).toHaveBeenCalledWith('Password must be at least 8 characters');
@@ -130,21 +140,21 @@ describe('RegisterPage', () => {
       mockRegister.mockResolvedValueOnce({});
       renderRegisterPage();
 
-      await user.type(screen.getByPlaceholderText('Enter your full name'), 'John Doe');
-      await user.type(screen.getByPlaceholderText('Choose a username'), 'johndoe');
-      await user.type(screen.getByPlaceholderText('Enter your email'), 'john@example.com');
-      await user.type(screen.getByPlaceholderText('Create a password'), 'Password123');
-      await user.type(screen.getByPlaceholderText('Confirm your password'), 'Password123');
+      await user.type(screen.getByPlaceholderText('Enter your full name'), TEST_FULL_NAME);
+      await user.type(screen.getByPlaceholderText('Choose a username'), TEST_USERNAME);
+      await user.type(screen.getByPlaceholderText('Enter your email'), TEST_EMAIL);
+      await user.type(screen.getByPlaceholderText('Create a password'), TEST_PASSWORD);
+      await user.type(screen.getByPlaceholderText('Confirm your password'), TEST_PASSWORD);
       await user.click(screen.getByRole('button', { name: 'Create Account' }));
 
       await waitFor(() => {
         expect(mockRegister).toHaveBeenCalledWith({
-          email: 'john@example.com',
-          username: 'johndoe',
-          password: 'Password123',
-          full_name: 'John Doe',
+          email: TEST_EMAIL,
+          username: TEST_USERNAME,
+          password: TEST_PASSWORD,
+          full_name: TEST_FULL_NAME,
         });
-        expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+        expect(mockNavigate).toHaveBeenCalledWith(DASHBOARD_ROUTE);
       });
     });
 
@@ -154,10 +164,10 @@ describe('RegisterPage', () => {
       mockRegister.mockReturnValueOnce(new Promise(r => { resolveRegister = r; }));
       renderRegisterPage();
 
-      await user.type(screen.getByPlaceholderText('Choose a username'), 'johndoe');
-      await user.type(screen.getByPlaceholderText('Enter your email'), 'john@example.com');
-      await user.type(screen.getByPlaceholderText('Create a password'), 'Password123');
-      await user.type(screen.getByPlaceholderText('Confirm your password'), 'Password123');
+      await user.type(screen.getByPlaceholderText('Choose a username'), TEST_USERNAME);
+      await user.type(screen.getByPlaceholderText('Enter your email'), TEST_EMAIL);
+      await user.type(screen.getByPlaceholderText('Create a password'), TEST_PASSWORD);
+      await user.type(screen.getByPlaceholderText('Confirm your password'), TEST_PASSWORD);
       await user.click(screen.getByRole('button', { name: 'Create Account' }));
 
       expect(screen.getByRole('button', { name: 'Creating account...' })).toBeDisabled();
@@ -176,10 +186,10 @@ describe('RegisterPage', () => {
       });
       renderRegisterPage();
 
-      await user.type(screen.getByPlaceholderText('Choose a username'), 'johndoe');
-      await user.type(screen.getByPlaceholderText('Enter your email'), 'john@example.com');
-      await user.type(screen.getByPlaceholderText('Create a password'), 'Password123');
-      await user.type(screen.getByPlaceholderText('Confirm your password'), 'Password123');
+      await user.type(screen.getByPlaceholderText('Choose a username'), TEST_USERNAME);
+      await user.type(screen.getByPlaceholderText('Enter your email'), TEST_EMAIL);
+      await user.type(screen.getByPlaceholderText('Create a password'), TEST_PASSWORD);
+      await user.type(screen.getByPlaceholderText('Confirm your password'), TEST_PASSWORD);
       await user.click(screen.getByRole('button', { name: 'Create Account' }));
 
       await waitFor(() => {
@@ -193,10 +203,10 @@ describe('RegisterPage', () => {
       mockRegister.mockRejectedValueOnce(new Error('Network error'));
       renderRegisterPage();
 
-      await user.type(screen.getByPlaceholderText('Choose a username'), 'johndoe');
-      await user.type(screen.getByPlaceholderText('Enter your email'), 'john@example.com');
-      await user.type(screen.getByPlaceholderText('Create a password'), 'Password123');
-      await user.type(screen.getByPlaceholderText('Confirm your password'), 'Password123');
+      await user.type(screen.getByPlaceholderText('Choose a username'), TEST_USERNAME);
+      await user.type(screen.getByPlaceholderText('Enter your email'), TEST_EMAIL);
+      await user.type(screen.getByPlaceholderText('Create a password'), TEST_PASSWORD);
+      await user.type(screen.getByPlaceholderText('Confirm your password'), TEST_PASSWORD);
       await user.click(screen.getByRole('button', { name: 'Create Account' }));
 
       await waitFor(() => {

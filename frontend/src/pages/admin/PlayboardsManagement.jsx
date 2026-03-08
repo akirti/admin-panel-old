@@ -207,13 +207,11 @@ const PlayboardsManagement = () => {
         name: formData.name,
         description: formData.description,
         scenarioKey: formData.scenarioKey,
-        status: formData.status === 'active' ? 'active' : 'inactive',
+        scenerioKey: formData.scenarioKey,
+        status: formData.status,
         key: formData.key,
         dataDomain: formData.dataDomain,
-        scenarioKey: formData.scenarioKey,
-        scenerioKey: formData.scenarioKey,
         order: formData.order,
-        status: formData.status,
         program_key: formData.program_key,
         config_type: formData.config_type,
         addon_configurations: formData.addon_configurations,
@@ -237,18 +235,16 @@ const PlayboardsManagement = () => {
         name: formData.name,
         description: formData.description,
         scenarioKey: formData.scenarioKey,
-        status: formData.status === 'active' ? 'active' : 'inactive',
+        scenerioKey: formData.scenarioKey,
+        status: formData.status,
         key: formData.key,
         dataDomain: formData.dataDomain,
-        scenarioKey: formData.scenarioKey,
-        scenerioKey: formData.scenarioKey,
         order: formData.order,
         program_key: formData.program_key,
         config_type: formData.config_type,
         addon_configurations: formData.addon_configurations,
         widgets: formData.widgets,
         scenarioDescription: formData.scenarioDescription
-        
       };
       await playboardsAPI.update(editingItem.id || editingItem._id, payload);
       toast.success('Playboard updated successfully');
