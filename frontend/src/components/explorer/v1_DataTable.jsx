@@ -44,6 +44,74 @@ const isDateString = (value) =>
 
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
 
+// Compute portal menu position relative to a button, clamped to viewport
+const computeMenuPosition = (buttonEl, itemCount) => {
+  const rect = buttonEl.getBoundingClientRect();
+  const menuHeight = 40 * (itemCount || 1);
+  const menuWidth = 180;
+
+  let top = rect.bottom + 4;
+  let left = rect.right + 8;
+
+  if (left + menuWidth > window.innerWidth) {
+    left = rect.left - menuWidth - 8;
+  }
+  if (left < 0) left = 8;
+
+  if (top + menuHeight > window.innerHeight) {
+    top = rect.top - menuHeight - 4;
+    if (top < 0) top = 8;
+  }
+
+  return { top, left };
+};
+
+// Build the drill-down action URL from action config, row data, and active filters
+const buildActionUrl = (action, row) => {
+  const encode = encodeURIComponent;
+  const targetDomain = action.dataDomain;
+  const targetScenarioKey = action.key || action.scenerioKey;
+
+  // Collect current row values (primitives only)
+  const rowParams = Object.fromEntries(
+    Object.entries(row).filter(
+      ([, v]) => typeof v !== "object" && typeof v !== "function"
+    )
+  );
+
+  // Merge active filters + row values into a param map
+  const activeFilters =
+    window.__activeFilters && typeof window.__activeFilters === "object"
+      ? window.__activeFilters
+      : {};
+
+  const paramMap = {};
+  Object.entries(activeFilters).forEach(([k, v]) => {
+    if (v !== undefined && v !== null) paramMap[k] = String(v);
+  });
+  Object.entries(rowParams).forEach(([k, v]) => {
+    if (v !== undefined && v !== null) paramMap[k] = String(v);
+  });
+
+  // Apply filter key mappings (dataKey -> inputKey)
+  if (action.filters && Array.isArray(action.filters)) {
+    action.filters.forEach((f) => {
+      if (f.dataKey && f.inputKey && f.dataKey in paramMap) {
+        paramMap[f.inputKey] = paramMap[f.dataKey];
+        delete paramMap[f.dataKey];
+      }
+    });
+  }
+
+  paramMap.autosubmit = "true";
+
+  const urlParams = Object.entries(paramMap)
+    .map(([k, v]) => `${encode(k)}=${encode(v)}`)
+    .join("&");
+
+  return `/explorer/${targetDomain}/${targetScenarioKey}?${urlParams}`;
+};
+
 const V1DataTable = ({
   columns = [],
   data = [],
@@ -51,11 +119,11 @@ const V1DataTable = ({
   pageSize = 10,
   pages = 1,
   totalRecords,
-  onSort = () => {},
+  onSort = Function.prototype,
   sortBy = "",
   sortOrder = "",
-  onPageChange = () => {},
-  onPageSizeChange = () => {},
+  onPageChange = Function.prototype,
+  onPageSizeChange = Function.prototype,
   paginationOptions = [10, 25, 50, 100],
   onDownloadClick,
   actionGrid = [],
@@ -132,20 +200,7 @@ const V1DataTable = ({
     } else {
       const btn = buttonRefs.current[idx];
       if (btn) {
-        const rect = btn.getBoundingClientRect();
-        const menuHeight = 40 * (actionGrid.length || 1);
-        const menuWidth = 180;
-        let top = rect.bottom + 4;
-        let left = rect.right + 8;
-        if (left + menuWidth > window.innerWidth) {
-          left = rect.left - menuWidth - 8;
-        }
-        if (left < 0) left = 8;
-        if (top + menuHeight > window.innerHeight) {
-          top = rect.top - menuHeight - 4;
-          if (top < 0) top = 8;
-        }
-        setMenuPosition({ top, left });
+        setMenuPosition(computeMenuPosition(btn, actionGrid.length));
       }
       setOpenMenuIdx(idx);
     }
@@ -153,54 +208,10 @@ const V1DataTable = ({
 
   // Handle drill-down action click
   const handleActionClick = useCallback(
-    (action, row) => async (e) => {
+    (action, row) => (e) => {
       e.preventDefault();
       setOpenMenuIdx(null);
-
-      const encode = encodeURIComponent;
-      const decode = decodeURIComponent;
-      const targetDomain = action.dataDomain;
-      const targetScenarioKey = action.key || action.scenerioKey;
-
-      // Collect current row values (primitives only)
-      const rowParams = Object.fromEntries(
-        Object.entries(row).filter(
-          ([, v]) => typeof v !== "object" && typeof v !== "function"
-        )
-      );
-
-      // Build URL params from active filters + row values
-      const filters =
-        window.__activeFilters && typeof window.__activeFilters === "object"
-          ? window.__activeFilters
-          : {};
-
-      let paramMap = {};
-      Object.entries(filters).forEach(([k, v]) => {
-        if (v !== undefined && v !== null) paramMap[k] = String(v);
-      });
-      Object.entries(rowParams).forEach(([k, v]) => {
-        if (v !== undefined && v !== null) paramMap[k] = String(v);
-      });
-
-      // Apply filter key mappings (dataKey → inputKey)
-      if (action.filters && Array.isArray(action.filters)) {
-        action.filters.forEach((f) => {
-          if (f.dataKey && f.inputKey && f.dataKey in paramMap) {
-            paramMap[f.inputKey] = paramMap[f.dataKey];
-            delete paramMap[f.dataKey];
-          }
-        });
-      }
-
-      paramMap.autosubmit = "true";
-
-      const urlParams = Object.entries(paramMap)
-        .map(([k, v]) => `${encode(k)}=${encode(v)}`)
-        .join("&");
-
-      const url = `/explorer/${targetDomain}/${targetScenarioKey}?${urlParams}`;
-      window.open(url, "_blank");
+      window.open(buildActionUrl(action, row), "_blank");
     },
     []
   );

@@ -53,29 +53,24 @@ function V1ExplorerSidebar() {
                 }
                 title={domain.name}
               >
-                {({ isActive }) => (
-                  <>
-                    <span className="w-5 h-5 shrink-0 flex items-center justify-center overflow-hidden">
-                      {domain.icon && !isActive ? (
-                        <img
-                          src={domain.icon}
-                          alt=""
-                          className="w-5 h-5 object-contain"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'block';
-                          }}
-                        />
-                      ) : null}
-                      <Layers
-                        size={18}
-                        className="shrink-0"
-                        style={{ display: domain.icon && !isActive ? 'none' : 'block' }}
-                      />
-                    </span>
-                    {!collapsed && <span className="truncate">{domain.name}</span>}
-                  </>
-                )}
+                {({ isActive }) => {
+                  const showCustomIcon = domain.icon && !isActive;
+                  const handleImgError = (e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'block';
+                  };
+                  return (
+                    <>
+                      <span className="w-5 h-5 shrink-0 flex items-center justify-center overflow-hidden">
+                        {showCustomIcon && (
+                          <img src={domain.icon} alt="" className="w-5 h-5 object-contain" onError={handleImgError} />
+                        )}
+                        <Layers size={18} className="shrink-0" style={{ display: showCustomIcon ? 'none' : 'block' }} />
+                      </span>
+                      {!collapsed && <span className="truncate">{domain.name}</span>}
+                    </>
+                  );
+                }}
               </NavLink>
             </li>
           ))}

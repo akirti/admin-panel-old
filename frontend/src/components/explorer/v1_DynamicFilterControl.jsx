@@ -26,6 +26,322 @@ const isCustomerFilter = (filter) => {
   return CUSTOMER_DISPLAY_PATTERN.test(display);
 };
 
+// --- Helper: check if a value is empty (undefined, null, or '') ---
+const isEmpty = (v) => v === undefined || v === null || v === '';
+
+// --- Helper: resolve a date value with defaultValue and getCurrentDate fallbacks ---
+const resolveDateValue = (value, defaultVal, format) => {
+  let v = value;
+  if (isEmpty(v) && defaultVal) v = formatApiDateForInput(defaultVal, format);
+  if (isEmpty(v)) v = getCurrentDate();
+  return v;
+};
+
+// --- Helper: resolve multiselect value from various input shapes ---
+const resolveMultiValue = (value, defaultVal) => {
+  if (typeof value === 'string' && value.trim() !== '') {
+    return [value.trim()];
+  }
+  if (Array.isArray(value)) {
+    return value.filter((v) => v !== '');
+  }
+  if (isEmpty(value) && defaultVal) {
+    if (typeof defaultVal === 'string') {
+      return defaultVal.split(',').map((v) => v.trim());
+    }
+    if (Array.isArray(defaultVal)) {
+      return defaultVal.filter((v) => v !== '');
+    }
+  }
+  return [];
+};
+
+// --- Helper: resolve radio button value ---
+const resolveRadioValue = (value, defaultVal, options) => {
+  if (isEmpty(value)) {
+    let resolved = !isEmpty(defaultVal)
+      ? defaultVal
+      : (options[0] && options[0].value) || '';
+    return typeof resolved === 'string' ? resolved.trim() : resolved;
+  }
+  if (typeof value === 'number') {
+    return value.toString();
+  }
+  return value;
+};
+
+// --- Helper: determine if a toggle is "on" ---
+const isToggleOn = (v, onValue = undefined) => {
+  if (onValue !== undefined) return v === onValue;
+  return v === 1 || v === '1' || v === 'on' || v === true;
+};
+
+// --- Helper: resolve a single toggle option's state from a defaults source ---
+const resolveToggleDefault = (opt, defaultVal) => {
+  const def = Array.isArray(defaultVal)
+    ? defaultVal.find((item) => item[opt.dataKey] !== undefined)
+    : defaultVal;
+  if (def && def[opt.dataKey] !== undefined) {
+    return isToggleOn(def[opt.dataKey], opt.values ? opt.values.on : undefined);
+  }
+  return false;
+};
+
+// --- Helper: resolve all toggle states from value and defaultVal ---
+const resolveToggleState = (value, options, defaultVal) => {
+  const togglesState = {};
+
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    options.forEach((opt) => {
+      const v = value[opt.dataKey];
+      if (v !== undefined) {
+        togglesState[opt.dataKey] = opt.values
+          ? isToggleOn(v, opt.values.on)
+          : isToggleOn(v);
+      } else if (defaultVal && typeof defaultVal === 'object') {
+        togglesState[opt.dataKey] = resolveToggleDefault(opt, defaultVal);
+      } else {
+        togglesState[opt.dataKey] = false;
+      }
+    });
+  } else if (defaultVal && typeof defaultVal === 'object') {
+    options.forEach((opt) => {
+      togglesState[opt.dataKey] = resolveToggleDefault(opt, defaultVal);
+    });
+  } else {
+    options.forEach((opt) => {
+      togglesState[opt.dataKey] = false;
+    });
+  }
+
+  return togglesState;
+};
+
+// --- CSS class constants ---
+const DATE_INPUT_CLASS =
+  'border border-edge rounded-md h-10 px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors hover:border-neutral-400';
+const DATE_RANGE_INPUT_CLASS =
+  'border border-edge rounded-md h-10 px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors hover:border-neutral-400';
+
+// --- Type-specific render functions ---
+
+const renderDatePicker = ({ filter, value, onChange, attrs, format, defaultVal, allFilters, form, width }) => {
+  const datePickers = allFilters?.filter(
+    (f) =>
+      getAttrValue(f.attributes, 'type') === 'date-picker' ||
+      getAttrValue(f.attributes, 'type') === 'date'
+  );
+  let v = value;
+
+  if (datePickers?.length === 2) {
+    const [first, second] = datePickers;
+    const isFrom = filter.dataKey === first.dataKey;
+    const isTo = filter.dataKey === second.dataKey;
+    const today = getCurrentDate();
+
+    if (isFrom) {
+      const toVal =
+        form[second.dataKey] ||
+        formatApiDateForInput(
+          getAttrValue(second.attributes, 'defaultValue'),
+          format
+        ) ||
+        today;
+      if (isEmpty(v) && toVal === today) {
+        v = addDays(today, -60);
+      }
+    }
+    if (isTo) {
+      const fromVal =
+        form[first.dataKey] ||
+        formatApiDateForInput(
+          getAttrValue(first.attributes, 'defaultValue'),
+          format
+        ) ||
+        today;
+      if (isEmpty(v) && fromVal === today) {
+        v = addDays(today, 60);
+      }
+    }
+  }
+
+  v = resolveDateValue(v, defaultVal, format);
+
+  return (
+    <input
+      type="date"
+      value={v}
+      onChange={(e) => onChange(filter.dataKey, e.target.value)}
+      min={getAttrValue(attrs, 'min')}
+      max={getAttrValue(attrs, 'max')}
+      className={DATE_INPUT_CLASS}
+      style={{ minWidth: width }}
+    />
+  );
+};
+
+const renderDropdown = ({ options, value, onChange, filter, width }) => {
+  return (
+    <V1CustomDropdown
+      options={options}
+      value={value || (options[0] && options[0].value) || ''}
+      onChange={(val) => onChange(filter.dataKey, val)}
+      width={width}
+    />
+  );
+};
+
+const renderMultiSelect = ({ options, value, onChange, filter, attrs, defaultVal }) => {
+  const multiValue = resolveMultiValue(value, defaultVal);
+  const allOptionValues = options.map((opt) => opt.value);
+  const allSelected =
+    multiValue.length === allOptionValues.length && allOptionValues.length > 0;
+
+  const handleToggleSelectAll = () => {
+    if (allSelected) {
+      handleArray([], filter, onChange);
+    } else {
+      handleArray(allOptionValues, filter, onChange);
+    }
+  };
+
+  return (
+    <V1MultiSelectDropdown
+      options={options}
+      selectedOptions={multiValue}
+      onChange={(vals) => handleArray(vals, filter, onChange)}
+      placeholder={getAttrValue(attrs, 'placeholder') || 'Select...'}
+      allSelected={allSelected}
+      handleToggleSelectAll={handleToggleSelectAll}
+      multiSelectFooter={true}
+    />
+  );
+};
+
+const renderRadioButton = ({ options, value, onChange, filter, defaultVal }) => {
+  const radiovalue = resolveRadioValue(value, defaultVal, options);
+  return (
+    <V1RadioButtonDropdown
+      options={options}
+      value={radiovalue}
+      onChange={(val) => onChange(filter.dataKey, val)}
+      name={filter.dataKey}
+    />
+  );
+};
+
+const renderToggleButton = ({ options, value, onChange, filter, attrs, defaultVal }) => {
+  const togglesState = resolveToggleState(value, options, defaultVal);
+
+  const allSelected =
+    Object.values(togglesState).every(Boolean) &&
+    Object.keys(togglesState).length > 0;
+
+  const handleToggleChange = (newState) => {
+    const mapped = {};
+    options.forEach((opt) => {
+      const state = newState[opt.dataKey];
+      if (opt.values) {
+        mapped[opt.dataKey] = state ? opt.values.on : opt.values.off;
+      } else {
+        mapped[opt.dataKey] = state;
+      }
+    });
+    onChange(filter.dataKey, mapped);
+  };
+
+  const handleToggleSelectAll = () => {
+    const newState = {};
+    Object.keys(togglesState).forEach((key) => {
+      newState[key] = !allSelected;
+    });
+    handleToggleChange(newState);
+  };
+
+  return (
+    <V1ToggleButtonDropdown
+      options={options.map((opt) => ({
+        value: opt.dataKey,
+        label: opt.name,
+      }))}
+      togglesState={togglesState}
+      onChange={handleToggleChange}
+      placeholder={getAttrValue(attrs, 'placeholder') || 'Select...'}
+      disabled={options.length === 0}
+      allSelected={allSelected}
+      handleToggleSelectAll={handleToggleSelectAll}
+    />
+  );
+};
+
+const renderCheckbox = ({ value, onChange, filter, width }) => {
+  return (
+    <div className="flex items-center h-10">
+      <input
+        type="checkbox"
+        checked={!!value}
+        onChange={(e) => onChange(filter.dataKey, e.target.checked)}
+        className="w-5 h-5 accent-primary-600 rounded cursor-pointer"
+        style={{ minWidth: width }}
+      />
+    </div>
+  );
+};
+
+const renderDateRange = ({ filter, value, onChange, attrs, format, width }) => {
+  const defaultStart = getAttrValue(attrs, 'defaultValue_start');
+  const defaultEnd = getAttrValue(attrs, 'defaultValue_end');
+  const formatStart = getAttrValue(attrs, 'format_start') || format;
+  const formatEnd = getAttrValue(attrs, 'format_end') || format;
+
+  const valueStart = resolveDateValue(value?.start, defaultStart, formatStart);
+  const valueEnd = resolveDateValue(value?.end, defaultEnd, formatEnd);
+
+  return (
+    <div className="flex items-center gap-2" style={{ minWidth: width }}>
+      <input
+        type="date"
+        value={valueStart}
+        onChange={(e) =>
+          onChange(filter.dataKey, {
+            ...value,
+            start: e.target.value,
+            end: valueEnd,
+          })
+        }
+        className={DATE_RANGE_INPUT_CLASS}
+      />
+      <span className="text-sm text-content-muted font-medium">to</span>
+      <input
+        type="date"
+        value={valueEnd}
+        onChange={(e) =>
+          onChange(filter.dataKey, {
+            ...value,
+            start: valueStart,
+            end: e.target.value,
+          })
+        }
+        className={DATE_RANGE_INPUT_CLASS}
+      />
+    </div>
+  );
+};
+
+// --- Type renderer lookup ---
+const TYPE_RENDERERS = {
+  'date-picker': renderDatePicker,
+  'date': renderDatePicker,
+  'dropdown': renderDropdown,
+  'select': renderDropdown,
+  'multiselect': renderMultiSelect,
+  'multi-select': renderMultiSelect,
+  'radioButton': renderRadioButton,
+  'toggleButton': renderToggleButton,
+  'checkbox': renderCheckbox,
+  'date-range': renderDateRange,
+};
+
 const V1DynamicFilterControl = ({
   filter,
   value,
@@ -53,313 +369,26 @@ const V1DynamicFilterControl = ({
     options = [];
   }
 
-  // Date picker / date type
-  if (type === 'date-picker' || type === 'date') {
-    // Find if there are two date pickers in allFilters
-    const datePickers = allFilters?.filter(
-      (f) =>
-        getAttrValue(f.attributes, 'type') === 'date-picker' ||
-        getAttrValue(f.attributes, 'type') === 'date'
-    );
-    let v = value;
-    // If there are two date pickers, apply the 60-day logic
-    if (datePickers?.length === 2) {
-      const [first, second] = datePickers;
-      const isFrom = filter.dataKey === first.dataKey;
-      const isTo = filter.dataKey === second.dataKey;
-      const today = getCurrentDate();
-
-      if (isFrom) {
-        const toVal =
-          form[second.dataKey] ||
-          formatApiDateForInput(
-            getAttrValue(second.attributes, 'defaultValue'),
-            format
-          ) ||
-          today;
-        if ((!v || v === '') && toVal === today) {
-          v = addDays(today, -60);
-        }
-      }
-      if (isTo) {
-        const fromVal =
-          form[first.dataKey] ||
-          formatApiDateForInput(
-            getAttrValue(first.attributes, 'defaultValue'),
-            format
-          ) ||
-          today;
-        if ((!v || v === '') && fromVal === today) {
-          v = addDays(today, 60);
-        }
-      }
-    }
-    if ((v === undefined || v === null || v === '') && defaultVal)
-      v = formatApiDateForInput(defaultVal, format);
-    if (v === undefined || v === null || v === '') v = getCurrentDate();
-
+  // Type-specific renderer
+  const TypeRenderer = TYPE_RENDERERS[type];
+  if (TypeRenderer) {
     return (
-      <input
-        type="date"
-        value={v}
-        onChange={(e) => onChange(filter.dataKey, e.target.value)}
-        min={getAttrValue(attrs, 'min')}
-        max={getAttrValue(attrs, 'max')}
-        className="border border-edge rounded-md h-10 px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors hover:border-neutral-400"
-        style={{ minWidth: width }}
-      />
-    );
-  }
-
-  // Dropdown / select
-  if (type === 'dropdown' || type === 'select') {
-    return (
-      <V1CustomDropdown
+      <TypeRenderer
+        filter={filter}
+        value={value}
+        onChange={onChange}
+        attrs={attrs}
         options={options}
-        value={value || (options[0] && options[0].value) || ''}
-        onChange={(val) => onChange(filter.dataKey, val)}
+        format={format}
+        defaultVal={defaultVal}
         width={width}
+        allFilters={allFilters}
+        form={form}
       />
     );
   }
 
-  // Multi-select
-  if (type === 'multiselect' || type === 'multi-select') {
-    let multiValue = value;
-    if (typeof multiValue === 'string' && multiValue.trim() !== '') {
-      multiValue = [multiValue.trim()];
-    } else if (Array.isArray(multiValue)) {
-      multiValue = multiValue.filter((v) => v !== '');
-    } else if (
-      (multiValue === undefined ||
-        multiValue === null ||
-        multiValue.length === 0) &&
-      defaultVal
-    ) {
-      multiValue =
-        typeof defaultVal === 'string'
-          ? defaultVal.split(',').map((v) => v.trim())
-          : Array.isArray(defaultVal)
-          ? defaultVal.filter((v) => v !== '')
-          : [];
-    } else {
-      multiValue = [];
-    }
-
-    const allOptionValues = options.map((opt) => opt.value);
-    const allSelected =
-      multiValue.length === allOptionValues.length &&
-      allOptionValues.length > 0;
-
-    const handleToggleSelectAll = () => {
-      if (allSelected) {
-        handleArray([], filter, onChange);
-      } else {
-        handleArray(allOptionValues, filter, onChange);
-      }
-    };
-
-    return (
-      <V1MultiSelectDropdown
-        options={options}
-        selectedOptions={multiValue}
-        onChange={(vals) => handleArray(vals, filter, onChange)}
-        placeholder={getAttrValue(attrs, 'placeholder') || 'Select...'}
-        allSelected={allSelected}
-        handleToggleSelectAll={handleToggleSelectAll}
-        multiSelectFooter={true}
-      />
-    );
-  }
-
-  // Radio button
-  if (type === 'radioButton') {
-    let radiovalue = value;
-    if (radiovalue === undefined || radiovalue === null || radiovalue === '') {
-      radiovalue =
-        defaultVal !== undefined && defaultVal !== null && defaultVal !== ''
-          ? defaultVal
-          : (options[0] && options[0].value) || '';
-      radiovalue = typeof radiovalue === 'string' ? radiovalue.trim() : radiovalue;
-    } else if (typeof radiovalue === 'number') {
-      radiovalue = radiovalue.toString();
-    }
-    return (
-      <V1RadioButtonDropdown
-        options={options}
-        value={radiovalue}
-        onChange={(val) => onChange(filter.dataKey, val)}
-        name={filter.dataKey}
-      />
-    );
-  }
-
-  // Toggle button
-  if (type === 'toggleButton') {
-    const isToggleOn = (v, onValue = undefined) => {
-      if (onValue !== undefined) return v === onValue;
-      return v === 1 || v === '1' || v === 'on' || v === true;
-    };
-
-    let togglesState = {};
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      options.forEach((opt) => {
-        const v = value[opt.dataKey];
-        if (v !== undefined) {
-          if (opt.values) {
-            togglesState[opt.dataKey] = isToggleOn(v, opt.values.on);
-          } else {
-            togglesState[opt.dataKey] = isToggleOn(v);
-          }
-        } else if (defaultVal && typeof defaultVal === 'object') {
-          const def = Array.isArray(defaultVal)
-            ? defaultVal.find((item) => item[opt.dataKey] !== undefined)
-            : defaultVal;
-          if (def && def[opt.dataKey] !== undefined) {
-            togglesState[opt.dataKey] = isToggleOn(
-              def[opt.dataKey],
-              opt.values ? opt.values.on : undefined
-            );
-          } else {
-            togglesState[opt.dataKey] = false;
-          }
-        } else {
-          togglesState[opt.dataKey] = false;
-        }
-      });
-    } else if (defaultVal && typeof defaultVal === 'object') {
-      options.forEach((opt) => {
-        const def = Array.isArray(defaultVal)
-          ? defaultVal.find((item) => item[opt.dataKey] !== undefined)
-          : defaultVal;
-        if (def && def[opt.dataKey] !== undefined) {
-          togglesState[opt.dataKey] = isToggleOn(
-            def[opt.dataKey],
-            opt.values ? opt.values.on : undefined
-          );
-        } else {
-          togglesState[opt.dataKey] = false;
-        }
-      });
-    } else {
-      options.forEach((opt) => {
-        togglesState[opt.dataKey] = false;
-      });
-    }
-
-    const allSelected =
-      Object.values(togglesState).every(Boolean) &&
-      Object.keys(togglesState).length > 0;
-
-    const handleToggleSelectAll = () => {
-      const newState = {};
-      Object.keys(togglesState).forEach((key) => {
-        newState[key] = !allSelected;
-      });
-      handleToggleChange(newState);
-    };
-
-    const handleToggleChange = (newState) => {
-      const mapped = {};
-      options.forEach((opt) => {
-        const state = newState[opt.dataKey];
-        if (opt.values) {
-          mapped[opt.dataKey] = state ? opt.values.on : opt.values.off;
-        } else {
-          mapped[opt.dataKey] = state;
-        }
-      });
-      onChange(filter.dataKey, mapped);
-    };
-
-    return (
-      <V1ToggleButtonDropdown
-        options={options.map((opt) => ({
-          value: opt.dataKey,
-          label: opt.name,
-        }))}
-        togglesState={togglesState}
-        onChange={handleToggleChange}
-        placeholder={getAttrValue(attrs, 'placeholder') || 'Select...'}
-        disabled={options.length === 0}
-        allSelected={allSelected}
-        handleToggleSelectAll={handleToggleSelectAll}
-      />
-    );
-  }
-
-  // Checkbox
-  if (type === 'checkbox') {
-    return (
-      <div className="flex items-center h-10">
-        <input
-          type="checkbox"
-          checked={!!value}
-          onChange={(e) => onChange(filter.dataKey, e.target.checked)}
-          className="w-5 h-5 accent-primary-600 rounded cursor-pointer"
-          style={{ minWidth: width }}
-        />
-      </div>
-    );
-  }
-
-  // Date range
-  if (type === 'date-range') {
-    const defaultStart = getAttrValue(attrs, 'defaultValue_start');
-    const defaultEnd = getAttrValue(attrs, 'defaultValue_end');
-    const formatStart = getAttrValue(attrs, 'format_start') || format;
-    const formatEnd = getAttrValue(attrs, 'format_end') || format;
-    let valueStart = value?.start;
-    let valueEnd = value?.end;
-    if (
-      (valueStart === undefined || valueStart === null || valueStart === '') &&
-      defaultStart
-    ) {
-      valueStart = formatApiDateForInput(defaultStart, formatStart);
-    }
-    if (
-      (valueEnd === undefined || valueEnd === null || valueEnd === '') &&
-      defaultEnd
-    ) {
-      valueEnd = formatApiDateForInput(defaultEnd, formatEnd);
-    }
-    if (valueStart === undefined || valueStart === null || valueStart === '')
-      valueStart = getCurrentDate();
-    if (valueEnd === undefined || valueEnd === null || valueEnd === '')
-      valueEnd = getCurrentDate();
-
-    return (
-      <div className="flex items-center gap-2" style={{ minWidth: width }}>
-        <input
-          type="date"
-          value={valueStart}
-          onChange={(e) =>
-            onChange(filter.dataKey, {
-              ...value,
-              start: e.target.value,
-              end: valueEnd,
-            })
-          }
-          className="border border-edge rounded-md h-10 px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors hover:border-neutral-400"
-        />
-        <span className="text-sm text-content-muted font-medium">to</span>
-        <input
-          type="date"
-          value={valueEnd}
-          onChange={(e) =>
-            onChange(filter.dataKey, {
-              ...value,
-              start: valueStart,
-              end: e.target.value,
-            })
-          }
-          className="border border-edge rounded-md h-10 px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors hover:border-neutral-400"
-        />
-      </div>
-    );
-  }
-
-  // Customer suggest input for customer-type fields
+  // Customer suggest fallback
   const isCustomerField = isCustomerFilter(filter);
   if (type === 'input' && isCustomerField && useCustomerSuggest && customerData?.hasAssigned) {
     return (
@@ -386,7 +415,7 @@ const V1DynamicFilterControl = ({
       type="text"
       value={value || ''}
       onChange={(e) => onChange(filter.dataKey, e.target.value)}
-      className="border border-edge rounded-md h-10 px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors hover:border-neutral-400"
+      className={DATE_INPUT_CLASS}
       placeholder={
         (!value || value === '') && filter.inputHint
           ? filter.inputHint

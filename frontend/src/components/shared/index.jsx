@@ -276,6 +276,17 @@ export const SearchInput = ({ value, onChange, placeholder = 'Search...' }) => {
   );
 };
 
+const computePageRange = (displayPage, totalPages, maxVisible = 7) => {
+  let startPage = Math.max(1, displayPage - Math.floor(maxVisible / 2));
+  let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+  if (endPage - startPage + 1 < maxVisible) {
+    startPage = Math.max(1, endPage - maxVisible + 1);
+  }
+  const pages = [];
+  for (let i = startPage; i <= endPage; i++) pages.push(i);
+  return { startPage, endPage, pages };
+};
+
 // Pagination Component
 export const Pagination = ({
   currentPage,
@@ -286,19 +297,7 @@ export const Pagination = ({
   showInfo = true
 }) => {
   const displayPage = currentPage + 1;
-  const pages = [];
-
-  const maxVisiblePages = 7;
-  let startPage = Math.max(1, displayPage - Math.floor(maxVisiblePages / 2));
-  let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-  if (endPage - startPage + 1 < maxVisiblePages) {
-    startPage = Math.max(1, endPage - maxVisiblePages + 1);
-  }
-
-  for (let i = startPage; i <= endPage; i++) {
-    pages.push(i);
-  }
+  const { startPage, endPage, pages } = computePageRange(displayPage, totalPages);
 
   const startItem = currentPage * limit + 1;
   const endItem = Math.min((currentPage + 1) * limit, total);

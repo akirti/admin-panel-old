@@ -32,6 +32,57 @@ import {
 } from 'lucide-react';
 import { Badge } from '../shared';
 
+const ADMIN_NAV = [
+  { path: '/dashboard', icon: Home, label: 'User Dashboard' },
+  { path: '/explorer', icon: Compass, label: 'Explorer', dividerAfter: true },
+  { path: '/admin', icon: LayoutDashboard, label: 'Admin Dashboard', exact: true },
+  { path: '/admin/users', icon: Users, label: 'Users' },
+  { path: '/admin/roles', icon: Shield, label: 'Roles' },
+  { path: '/admin/groups', icon: UsersRound, label: 'Groups' },
+  { path: '/admin/permissions', icon: Key, label: 'Permissions' },
+  { path: '/admin/customers', icon: Building2, label: 'Customers' },
+  { path: '/admin/domains', icon: Layers, label: 'Domains' },
+  { path: '/admin/scenarios', icon: FileText, label: 'Scenarios' },
+  { path: '/admin/playboards', icon: LayoutGrid, label: 'Playboards' },
+  { path: '/admin/configurations', icon: Cog, label: 'Configurations' },
+  { path: '/admin/api-configs', icon: Plug, label: 'API Configs' },
+  { path: '/admin/scenario-requests', icon: ClipboardList, label: 'Scenario Requests' },
+  { path: '/admin/feedback', icon: MessageSquare, label: 'Feedback' },
+  { path: '/admin/activity-logs', icon: Activity, label: 'Activity Logs' },
+  { path: '/admin/error-logs', icon: AlertTriangle, label: 'Error Logs' },
+  { path: '/admin/bulk-upload', icon: Upload, label: 'Bulk Upload' },
+  { path: '/admin/distribution-lists', icon: Mail, label: 'Distribution Lists' },
+];
+
+const GROUP_ADMIN_NAV = [
+  { path: '/dashboard', icon: Home, label: 'User Dashboard' },
+  { path: '/explorer', icon: Compass, label: 'Explorer', dividerAfter: true },
+  { path: '/management', icon: LayoutDashboard, label: 'Management Dashboard', exact: true },
+  { path: '/management/users', icon: Users, label: 'Users Management' },
+  { path: '/management/domains', icon: Layers, label: 'Domains' },
+  { path: '/management/scenario-requests', icon: ClipboardList, label: 'Scenario Requests' },
+];
+
+const USER_NAV = [
+  { path: '/dashboard', icon: Home, label: 'Dashboard' },
+  { path: '/domains', icon: Layers, label: 'My Domains' },
+  { path: '/ask-scenario', icon: MessageSquarePlus, label: 'Ask Scenario' },
+  { path: '/my-requests', icon: ClipboardList, label: 'My Requests' },
+  { path: '/explorer', icon: Compass, label: 'Explorer' },
+  { path: '/profile', icon: User, label: 'Profile' },
+  { path: '/feedback', icon: MessageSquare, label: 'Feedback' },
+];
+
+const getUserNav = (isSuperAdmin, canManageUsers) => {
+  const items = [...USER_NAV];
+  if (isSuperAdmin()) {
+    items.push({ path: '/admin', icon: Settings, label: 'Admin Panel' });
+  } else if (canManageUsers()) {
+    items.push({ path: '/management', icon: Settings, label: 'Management' });
+  }
+  return items;
+};
+
 function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
   const { user, logout, isSuperAdmin, canManageUsers, isEditor } = useAuth();
   const location = useLocation();
@@ -44,66 +95,11 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
     navigate('/login');
   };
 
-  const getNavItems = () => {
-    if (isAdmin) {
-      // Super Admin Panel
-      return [
-        { path: '/dashboard', icon: Home, label: 'User Dashboard' },
-        { path: '/explorer', icon: Compass, label: 'Explorer', dividerAfter: true },
-        { path: '/admin', icon: LayoutDashboard, label: 'Admin Dashboard', exact: true },
-        { path: '/admin/users', icon: Users, label: 'Users' },
-        { path: '/admin/roles', icon: Shield, label: 'Roles' },
-        { path: '/admin/groups', icon: UsersRound, label: 'Groups' },
-        { path: '/admin/permissions', icon: Key, label: 'Permissions' },
-        { path: '/admin/customers', icon: Building2, label: 'Customers' },
-        { path: '/admin/domains', icon: Layers, label: 'Domains' },
-        { path: '/admin/scenarios', icon: FileText, label: 'Scenarios' },
-        { path: '/admin/playboards', icon: LayoutGrid, label: 'Playboards' },
-        { path: '/admin/configurations', icon: Cog, label: 'Configurations' },
-        { path: '/admin/api-configs', icon: Plug, label: 'API Configs' },
-        { path: '/admin/scenario-requests', icon: ClipboardList, label: 'Scenario Requests' },
-        { path: '/admin/feedback', icon: MessageSquare, label: 'Feedback' },
-        { path: '/admin/activity-logs', icon: Activity, label: 'Activity Logs' },
-        { path: '/admin/error-logs', icon: AlertTriangle, label: 'Error Logs' },
-        { path: '/admin/bulk-upload', icon: Upload, label: 'Bulk Upload' },
-        { path: '/admin/distribution-lists', icon: Mail, label: 'Distribution Lists' },
-      ];
-    }
-
-    if (isGroupAdmin) {
-      // Group Admin Panel
-      return [
-        { path: '/dashboard', icon: Home, label: 'User Dashboard' },
-        { path: '/explorer', icon: Compass, label: 'Explorer', dividerAfter: true },
-        { path: '/management', icon: LayoutDashboard, label: 'Management Dashboard', exact: true },
-        { path: '/management/users', icon: Users, label: 'Users Management' },
-        { path: '/management/domains', icon: Layers, label: 'Domains' },
-        { path: '/management/scenario-requests', icon: ClipboardList, label: 'Scenario Requests' },
-      ];
-    }
-
-    // Regular User Navigation
-    const items = [
-      { path: '/dashboard', icon: Home, label: 'Dashboard' },
-      { path: '/domains', icon: Layers, label: 'My Domains' },
-      { path: '/ask-scenario', icon: MessageSquarePlus, label: 'Ask Scenario' },
-      { path: '/my-requests', icon: ClipboardList, label: 'My Requests' },
-      { path: '/explorer', icon: Compass, label: 'Explorer' },
-      { path: '/profile', icon: User, label: 'Profile' },
-      { path: '/feedback', icon: MessageSquare, label: 'Feedback' },
-    ];
-
-    // Add admin link for super admins
-    if (isSuperAdmin()) {
-      items.push({ path: '/admin', icon: Settings, label: 'Admin Panel' });
-    } else if (canManageUsers()) {
-      items.push({ path: '/management', icon: Settings, label: 'Management' });
-    }
-
-    return items;
-  };
-
-  const navItems = getNavItems();
+  const navItems = isAdmin
+    ? ADMIN_NAV
+    : isGroupAdmin
+      ? GROUP_ADMIN_NAV
+      : getUserNav(isSuperAdmin, canManageUsers);
   const iconSize = sidebarOpen ? 20 : 24;
 
   const isActive = (path, exact = false) => {

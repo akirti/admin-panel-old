@@ -57,43 +57,39 @@ const V1DescriptionRenderer = ({ description, className = '' }) => {
   return null;
 };
 
+const resolveStyleClasses = (styleClasses) => {
+  if (Array.isArray(styleClasses)) return styleClasses.join(' ');
+  if (typeof styleClasses === 'string') return styleClasses;
+  return '';
+};
+
+const resolveTag = (type) =>
+  type && ELEMENT_TYPES.has(type) ? type : 'div';
+
+const getActiveChildren = (nodes) =>
+  Array.isArray(nodes) ? nodes.filter((n) => n.status !== 'I') : [];
+
+const SanitizedText = ({ text }) => (
+  <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(text) }} />
+);
+
 const DescriptionNode = ({ node }) => {
-  const styleClasses = Array.isArray(node.styleClasses)
-    ? node.styleClasses.join(' ')
-    : typeof node.styleClasses === 'string'
-      ? node.styleClasses
-      : '';
+  const classes = resolveStyleClasses(node.styleClasses);
+  const Tag = resolveTag(node.type);
 
-  // Determine the HTML element to use based on node.type
-  const Tag = node.type && ELEMENT_TYPES.has(node.type) ? node.type : 'div';
-
-  // Self-closing elements
   if (Tag === 'br' || Tag === 'hr') {
     return React.createElement(Tag);
   }
 
-  const activeChildren = Array.isArray(node.nodes)
-    ? node.nodes.filter((n) => n.status !== 'I')
-    : [];
-
-  // For list containers (ol/ul), render children as <li> items
-  if ((Tag === 'ol' || Tag === 'ul') && activeChildren.length > 0) {
-    return (
-      <Tag className={styleClasses || undefined}>
-        {node.text && (
-          <li><span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(node.text) }} /></li>
-        )}
-        {activeChildren.map((child, idx) => (
-          <DescriptionNode key={child.index ?? idx} node={child} />
-        ))}
-      </Tag>
-    );
-  }
+  const activeChildren = getActiveChildren(node.nodes);
+  const isListContainer = (Tag === 'ol' || Tag === 'ul') && activeChildren.length > 0;
 
   return (
-    <Tag className={styleClasses || undefined}>
+    <Tag className={classes || undefined}>
       {node.text && (
-        <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(node.text) }} />
+        isListContainer
+          ? <li><SanitizedText text={node.text} /></li>
+          : <SanitizedText text={node.text} />
       )}
       {activeChildren.map((child, idx) => (
         <DescriptionNode key={child.index ?? idx} node={child} />

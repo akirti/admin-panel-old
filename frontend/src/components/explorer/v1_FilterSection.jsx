@@ -29,6 +29,133 @@ const isCustomerFilter = (filter) => {
 };
 
 /**
+ * Returns the default form value for a single filter config object.
+ * If `initialValues` is provided and contains a value for the filter's dataKey,
+ * that value is returned. Otherwise, the default is derived from filter attributes
+ * based on the filter type.
+ *
+ * Returns `undefined` when no default value should be set.
+ */
+const getFilterDefaultValue = (filter, initialValues) => {
+  if (
+    initialValues &&
+    initialValues[filter.dataKey] !== undefined
+  ) {
+    return initialValues[filter.dataKey];
+  }
+
+  const type = getAttrValue(filter.attributes, 'type');
+
+  if (type === 'date-range') {
+    const startRaw = getAttrValue(filter.attributes, 'defaultValue_start');
+    const endRaw = getAttrValue(filter.attributes, 'defaultValue_end');
+    const start = parseCurrentDateString(startRaw);
+    const end = parseCurrentDateString(endRaw);
+    return (start || end) ? { start, end } : undefined;
+  }
+
+  if (type === 'date-picker' || type === 'date') {
+    const defaultValRaw = getAttrValue(filter.attributes, 'defaultValue');
+    const defaultVal = parseCurrentDateString(defaultValRaw);
+    return (defaultVal !== undefined && defaultVal !== null && defaultVal !== '')
+      ? defaultVal
+      : undefined;
+  }
+
+  if (type === 'multiselect' || type === 'multi-select') {
+    const defaultVal = getAttrValue(filter.attributes, 'defaultValue');
+    if (typeof defaultVal === 'string' && defaultVal.trim() !== '') {
+      return defaultVal.split(',').map((v) => v.trim());
+    }
+    if (Array.isArray(defaultVal)) {
+      return defaultVal;
+    }
+    return undefined;
+  }
+
+  if (type === 'radioButton') {
+    const defaultVal = getAttrValue(filter.attributes, 'defaultValue');
+    return (defaultVal !== undefined && defaultVal !== null && defaultVal !== '')
+      ? defaultVal
+      : undefined;
+  }
+
+  if (type === 'toggleButton') {
+    const defaultVal = getAttrValue(filter.attributes, 'defaultValue');
+    return (defaultVal !== undefined && defaultVal !== null && (defaultVal === true || defaultVal === false))
+      ? defaultVal
+      : undefined;
+  }
+
+  // Generic fallback
+  const defaultVal = getAttrValue(filter.attributes, 'defaultValue');
+  return (defaultVal !== undefined && defaultVal !== null && defaultVal !== '')
+    ? defaultVal
+    : undefined;
+};
+
+/**
+ * Takes an array of `{ msg, displayName }` error entries and returns
+ * a formatted error string. Messages are grouped by identical text,
+ * and display names are joined with natural-language conjunctions.
+ *
+ * Returns a fallback message when the array is empty.
+ */
+const formatErrorMessages = (errorMessages) => {
+  if (errorMessages.length === 0) {
+    return 'Please select all filters before submitting';
+  }
+
+  const msgMap = {};
+  errorMessages.forEach(({ msg, displayName }) => {
+    if (!msgMap[msg]) msgMap[msg] = [];
+    msgMap[msg].push(displayName);
+  });
+
+  const formattedMsgs = Object.entries(msgMap).map(([msg, names]) => {
+    let cleanMsg = msg.replace(/\s*\([^)]*\)\s*$/, '').replace(/\.$/, '');
+    const alreadyHasDisplayName = names.some((name) =>
+      cleanMsg.includes(name)
+    );
+    if (!alreadyHasDisplayName) {
+      let displayStr = '';
+      if (names.length === 1) {
+        displayStr = `${names[0]}`;
+      } else if (names.length === 2) {
+        displayStr = `${names[0]} and ${names[1]}`;
+      } else {
+        displayStr = `${names.slice(0, -1).join(', ')}, and ${
+          names[names.length - 1]
+        }`;
+      }
+      return `${cleanMsg} in ${displayStr}.`;
+    } else {
+      return `${cleanMsg}.`;
+    }
+  });
+
+  return formattedMsgs.join('\n');
+};
+
+/**
+ * Returns the placeholder string for a filter's dynamic control.
+ * Only input-type filters with no (or empty) defaultValue get a placeholder;
+ * all other filter types return `undefined`.
+ */
+const getFilterPlaceholder = (filter) => {
+  const type = filter.attributes?.find(
+    (attr) => attr.key === 'type'
+  )?.value;
+  const defaultValue = filter.attributes?.find(
+    (attr) => attr.key === 'defaultValue'
+  )?.value;
+  if (type === 'input' && (!defaultValue || defaultValue === '')) {
+    return filter.inputHint || 'Enter value';
+  }
+  return undefined;
+};
+
+/**
  * Filter label with optional info tooltip.
  * Shows an info icon when filter.description exists; clicking it
  * opens/closes an inline popover that renders the description HTML.
@@ -142,67 +269,9 @@ const V1FilterSection = ({
     if (!filterConfig || filterConfig.length === 0) return;
     const initialForm = {};
     filterConfig.forEach((filter) => {
-      const type = getAttrValue(filter.attributes, 'type');
-      // Use value from initialFilterValues if present, else default
-      if (
-        initialFilterValues &&
-        initialFilterValues[filter.dataKey] !== undefined
-      ) {
-        initialForm[filter.dataKey] = initialFilterValues[filter.dataKey];
-      } else if (type === 'date-range') {
-        const startRaw = getAttrValue(filter.attributes, 'defaultValue_start');
-        const endRaw = getAttrValue(filter.attributes, 'defaultValue_end');
-        const start = parseCurrentDateString(startRaw);
-        const end = parseCurrentDateString(endRaw);
-        if (start || end) {
-          initialForm[filter.dataKey] = { start, end };
-        }
-      } else if (type === 'date-picker' || type === 'date') {
-        const defaultValRaw = getAttrValue(filter.attributes, 'defaultValue');
-        const defaultVal = parseCurrentDateString(defaultValRaw);
-        if (
-          defaultVal !== undefined &&
-          defaultVal !== null &&
-          defaultVal !== ''
-        ) {
-          initialForm[filter.dataKey] = defaultVal;
-        }
-      } else if (type === 'multiselect' || type === 'multi-select') {
-        const defaultVal = getAttrValue(filter.attributes, 'defaultValue');
-        if (typeof defaultVal === 'string' && defaultVal.trim() !== '') {
-          initialForm[filter.dataKey] = defaultVal
-            .split(',')
-            .map((v) => v.trim());
-        } else if (Array.isArray(defaultVal)) {
-          initialForm[filter.dataKey] = defaultVal;
-        }
-      } else if (type === 'radioButton') {
-        const defaultVal = getAttrValue(filter.attributes, 'defaultValue');
-        if (
-          defaultVal !== undefined &&
-          defaultVal !== null &&
-          defaultVal !== ''
-        ) {
-          initialForm[filter.dataKey] = defaultVal;
-        }
-      } else if (type === 'toggleButton') {
-        const defaultVal = getAttrValue(filter.attributes, 'defaultValue');
-        if (
-          defaultVal !== undefined &&
-          defaultVal !== null &&
-          (defaultVal === true || defaultVal === false)
-        ) {
-          initialForm[filter.dataKey] = defaultVal;
-        }
-      } else {
-        const defaultVal = getAttrValue(filter.attributes, 'defaultValue');
-        if (
-          defaultVal !== undefined &&
-          defaultVal !== null &&
-          defaultVal !== ''
-        ) {
-          initialForm[filter.dataKey] = defaultVal;
-        }
+      const val = getFilterDefaultValue(filter, initialFilterValues);
+      if (val !== undefined) {
+        initialForm[filter.dataKey] = val;
       }
     });
     setForm((prev) => ({ ...initialForm, ...prev }));
@@ -216,33 +285,9 @@ const V1FilterSection = ({
   const handleReset = useCallback(() => {
     const resetForm = {};
     filterConfig.forEach((filter) => {
-      const type = getAttrValue(filter.attributes, 'type');
-      if (type === 'date-range') {
-        const startRaw = getAttrValue(filter.attributes, 'defaultValue_start');
-        const endRaw = getAttrValue(filter.attributes, 'defaultValue_end');
-        const start = parseCurrentDateString(startRaw);
-        const end = parseCurrentDateString(endRaw);
-        if (start || end) {
-          resetForm[filter.dataKey] = { start, end };
-        }
-      } else if (type === 'date-picker' || type === 'date') {
-        const defaultValRaw = getAttrValue(filter.attributes, 'defaultValue');
-        const defaultVal = parseCurrentDateString(defaultValRaw);
-        if (defaultVal !== undefined && defaultVal !== null && defaultVal !== '') {
-          resetForm[filter.dataKey] = defaultVal;
-        }
-      } else if (type === 'multiselect' || type === 'multi-select') {
-        const defaultVal = getAttrValue(filter.attributes, 'defaultValue');
-        if (typeof defaultVal === 'string' && defaultVal.trim() !== '') {
-          resetForm[filter.dataKey] = defaultVal.split(',').map((v) => v.trim());
-        } else if (Array.isArray(defaultVal)) {
-          resetForm[filter.dataKey] = defaultVal;
-        }
-      } else {
-        const defaultVal = getAttrValue(filter.attributes, 'defaultValue');
-        if (defaultVal !== undefined && defaultVal !== null && defaultVal !== '') {
-          resetForm[filter.dataKey] = defaultVal;
-        }
+      const val = getFilterDefaultValue(filter, null);
+      if (val !== undefined) {
+        resetForm[filter.dataKey] = val;
       }
     });
     setForm(resetForm);
@@ -288,37 +333,7 @@ const V1FilterSection = ({
       onSubmit(filledForm);
       setShow(false);
     } else {
-      if (errorMessages.length > 0) {
-        const msgMap = {};
-        errorMessages.forEach(({ msg, displayName }) => {
-          if (!msgMap[msg]) msgMap[msg] = [];
-          msgMap[msg].push(displayName);
-        });
-        const formattedMsgs = Object.entries(msgMap).map(([msg, names]) => {
-          let cleanMsg = msg.replace(/\s*\([^)]*\)\s*$/, '').replace(/\.$/, '');
-          const alreadyHasDisplayName = names.some((name) =>
-            cleanMsg.includes(name)
-          );
-          if (!alreadyHasDisplayName) {
-            let displayStr = '';
-            if (names.length === 1) {
-              displayStr = `${names[0]}`;
-            } else if (names.length === 2) {
-              displayStr = `${names[0]} and ${names[1]}`;
-            } else {
-              displayStr = `${names.slice(0, -1).join(', ')}, and ${
-                names[names.length - 1]
-              }`;
-            }
-            return `${cleanMsg} in ${displayStr}.`;
-          } else {
-            return `${cleanMsg}.`;
-          }
-        });
-        setErrorMsg(formattedMsgs.join('\n'));
-      } else {
-        setErrorMsg('Please select all filters before submitting');
-      }
+      setErrorMsg(formatErrorMessages(errorMessages));
     }
   }, [onSubmit, form, externalLoading, filterConfig]);
 
@@ -415,31 +430,16 @@ const V1FilterSection = ({
                       >
                         <FilterLabel filter={filter} />
 
-                        {(() => {
-                          const type = filter.attributes?.find(
-                            (attr) => attr.key === 'type'
-                          )?.value;
-                          const defaultValue = filter.attributes?.find(
-                            (attr) => attr.key === 'defaultValue'
-                          )?.value;
-                          const inputPlaceholder =
-                            type === 'input' &&
-                            (!defaultValue || defaultValue === '')
-                              ? filter.inputHint || 'Enter value'
-                              : undefined;
-                          return (
-                            <V1DynamicFilterControl
-                              filter={filter}
-                              value={form[filter.dataKey]}
-                              onChange={handleChange}
-                              allFilters={filterConfig}
-                              form={form}
-                              placeholder={inputPlaceholder}
-                              customerData={customerData}
-                              useCustomerSuggest={useCustomerSuggest}
-                            />
-                          );
-                        })()}
+                        <V1DynamicFilterControl
+                          filter={filter}
+                          value={form[filter.dataKey]}
+                          onChange={handleChange}
+                          allFilters={filterConfig}
+                          form={form}
+                          placeholder={getFilterPlaceholder(filter)}
+                          customerData={customerData}
+                          useCustomerSuggest={useCustomerSuggest}
+                        />
                       </div>
                     ))}
                   </div>

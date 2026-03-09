@@ -115,7 +115,7 @@ const ApiConfigsManagement = () => {
 
   useEffect(() => {
     // Fetch GCS status on mount
-    apiConfigsAPI.getGCSStatus().then(res => setGcsStatus(res.data)).catch(() => {});
+    apiConfigsAPI.getGCSStatus().then(res => setGcsStatus(res.data)).catch(Function.prototype);
   }, []);
 
   const handlePageChange = (newPage) => {
