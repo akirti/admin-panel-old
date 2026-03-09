@@ -1,5 +1,4 @@
 module.exports = {
-  rootDir: '..',
   testEnvironment: 'jsdom',
   testTimeout: 30000,
   setupFiles: ['./jest/jest-globals.js'],
