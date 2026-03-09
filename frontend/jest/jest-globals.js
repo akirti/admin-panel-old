@@ -7,14 +7,9 @@ if (typeof globalThis.TextDecoder === 'undefined') {
   globalThis.TextDecoder = TextDecoder;
 }
 
-// Polyfill Blob.text() if not available (older jsdom)
-if (typeof Blob !== 'undefined' && !Blob.prototype.text) {
-  Blob.prototype.text = function () {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsText(this);
-    });
-  };
+// Use Node's native Blob which has .text() and .arrayBuffer()
+// jsdom's Blob implementation lacks these methods
+const { Blob: NodeBlob } = require('buffer');
+if (NodeBlob) {
+  globalThis.Blob = NodeBlob;
 }
