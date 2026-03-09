@@ -497,3 +497,31 @@ The following policy files exist in `policies/` but are no longer referenced in 
 
 - `VA-VerifyAPIKey.xml` — API key verification (removed; browser SPA uses JWT auth)
 - `AM-InvalidAPIKeyResponse.xml` — API key error response (no longer triggered)
+
+# How it is verifying JWT Token
+ ┌─────────┬───────────────────┬───────────────────────────────────────────────┐
+  │  Claim  │   Flow Variable   │                    Purpose                    │
+  ├─────────┼───────────────────┼───────────────────────────────────────────────┤
+  │ user_id │ jwt.user_id       │ Identifies the authenticated user             │
+  ├─────────┼───────────────────┼───────────────────────────────────────────────┤
+  │ email   │ jwt.email         │ User's email address                          │
+  ├─────────┼───────────────────┼───────────────────────────────────────────────┤
+  │ roles   │ jwt.roles (array) │ User's RBAC roles for authorization decisions │
+  └─────────┴───────────────────┴───────────────────────────────────────────────┘
+
+  What causes rejection
+
+  The policy will reject the request (401) if any of these fail:
+  1. No Authorization header present
+  2. Signature doesn't match the secret key
+  3. Token is expired (beyond 60s grace)
+  4. sub is not "access_token"
+  5. iss is not "easylife-auth"
+  6. aud is not "easylife-api"
+  7. Required claims (user_id, email, roles) are missing
+
+  Security Note
+
+  HS256 uses a symmetric shared secret - the same key signs and verifies. This means both the FastAPI backend (token issuer)
+  and the Apigee gateway must share private.jwt.secret. If either is compromised, tokens can be forged. RS256 (asymmetric)
+  would be more secure for production but requires key pair management.
