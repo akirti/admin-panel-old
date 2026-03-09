@@ -65,7 +65,7 @@ const mockConfigs = [
     _id: 'ac1',
     key: 'user-svc',
     name: 'User Service',
-    base_url: 'https://api.users.com',
+    base_url: '/api/users',
     method: 'GET',
     endpoint: '/users',
     auth_type: 'bearer',
@@ -87,7 +87,7 @@ const mockConfigs = [
     _id: 'ac2',
     key: 'payment-api',
     name: 'Payment API',
-    base_url: 'https://api.payments.com',
+    base_url: '/api/payments',
     method: 'POST',
     endpoint: '/charge',
     auth_type: 'api_key',
@@ -221,7 +221,7 @@ describe('ApiConfigsManagement', () => {
     // Fill required fields
     await user.type(screen.getByPlaceholderText('unique-api-key'), 'new-api');
     await user.type(screen.getByPlaceholderText('My API'), 'New API');
-    await user.type(screen.getByPlaceholderText('https://api.example.com/v1/resource'), 'https://test.com/api');
+    await user.type(screen.getByPlaceholderText('e.g. /api/v1/resource'), 'https://test.com/api');
 
     // Submit form
     const submitButton = screen.getByText('Create');
@@ -407,7 +407,7 @@ describe('ApiConfigsManagement', () => {
 
     await user.type(screen.getByPlaceholderText('unique-api-key'), 'dup');
     await user.type(screen.getByPlaceholderText('My API'), 'Dup');
-    await user.type(screen.getByPlaceholderText('https://api.example.com/v1/resource'), 'https://t.com');
+    await user.type(screen.getByPlaceholderText('e.g. /api/v1/resource'), 'https://t.com');
 
     await user.click(screen.getByText('Create'));
 
@@ -809,7 +809,7 @@ describe('ApiConfigsManagement', () => {
     expect(nameInput.value).toBe('New API');
 
     // Fill endpoint
-    const urlInput = screen.getByPlaceholderText('https://api.example.com/v1/resource');
+    const urlInput = screen.getByPlaceholderText('e.g. /api/v1/resource');
     await user.type(urlInput, 'https://test.com/api');
     expect(urlInput.value).toBe('https://test.com/api');
   });
@@ -1011,7 +1011,7 @@ describe('ApiConfigsManagement', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Login Token Configuration')).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('https://api.example.com/auth/login')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('e.g. /auth/login')).toBeInTheDocument();
       expect(screen.getByPlaceholderText('user@example.com')).toBeInTheDocument();
     });
   });
@@ -1033,11 +1033,11 @@ describe('ApiConfigsManagement', () => {
     await user.selectOptions(authSelect, 'login_token');
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('https://api.example.com/auth/login')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('e.g. /auth/login')).toBeInTheDocument();
     });
 
     // Fill login endpoint
-    const loginEndpoint = screen.getByPlaceholderText('https://api.example.com/auth/login');
+    const loginEndpoint = screen.getByPlaceholderText('e.g. /auth/login');
     await user.type(loginEndpoint, 'https://auth.test.com/login');
     expect(loginEndpoint.value).toBe('https://auth.test.com/login');
 
@@ -1074,7 +1074,7 @@ describe('ApiConfigsManagement', () => {
 
     await waitFor(() => {
       expect(screen.getByText('OAuth2 Client Credentials Configuration')).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('https://auth.example.com/oauth/token')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('e.g. /oauth/token')).toBeInTheDocument();
       expect(screen.getByPlaceholderText('my-client-id')).toBeInTheDocument();
     });
   });
@@ -1096,11 +1096,11 @@ describe('ApiConfigsManagement', () => {
     await user.selectOptions(authSelect, 'oauth2');
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('https://auth.example.com/oauth/token')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('e.g. /oauth/token')).toBeInTheDocument();
     });
 
     // Fill token endpoint
-    await user.type(screen.getByPlaceholderText('https://auth.example.com/oauth/token'), 'https://oauth.test.com/token');
+    await user.type(screen.getByPlaceholderText('e.g. /oauth/token'), 'https://oauth.test.com/token');
 
     // Fill client ID
     await user.type(screen.getByPlaceholderText('my-client-id'), 'test-client');
@@ -1109,7 +1109,7 @@ describe('ApiConfigsManagement', () => {
     await user.type(screen.getByPlaceholderText('read write'), 'read');
 
     // Fill audience
-    await user.type(screen.getByPlaceholderText('https://api.example.com'), 'https://api.test.com');
+    await user.type(screen.getByPlaceholderText('e.g. api.example.com'), 'https://api.test.com');
   });
 
   it('shows auth config JSON textarea for basic auth type', async () => {
@@ -1153,7 +1153,7 @@ describe('ApiConfigsManagement', () => {
     await user.click(proxyCheckbox);
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('http://proxy:8080')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('e.g. proxy-host:8080')).toBeInTheDocument();
     });
   });
 

@@ -3,6 +3,7 @@ import { Card, Button, Input, Table, Modal, Badge, SearchInput, Select, Paginati
 import { apiConfigsAPI } from '../../services/api';
 import { PlayCircle, Eye, Pencil, ShieldCheck, ToggleLeft, Trash2, Plus, Check, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getAuthConfigTemplate, AUTH_CONFIG_HINTS, PLACEHOLDER_URLS, AUTH_FIELDS } from '../../constants/apiConfigDefaults';
 
 const AUTH_TYPES = [
   { value: 'none', label: 'None' },
@@ -14,46 +15,6 @@ const AUTH_TYPES = [
   { value: 'mtls', label: 'mTLS' },
   { value: 'custom', label: 'Custom' },
 ];
-
-// Helper to get auth config template for each auth type
-const getAuthConfigTemplate = (authType) => {
-  switch (authType) {
-    case 'basic':
-      return { username: '', password: '' };
-    case 'bearer':
-      return { token: '' };
-    case 'api_key':
-      return { key_name: 'X-API-Key', key_value: '', key_location: 'header' };
-    case 'login_token':
-      return {
-        login_endpoint: '',
-        login_method: 'POST',
-        username_field: 'email',
-        password_field: 'password',
-        username: '',
-        password: '',
-        extra_body: {},
-        token_response_path: 'access_token',
-        token_type: 'Bearer',
-        token_header_name: 'Authorization',
-      };
-    case 'oauth2':
-      return {
-        token_endpoint: '',
-        client_id: '',
-        client_secret: '',
-        scope: '',
-        grant_type: 'client_credentials',
-        audience: '',
-        extra_params: {},
-        token_response_path: 'access_token',
-        token_type: 'Bearer',
-        token_header_name: 'Authorization',
-      };
-    default:
-      return {};
-  }
-};
 
 const HTTP_METHODS = [
   { value: 'GET', label: 'GET' },
@@ -578,7 +539,7 @@ const ApiConfigsManagement = () => {
                 label="Endpoint URL"
                 value={formData.endpoint}
                 onChange={(e) => setFormData({ ...formData, endpoint: e.target.value })}
-                placeholder="https://api.example.com/v1/resource"
+                placeholder={PLACEHOLDER_URLS.API_ENDPOINT}
                 required
               />
             </div>
@@ -625,7 +586,7 @@ const ApiConfigsManagement = () => {
               label="Proxy URL"
               value={formData.proxy_url}
               onChange={(e) => setFormData({ ...formData, proxy_url: e.target.value })}
-              placeholder="http://proxy:8080"
+              placeholder={PLACEHOLDER_URLS.PROXY}
             />
           )}
 
@@ -646,7 +607,7 @@ const ApiConfigsManagement = () => {
                       config.login_endpoint = e.target.value;
                       setAuthConfigJson(JSON.stringify(config, null, 2));
                     }}
-                    placeholder="https://api.example.com/auth/login"
+                    placeholder={PLACEHOLDER_URLS.LOGIN_ENDPOINT}
                   />
                 </div>
                 <Select
@@ -755,7 +716,7 @@ const ApiConfigsManagement = () => {
                   config.token_endpoint = e.target.value;
                   setAuthConfigJson(JSON.stringify(config, null, 2));
                 }}
-                placeholder="https://auth.example.com/oauth/token"
+                placeholder={PLACEHOLDER_URLS.OAUTH_TOKEN_ENDPOINT}
               />
               <div className="grid grid-cols-2 gap-4">
                 <Input
@@ -799,7 +760,7 @@ const ApiConfigsManagement = () => {
                     config.audience = e.target.value;
                     setAuthConfigJson(JSON.stringify(config, null, 2));
                   }}
-                  placeholder="https://api.example.com"
+                  placeholder={PLACEHOLDER_URLS.OAUTH_AUDIENCE}
                 />
               </div>
               <div className="grid grid-cols-3 gap-4">
@@ -843,9 +804,7 @@ const ApiConfigsManagement = () => {
               <label className="block text-sm font-medium text-content-secondary mb-1">
                 Auth Configuration JSON
                 <span className="text-xs text-content-muted ml-2">
-                  {formData.auth_type === 'basic' && '{"username": "", "password": ""}'}
-                  {formData.auth_type === 'bearer' && '{"token": ""}'}
-                  {formData.auth_type === 'api_key' && '{"key_name": "X-API-Key", "key_value": "", "key_location": "header"}'}
+                  {AUTH_CONFIG_HINTS[formData.auth_type] || ''}
                 </span>
               </label>
               <textarea

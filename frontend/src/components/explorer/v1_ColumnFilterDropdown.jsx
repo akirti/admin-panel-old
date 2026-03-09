@@ -1,6 +1,50 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import ReactDOM from "react-dom";
 import { Filter } from "lucide-react";
+
+const isObj = (val) => val && typeof val === "object";
+
+const getOptionKey = (option, idx) => {
+  if (isObj(option) && option.value) return option.value;
+  return String(option ?? idx);
+};
+
+const getOptionLabel = (option) => {
+  if (isObj(option)) return option.label || option.value || option.id;
+  return String(option);
+};
+
+const DROPDOWN_HEIGHT = 260;
+
+const computeDropdownStyle = (triggerEl) => {
+  const rect = triggerEl.getBoundingClientRect();
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const showAbove = spaceBelow < DROPDOWN_HEIGHT && rect.top > DROPDOWN_HEIGHT;
+  return {
+    position: "fixed",
+    top: showAbove ? rect.top - DROPDOWN_HEIGHT : rect.bottom + 4,
+    left: rect.left,
+    minWidth: 200,
+    zIndex: 9999,
+  };
+};
+
+const OptionItem = ({ option, idx, isSelected, onToggle }) => (
+  <label
+    key={getOptionKey(option, idx)}
+    className="flex items-center px-3 py-1.5 cursor-pointer hover:bg-blue-50 text-sm"
+  >
+    <input
+      type="checkbox"
+      checked={isSelected}
+      onChange={() => onToggle(option)}
+      className="mr-2 accent-blue-600 w-3.5 h-3.5"
+    />
+    <span className={isSelected ? "font-medium text-content" : "text-content-secondary"}>
+      {getOptionLabel(option)}
+    </span>
+  </label>
+);
 
 const V1ColumnFilterDropdown = ({
   options = [],
@@ -41,28 +85,17 @@ const V1ColumnFilterDropdown = ({
   // Position dropdown via portal
   useEffect(() => {
     if (isOpen && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      const dropdownHeight = 260;
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const showAbove = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
-
-      setDropdownStyle({
-        position: "fixed",
-        top: showAbove ? rect.top - dropdownHeight : rect.bottom + 4,
-        left: rect.left,
-        minWidth: 200,
-        zIndex: 9999,
-      });
+      setDropdownStyle(computeDropdownStyle(triggerRef.current));
     }
   }, [isOpen]);
 
-  const handleOptionClick = (option) => {
+  const handleOptionClick = useCallback((option) => {
     setLocalSelected((prev) =>
       prev.includes(option)
         ? prev.filter((item) => item !== option)
         : [...prev, option]
     );
-  };
+  }, []);
 
   const handleApply = () => {
     onChange(localSelected);
@@ -87,38 +120,15 @@ const V1ColumnFilterDropdown = ({
         {options.length === 0 ? (
           <div className="px-3 py-2 text-content-muted text-sm">No values</div>
         ) : (
-          options.map((option, idx) => {
-            const key =
-              option && typeof option === "object" && option.value
-                ? option.value
-                : String(option ?? idx);
-            const label =
-              option && typeof option === "object"
-                ? option.label || option.value || option.id
-                : String(option);
-            return (
-              <label
-                key={key}
-                className="flex items-center px-3 py-1.5 cursor-pointer hover:bg-blue-50 text-sm"
-              >
-                <input
-                  type="checkbox"
-                  checked={localSelected.includes(option)}
-                  onChange={() => handleOptionClick(option)}
-                  className="mr-2 accent-blue-600 w-3.5 h-3.5"
-                />
-                <span
-                  className={
-                    localSelected.includes(option)
-                      ? "font-medium text-content"
-                      : "text-content-secondary"
-                  }
-                >
-                  {label}
-                </span>
-              </label>
-            );
-          })
+          options.map((option, idx) => (
+            <OptionItem
+              key={getOptionKey(option, idx)}
+              option={option}
+              idx={idx}
+              isSelected={localSelected.includes(option)}
+              onToggle={handleOptionClick}
+            />
+          ))
         )}
       </div>
       {options.length > 0 && (

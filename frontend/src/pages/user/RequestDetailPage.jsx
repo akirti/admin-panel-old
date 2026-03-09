@@ -928,7 +928,7 @@ function RequestDetailPage() {
               type="url"
               value={newJiraLink.ticket_url}
               onChange={(e) => setNewJiraLink(prev => ({ ...prev, ticket_url: e.target.value }))}
-              placeholder="https://your-domain.atlassian.net/browse/PROJ-123"
+              placeholder="e.g. PROJ-123 or full ticket URL"
               className="input w-full"
             />
           </div>
