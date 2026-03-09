@@ -541,7 +541,7 @@ describe('V1DataTable', () => {
 
   it('opens URL in new tab when action item clicked', async () => {
     const user = userEvent.setup();
-    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => {});
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(Function.prototype);
 
     render(
       <V1DataTable
@@ -563,7 +563,7 @@ describe('V1DataTable', () => {
 
   it('includes row values in action URL', async () => {
     const user = userEvent.setup();
-    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => {});
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(Function.prototype);
 
     render(
       <V1DataTable
@@ -584,7 +584,7 @@ describe('V1DataTable', () => {
 
   it('applies filter key mappings in action URL', async () => {
     const user = userEvent.setup();
-    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => {});
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(Function.prototype);
 
     render(
       <V1DataTable
@@ -654,7 +654,7 @@ describe('V1DataTable', () => {
 
   it('includes active filters in action URL', async () => {
     const user = userEvent.setup();
-    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => {});
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(Function.prototype);
     window.__activeFilters = { fromDate: '2026-01-01' };
 
     render(

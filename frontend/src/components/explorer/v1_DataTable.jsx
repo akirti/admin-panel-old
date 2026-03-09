@@ -66,51 +66,149 @@ const computeMenuPosition = (buttonEl, itemCount) => {
   return { top, left };
 };
 
+// Helpers for building action URLs
+const toPrimitiveEntries = (obj) =>
+  Object.entries(obj).filter(
+    ([, v]) => v != null && typeof v !== "object" && typeof v !== "function"
+  );
+
+const mergeParams = (activeFilters, rowParams) => {
+  const paramMap = {};
+  for (const [k, v] of toPrimitiveEntries(activeFilters)) {
+    paramMap[k] = String(v);
+  }
+  for (const [k, v] of toPrimitiveEntries(rowParams)) {
+    paramMap[k] = String(v);
+  }
+  return paramMap;
+};
+
+const applyFilterMappings = (paramMap, filters) => {
+  if (!Array.isArray(filters)) return;
+  for (const f of filters) {
+    if (f.dataKey && f.inputKey && f.dataKey in paramMap) {
+      paramMap[f.inputKey] = paramMap[f.dataKey];
+      delete paramMap[f.dataKey];
+    }
+  }
+};
+
 // Build the drill-down action URL from action config, row data, and active filters
 const buildActionUrl = (action, row) => {
   const encode = encodeURIComponent;
-  const targetDomain = action.dataDomain;
-  const targetScenarioKey = action.key || action.scenerioKey;
-
-  // Collect current row values (primitives only)
-  const rowParams = Object.fromEntries(
-    Object.entries(row).filter(
-      ([, v]) => typeof v !== "object" && typeof v !== "function"
-    )
-  );
-
-  // Merge active filters + row values into a param map
   const activeFilters =
     window.__activeFilters && typeof window.__activeFilters === "object"
       ? window.__activeFilters
       : {};
 
-  const paramMap = {};
-  Object.entries(activeFilters).forEach(([k, v]) => {
-    if (v !== undefined && v !== null) paramMap[k] = String(v);
-  });
-  Object.entries(rowParams).forEach(([k, v]) => {
-    if (v !== undefined && v !== null) paramMap[k] = String(v);
-  });
-
-  // Apply filter key mappings (dataKey -> inputKey)
-  if (action.filters && Array.isArray(action.filters)) {
-    action.filters.forEach((f) => {
-      if (f.dataKey && f.inputKey && f.dataKey in paramMap) {
-        paramMap[f.inputKey] = paramMap[f.dataKey];
-        delete paramMap[f.dataKey];
-      }
-    });
-  }
-
+  const paramMap = mergeParams(activeFilters, row);
+  applyFilterMappings(paramMap, action.filters);
   paramMap.autosubmit = "true";
 
   const urlParams = Object.entries(paramMap)
     .map(([k, v]) => `${encode(k)}=${encode(v)}`)
     .join("&");
 
+  const targetDomain = action.dataDomain;
+  const targetScenarioKey = action.key || action.scenerioKey;
   return `/explorer/${targetDomain}/${targetScenarioKey}?${urlParams}`;
 };
+
+// Aria sort helper
+const getAriaSort = (colKey, sortBy, sortOrder) => {
+  if (sortBy !== colKey) return "none";
+  return sortOrder === "asc" ? "ascending" : "descending";
+};
+
+// Sort button for column headers
+const SortButton = ({ colKey, sortBy, sortOrder, label, onSort }) => {
+  const icon =
+    sortBy !== colKey || !sortOrder ? (
+      <ArrowUpDown size={14} className="text-content-muted" />
+    ) : sortOrder === "asc" ? (
+      <ArrowUp size={14} className="text-blue-600" />
+    ) : (
+      <ArrowDown size={14} className="text-blue-600" />
+    );
+
+  return (
+    <button
+      type="button"
+      className="p-0.5 rounded hover:bg-neutral-200 focus:outline-none"
+      onClick={() => onSort(colKey)}
+      aria-label={`Sort by ${label}`}
+    >
+      {icon}
+    </button>
+  );
+};
+
+// Portal-based action menu
+const ActionMenuPortal = ({ menuRef, menuPosition, actionGrid, row, onActionClick }) =>
+  ReactDOM.createPortal(
+    <div
+      ref={menuRef}
+      className="fixed bg-surface border border-edge rounded-lg shadow-lg py-1 min-w-[160px]"
+      style={{ top: menuPosition.top, left: menuPosition.left, zIndex: 2147483647 }}
+    >
+      {actionGrid.map((action, i) => (
+        <button
+          key={`${action.name || "action"}-${i}`}
+          type="button"
+          className="block w-full text-left px-4 py-2 text-sm text-content-secondary hover:bg-blue-50 hover:text-blue-700 transition-colors"
+          onClick={onActionClick(action, row)}
+          aria-label={action.name}
+        >
+          {action.name}
+        </button>
+      ))}
+    </div>,
+    document.body
+  );
+
+// Empty state placeholder
+const EmptyState = () => (
+  <div className="flex flex-col items-center justify-center py-16 text-content-muted">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-12 w-12 mb-3"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+      />
+    </svg>
+    <p className="text-base font-medium">No data found</p>
+  </div>
+);
+
+// Column header with sort and filter controls
+const ColumnHeader = ({ col, sortBy, sortOrder, onSort, isFiltered, uniqueValues, filterValues, onFilterChange }) => (
+  <th
+    className={`px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap ${
+      isFiltered ? "bg-blue-50 text-blue-700" : "text-content-secondary"
+    }`}
+    scope="col"
+    aria-sort={getAriaSort(col.key, sortBy, sortOrder)}
+  >
+    <div className="flex items-center gap-1">
+      <span>{formatHeaderLabel(col.label)}</span>
+      <SortButton colKey={col.key} sortBy={sortBy} sortOrder={sortOrder} label={col.label} onSort={onSort} />
+      <V1ColumnFilterDropdown
+        options={uniqueValues}
+        selectedOptions={filterValues}
+        onChange={(selected) => onFilterChange(col.key, selected)}
+        columnLabel={col.label}
+      />
+    </div>
+  </th>
+);
 
 const V1DataTable = ({
   columns = [],
@@ -216,39 +314,10 @@ const V1DataTable = ({
     []
   );
 
-  // Sort icon for column header
-  const getSortIcon = (colKey) => {
-    if (sortBy !== colKey || !sortOrder) {
-      return <ArrowUpDown size={14} className="text-content-muted" />;
-    }
-    return sortOrder === "asc" ? (
-      <ArrowUp size={14} className="text-blue-600" />
-    ) : (
-      <ArrowDown size={14} className="text-blue-600" />
-    );
-  };
-
   return (
     <div className="mt-4">
       {filteredData.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-content-muted">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-12 w-12 mb-3"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-            />
-          </svg>
-          <p className="text-base font-medium">No data found</p>
-        </div>
+        <EmptyState />
       ) : (
         <div className="card p-0 overflow-auto">
           <table className="w-full text-sm">
@@ -260,42 +329,17 @@ const V1DataTable = ({
                   </th>
                 )}
                 {columns.map((col) => (
-                  <th
+                  <ColumnHeader
                     key={col.key}
-                    className={`px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap ${
-                      isColumnFiltered(col.key)
-                        ? "bg-blue-50 text-blue-700"
-                        : "text-content-secondary"
-                    }`}
-                    scope="col"
-                    aria-sort={
-                      sortBy === col.key
-                        ? sortOrder === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "none"
-                    }
-                  >
-                    <div className="flex items-center gap-1">
-                      <span>{formatHeaderLabel(col.label)}</span>
-                      <button
-                        type="button"
-                        className="p-0.5 rounded hover:bg-neutral-200 focus:outline-none"
-                        onClick={() => onSort(col.key)}
-                        aria-label={`Sort by ${col.label}`}
-                      >
-                        {getSortIcon(col.key)}
-                      </button>
-                      <V1ColumnFilterDropdown
-                        options={columnUniqueValues[col.key] || []}
-                        selectedOptions={columnFilters[col.key] || []}
-                        onChange={(selected) =>
-                          handleFilterChange(col.key, selected)
-                        }
-                        columnLabel={col.label}
-                      />
-                    </div>
-                  </th>
+                    col={col}
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                    onSort={onSort}
+                    isFiltered={isColumnFiltered(col.key)}
+                    uniqueValues={columnUniqueValues[col.key] || []}
+                    filterValues={columnFilters[col.key] || []}
+                    onFilterChange={handleFilterChange}
+                  />
                 ))}
               </tr>
             </thead>
@@ -318,32 +362,15 @@ const V1DataTable = ({
                       >
                         <MoreVertical size={16} className="text-content-muted" />
                       </button>
-                      {openMenuIdx === idx &&
-                        menuPosition &&
-                        ReactDOM.createPortal(
-                          <div
-                            ref={menuRef}
-                            className="fixed bg-surface border border-edge rounded-lg shadow-lg py-1 min-w-[160px]"
-                            style={{
-                              top: menuPosition.top,
-                              left: menuPosition.left,
-                              zIndex: 2147483647,
-                            }}
-                          >
-                            {actionGrid.map((action, i) => (
-                              <button
-                                key={`${action.name || "action"}-${i}`}
-                                type="button"
-                                className="block w-full text-left px-4 py-2 text-sm text-content-secondary hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                                onClick={handleActionClick(action, row)}
-                                aria-label={action.name}
-                              >
-                                {action.name}
-                              </button>
-                            ))}
-                          </div>,
-                          document.body
-                        )}
+                      {openMenuIdx === idx && menuPosition && (
+                        <ActionMenuPortal
+                          menuRef={menuRef}
+                          menuPosition={menuPosition}
+                          actionGrid={actionGrid}
+                          row={row}
+                          onActionClick={handleActionClick}
+                        />
+                      )}
                     </td>
                   )}
                   {columns.map((col) => (

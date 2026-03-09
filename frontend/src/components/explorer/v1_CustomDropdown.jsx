@@ -2,6 +2,39 @@ import React, { useState, useRef, useEffect, useMemo, useCallback, useLayoutEffe
 import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronUp, Search, Check } from 'lucide-react';
 
+// --- Extracted helpers (reduce cognitive complexity) ---
+
+const isClickInside = (event, ...refs) =>
+  refs.some((ref) => ref.current?.contains(event.target));
+
+const applyPositionStyle = (el, style) => {
+  if (!el || !style) return;
+  el.style.top = style.top != null ? `${style.top}px` : '';
+  el.style.bottom = style.bottom != null ? `${style.bottom}px` : '';
+  el.style.left = `${style.left}px`;
+  el.style.width = `${style.width}px`;
+};
+
+// --- Extracted sub-component ---
+
+const DropdownOption = ({ opt, isSelected, onSelect }) => (
+  <li
+    className={`px-4 py-2 cursor-pointer text-sm flex items-center justify-between transition-colors ${
+      isSelected
+        ? 'bg-primary-50 text-primary-700 font-medium'
+        : 'hover:bg-surface-hover text-content-secondary'
+    }`}
+    onClick={() => onSelect(opt.value)}
+  >
+    <span>{opt.name}</span>
+    {isSelected && (
+      <Check className="w-4 h-4 text-primary-600 flex-shrink-0" />
+    )}
+  </li>
+);
+
+// --- Main component ---
+
 const V1CustomDropdown = ({
   options = [],
   value,
@@ -49,10 +82,7 @@ const V1CustomDropdown = ({
   useEffect(() => {
     if (!open) return;
     const handleClickOutside = (event) => {
-      if (
-        btnRef.current && !btnRef.current.contains(event.target) &&
-        menuRef.current && !menuRef.current.contains(event.target)
-      ) {
+      if (!isClickInside(event, btnRef, menuRef)) {
         setOpen(false);
         setSearchTerm('');
       }
@@ -64,17 +94,7 @@ const V1CustomDropdown = ({
   // Reposition on scroll / resize while open (useLayoutEffect to avoid flash)
   useLayoutEffect(() => {
     if (!open) return;
-    const reposition = () => {
-      const style = computePosition();
-      if (style && menuRef.current) {
-        Object.assign(menuRef.current.style, {
-          top: style.top !== null && style.top !== undefined ? `${style.top}px` : '',
-          bottom: style.bottom !== null && style.bottom !== undefined ? `${style.bottom}px` : '',
-          left: `${style.left}px`,
-          width: `${style.width}px`,
-        });
-      }
-    };
+    const reposition = () => applyPositionStyle(menuRef.current, computePosition());
     window.addEventListener('scroll', reposition, true);
     window.addEventListener('resize', reposition);
     return () => {
@@ -137,20 +157,12 @@ const V1CustomDropdown = ({
               </li>
             ) : (
               filteredOptions.map((opt) => (
-                <li
+                <DropdownOption
                   key={opt.value}
-                  className={`px-4 py-2 cursor-pointer text-sm flex items-center justify-between transition-colors ${
-                    opt.value === value
-                      ? 'bg-primary-50 text-primary-700 font-medium'
-                      : 'hover:bg-surface-hover text-content-secondary'
-                  }`}
-                  onClick={() => handleSelect(opt.value)}
-                >
-                  <span>{opt.name}</span>
-                  {opt.value === value && (
-                    <Check className="w-4 h-4 text-primary-600 flex-shrink-0" />
-                  )}
-                </li>
+                  opt={opt}
+                  isSelected={opt.value === value}
+                  onSelect={handleSelect}
+                />
               ))
             )}
           </ul>

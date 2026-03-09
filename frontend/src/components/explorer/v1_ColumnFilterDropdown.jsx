@@ -46,6 +46,9 @@ const OptionItem = ({ option, idx, isSelected, onToggle }) => (
   </label>
 );
 
+const isClickInside = (event, ...refs) =>
+  refs.some((ref) => ref.current?.contains(event.target));
+
 const V1ColumnFilterDropdown = ({
   options = [],
   selectedOptions = [],
@@ -65,21 +68,15 @@ const V1ColumnFilterDropdown = ({
 
   // Close on outside click
   useEffect(() => {
+    if (!isOpen) return;
     const handleClickOutside = (event) => {
-      const triggerClicked =
-        triggerRef.current && triggerRef.current.contains(event.target);
-      const dropdownClicked =
-        dropdownRef.current && dropdownRef.current.contains(event.target);
-      if (!triggerClicked && !dropdownClicked) {
+      if (!isClickInside(event, triggerRef, dropdownRef)) {
         setIsOpen(false);
         setLocalSelected(selectedOptions);
       }
     };
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
-    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen, selectedOptions]);
 
   // Position dropdown via portal

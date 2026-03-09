@@ -2,6 +2,112 @@ import React, { useState, useRef, useEffect, useMemo, useCallback, useLayoutEffe
 import { createPortal } from 'react-dom';
 import { Search, X, Tag, ChevronDown } from 'lucide-react';
 
+// --- Helper functions ---
+
+const isClickInside = (event, ...refs) =>
+  refs.some((ref) => ref.current?.contains(event.target));
+
+const applyPositionStyle = (el, style) => {
+  if (!el || !style) return;
+  el.style.top = style.top != null ? `${style.top}px` : '';
+  el.style.bottom = style.bottom != null ? `${style.bottom}px` : '';
+  el.style.left = `${style.left}px`;
+  el.style.width = `${style.width}px`;
+};
+
+// --- Sub-components ---
+
+const SourceBadge = ({ source }) => {
+  const isDirect = source === 'direct';
+  return (
+    <span
+      className={`inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded ${
+        isDirect ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700 truncate max-w-[100px]'
+      }`}
+      title={isDirect ? undefined : source}
+    >
+      {isDirect ? 'Direct' : source}
+    </span>
+  );
+};
+
+const CustomerListItem = ({ cust, isSelected, onSelect }) => (
+  <li
+    className={`px-3 py-2 cursor-pointer text-sm hover:bg-surface-hover transition-colors ${
+      isSelected ? 'bg-primary-50' : ''
+    }`}
+    onClick={() => onSelect(cust)}
+  >
+    <div className="flex items-center justify-between gap-2">
+      <div className="flex-1 min-w-0">
+        <span className="font-medium text-content">{cust.customerId}</span>
+        {cust.name && (
+          <span className="text-content-muted ml-1.5">— {cust.name}</span>
+        )}
+      </div>
+      <SourceBadge source={cust.source} />
+    </div>
+    {cust.tags?.length > 0 && (
+      <div className="flex flex-wrap gap-1 mt-1">
+        {cust.tags.map((t) => (
+          <span key={t} className="inline-flex items-center px-1.5 py-0.5 text-[10px] bg-base-secondary text-content-muted rounded">
+            {t}
+          </span>
+        ))}
+      </div>
+    )}
+  </li>
+);
+
+const CustomerList = ({ loading, customers, inputValue, onSelect }) => {
+  if (loading) {
+    return (
+      <li className="px-3 py-4 text-center">
+        <div className="w-5 h-5 border-2 border-neutral-200 border-t-primary-600 rounded-full animate-spin mx-auto" />
+      </li>
+    );
+  }
+  if (customers.length === 0) {
+    return (
+      <li className="px-3 py-3 text-sm text-content-muted text-center">
+        {inputValue ? 'No matching customers' : 'No assigned customers'}
+      </li>
+    );
+  }
+  return customers.map((cust) => (
+    <CustomerListItem key={cust.customerId} cust={cust} isSelected={inputValue === cust.customerId} onSelect={onSelect} />
+  ));
+};
+
+const TagFilterBar = ({ tags, selectedTag, tagBtnRef, onToggle, onClear }) => {
+  if (tags.length === 0) return null;
+  return (
+    <div className="px-3 py-2 border-b border-edge-light flex items-center gap-2">
+      <button
+        ref={tagBtnRef}
+        type="button"
+        onClick={onToggle}
+        className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded border transition-colors ${
+          selectedTag
+            ? 'bg-primary-50 border-primary-300 text-primary-700'
+            : 'bg-surface-secondary border-edge text-content-secondary hover:bg-surface-hover'
+        }`}
+      >
+        <Tag size={12} />
+        {selectedTag || 'Filter by tag'}
+        <ChevronDown size={12} />
+      </button>
+      {selectedTag && (
+        <button type="button" onClick={onClear} className="text-xs text-content-muted hover:text-content-secondary">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
+  );
+};
+
+// --- Main component ---
+
 const V1CustomerSuggestInput = ({
   value = '',
   onChange,
@@ -87,11 +193,7 @@ const V1CustomerSuggestInput = ({
   // Close on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
-      const clickedInInput = inputRef.current?.contains(event.target);
-      const clickedInMenu = menuRef.current?.contains(event.target);
-      const clickedInTagMenu = tagMenuRef.current?.contains(event.target);
-      const clickedInTagBtn = tagBtnRef.current?.contains(event.target);
-      if (!clickedInInput && !clickedInMenu && !clickedInTagMenu && !clickedInTagBtn) {
+      if (!isClickInside(event, inputRef, menuRef, tagMenuRef, tagBtnRef)) {
         setIsOpen(false);
         setShowTagFilter(false);
       }
@@ -103,17 +205,7 @@ const V1CustomerSuggestInput = ({
   // Reposition on scroll/resize
   useLayoutEffect(() => {
     if (!isOpen) return;
-    const reposition = () => {
-      const style = computePosition();
-      if (style && menuRef.current) {
-        Object.assign(menuRef.current.style, {
-          top: style.top !== null && style.top !== undefined ? `${style.top}px` : '',
-          bottom: style.bottom !== null && style.bottom !== undefined ? `${style.bottom}px` : '',
-          left: `${style.left}px`,
-          width: `${style.width}px`,
-        });
-      }
-    };
+    const reposition = () => applyPositionStyle(menuRef.current, computePosition());
     window.addEventListener('scroll', reposition, true);
     window.addEventListener('resize', reposition);
     return () => {
@@ -142,101 +234,12 @@ const V1CustomerSuggestInput = ({
     setShowTagFilter((prev) => !prev);
   };
 
-  // Source badge color
-  const getSourceBadge = (source) => {
-    if (source === 'direct') {
-      return (
-        <span className="inline-flex items-center px-1.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded">
-          Direct
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center px-1.5 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded truncate max-w-[100px]" title={source}>
-        {source}
-      </span>
-    );
-  };
-
   const suggestionMenu = isOpen && menuStyleRef.current
     ? createPortal(
-        <div
-          ref={menuRef}
-          style={menuStyleRef.current}
-          className="bg-surface border border-edge rounded-md shadow-lg overflow-hidden"
-        >
-          {/* Tag filter bar */}
-          {tags.length > 0 && (
-            <div className="px-3 py-2 border-b border-edge-light flex items-center gap-2">
-              <button
-                ref={tagBtnRef}
-                type="button"
-                onClick={handleToggleTagFilter}
-                className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded border transition-colors ${
-                  selectedTag
-                    ? 'bg-primary-50 border-primary-300 text-primary-700'
-                    : 'bg-surface-secondary border-edge text-content-secondary hover:bg-surface-hover'
-                }`}
-              >
-                <Tag size={12} />
-                {selectedTag || 'Filter by tag'}
-                <ChevronDown size={12} />
-              </button>
-              {selectedTag && (
-                <button
-                  type="button"
-                  onClick={() => handleTagSelect('')}
-                  className="text-xs text-content-muted hover:text-content-secondary"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Customer list */}
+        <div ref={menuRef} style={menuStyleRef.current} className="bg-surface border border-edge rounded-md shadow-lg overflow-hidden">
+          <TagFilterBar tags={tags} selectedTag={selectedTag} tagBtnRef={tagBtnRef} onToggle={handleToggleTagFilter} onClear={() => handleTagSelect('')} />
           <ul className="max-h-52 overflow-auto">
-            {loading ? (
-              <li className="px-3 py-4 text-center">
-                <div className="w-5 h-5 border-2 border-neutral-200 border-t-primary-600 rounded-full animate-spin mx-auto" />
-              </li>
-            ) : customers.length === 0 ? (
-              <li className="px-3 py-3 text-sm text-content-muted text-center">
-                {inputValue ? 'No matching customers' : 'No assigned customers'}
-              </li>
-            ) : (
-              customers.map((cust) => (
-                <li
-                  key={cust.customerId}
-                  className={`px-3 py-2 cursor-pointer text-sm hover:bg-surface-hover transition-colors ${
-                    inputValue === cust.customerId ? 'bg-primary-50' : ''
-                  }`}
-                  onClick={() => handleSelect(cust)}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <span className="font-medium text-content">{cust.customerId}</span>
-                      {cust.name && (
-                        <span className="text-content-muted ml-1.5">— {cust.name}</span>
-                      )}
-                    </div>
-                    {getSourceBadge(cust.source)}
-                  </div>
-                  {cust.tags && cust.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {cust.tags.map((t) => (
-                        <span
-                          key={t}
-                          className="inline-flex items-center px-1.5 py-0.5 text-[10px] bg-base-secondary text-content-muted rounded"
-                        >
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </li>
-              ))
-            )}
+            <CustomerList loading={loading} customers={customers} inputValue={inputValue} onSelect={handleSelect} />
           </ul>
         </div>,
         document.body
