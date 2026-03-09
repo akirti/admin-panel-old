@@ -42,31 +42,46 @@ function convertGenericParamValue(value) {
 }
 
 /**
+ * Ensures a step entry exists in logic_args, creating it if needed.
+ */
+function ensureStep(logic_args, step) {
+  if (!logic_args[step]) logic_args[step] = { query_params: {} };
+}
+
+/**
+ * Maps filter config entries to their corresponding logic_args steps.
+ */
+function mapFilterConfigToLogicArgs(logic_args, filterConfig, filterValues) {
+  if (!Array.isArray(filterConfig) || filterConfig.length === 0) return;
+  filterConfig.forEach((filter) => {
+    const step = filter.index != null ? filter.index.toString() : '0';
+    ensureStep(logic_args, step);
+    if (filter.dataKey in filterValues) {
+      logic_args[step].query_params[filter.dataKey] = convertFilterValue(filterValues[filter.dataKey], filter.type);
+    }
+  });
+}
+
+/**
+ * Maps remaining filter values (not in filterConfig) to step 0.
+ */
+function mapUnmappedParamsToStepZero(logic_args, filterConfig, filterValues) {
+  Object.keys(filterValues).forEach((key) => {
+    const alreadyMapped = filterConfig?.some((f) => f.dataKey === key);
+    if (alreadyMapped) return;
+    ensureStep(logic_args, '0');
+    logic_args['0'].query_params[key] = convertGenericParamValue(filterValues[key]);
+  });
+}
+
+/**
  * Builds logic_args from filter config and user-supplied filter values.
  */
 function buildLogicArgs(filterConfig, filterValues) {
   const logic_args = {};
-
-  if (Array.isArray(filterConfig) && filterConfig.length > 0) {
-    filterConfig.forEach((filter) => {
-      const step = filter.index != null ? filter.index.toString() : '0';
-      if (!logic_args[step]) logic_args[step] = { query_params: {} };
-      if (filter.dataKey in filterValues) {
-        logic_args[step].query_params[filter.dataKey] = convertFilterValue(filterValues[filter.dataKey], filter.type);
-      }
-    });
-  }
-
-  // Map remaining params not in filterConfig to step 0
-  Object.keys(filterValues).forEach((key) => {
-    const alreadyMapped = filterConfig?.some((f) => f.dataKey === key);
-    if (!alreadyMapped) {
-      if (!logic_args['0']) logic_args['0'] = { query_params: {} };
-      logic_args['0'].query_params[key] = convertGenericParamValue(filterValues[key]);
-    }
-  });
-
-  if (!logic_args['0']) logic_args['0'] = { query_params: {} };
+  mapFilterConfigToLogicArgs(logic_args, filterConfig, filterValues);
+  mapUnmappedParamsToStepZero(logic_args, filterConfig, filterValues);
+  ensureStep(logic_args, '0');
   return logic_args;
 }
 
@@ -127,6 +142,32 @@ function buildPaginationConfig(pagWidget, effectivePageSize, effectivePage) {
 }
 
 /**
+ * Resolves the pagination flags (countEvaluated, end) based on the current page.
+ */
+function resolvePaginationFlags(effectivePage, totalPages, currentCountEvaluated, currentEnd) {
+  if (effectivePage === 1) {
+    return { sendCountEvaluated: false, sendEnd: false };
+  }
+  const isLastPage = totalPages > 1 && effectivePage === totalPages;
+  return {
+    sendCountEvaluated: currentCountEvaluated,
+    sendEnd: isLastPage ? true : false
+  };
+}
+
+/**
+ * Applies pagination metadata from the API response to state setters.
+ */
+function extractPaginationMeta(pagination) {
+  return {
+    count_evaluated: pagination.count_evaluated ?? false,
+    current_count: pagination.current_count ?? 0,
+    total_count: pagination.total_count ?? 0,
+    end: pagination.end ?? false
+  };
+}
+
+/**
  * Calculates total pages from the API response.
  */
 function calculateTotalPages(response, limit, currentPage) {
@@ -136,6 +177,89 @@ function calculateTotalPages(response, limit, currentPage) {
   const dataLen = response?.data?.length || 0;
   if (dataLen < limit) return currentPage;
   return currentPage + 1;
+}
+
+/**
+ * Extracts a short plain-text snippet from the scenario description (string or array).
+ */
+function getDescriptionSnippet(scenarioDescription, maxLen = 120) {
+  if (typeof scenarioDescription === 'string') {
+    return scenarioDescription.replace(/<[^>]*>/g, '').slice(0, maxLen);
+  }
+  if (Array.isArray(scenarioDescription)) {
+    return scenarioDescription
+      .filter((d) => d.text && d.status !== 'I')
+      .map((d) => d.text.replace(/<[^>]*>/g, ''))
+      .join(' — ')
+      .slice(0, maxLen);
+  }
+  return '';
+}
+
+/**
+ * Determines whether a description snippet should show an ellipsis.
+ */
+function shouldShowEllipsis(scenarioDescription, maxLen = 120) {
+  if (typeof scenarioDescription === 'string') {
+    return scenarioDescription.length > maxLen;
+  }
+  if (Array.isArray(scenarioDescription)) {
+    const joined = scenarioDescription
+      .filter((d) => d.text && d.status !== 'I')
+      .map((d) => d.text)
+      .join(' — ');
+    return joined.length > maxLen;
+  }
+  return false;
+}
+
+/**
+ * Renders the loading state for playboard filters.
+ */
+function FilterLoadingState() {
+  return (
+    <div className="flex items-center justify-center py-8">
+      <Loader2 size={24} className="animate-spin text-primary-600 mr-2" />
+      <span className="text-content-muted">Loading filters...</span>
+    </div>
+  );
+}
+
+/**
+ * Renders an error message for playboard errors.
+ */
+function FilterErrorState({ message }) {
+  return (
+    <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg mb-6">
+      <AlertCircle size={20} className="text-red-600" />
+      <span className="text-red-700">{message}</span>
+    </div>
+  );
+}
+
+/**
+ * Renders the loading state for data fetching.
+ */
+function DataLoadingState() {
+  return (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 size={32} className="animate-spin text-primary-600 mr-3" />
+      <span className="text-content-muted text-lg">Loading data...</span>
+    </div>
+  );
+}
+
+/**
+ * Renders the empty data state.
+ */
+function DataEmptyState() {
+  return (
+    <div className="text-center py-12 text-content-muted">
+      <BarChart3 size={48} className="mx-auto mb-4 text-content-muted" />
+      <p className="text-lg font-medium">No data found</p>
+      <p className="text-sm mt-1">Try adjusting your filter criteria</p>
+    </div>
+  );
 }
 
 /**
@@ -397,17 +521,7 @@ function V1ExplorerReportPage() {
         const paginationConfig = buildPaginationConfig(pagWidget, effectivePageSize, effectivePage);
 
         // Pagination flags
-        let sendCountEvaluated = countEvaluated;
-        let sendEnd = end;
-        if (effectivePage === 1) {
-          sendCountEvaluated = false;
-          sendEnd = false;
-        } else if (pages > 1 && effectivePage === pages) {
-          sendEnd = true;
-        } else {
-          sendEnd = false;
-        }
-
+        const { sendCountEvaluated, sendEnd } = resolvePaginationFlags(effectivePage, pages, countEvaluated, end);
         paginationConfig.count_evaluated = sendCountEvaluated;
         paginationConfig.end = sendEnd;
         paginationConfig.current_count = currentCount;
@@ -434,10 +548,11 @@ function V1ExplorerReportPage() {
           setPages(calculateTotalPages(resData, paginationConfig.limit, effectivePage));
 
           if (resData.pagination) {
-            setCountEvaluated(resData.pagination.count_evaluated ?? false);
-            setCurrentCount(resData.pagination.current_count ?? 0);
-            setTotalCount(resData.pagination.total_count ?? 0);
-            setEnd(resData.pagination.end ?? false);
+            const meta = extractPaginationMeta(resData.pagination);
+            setCountEvaluated(meta.count_evaluated);
+            setCurrentCount(meta.current_count);
+            setTotalCount(meta.total_count);
+            setEnd(meta.end);
           }
         }
       } catch (err) {
@@ -551,34 +666,17 @@ function V1ExplorerReportPage() {
           </div>
           {playboard?.scenarioDescription && (
             <p className="text-sm text-content-muted mt-1">
-              {typeof playboard.scenarioDescription === 'string'
-                ? playboard.scenarioDescription.replace(/<[^>]*>/g, '').slice(0, 120)
-                : Array.isArray(playboard.scenarioDescription)
-                  ? playboard.scenarioDescription
-                      .filter((d) => d.text && d.status !== 'I')
-                      .map((d) => d.text.replace(/<[^>]*>/g, ''))
-                      .join(' — ')
-                      .slice(0, 120)
-                  : ''}
-              {((typeof playboard.scenarioDescription === 'string' && playboard.scenarioDescription.length > 120) ||
-                (Array.isArray(playboard.scenarioDescription) && playboard.scenarioDescription.filter((d) => d.text && d.status !== 'I').map((d) => d.text).join(' — ').length > 120)) && '...'}
+              {getDescriptionSnippet(playboard.scenarioDescription)}
+              {shouldShowEllipsis(playboard.scenarioDescription) && '...'}
             </p>
           )}
         </div>
       </div>
 
       {/* Filter Section */}
-      {playboardLoading ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 size={24} className="animate-spin text-primary-600 mr-2" />
-          <span className="text-content-muted">Loading filters...</span>
-        </div>
-      ) : playboardError ? (
-        <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg mb-6">
-          <AlertCircle size={20} className="text-red-600" />
-          <span className="text-red-700">{playboardError}</span>
-        </div>
-      ) : (
+      {playboardLoading && <FilterLoadingState />}
+      {!playboardLoading && playboardError && <FilterErrorState message={playboardError} />}
+      {!playboardLoading && !playboardError && (
         <V1FilterSection
           filterConfig={filterConfig}
           onSubmit={handleFilterSubmit}
@@ -587,17 +685,9 @@ function V1ExplorerReportPage() {
       )}
 
       {/* Data Table */}
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 size={32} className="animate-spin text-primary-600 mr-3" />
-          <span className="text-content-muted text-lg">Loading data...</span>
-        </div>
-      ) : error ? (
-        <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <AlertCircle size={20} className="text-red-600" />
-          <span className="text-red-700">{error}</span>
-        </div>
-      ) : showTable && data.length > 0 ? (
+      {loading && <DataLoadingState />}
+      {!loading && error && <FilterErrorState message={error} />}
+      {!loading && !error && showTable && data.length > 0 && (
         <V1DataTable
           columns={visibleColumns}
           data={data}
@@ -613,13 +703,8 @@ function V1ExplorerReportPage() {
           actionGrid={actionGrid}
           totalRecords={totalCount}
         />
-      ) : showTable && data.length === 0 ? (
-        <div className="text-center py-12 text-content-muted">
-          <BarChart3 size={48} className="mx-auto mb-4 text-content-muted" />
-          <p className="text-lg font-medium">No data found</p>
-          <p className="text-sm mt-1">Try adjusting your filter criteria</p>
-        </div>
-      ) : null}
+      )}
+      {!loading && !error && showTable && data.length === 0 && <DataEmptyState />}
     </div>
   );
 }

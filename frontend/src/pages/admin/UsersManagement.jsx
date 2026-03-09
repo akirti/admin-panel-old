@@ -234,6 +234,118 @@ const UserForm = ({
   );
 };
 
+// --- Helper functions outside component ---
+
+const EMPTY_USER_FORM = {
+  email: '', username: '', full_name: '', password: '',
+  roles: [], groups: [], customers: [], is_active: true, send_password_email: true,
+};
+
+function buildUserFetchParams(paginationPage, paginationLimit, search, filterRole, filterGroup) {
+  const params = { page: paginationPage, limit: paginationLimit };
+  if (search) params.search = search;
+  if (filterRole) params.role = filterRole;
+  if (filterGroup) params.group = filterGroup;
+  return params;
+}
+
+function buildUserFormData(user) {
+  return {
+    email: user.email, username: user.username, full_name: user.full_name, password: '',
+    roles: user.roles || [], groups: user.groups || [], customers: user.customers || [],
+    is_active: user.is_active, send_password_email: false,
+  };
+}
+
+function extractResponseData(res) {
+  return res.data.data || res.data;
+}
+
+async function downloadUserExport(exportFn, format, filename) {
+  const response = await exportFn();
+  const mimeType = format === 'csv' ? 'text/csv' : 'application/json';
+  const blob = new Blob([response.data], { type: mimeType });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+}
+
+const UsersHeader = ({ onExportCsv, onExportJson, onAddUser }) => (
+  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 className="text-2xl font-bold text-content">Users</h1>
+      <p className="text-content-muted mt-1">Manage user accounts and access</p>
+    </div>
+    <div className="flex items-center gap-2">
+      <button onClick={onExportCsv} className="btn-secondary flex items-center gap-2">
+        <FileDown size={16} /> CSV
+      </button>
+      <button onClick={onExportJson} className="btn-secondary flex items-center gap-2">
+        <Download size={16} /> JSON
+      </button>
+      <button onClick={onAddUser} className="btn-primary flex items-center gap-2">
+        <Plus size={16} /> Add User
+      </button>
+    </div>
+  </div>
+);
+
+const UsersFilterBar = ({ search, onSearchChange, filterRole, onFilterRoleChange, filterGroup, onFilterGroupChange, roles, groups, onClearFilters }) => (
+  <div className="card p-4">
+    <div className="flex flex-wrap gap-4">
+      <div className="relative flex-1 min-w-[200px]">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
+        <input type="text" value={search} onChange={(e) => onSearchChange(e.target.value)} placeholder="Search by email, username, or name..." className="input-field pl-10 w-full" />
+      </div>
+      <div className="flex items-center gap-2">
+        <Filter size={18} className="text-content-muted" />
+        <select className="input-field min-w-[150px]" value={filterRole} onChange={(e) => onFilterRoleChange(e.target.value)}>
+          <option value="">All Roles</option>
+          {roles.map((role) => (
+            <option key={role.roleId} value={role.roleId}>{role.name}</option>
+          ))}
+        </select>
+        <select className="input-field min-w-[150px]" value={filterGroup} onChange={(e) => onFilterGroupChange(e.target.value)}>
+          <option value="">All Groups</option>
+          {groups.map((group) => (
+            <option key={group.groupId} value={group.groupId}>{group.name}</option>
+          ))}
+        </select>
+        {(filterRole || filterGroup) && (
+          <button className="btn-secondary text-sm py-2 px-3" onClick={onClearFilters}>
+            Clear Filters
+          </button>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
+const UsersPagination = ({ pagination, totalPages, onPageChange, loading }) => {
+  if (loading || totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-between px-4 py-3 border-t border-edge">
+      <p className="text-sm text-content-muted">
+        Showing {pagination.page * pagination.limit + 1} to {Math.min((pagination.page + 1) * pagination.limit, pagination.total)} of {pagination.total} users
+      </p>
+      <div className="flex items-center gap-2">
+        <button onClick={() => onPageChange(pagination.page - 1)} disabled={pagination.page === 0} className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-content-muted">
+          <ChevronLeft size={20} />
+        </button>
+        <span className="text-sm text-content-muted">Page {pagination.page + 1} of {totalPages}</span>
+        <button onClick={() => onPageChange(pagination.page + 1)} disabled={pagination.page >= totalPages - 1} className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-content-muted">
+          <ChevronRight size={20} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // --- Main Component ---
 
 const UsersManagement = () => {
@@ -248,26 +360,20 @@ const UsersManagement = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [pagination, setPagination] = useState({ page: 0, limit: 25, total: 0, pages: 0 });
-  const [formData, setFormData] = useState({
-    email: '', username: '', full_name: '', password: '',
-    roles: [], groups: [], customers: [], is_active: true, send_password_email: true,
-  });
+  const [formData, setFormData] = useState({ ...EMPTY_USER_FORM });
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const params = { page: pagination.page, limit: pagination.limit };
-      if (search) params.search = search;
-      if (filterRole) params.role = filterRole;
-      if (filterGroup) params.group = filterGroup;
+      const params = buildUserFetchParams(pagination.page, pagination.limit, search, filterRole, filterGroup);
       const [usersRes, rolesRes, groupsRes, customersRes] = await Promise.all([
         usersAPI.list(params), rolesAPI.list({ limit: 100 }), groupsAPI.list({ limit: 100 }), customersAPI.list({ limit: 100 }),
       ]);
-      setUsers(usersRes.data.data || usersRes.data);
+      setUsers(extractResponseData(usersRes));
       setPagination(prev => ({ ...prev, ...usersRes.data.pagination }));
-      setRoles(rolesRes.data.data || rolesRes.data);
-      setGroups(groupsRes.data.data || groupsRes.data);
-      setCustomers(customersRes.data.data || customersRes.data);
+      setRoles(extractResponseData(rolesRes));
+      setGroups(extractResponseData(groupsRes));
+      setCustomers(extractResponseData(customersRes));
     } catch (error) {
       toast.error('Failed to load users');
     } finally {
@@ -277,6 +383,7 @@ const UsersManagement = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const resetPageToFirst = () => setPagination(prev => ({ ...prev, page: 0 }));
   const handlePageChange = (newPage) => { setPagination(prev => ({ ...prev, page: newPage })); };
 
   const handleSubmit = async (e) => {
@@ -322,11 +429,8 @@ const UsersManagement = () => {
   const handleSendPasswordReset = async (user, sendEmail = true) => {
     try {
       const response = await usersAPI.sendPasswordReset(user.email, sendEmail);
-      if (sendEmail) {
-        toast.success('Password reset email sent');
-      } else {
-        toast.success(`Reset token: ${response.data.token}`);
-      }
+      const message = sendEmail ? 'Password reset email sent' : `Reset token: ${response.data.token}`;
+      toast.success(message);
     } catch (error) {
       toast.error('Failed to send password reset');
     }
@@ -334,16 +438,8 @@ const UsersManagement = () => {
 
   const handleExport = async (format) => {
     try {
-      const response = format === 'csv' ? await exportAPI.users.csv() : await exportAPI.users.json();
-      const blob = new Blob([response.data], { type: format === 'csv' ? 'text/csv' : 'application/json' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `users.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const exportFn = format === 'csv' ? exportAPI.users.csv : exportAPI.users.json;
+      await downloadUserExport(exportFn, format, `users.${format}`);
       toast.success(`Exported users as ${format.toUpperCase()}`);
     } catch (error) {
       toast.error('Failed to export users');
@@ -351,19 +447,17 @@ const UsersManagement = () => {
   };
 
   const resetForm = () => {
-    setFormData({ email: '', username: '', full_name: '', password: '', roles: [], groups: [], customers: [], is_active: true, send_password_email: true });
+    setFormData({ ...EMPTY_USER_FORM });
     setEditingUser(null);
   };
 
   const openEditModal = (user) => {
     setEditingUser(user);
-    setFormData({
-      email: user.email, username: user.username, full_name: user.full_name, password: '',
-      roles: user.roles || [], groups: user.groups || [], customers: user.customers || [],
-      is_active: user.is_active, send_password_email: false,
-    });
+    setFormData(buildUserFormData(user));
     setModalOpen(true);
   };
+
+  const openAddModal = () => { resetForm(); setModalOpen(true); };
 
   const isRoleSelected = (role) => formData.roles.includes(role._id) || formData.roles.includes(role.roleId);
   const isGroupSelected = (group) => formData.groups.includes(group._id) || formData.groups.includes(group.groupId);
@@ -377,91 +471,29 @@ const UsersManagement = () => {
   const clearAllCustomers = () => { setFormData(prev => ({ ...prev, customers: [] })); };
 
   const totalPages = pagination.pages || Math.ceil(pagination.total / pagination.limit);
-
   const closeModal = () => { setModalOpen(false); resetForm(); };
+
+  const handleSearchChange = (value) => { setSearch(value); resetPageToFirst(); };
+  const handleFilterRoleChange = (value) => { setFilterRole(value); resetPageToFirst(); };
+  const handleFilterGroupChange = (value) => { setFilterGroup(value); resetPageToFirst(); };
+  const handleClearFilters = () => { setFilterRole(''); setFilterGroup(''); resetPageToFirst(); };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-content">Users</h1>
-          <p className="text-content-muted mt-1">Manage user accounts and access</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => handleExport('csv')} className="btn-secondary flex items-center gap-2">
-            <FileDown size={16} /> CSV
-          </button>
-          <button onClick={() => handleExport('json')} className="btn-secondary flex items-center gap-2">
-            <Download size={16} /> JSON
-          </button>
-          <button onClick={() => { resetForm(); setModalOpen(true); }} className="btn-primary flex items-center gap-2">
-            <Plus size={16} /> Add User
-          </button>
-        </div>
-      </div>
+      <UsersHeader onExportCsv={() => handleExport('csv')} onExportJson={() => handleExport('json')} onAddUser={openAddModal} />
 
-      {/* Search and Filters */}
-      <div className="card p-4">
-        <div className="flex flex-wrap gap-4">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
-            <input type="text" value={search} onChange={(e) => { setSearch(e.target.value); setPagination(prev => ({ ...prev, page: 0 })); }} placeholder="Search by email, username, or name..." className="input-field pl-10 w-full" />
-          </div>
-          <div className="flex items-center gap-2">
-            <Filter size={18} className="text-content-muted" />
-            <select className="input-field min-w-[150px]" value={filterRole} onChange={(e) => { setFilterRole(e.target.value); setPagination(prev => ({ ...prev, page: 0 })); }}>
-              <option value="">All Roles</option>
-              {roles.map((role) => (
-                <option key={role.roleId} value={role.roleId}>{role.name}</option>
-              ))}
-            </select>
-            <select className="input-field min-w-[150px]" value={filterGroup} onChange={(e) => { setFilterGroup(e.target.value); setPagination(prev => ({ ...prev, page: 0 })); }}>
-              <option value="">All Groups</option>
-              {groups.map((group) => (
-                <option key={group.groupId} value={group.groupId}>{group.name}</option>
-              ))}
-            </select>
-            {(filterRole || filterGroup) && (
-              <button className="btn-secondary text-sm py-2 px-3" onClick={() => { setFilterRole(''); setFilterGroup(''); setPagination(prev => ({ ...prev, page: 0 })); }}>
-                Clear Filters
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+      <UsersFilterBar
+        search={search} onSearchChange={handleSearchChange}
+        filterRole={filterRole} onFilterRoleChange={handleFilterRoleChange}
+        filterGroup={filterGroup} onFilterGroupChange={handleFilterGroupChange}
+        roles={roles} groups={groups} onClearFilters={handleClearFilters}
+      />
 
-      {/* Table */}
       <div className="card overflow-hidden p-0">
-        <UsersTable
-          users={users}
-          loading={loading}
-          onEdit={openEditModal}
-          onToggleStatus={handleToggleStatus}
-          onSendPasswordReset={handleSendPasswordReset}
-          onDelete={handleDelete}
-        />
-
-        {/* Pagination */}
-        {!loading && totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-edge">
-            <p className="text-sm text-content-muted">
-              Showing {pagination.page * pagination.limit + 1} to {Math.min((pagination.page + 1) * pagination.limit, pagination.total)} of {pagination.total} users
-            </p>
-            <div className="flex items-center gap-2">
-              <button onClick={() => handlePageChange(pagination.page - 1)} disabled={pagination.page === 0} className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-content-muted">
-                <ChevronLeft size={20} />
-              </button>
-              <span className="text-sm text-content-muted">Page {pagination.page + 1} of {totalPages}</span>
-              <button onClick={() => handlePageChange(pagination.page + 1)} disabled={pagination.page >= totalPages - 1} className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-content-muted">
-                <ChevronRight size={20} />
-              </button>
-            </div>
-          </div>
-        )}
+        <UsersTable users={users} loading={loading} onEdit={openEditModal} onToggleStatus={handleToggleStatus} onSendPasswordReset={handleSendPasswordReset} onDelete={handleDelete} />
+        <UsersPagination pagination={pagination} totalPages={totalPages} onPageChange={handlePageChange} loading={loading} />
       </div>
 
-      {/* User Modal */}
       <Modal isOpen={modalOpen} onClose={closeModal} title={editingUser ? 'Edit User' : 'Add User'} size="xl">
         <UserForm
           formData={formData} setFormData={setFormData} editingUser={editingUser}

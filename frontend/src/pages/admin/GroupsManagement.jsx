@@ -686,6 +686,101 @@ const AlertMessages = ({ error, success }) => (
   </>
 );
 
+// --- Helpers for GroupsManagement to reduce cognitive complexity ---
+
+const INITIAL_GROUP_FORM = {
+  groupId: '', name: '', description: '', type: 'domain',
+  permissions: [], domains: [], customers: [], status: 'active', priority: 0,
+};
+
+const buildCreateFormData = (groupTypes) => ({
+  ...INITIAL_GROUP_FORM,
+  type: groupTypes.length > 0 ? groupTypes[0].value : 'domain',
+});
+
+const buildEditFormData = (group) => ({
+  groupId: group.groupId || '', name: group.name || '', description: group.description || '',
+  type: group.type || 'custom', permissions: group.permissions || [], domains: group.domains || [],
+  customers: group.customers || [], status: group.status || 'active', priority: group.priority || 0,
+});
+
+const filterCustomersBySearch = (customers, searchTerm) => {
+  if (!searchTerm.trim()) return customers;
+  const term = searchTerm.toLowerCase();
+  return customers.filter((c) =>
+    (c.customerId || '').toLowerCase().includes(term) || (c.name || '').toLowerCase().includes(term)
+  );
+};
+
+const toggleExportMenu = () => document.getElementById('export-menu-groups').classList.toggle('hidden');
+const hideExportMenu = () => document.getElementById('export-menu-groups').classList.add('hidden');
+
+const GroupsHeader = ({ total, onExportCsv, onExportJson, onCreateClick }) => (
+  <div className="flex items-center justify-between">
+    <div>
+      <h1 className="text-2xl font-bold text-content">Groups Management</h1>
+      <p className="text-content-muted text-sm mt-1">Manage user groups and their permissions ({total} total)</p>
+    </div>
+    <div className="flex gap-2">
+      <div className="relative">
+        <button className="btn btn-secondary flex items-center gap-2" onClick={toggleExportMenu}>
+          <Download size={16} /> Export
+        </button>
+        <div id="export-menu-groups" className="hidden absolute right-0 mt-1 bg-surface border rounded-lg shadow-lg z-10">
+          <button className="block w-full px-4 py-2 text-left hover:bg-surface-hover" onClick={onExportCsv}>Export as CSV</button>
+          <button className="block w-full px-4 py-2 text-left hover:bg-surface-hover" onClick={onExportJson}>Export as JSON</button>
+        </div>
+      </div>
+      <button className="btn btn-primary flex items-center gap-2" onClick={onCreateClick}>
+        <Plus size={16} /> Add Group
+      </button>
+    </div>
+  </div>
+);
+
+const GroupsFilterBar = ({ data }) => (
+  <div className="card">
+    <div className="flex flex-wrap gap-4">
+      <div className="relative flex-1 min-w-[200px]">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
+        <input type="text" placeholder="Search groups by name or ID..." className="input pl-10 w-full" value={data.search} onChange={(e) => data.setSearch(e.target.value)} />
+      </div>
+      <div className="flex items-center gap-2">
+        <Filter size={18} className="text-content-muted" />
+        <select className="input min-w-[150px]" value={data.filterDomain} onChange={(e) => { data.setFilterDomain(e.target.value); data.setPage(0); }}>
+          <option value="">All Domains</option>
+          {data.domains.map((domain) => (
+            <option key={domain.key || domain._id} value={domain.key || domain._id}>{domain.name}</option>
+          ))}
+        </select>
+        <select className="input min-w-[150px]" value={data.filterPermission} onChange={(e) => { data.setFilterPermission(e.target.value); data.setPage(0); }}>
+          <option value="">All Permissions</option>
+          {data.permissions.map((perm) => (
+            <option key={perm.key} value={perm.key}>{perm.name || perm.key}</option>
+          ))}
+        </select>
+        {(data.filterDomain || data.filterPermission) && (
+          <button className="btn btn-secondary btn-sm" onClick={() => { data.setFilterDomain(''); data.setFilterPermission(''); data.setPage(0); }}>Clear Filters</button>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
+const GroupsPagination = ({ data }) => {
+  if (data.totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-between px-4 py-3 border-t border-edge">
+      <p className="text-sm text-content-muted">Showing {data.page * data.limit + 1} to {Math.min((data.page + 1) * data.limit, data.total)} of {data.total} groups</p>
+      <div className="flex items-center gap-2">
+        <button onClick={() => data.setPage((p) => Math.max(0, p - 1))} disabled={data.page === 0} className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-content-muted"><ChevronLeft size={20} /></button>
+        <span className="text-sm text-content-muted">Page {data.page + 1} of {data.totalPages}</span>
+        <button onClick={() => data.setPage((p) => Math.min(data.totalPages - 1, p + 1))} disabled={data.page >= data.totalPages - 1} className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-content-muted"><ChevronRight size={20} /></button>
+      </div>
+    </div>
+  );
+};
+
 // --- Main Component ---
 
 const GroupsManagement = () => {
@@ -694,42 +789,27 @@ const GroupsManagement = () => {
   const [customerSearch, setCustomerSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState(null);
-  const [formData, setFormData] = useState({
-    groupId: '', name: '', description: '', type: 'domain',
-    permissions: [], domains: [], customers: [], status: 'active', priority: 0,
-  });
+  const [formData, setFormData] = useState(INITIAL_GROUP_FORM);
   const [usersModalOpen, setUsersModalOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [groupUsers, setGroupUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
 
-  const filteredCustomers = data.allCustomers.filter((c) => {
-    if (!customerSearch.trim()) return true;
-    const term = customerSearch.toLowerCase();
-    return (c.customerId || '').toLowerCase().includes(term) || (c.name || '').toLowerCase().includes(term);
-  });
+  const filteredCustomers = filterCustomersBySearch(data.allCustomers, customerSearch);
 
   const formHandlers = useGroupFormHandlers(formData, setFormData, data.permissions, data.domains, data.groupedPermissions, filteredCustomers);
   const actions = useGroupActions(data.setError, data.setSuccess, data.fetchGroups);
 
   const openCreateModal = () => {
     setEditingGroup(null);
-    setFormData({
-      groupId: '', name: '', description: '',
-      type: data.groupTypes.length > 0 ? data.groupTypes[0].value : 'domain',
-      permissions: [], domains: [], customers: [], status: 'active', priority: 0,
-    });
+    setFormData(buildCreateFormData(data.groupTypes));
     setCustomerSearch('');
     setModalOpen(true);
   };
 
   const openEditModal = (group) => {
     setEditingGroup(group);
-    setFormData({
-      groupId: group.groupId || '', name: group.name || '', description: group.description || '',
-      type: group.type || 'custom', permissions: group.permissions || [], domains: group.domains || [],
-      customers: group.customers || [], status: group.status || 'active', priority: group.priority || 0,
-    });
+    setFormData(buildEditFormData(group));
     setCustomerSearch('');
     setModalOpen(true);
   };
@@ -760,72 +840,22 @@ const GroupsManagement = () => {
     finally { setLoadingUsers(false); }
   };
 
+  const handleExportCsv = () => { actions.handleExport('csv'); hideExportMenu(); };
+  const handleExportJson = () => { actions.handleExport('json'); hideExportMenu(); };
+
   if (!isSuperAdmin()) return <AccessDenied />;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-content">Groups Management</h1>
-          <p className="text-content-muted text-sm mt-1">Manage user groups and their permissions ({data.total} total)</p>
-        </div>
-        <div className="flex gap-2">
-          <div className="relative">
-            <button className="btn btn-secondary flex items-center gap-2" onClick={() => document.getElementById('export-menu-groups').classList.toggle('hidden')}>
-              <Download size={16} /> Export
-            </button>
-            <div id="export-menu-groups" className="hidden absolute right-0 mt-1 bg-surface border rounded-lg shadow-lg z-10">
-              <button className="block w-full px-4 py-2 text-left hover:bg-surface-hover" onClick={() => { actions.handleExport('csv'); document.getElementById('export-menu-groups').classList.add('hidden'); }}>Export as CSV</button>
-              <button className="block w-full px-4 py-2 text-left hover:bg-surface-hover" onClick={() => { actions.handleExport('json'); document.getElementById('export-menu-groups').classList.add('hidden'); }}>Export as JSON</button>
-            </div>
-          </div>
-          <button className="btn btn-primary flex items-center gap-2" onClick={openCreateModal}>
-            <Plus size={16} /> Add Group
-          </button>
-        </div>
-      </div>
+      <GroupsHeader total={data.total} onExportCsv={handleExportCsv} onExportJson={handleExportJson} onCreateClick={openCreateModal} />
 
       <AlertMessages error={data.error} success={data.success} />
 
-      <div className="card">
-        <div className="flex flex-wrap gap-4">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
-            <input type="text" placeholder="Search groups by name or ID..." className="input pl-10 w-full" value={data.search} onChange={(e) => data.setSearch(e.target.value)} />
-          </div>
-          <div className="flex items-center gap-2">
-            <Filter size={18} className="text-content-muted" />
-            <select className="input min-w-[150px]" value={data.filterDomain} onChange={(e) => { data.setFilterDomain(e.target.value); data.setPage(0); }}>
-              <option value="">All Domains</option>
-              {data.domains.map((domain) => (
-                <option key={domain.key || domain._id} value={domain.key || domain._id}>{domain.name}</option>
-              ))}
-            </select>
-            <select className="input min-w-[150px]" value={data.filterPermission} onChange={(e) => { data.setFilterPermission(e.target.value); data.setPage(0); }}>
-              <option value="">All Permissions</option>
-              {data.permissions.map((perm) => (
-                <option key={perm.key} value={perm.key}>{perm.name || perm.key}</option>
-              ))}
-            </select>
-            {(data.filterDomain || data.filterPermission) && (
-              <button className="btn btn-secondary btn-sm" onClick={() => { data.setFilterDomain(''); data.setFilterPermission(''); data.setPage(0); }}>Clear Filters</button>
-            )}
-          </div>
-        </div>
-      </div>
+      <GroupsFilterBar data={data} />
 
       <div className="card overflow-hidden">
         <GroupsTable groups={data.groups} loading={data.loading} onShowUsers={showUsers} onEdit={openEditModal} onToggleStatus={actions.handleToggleStatus} onDelete={actions.handleDelete} />
-        {data.totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-edge">
-            <p className="text-sm text-content-muted">Showing {data.page * data.limit + 1} to {Math.min((data.page + 1) * data.limit, data.total)} of {data.total} groups</p>
-            <div className="flex items-center gap-2">
-              <button onClick={() => data.setPage((p) => Math.max(0, p - 1))} disabled={data.page === 0} className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-content-muted"><ChevronLeft size={20} /></button>
-              <span className="text-sm text-content-muted">Page {data.page + 1} of {data.totalPages}</span>
-              <button onClick={() => data.setPage((p) => Math.min(data.totalPages - 1, p + 1))} disabled={data.page >= data.totalPages - 1} className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-content-muted"><ChevronRight size={20} /></button>
-            </div>
-          </div>
-        )}
+        <GroupsPagination data={data} />
       </div>
 
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editingGroup ? 'Edit Group' : 'Create Group'} size="xl">

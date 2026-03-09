@@ -412,6 +412,52 @@ function CurrentLogsTab({ stats, search, setSearch, level, setLevel, levels, err
   );
 }
 
+/* ─── Extracted archive action handlers (outside component) ─── */
+
+async function downloadArchive(archiveId) {
+  try {
+    const response = await errorLogsAPI.getArchiveDownloadUrl(archiveId);
+    window.open(response.data.download_url, '_blank');
+  } catch (error) { toast.error('Failed to get download URL'); }
+}
+
+async function deleteArchive(archiveId, onSuccess) {
+  if (!confirm('Are you sure you want to delete this archive? This action cannot be undone.')) return;
+  try {
+    await errorLogsAPI.deleteArchive(archiveId);
+    toast.success('Archive deleted successfully');
+    onSuccess();
+  } catch (error) { toast.error('Failed to delete archive'); }
+}
+
+async function forceArchive(onSuccess) {
+  if (!confirm('Archive current log file to GCS? This will clear the current log file.')) return;
+  try {
+    const response = await errorLogsAPI.forceArchive();
+    const message = response.data.archived ? 'Log file archived successfully' : (response.data.message || 'No logs to archive');
+    const toastFn = response.data.archived ? toast.success : toast.info;
+    toastFn(message);
+    if (response.data.archived) onSuccess();
+  } catch (error) { toast.error('Failed to archive logs'); }
+}
+
+async function cleanupArchives(onSuccess) {
+  const daysToKeep = prompt('Delete archives older than how many days?', '90');
+  if (!daysToKeep) return;
+  try {
+    const response = await errorLogsAPI.cleanup(parseInt(daysToKeep));
+    toast.success(`Deleted ${response.data.deleted_count} old archives`);
+    onSuccess();
+  } catch (error) { toast.error('Failed to cleanup archives'); }
+}
+
+function toggleExpandedRow(expandedRows, id, setExpandedRows) {
+  const newExpanded = new Set(expandedRows);
+  if (newExpanded.has(id)) { newExpanded.delete(id); }
+  else { newExpanded.add(id); }
+  setExpandedRows(newExpanded);
+}
+
 /* ═══════════════════════════════════════════════════════════
    Main Component
    ═══════════════════════════════════════════════════════════ */
@@ -471,52 +517,11 @@ const ErrorLogsPage = () => {
   }, [activeTab, fetchCurrentLogs, fetchArchives]);
 
   const handlePageChange = (newPage) => setPagination(prev => ({ ...prev, page: newPage }));
-
-  const toggleRow = (id) => {
-    const newExpanded = new Set(expandedRows);
-    if (newExpanded.has(id)) { newExpanded.delete(id); }
-    else { newExpanded.add(id); }
-    setExpandedRows(newExpanded);
-  };
-
-  const handleDownloadArchive = async (archiveId) => {
-    try {
-      const response = await errorLogsAPI.getArchiveDownloadUrl(archiveId);
-      window.open(response.data.download_url, '_blank');
-    } catch (error) { toast.error('Failed to get download URL'); }
-  };
-
-  const handleDeleteArchive = async (archiveId) => {
-    if (!confirm('Are you sure you want to delete this archive? This action cannot be undone.')) return;
-    try {
-      await errorLogsAPI.deleteArchive(archiveId);
-      toast.success('Archive deleted successfully');
-      fetchArchives();
-    } catch (error) { toast.error('Failed to delete archive'); }
-  };
-
-  const handleForceArchive = async () => {
-    if (!confirm('Archive current log file to GCS? This will clear the current log file.')) return;
-    try {
-      const response = await errorLogsAPI.forceArchive();
-      if (response.data.archived) {
-        toast.success('Log file archived successfully');
-        fetchArchives();
-      } else {
-        toast.info(response.data.message || 'No logs to archive');
-      }
-    } catch (error) { toast.error('Failed to archive logs'); }
-  };
-
-  const handleCleanup = async () => {
-    const daysToKeep = prompt('Delete archives older than how many days?', '90');
-    if (!daysToKeep) return;
-    try {
-      const response = await errorLogsAPI.cleanup(parseInt(daysToKeep));
-      toast.success(`Deleted ${response.data.deleted_count} old archives`);
-      fetchArchives();
-    } catch (error) { toast.error('Failed to cleanup archives'); }
-  };
+  const toggleRow = (id) => toggleExpandedRow(expandedRows, id, setExpandedRows);
+  const handleDownloadArchive = (archiveId) => downloadArchive(archiveId);
+  const handleDeleteArchive = (archiveId) => deleteArchive(archiveId, fetchArchives);
+  const handleForceArchive = () => forceArchive(fetchArchives);
+  const handleCleanup = () => cleanupArchives(fetchArchives);
 
   const handleDaysChange = (e) => {
     setDays(parseInt(e.target.value));

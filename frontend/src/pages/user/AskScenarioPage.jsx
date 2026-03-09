@@ -180,6 +180,165 @@ function RichTextEditor({ value, onChange, placeholder, rows = 6 }) {
   );
 }
 
+// Strips HTML tags for plain text checks
+function stripHtml(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+}
+
+// Builds form data from a loaded request for edit mode
+function buildFormDataFromRequest(request) {
+  return {
+    requestType: request.requestType || 'scenario',
+    dataDomain: request.dataDomain || '',
+    name: request.name || '',
+    description: request.description || '',
+    has_suggestion: request.has_suggestion || false,
+    knows_steps: request.knows_steps || false,
+    steps: request.steps || [],
+    reason: request.reason || '',
+    team: request.team || '',
+    assignee: request.assignee || '',
+    assignee_name: request.assignee_name || '',
+    status: request.status || '',
+    scenarioKey: request.scenarioKey || '',
+    configName: request.configName || '',
+    fulfilmentDate: request.fulfilmentDate ? request.fulfilmentDate.split('T')[0] : ''
+  };
+}
+
+// Returns the submit button icon based on state
+function SubmitButtonIcon({ loading: isLoading, isEditMode }) {
+  if (isLoading) return <Loader2 className="animate-spin" size={18} />;
+  if (isEditMode) return <Save size={18} />;
+  return <Send size={18} />;
+}
+
+// Admin settings section for editors in edit mode
+function AdminSettingsSection({ formData, handleChange, statuses, originalRequest }) {
+  const statusChanged = formData.status && originalRequest && formData.status !== originalRequest.status;
+  return (
+    <div className="card">
+      <div className="card-header">
+        <h2 className="text-lg font-semibold text-content">Admin Settings</h2>
+        <p className="text-sm text-content-muted mt-1">These fields are only visible to administrators and editors</p>
+      </div>
+      <div className="space-y-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="w-full">
+            <label className="block text-sm font-medium text-content-secondary mb-2">Status</label>
+            <select name="status" value={formData.status} onChange={handleChange}
+              className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content">
+              {statuses.map(status => (
+                <option key={status.value} value={status.value}>{status.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="w-full">
+            <label className="block text-sm font-medium text-content-secondary mb-2">Target Date</label>
+            <input type="date" name="fulfilmentDate" value={formData.fulfilmentDate} onChange={handleChange}
+              className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="w-full">
+            <label className="block text-sm font-medium text-content-secondary mb-2">Scenario Key</label>
+            <input type="text" name="scenarioKey" value={formData.scenarioKey} onChange={handleChange}
+              className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
+              placeholder="e.g., SC-001" />
+          </div>
+          <div className="w-full">
+            <label className="block text-sm font-medium text-content-secondary mb-2">Config Name</label>
+            <input type="text" name="configName" value={formData.configName} onChange={handleChange}
+              className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
+              placeholder="Configuration name" />
+          </div>
+        </div>
+        {statusChanged && (
+          <div className="w-full border-t border-edge pt-5">
+            <label className="block text-sm font-medium text-content-secondary mb-2">
+              Status Change Comment <span className="text-red-500">*</span>
+            </label>
+            <textarea name="statusComment" value={formData.statusComment} onChange={handleChange} rows={3}
+              className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
+              placeholder="Please provide a reason for this status change..." required />
+            <p className="text-xs text-content-muted mt-1">This comment will be recorded in the workflow history.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// File upload section with existing and new files
+function FileUploadSection({ isEditMode, existingFiles, uploadedFiles, handleFileUpload, handleRemoveFile }) {
+  return (
+    <div className="card">
+      <div className="card-header">
+        <h2 className="text-lg font-semibold text-content">Sample Files</h2>
+        <p className="text-sm text-content-muted mt-1">Upload sample data files or screenshots to help us understand your requirements</p>
+      </div>
+      <div>
+        {isEditMode && existingFiles.length > 0 && (
+          <div className="mb-5 space-y-2">
+            <p className="text-sm font-medium text-content-secondary">Existing files:</p>
+            {existingFiles.map((file, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded bg-green-100 flex items-center justify-center text-green-600">
+                    <FileUp size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-content truncate">{file.file_name || file.name}</p>
+                    <p className="text-xs text-content-muted">{file.file_type} • v{file.version || 1}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="border-2 border-dashed border-edge rounded-lg p-8 text-center hover:border-primary-300 transition-colors">
+          <FileUp className="mx-auto text-content-muted mb-3" size={48} />
+          <p className="text-sm text-content-secondary mb-3">
+            {isEditMode ? 'Add more files' : 'Drag and drop files here, or click to browse'}
+          </p>
+          <p className="text-xs text-content-muted mb-4">
+            Supported: CSV, Excel, JSON, PDF, PNG, JPG (max 10MB each)
+          </p>
+          <input type="file" id="file-upload" multiple onChange={handleFileUpload} className="hidden"
+            accept=".csv,.xlsx,.xls,.json,.pdf,.png,.jpg,.jpeg" />
+          <label htmlFor="file-upload" className="btn-secondary cursor-pointer inline-block">Choose Files</label>
+        </div>
+
+        {uploadedFiles.length > 0 && (
+          <div className="mt-5 space-y-2">
+            <p className="text-sm font-medium text-content-secondary">{uploadedFiles.length} new file(s) to upload:</p>
+            {uploadedFiles.map((file, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg border border-edge">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded bg-primary-100 flex items-center justify-center text-primary-600">
+                    <FileUp size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-content truncate">{file.name}</p>
+                    <p className="text-xs text-content-muted">{(file.size / 1024).toFixed(1)} KB</p>
+                  </div>
+                </div>
+                <button type="button" onClick={() => handleRemoveFile(index)}
+                  className="flex-shrink-0 text-content-muted hover:text-red-600 p-1">
+                  <X size={18} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function AskScenarioPage() {
   const navigate = useNavigate();
   const { requestId } = useParams();
@@ -205,16 +364,13 @@ function AskScenarioPage() {
     knows_steps: false,
     steps: [],
     reason: '',
-    // Team and assignee
     team: '',
     assignee: '',
     assignee_name: '',
-    // Admin fields (only editable by editors)
     status: '',
     scenarioKey: '',
     configName: '',
     fulfilmentDate: '',
-    // Workflow comment (required when changing status)
     statusComment: ''
   });
 
@@ -239,7 +395,6 @@ function AskScenarioPage() {
         scenarioRequestAPI.getRequestTypes(),
         scenarioRequestAPI.getDefaults()
       ];
-      // Load statuses for editors in edit mode
       if (isEditMode && isEditor()) {
         promises.push(scenarioRequestAPI.getStatuses());
       }
@@ -252,7 +407,6 @@ function AskScenarioPage() {
         setStatuses(results[3].data || []);
       }
 
-      // Set default request type if available (only for new requests)
       if (!isEditMode && results[1].data && results[1].data.length > 0) {
         setFormData(prev => ({
           ...prev,
@@ -263,7 +417,6 @@ function AskScenarioPage() {
         }));
       }
 
-      // Load Jira boards and assignable users
       loadJiraData();
     } catch (error) {
       // error handled silently
@@ -283,19 +436,6 @@ function AskScenarioPage() {
     }
   };
 
-  const searchJiraUsers = async (query) => {
-    if (!query || query.length < 1) return;
-    setLoadingJiraUsers(true);
-    try {
-      const res = await jiraAPI.getAssignableUsers(null, query);
-      setJiraUsers(res.data || []);
-    } catch (error) {
-      // error handled silently
-    } finally {
-      setLoadingJiraUsers(false);
-    }
-  };
-
   const loadRequest = async () => {
     setLoadingRequest(true);
     try {
@@ -303,7 +443,6 @@ function AskScenarioPage() {
       const request = response.data;
       setOriginalRequest(request);
 
-      // Check if user can edit this request
       const isOwner = request.user_id === user?.user_id;
       const canEdit = isOwner || isEditor();
 
@@ -313,28 +452,7 @@ function AskScenarioPage() {
         return;
       }
 
-      // Populate form with existing data
-      setFormData({
-        requestType: request.requestType || 'scenario',
-        dataDomain: request.dataDomain || '',
-        name: request.name || '',
-        description: request.description || '',
-        has_suggestion: request.has_suggestion || false,
-        knows_steps: request.knows_steps || false,
-        steps: request.steps || [],
-        reason: request.reason || '',
-        // Team and assignee
-        team: request.team || '',
-        assignee: request.assignee || '',
-        assignee_name: request.assignee_name || '',
-        // Admin fields
-        status: request.status || '',
-        scenarioKey: request.scenarioKey || '',
-        configName: request.configName || '',
-        fulfilmentDate: request.fulfilmentDate ? request.fulfilmentDate.split('T')[0] : ''
-      });
-
-      // Set existing files
+      setFormData(buildFormDataFromRequest(request));
       setExistingFiles(request.files || []);
     } catch (error) {
       toast.error('Failed to load request');
@@ -356,20 +474,28 @@ function AskScenarioPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleAssigneeChange = (e) => {
+    const selectedUser = jiraUsers.find(u => u.accountId === e.target.value);
+    setFormData(prev => ({
+      ...prev,
+      assignee: e.target.value,
+      assignee_name: selectedUser ? selectedUser.displayName : ''
+    }));
+  };
+
   const handleAddStep = () => {
-    if (newStep.description.trim()) {
-      const stepData = {
-        description: newStep.description,
-        database: newStep.database || null,
-        query: newStep.query ? [newStep.query] : [],
-        order: formData.steps.length + 1
-      };
-      setFormData(prev => ({
-        ...prev,
-        steps: [...prev.steps, stepData]
-      }));
-      setNewStep({ description: '', database: '', query: '' });
-    }
+    if (!newStep.description.trim()) return;
+    const stepData = {
+      description: newStep.description,
+      database: newStep.database || null,
+      query: newStep.query ? [newStep.query] : [],
+      order: formData.steps.length + 1
+    };
+    setFormData(prev => ({
+      ...prev,
+      steps: [...prev.steps, stepData]
+    }));
+    setNewStep({ description: '', database: '', query: '' });
   };
 
   const handleRemoveStep = (index) => {
@@ -386,13 +512,6 @@ function AskScenarioPage() {
 
   const handleRemoveFile = (index) => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  // Strip HTML for plain text check
-  const stripHtml = (html) => {
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
   };
 
   const validateForm = () => {
@@ -512,7 +631,6 @@ function AskScenarioPage() {
     }
   };
 
-  // Show loading state while loading request in edit mode
   if (isEditMode && loadingRequest) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -521,15 +639,14 @@ function AskScenarioPage() {
     );
   }
 
+  const showAdminSettings = isEditMode && isEditor();
+
   return (
     <div className="w-full max-w-5xl mx-auto px-4">
       <div className="mb-6">
         {isEditMode && (
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-content-secondary hover:text-content mb-4"
-          >
+          <button type="button" onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-content-secondary hover:text-content mb-4">
             <ArrowLeft size={18} />
             Back
           </button>
@@ -556,12 +673,8 @@ function AskScenarioPage() {
                 <label className="block text-sm font-medium text-content-secondary mb-2">
                   Request Type <span className="text-red-500">*</span>
                 </label>
-                <select
-                  name="requestType"
-                  value={formData.requestType}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
-                >
+                <select name="requestType" value={formData.requestType} onChange={handleChange}
+                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content">
                   {requestTypes.length === 0 && (
                     <option value="scenario">New Scenario Request</option>
                   )}
@@ -570,18 +683,13 @@ function AskScenarioPage() {
                   ))}
                 </select>
               </div>
-              
+
               <div className="w-full">
                 <label className="block text-sm font-medium text-content-secondary mb-2">
                   Domain <span className="text-red-500">*</span>
                 </label>
-                <select
-                  name="dataDomain"
-                  value={formData.dataDomain}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
-                  required
-                >
+                <select name="dataDomain" value={formData.dataDomain} onChange={handleChange}
+                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content" required>
                   <option value="">Select a domain...</option>
                   {domains.map(domain => (
                     <option key={domain.key || domain.value} value={domain.key || domain.value}>
@@ -596,53 +704,37 @@ function AskScenarioPage() {
               <label className="block text-sm font-medium text-content-secondary mb-2">
                 Scenario Name <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
+              <input type="text" name="name" value={formData.name} onChange={handleChange}
                 className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
-                placeholder="Enter a descriptive name for your scenario"
-                required
-              />
+                placeholder="Enter a descriptive name for your scenario" required />
             </div>
 
             <div className="w-full">
               <label className="block text-sm font-medium text-content-secondary mb-2">
                 Description <span className="text-red-500">*</span>
               </label>
-              <RichTextEditor
-                value={formData.description}
+              <RichTextEditor value={formData.description}
                 onChange={(val) => handleRichTextChange('description', val)}
                 placeholder="Describe what you need this scenario to do. Include data requirements, expected output format, and any specific conditions..."
-                rows={8}
-              />
+                rows={8} />
             </div>
 
             <div className="w-full">
               <label className="block text-sm font-medium text-content-secondary mb-2">
                 Reason / Business Justification
               </label>
-              <RichTextEditor
-                value={formData.reason}
+              <RichTextEditor value={formData.reason}
                 onChange={(val) => handleRichTextChange('reason', val)}
                 placeholder="Why do you need this scenario? What business problem does it solve? (optional)"
-                rows={4}
-              />
+                rows={4} />
             </div>
 
-            {/* Team and Assignee - editable by all users */}
+            {/* Team and Assignee */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-3 border-t border-edge">
               <div className="w-full">
-                <label className="block text-sm font-medium text-content-secondary mb-2">
-                  Team
-                </label>
-                <select
-                  name="team"
-                  value={formData.team}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
-                >
+                <label className="block text-sm font-medium text-content-secondary mb-2">Team</label>
+                <select name="team" value={formData.team} onChange={handleChange}
+                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content">
                   <option value="">Select a team...</option>
                   {jiraBoards.map(board => (
                     <option key={board.id} value={board.name}>{board.name}</option>
@@ -654,22 +746,9 @@ function AskScenarioPage() {
               </div>
 
               <div className="w-full">
-                <label className="block text-sm font-medium text-content-secondary mb-2">
-                  Assignee
-                </label>
-                <select
-                  name="assignee"
-                  value={formData.assignee}
-                  onChange={(e) => {
-                    const selectedUser = jiraUsers.find(u => u.accountId === e.target.value);
-                    setFormData(prev => ({
-                      ...prev,
-                      assignee: e.target.value,
-                      assignee_name: selectedUser ? selectedUser.displayName : ''
-                    }));
-                  }}
-                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
-                >
+                <label className="block text-sm font-medium text-content-secondary mb-2">Assignee</label>
+                <select name="assignee" value={formData.assignee} onChange={handleAssigneeChange}
+                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content">
                   <option value="">Select an assignee...</option>
                   {jiraUsers.map(jUser => (
                     <option key={jUser.accountId} value={jUser.accountId}>
@@ -697,24 +776,14 @@ function AskScenarioPage() {
           <div className="space-y-5">
             <div className="flex flex-wrap items-center gap-6">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="has_suggestion"
-                  checked={formData.has_suggestion}
-                  onChange={handleChange}
-                  className="w-4 h-4 rounded border-edge text-primary-600 focus:ring-primary-500"
-                />
+                <input type="checkbox" name="has_suggestion" checked={formData.has_suggestion} onChange={handleChange}
+                  className="w-4 h-4 rounded border-edge text-primary-600 focus:ring-primary-500" />
                 <span className="text-sm text-content-secondary">I have suggestions for implementation</span>
               </label>
-              
+
               <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="knows_steps"
-                  checked={formData.knows_steps}
-                  onChange={handleChange}
-                  className="w-4 h-4 rounded border-edge text-primary-600 focus:ring-primary-500"
-                />
+                <input type="checkbox" name="knows_steps" checked={formData.knows_steps} onChange={handleChange}
+                  className="w-4 h-4 rounded border-edge text-primary-600 focus:ring-primary-500" />
                 <span className="text-sm text-content-secondary">I know the required steps</span>
               </label>
             </div>
@@ -722,8 +791,7 @@ function AskScenarioPage() {
             {(formData.has_suggestion || formData.knows_steps) && (
               <div className="border-t border-edge pt-5">
                 <h3 className="text-sm font-medium text-content-secondary mb-4">Suggested Steps</h3>
-                
-                {/* Existing Steps */}
+
                 {formData.steps.length > 0 && (
                   <div className="space-y-3 mb-5">
                     {formData.steps.map((step, index) => (
@@ -744,11 +812,8 @@ function AskScenarioPage() {
                             </pre>
                           )}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveStep(index)}
-                          className="flex-shrink-0 text-content-muted hover:text-red-600 p-1"
-                        >
+                        <button type="button" onClick={() => handleRemoveStep(index)}
+                          className="flex-shrink-0 text-content-muted hover:text-red-600 p-1">
                           <Trash2 size={18} />
                         </button>
                       </div>
@@ -756,46 +821,32 @@ function AskScenarioPage() {
                   </div>
                 )}
 
-                {/* Add New Step */}
                 <div className="bg-surface-secondary rounded-lg p-5 border border-edge space-y-4">
                   <div className="w-full">
                     <label className="block text-xs font-medium text-content-secondary mb-1">Step Description</label>
-                    <input
-                      type="text"
-                      value={newStep.description}
+                    <input type="text" value={newStep.description}
                       onChange={(e) => setNewStep(prev => ({ ...prev, description: e.target.value }))}
                       className="w-full px-4 py-2.5 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
-                      placeholder="What should this step do?"
-                    />
+                      placeholder="What should this step do?" />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="w-full">
                       <label className="block text-xs font-medium text-content-secondary mb-1">Database / Schema</label>
-                      <input
-                        type="text"
-                        value={newStep.database}
+                      <input type="text" value={newStep.database}
                         onChange={(e) => setNewStep(prev => ({ ...prev, database: e.target.value }))}
                         className="w-full px-4 py-2.5 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
-                        placeholder="e.g., sales_db.reporting"
-                      />
+                        placeholder="e.g., sales_db.reporting" />
                     </div>
                     <div className="w-full">
                       <label className="block text-xs font-medium text-content-secondary mb-1">SQL Query Hint</label>
-                      <input
-                        type="text"
-                        value={newStep.query}
+                      <input type="text" value={newStep.query}
                         onChange={(e) => setNewStep(prev => ({ ...prev, query: e.target.value }))}
                         className="w-full px-4 py-2.5 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
-                        placeholder="SELECT ... FROM ... WHERE ..."
-                      />
+                        placeholder="SELECT ... FROM ... WHERE ..." />
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleAddStep}
-                    disabled={!newStep.description.trim()}
-                    className="btn-secondary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
+                  <button type="button" onClick={handleAddStep} disabled={!newStep.description.trim()}
+                    className="btn-secondary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                     <Plus size={16} />
                     Add Step
                   </button>
@@ -806,198 +857,32 @@ function AskScenarioPage() {
         </div>
 
         {/* Admin Fields - Only for editors in edit mode */}
-        {isEditMode && isEditor() && (
-          <div className="card">
-            <div className="card-header">
-              <h2 className="text-lg font-semibold text-content">Admin Settings</h2>
-              <p className="text-sm text-content-muted mt-1">These fields are only visible to administrators and editors</p>
-            </div>
-            <div className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="w-full">
-                  <label className="block text-sm font-medium text-content-secondary mb-2">
-                    Status
-                  </label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
-                  >
-                    {statuses.map(status => (
-                      <option key={status.value} value={status.value}>{status.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="w-full">
-                  <label className="block text-sm font-medium text-content-secondary mb-2">
-                    Target Date
-                  </label>
-                  <input
-                    type="date"
-                    name="fulfilmentDate"
-                    value={formData.fulfilmentDate}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="w-full">
-                  <label className="block text-sm font-medium text-content-secondary mb-2">
-                    Scenario Key
-                  </label>
-                  <input
-                    type="text"
-                    name="scenarioKey"
-                    value={formData.scenarioKey}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
-                    placeholder="e.g., SC-001"
-                  />
-                </div>
-
-                <div className="w-full">
-                  <label className="block text-sm font-medium text-content-secondary mb-2">
-                    Config Name
-                  </label>
-                  <input
-                    type="text"
-                    name="configName"
-                    value={formData.configName}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
-                    placeholder="Configuration name"
-                  />
-                </div>
-              </div>
-
-              {/* Status Change Comment - Required when status is changed */}
-              {formData.status && originalRequest && formData.status !== originalRequest.status && (
-                <div className="w-full border-t border-edge pt-5">
-                  <label className="block text-sm font-medium text-content-secondary mb-2">
-                    Status Change Comment <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    name="statusComment"
-                    value={formData.statusComment}
-                    onChange={handleChange}
-                    rows={3}
-                    className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
-                    placeholder="Please provide a reason for this status change..."
-                    required
-                  />
-                  <p className="text-xs text-content-muted mt-1">
-                    This comment will be recorded in the workflow history.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
+        {showAdminSettings && (
+          <AdminSettingsSection
+            formData={formData}
+            handleChange={handleChange}
+            statuses={statuses}
+            originalRequest={originalRequest}
+          />
         )}
 
         {/* File Upload */}
-        <div className="card">
-          <div className="card-header">
-            <h2 className="text-lg font-semibold text-content">Sample Files</h2>
-            <p className="text-sm text-content-muted mt-1">Upload sample data files or screenshots to help us understand your requirements</p>
-          </div>
-          <div>
-            {/* Show existing files in edit mode */}
-            {isEditMode && existingFiles.length > 0 && (
-              <div className="mb-5 space-y-2">
-                <p className="text-sm font-medium text-content-secondary">Existing files:</p>
-                {existingFiles.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded bg-green-100 flex items-center justify-center text-green-600">
-                        <FileUp size={16} />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-content truncate">{file.file_name || file.name}</p>
-                        <p className="text-xs text-content-muted">{file.file_type} • v{file.version || 1}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="border-2 border-dashed border-edge rounded-lg p-8 text-center hover:border-primary-300 transition-colors">
-              <FileUp className="mx-auto text-content-muted mb-3" size={48} />
-              <p className="text-sm text-content-secondary mb-3">
-                {isEditMode ? 'Add more files' : 'Drag and drop files here, or click to browse'}
-              </p>
-              <p className="text-xs text-content-muted mb-4">
-                Supported: CSV, Excel, JSON, PDF, PNG, JPG (max 10MB each)
-              </p>
-              <input
-                type="file"
-                id="file-upload"
-                multiple
-                onChange={handleFileUpload}
-                className="hidden"
-                accept=".csv,.xlsx,.xls,.json,.pdf,.png,.jpg,.jpeg"
-              />
-              <label
-                htmlFor="file-upload"
-                className="btn-secondary cursor-pointer inline-block"
-              >
-                Choose Files
-              </label>
-            </div>
-
-            {uploadedFiles.length > 0 && (
-              <div className="mt-5 space-y-2">
-                <p className="text-sm font-medium text-content-secondary">{uploadedFiles.length} new file(s) to upload:</p>
-                {uploadedFiles.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg border border-edge">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded bg-primary-100 flex items-center justify-center text-primary-600">
-                        <FileUp size={16} />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-content truncate">{file.name}</p>
-                        <p className="text-xs text-content-muted">{(file.size / 1024).toFixed(1)} KB</p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveFile(index)}
-                      className="flex-shrink-0 text-content-muted hover:text-red-600 p-1"
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        <FileUploadSection
+          isEditMode={isEditMode}
+          existingFiles={existingFiles}
+          uploadedFiles={uploadedFiles}
+          handleFileUpload={handleFileUpload}
+          handleRemoveFile={handleRemoveFile}
+        />
 
         {/* Submit Button */}
         <div className="flex justify-end gap-4 pb-6">
-          <button
-            type="button"
-            onClick={() => isEditMode ? navigate(-1) : navigate('/dashboard')}
-            className="btn-secondary px-6"
-          >
+          <button type="button" onClick={() => isEditMode ? navigate(-1) : navigate('/dashboard')}
+            className="btn-secondary px-6">
             Cancel
           </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-primary flex items-center gap-2 px-6"
-          >
-            {loading ? (
-              <Loader2 className="animate-spin" size={18} />
-            ) : isEditMode ? (
-              <Save size={18} />
-            ) : (
-              <Send size={18} />
-            )}
+          <button type="submit" disabled={loading} className="btn-primary flex items-center gap-2 px-6">
+            <SubmitButtonIcon loading={loading} isEditMode={isEditMode} />
             {isEditMode ? 'Save Changes' : 'Submit Request'}
           </button>
         </div>

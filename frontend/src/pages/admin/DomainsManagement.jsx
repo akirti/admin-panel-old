@@ -256,6 +256,15 @@ function DomainForm({ formData, handleChange, setFormData, editingDomain, saving
 /* ─── Default sub-domain ─── */
 const EMPTY_SUBDOMAIN = { key: '', name: '', path: '' };
 
+/* ─── Default form data factory ─── */
+function getDefaultDomainFormData(domainTypes) {
+  return {
+    key: '', name: '', description: '', path: '', icon: '', order: 0,
+    type: domainTypes.length > 0 ? domainTypes[0].value : 'custom',
+    dataDomain: '', status: 'active', defaultSelected: false, subDomains: [],
+  };
+}
+
 /* ─── Build form data from existing domain ─── */
 function buildDomainFormData(domain) {
   return {
@@ -265,6 +274,35 @@ function buildDomainFormData(domain) {
     status: domain.status === 'active' ? 'active' : (domain.status || 'active'),
     defaultSelected: domain.defaultSelected || false, subDomains: domain.subDomains || [],
   };
+}
+
+/* ─── Domain submit handler (outside component) ─── */
+async function submitDomain(editingDomain, formData, onSuccess) {
+  if (editingDomain) {
+    await domainAPI.update(editingDomain._id, { _id: editingDomain._id, ...formData });
+    toast.success('Domain updated successfully');
+  } else {
+    await domainAPI.create(formData);
+    toast.success('Domain created successfully');
+  }
+  onSuccess();
+}
+
+/* ─── Domain delete handler (outside component) ─── */
+async function deleteDomain(domain, onSuccess) {
+  if (!confirm(`Are you sure you want to delete "${domain.name}"?`)) return;
+  try {
+    await domainAPI.delete(domain._id || domain.key);
+    toast.success('Domain deleted successfully');
+    onSuccess();
+  } catch (error) { toast.error(error.response?.data?.error || 'Failed to delete domain'); }
+}
+
+/* ─── Form change handler (outside component) ─── */
+function handleDomainFieldChange(e, setFormData) {
+  const { name, value } = e.target;
+  const parsedValue = name === 'order' ? parseInt(value) || 0 : value;
+  setFormData(prev => ({ ...prev, [name]: parsedValue }));
 }
 
 /* ─── Access Denied view ─── */
@@ -331,36 +369,31 @@ function DomainsManagement() {
 
   useEffect(() => { fetchDomains(); fetchDomainTypes(); }, []);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: name === 'order' ? parseInt(value) || 0 : value }));
-  };
+  const handleChange = (e) => handleDomainFieldChange(e, setFormData);
 
-  const getDefaultFormData = () => ({
-    key: '', name: '', description: '', path: '', icon: '', order: 0,
-    type: domainTypes.length > 0 ? domainTypes[0].value : 'custom',
-    dataDomain: '', status: 'active', defaultSelected: false, subDomains: [],
-  });
+  const resetModalState = () => {
+    setNewSubDomain({ ...EMPTY_SUBDOMAIN });
+  };
 
   const openCreateModal = () => {
     setEditingDomain(null);
-    setFormData(getDefaultFormData());
-    setNewSubDomain({ ...EMPTY_SUBDOMAIN });
+    setFormData(getDefaultDomainFormData(domainTypes));
+    resetModalState();
     setModalOpen(true);
   };
 
   const openEditModal = (domain) => {
     setEditingDomain(domain);
     setFormData(buildDomainFormData(domain));
-    setNewSubDomain({ ...EMPTY_SUBDOMAIN });
+    resetModalState();
     setModalOpen(true);
   };
 
   const closeModal = () => {
     setModalOpen(false);
     setEditingDomain(null);
-    setFormData(getDefaultFormData());
-    setNewSubDomain({ ...EMPTY_SUBDOMAIN });
+    setFormData(getDefaultDomainFormData(domainTypes));
+    resetModalState();
   };
 
   const addSubDomain = () => {
@@ -377,26 +410,12 @@ function DomainsManagement() {
     e.preventDefault();
     setSaving(true);
     try {
-      if (editingDomain) {
-        await domainAPI.update(editingDomain._id, { _id: editingDomain._id, ...formData });
-        toast.success('Domain updated successfully');
-      } else {
-        await domainAPI.create(formData);
-        toast.success('Domain created successfully');
-      }
-      fetchDomains(); closeModal();
+      await submitDomain(editingDomain, formData, () => { fetchDomains(); closeModal(); });
     } catch (error) { toast.error(error.response?.data?.error || 'Failed to save domain'); }
     finally { setSaving(false); }
   };
 
-  const handleDelete = async (domain) => {
-    if (!confirm(`Are you sure you want to delete "${domain.name}"?`)) return;
-    try {
-      await domainAPI.delete(domain._id || domain.key);
-      toast.success('Domain deleted successfully');
-      fetchDomains();
-    } catch (error) { toast.error(error.response?.data?.error || 'Failed to delete domain'); }
-  };
+  const handleDelete = (domain) => deleteDomain(domain, fetchDomains);
 
   const filteredDomains = domains.filter(domain =>
     domain.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -405,13 +424,15 @@ function DomainsManagement() {
 
   if (!isEditor()) return <DomainsAccessDenied />;
 
+  const modalTitle = editingDomain ? 'Edit Domain' : 'Create Domain';
+
   return (
     <div className="space-y-6">
       <DomainsHeader searchTerm={searchTerm} onSearchChange={setSearchTerm} onAddNew={openCreateModal} />
 
       <DomainsTable loading={loading} filteredDomains={filteredDomains} onEdit={openEditModal} onDelete={handleDelete} />
 
-      <Modal isOpen={modalOpen} onClose={closeModal} title={editingDomain ? 'Edit Domain' : 'Create Domain'} size="lg">
+      <Modal isOpen={modalOpen} onClose={closeModal} title={modalTitle} size="lg">
         <DomainForm
           formData={formData} handleChange={handleChange} setFormData={setFormData}
           editingDomain={editingDomain} saving={saving} domainTypes={domainTypes}

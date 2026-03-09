@@ -144,6 +144,55 @@ const ScenarioForm = ({ formData, editingScenario, domains, saving, handleChange
   </form>
 );
 
+// --- Helper functions outside component ---
+
+const EMPTY_SCENARIO_FORM = {
+  key: '', name: '', dataDomain: '', description: '', fullDescription: '', path: '', order: 0,
+};
+
+function buildScenarioFormData(scenario) {
+  return {
+    key: scenario.key, name: scenario.name, dataDomain: scenario.dataDomain,
+    description: scenario.description || '', fullDescription: scenario.fullDescription || '',
+    path: scenario.path || '', order: scenario.order || 0,
+  };
+}
+
+function filterScenariosList(scenarios, searchTerm, filterDomain) {
+  return scenarios.filter(scenario => {
+    const lowerSearch = searchTerm.toLowerCase();
+    const matchesSearch = scenario.name.toLowerCase().includes(lowerSearch) || scenario.key.toLowerCase().includes(lowerSearch);
+    const matchesDomain = !filterDomain || scenario.dataDomain === filterDomain;
+    return matchesSearch && matchesDomain;
+  });
+}
+
+const ScenariosAccessDenied = () => (
+  <div className="text-center py-12">
+    <FileText className="mx-auto text-content-muted mb-4" size={48} />
+    <h2 className="text-xl font-semibold text-content mb-2">Access Denied</h2>
+    <p className="text-content-muted">Only Super Administrators can manage scenarios.</p>
+  </div>
+);
+
+const ScenariosFilterBar = ({ searchTerm, onSearchChange, filterDomain, onFilterDomainChange, domains }) => (
+  <div className="flex items-center gap-4">
+    <div className="relative flex-1 max-w-xs">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
+      <input type="text" placeholder="Search scenarios..." value={searchTerm} onChange={(e) => onSearchChange(e.target.value)} className="input-field pl-10" />
+    </div>
+    <div className="relative">
+      <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
+      <select value={filterDomain} onChange={(e) => onFilterDomainChange(e.target.value)} className="input-field pl-10 pr-8">
+        <option value="">All Domains</option>
+        {domains.map((domain) => (
+          <option key={domain.key} value={domain.key}>{domain.name}</option>
+        ))}
+      </select>
+    </div>
+  </div>
+);
+
 // --- Main Component ---
 
 function ScenariosManagement() {
@@ -155,9 +204,7 @@ function ScenariosManagement() {
   const [filterDomain, setFilterDomain] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingScenario, setEditingScenario] = useState(null);
-  const [formData, setFormData] = useState({
-    key: '', name: '', dataDomain: '', description: '', fullDescription: '', path: '', order: 0,
-  });
+  const [formData, setFormData] = useState({ ...EMPTY_SCENARIO_FORM });
   const [saving, setSaving] = useState(false);
 
   const fetchData = async () => {
@@ -182,17 +229,13 @@ function ScenariosManagement() {
 
   const openCreateModal = () => {
     setEditingScenario(null);
-    setFormData({ key: '', name: '', dataDomain: domains[0]?.key || '', description: '', fullDescription: '', path: '', order: 0 });
+    setFormData({ ...EMPTY_SCENARIO_FORM, dataDomain: domains[0]?.key || '' });
     setModalOpen(true);
   };
 
   const openEditModal = (scenario) => {
     setEditingScenario(scenario);
-    setFormData({
-      key: scenario.key, name: scenario.name, dataDomain: scenario.dataDomain,
-      description: scenario.description || '', fullDescription: scenario.fullDescription || '',
-      path: scenario.path || '', order: scenario.order || 0,
-    });
+    setFormData(buildScenarioFormData(scenario));
     setModalOpen(true);
   };
 
@@ -229,21 +272,11 @@ function ScenariosManagement() {
     }
   };
 
-  const filteredScenarios = scenarios.filter(scenario => {
-    const matchesSearch = scenario.name.toLowerCase().includes(searchTerm.toLowerCase()) || scenario.key.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDomain = !filterDomain || scenario.dataDomain === filterDomain;
-    return matchesSearch && matchesDomain;
-  });
-
   if (!isSuperAdmin()) {
-    return (
-      <div className="text-center py-12">
-        <FileText className="mx-auto text-content-muted mb-4" size={48} />
-        <h2 className="text-xl font-semibold text-content mb-2">Access Denied</h2>
-        <p className="text-content-muted">Only Super Administrators can manage scenarios.</p>
-      </div>
-    );
+    return <ScenariosAccessDenied />;
   }
+
+  const filteredScenarios = filterScenariosList(scenarios, searchTerm, filterDomain);
 
   return (
     <div className="space-y-6">
@@ -254,38 +287,20 @@ function ScenariosManagement() {
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
-          <input type="text" placeholder="Search scenarios..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="input-field pl-10" />
-        </div>
-        <div className="relative">
-          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
-          <select value={filterDomain} onChange={(e) => setFilterDomain(e.target.value)} className="input-field pl-10 pr-8">
-            <option value="">All Domains</option>
-            {domains.map((domain) => (
-              <option key={domain.key} value={domain.key}>{domain.name}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <ScenariosFilterBar
+        searchTerm={searchTerm} onSearchChange={setSearchTerm}
+        filterDomain={filterDomain} onFilterDomainChange={setFilterDomain}
+        domains={domains}
+      />
 
-      {/* Scenarios Table */}
       <div className="card overflow-hidden">
         <ScenariosTable scenarios={filteredScenarios} loading={loading} onEdit={openEditModal} onDelete={handleDelete} />
       </div>
 
-      {/* Create/Edit Modal */}
       <Modal isOpen={modalOpen} onClose={closeModal} title={editingScenario ? 'Edit Scenario' : 'Create Scenario'} size="md">
         <ScenarioForm
-          formData={formData}
-          editingScenario={editingScenario}
-          domains={domains}
-          saving={saving}
-          handleChange={handleChange}
-          handleSubmit={handleSubmit}
-          closeModal={closeModal}
+          formData={formData} editingScenario={editingScenario} domains={domains}
+          saving={saving} handleChange={handleChange} handleSubmit={handleSubmit} closeModal={closeModal}
         />
       </Modal>
     </div>

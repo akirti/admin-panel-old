@@ -338,6 +338,46 @@ function ConfigsFilters({ search, onSearchChange, filterType, onFilterTypeChange
 /* ─── Default form data ─── */
 const DEFAULT_CONFIG_FORM = { key: '', type: 'process-config', queries: {}, logics: {}, operations: {}, lookups: {}, data: {} };
 
+/* ─── Modals Section ─── */
+function ConfigModals({ modalState, formProps, uploadProps, detailProps, versionsProps }) {
+  const { modalOpen, uploadModalOpen, detailModalOpen, versionsModalOpen, editingItem, selectedConfig } = modalState;
+
+  return (
+    <>
+      <Modal isOpen={modalOpen} onClose={formProps.onClose} title={editingItem ? 'Edit Configuration' : 'Add Configuration'} size="xl">
+        <ConfigForm {...formProps.formFields} onSubmit={formProps.onSubmit} onCancel={formProps.onClose} />
+      </Modal>
+
+      <Modal isOpen={uploadModalOpen} onClose={uploadProps.onClose} title="Upload Configuration File" size="lg">
+        <UploadForm {...uploadProps.fields} onSubmit={uploadProps.onSubmit} onCancel={uploadProps.onCancel} />
+      </Modal>
+
+      <Modal isOpen={detailModalOpen} onClose={detailProps.onClose} title="Configuration Details" size="xl">
+        <ConfigDetailContent selectedConfig={selectedConfig} configTypes={detailProps.configTypes} onClose={detailProps.onClose} />
+      </Modal>
+
+      <Modal isOpen={versionsModalOpen} onClose={versionsProps.onClose} title="File Versions" size="lg">
+        <VersionsContent versions={versionsProps.versions} selectedConfig={selectedConfig} onDownloadVersion={versionsProps.onDownloadVersion} onClose={versionsProps.onClose} />
+      </Modal>
+    </>
+  );
+}
+
+/* ─── Upload handler helper ─── */
+function buildUploadFormData(file, key, type) {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('key', key);
+  if (type) fd.append('config_type', type);
+  return fd;
+}
+
+/* ─── Download dispatcher ─── */
+async function handleDownloadItem(item) {
+  if (item.type === 'gcs-data') { await downloadGcsConfig(item); }
+  else { await downloadJsonConfig(item); }
+}
+
 /* ═══════════════════════════════════════════════════════════
    Main Component
    ═══════════════════════════════════════════════════════════ */
@@ -424,12 +464,8 @@ const ConfigurationsManagement = () => {
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!uploadFile || !uploadKey) { toast.error('Please select a file and enter a key'); return; }
-    const formDataUpload = new FormData();
-    formDataUpload.append('file', uploadFile);
-    formDataUpload.append('key', uploadKey);
-    if (uploadType) formDataUpload.append('config_type', uploadType);
     try {
-      const response = await configurationsAPI.upload(formDataUpload, uploadKey, uploadType);
+      const response = await configurationsAPI.upload(buildUploadFormData(uploadFile, uploadKey, uploadType), uploadKey, uploadType);
       toast.success(response?.data?.message || 'File uploaded successfully');
       setUploadModalOpen(false); setUploadFile(null); setUploadKey(''); setUploadType(''); fetchData();
     } catch (error) {
@@ -439,8 +475,7 @@ const ConfigurationsManagement = () => {
 
   const handleDownload = async (item) => {
     try {
-      if (item.type === 'gcs-data') { await downloadGcsConfig(item); }
-      else { await downloadJsonConfig(item); }
+      await handleDownloadItem(item);
       toast.success('Download started');
     } catch (error) { toast.error('Failed to download'); }
   };
@@ -488,6 +523,27 @@ const ConfigurationsManagement = () => {
 
   const columns = buildColumns({ configTypes, handleViewDetails, openEditModal, handleDownload, handleViewVersions, handleDelete });
 
+  const closeFormModal = () => { setModalOpen(false); resetForm(); };
+  const closeUploadModal = () => { setUploadModalOpen(false); setUploadFile(null); setUploadKey(''); setUploadType(''); };
+
+  const modalState = { modalOpen, uploadModalOpen, detailModalOpen, versionsModalOpen, editingItem, selectedConfig };
+
+  const formProps = {
+    onClose: closeFormModal,
+    onSubmit: editingItem ? handleUpdate : handleCreate,
+    formFields: { formData, setFormData, editingItem, jsonInput, onJsonInputChange: handleJsonInputChange, configTypes },
+  };
+
+  const uploadProps = {
+    onClose: closeUploadModal,
+    onCancel: () => { setUploadModalOpen(false); setUploadFile(null); setUploadKey(''); },
+    onSubmit: handleUpload,
+    fields: { uploadKey, setUploadKey, uploadType, setUploadType, uploadFile, setUploadFile, configTypes },
+  };
+
+  const detailProps = { onClose: () => setDetailModalOpen(false), configTypes };
+  const versionsProps = { versions, onDownloadVersion: handleDownloadVersion, onClose: () => setVersionsModalOpen(false) };
+
   return (
     <div className="space-y-6">
       <ConfigsHeader onOpenUpload={() => setUploadModalOpen(true)} onAddNew={() => { resetForm(); setModalOpen(true); }} />
@@ -501,34 +557,7 @@ const ConfigurationsManagement = () => {
         )}
       </Card>
 
-      <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); resetForm(); }} title={editingItem ? 'Edit Configuration' : 'Add Configuration'} size="xl">
-        <ConfigForm
-          formData={formData} setFormData={setFormData} editingItem={editingItem}
-          jsonInput={jsonInput} onJsonInputChange={handleJsonInputChange}
-          configTypes={configTypes}
-          onSubmit={editingItem ? handleUpdate : handleCreate}
-          onCancel={() => { setModalOpen(false); resetForm(); }}
-        />
-      </Modal>
-
-      <Modal isOpen={uploadModalOpen} onClose={() => { setUploadModalOpen(false); setUploadFile(null); setUploadKey(''); setUploadType(''); }} title="Upload Configuration File" size="lg">
-        <UploadForm
-          uploadKey={uploadKey} setUploadKey={setUploadKey}
-          uploadType={uploadType} setUploadType={setUploadType}
-          uploadFile={uploadFile} setUploadFile={setUploadFile}
-          configTypes={configTypes}
-          onSubmit={handleUpload}
-          onCancel={() => { setUploadModalOpen(false); setUploadFile(null); setUploadKey(''); }}
-        />
-      </Modal>
-
-      <Modal isOpen={detailModalOpen} onClose={() => setDetailModalOpen(false)} title="Configuration Details" size="xl">
-        <ConfigDetailContent selectedConfig={selectedConfig} configTypes={configTypes} onClose={() => setDetailModalOpen(false)} />
-      </Modal>
-
-      <Modal isOpen={versionsModalOpen} onClose={() => setVersionsModalOpen(false)} title="File Versions" size="lg">
-        <VersionsContent versions={versions} selectedConfig={selectedConfig} onDownloadVersion={handleDownloadVersion} onClose={() => setVersionsModalOpen(false)} />
-      </Modal>
+      <ConfigModals modalState={modalState} formProps={formProps} uploadProps={uploadProps} detailProps={detailProps} versionsProps={versionsProps} />
     </div>
   );
 };

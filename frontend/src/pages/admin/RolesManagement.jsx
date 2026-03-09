@@ -303,6 +303,152 @@ const RoleUsersModal = ({ isOpen, onClose, selectedRole, loadingUsers, roleUsers
   </Modal>
 );
 
+const AccessDeniedView = () => (
+  <div className="text-center py-12">
+    <Shield className="mx-auto text-content-muted mb-4" size={48} />
+    <h2 className="text-xl font-semibold text-content mb-2">Access Denied</h2>
+    <p className="text-content-muted">Only Super Administrators can access this page.</p>
+  </div>
+);
+
+const AlertMessages = ({ error, success }) => (
+  <>
+    {error && (
+      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+        <AlertCircle size={20} /> {error}
+      </div>
+    )}
+    {success && (
+      <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center gap-2">
+        <CheckCircle size={20} /> {success}
+      </div>
+    )}
+  </>
+);
+
+const RolesHeader = ({ total, onExport, onCreateClick }) => (
+  <div className="flex items-center justify-between">
+    <div>
+      <h1 className="text-2xl font-bold text-content">Roles Management</h1>
+      <p className="text-content-muted text-sm mt-1">Manage roles and their permissions ({total} total)</p>
+    </div>
+    <div className="flex gap-2">
+      <div className="relative">
+        <button className="btn btn-secondary flex items-center gap-2" onClick={() => document.getElementById('export-menu').classList.toggle('hidden')}>
+          <Download size={16} /> Export
+        </button>
+        <div id="export-menu" className="hidden absolute right-0 mt-1 bg-surface border rounded-lg shadow-lg z-10">
+          <button className="block w-full px-4 py-2 text-left hover:bg-surface-hover" onClick={() => { onExport('csv'); document.getElementById('export-menu').classList.add('hidden'); }}>Export as CSV</button>
+          <button className="block w-full px-4 py-2 text-left hover:bg-surface-hover" onClick={() => { onExport('json'); document.getElementById('export-menu').classList.add('hidden'); }}>Export as JSON</button>
+        </div>
+      </div>
+      <button className="btn btn-primary flex items-center gap-2" onClick={onCreateClick}>
+        <Plus size={16} /> Add Role
+      </button>
+    </div>
+  </div>
+);
+
+const RolesFilterBar = ({ search, onSearchChange, filterDomain, onFilterDomainChange, filterPermission, onFilterPermissionChange, domains, permissions, onClearFilters }) => (
+  <div className="card">
+    <div className="flex flex-wrap gap-4">
+      <div className="relative flex-1 min-w-[200px]">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
+        <input type="text" placeholder="Search roles by name or ID..." className="input pl-10 w-full" value={search} onChange={(e) => onSearchChange(e.target.value)} />
+      </div>
+      <div className="flex items-center gap-2">
+        <Filter size={18} className="text-content-muted" />
+        <select className="input min-w-[150px]" value={filterDomain} onChange={(e) => onFilterDomainChange(e.target.value)}>
+          <option value="">All Domains</option>
+          {domains.map((domain) => (
+            <option key={domain.key || domain._id} value={domain.key || domain._id}>{domain.name}</option>
+          ))}
+        </select>
+        <select className="input min-w-[150px]" value={filterPermission} onChange={(e) => onFilterPermissionChange(e.target.value)}>
+          <option value="">All Permissions</option>
+          {permissions.map((perm) => (
+            <option key={perm.key} value={perm.key}>{perm.name || perm.key}</option>
+          ))}
+        </select>
+        {(filterDomain || filterPermission) && (
+          <button className="btn btn-secondary btn-sm" onClick={onClearFilters}>Clear Filters</button>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
+const RolesPagination = ({ page, limit, total, totalPages, onPageChange }) => {
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-between px-4 py-3 border-t border-edge">
+      <p className="text-sm text-content-muted">
+        Showing {page * limit + 1} to {Math.min((page + 1) * limit, total)} of {total} roles
+      </p>
+      <div className="flex items-center gap-2">
+        <button onClick={() => onPageChange(Math.max(0, page - 1))} disabled={page === 0} className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-content-muted">
+          <ChevronLeft size={20} />
+        </button>
+        <span className="text-sm text-content-muted">Page {page + 1} of {totalPages}</span>
+        <button onClick={() => onPageChange(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-content-muted">
+          <ChevronRight size={20} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// --- Helper functions outside component ---
+
+const EMPTY_FORM = { roleId: '', name: '', description: '', type: 'custom', permissions: [], domains: [], status: 'active', priority: 0 };
+
+function groupPermissionsByModule(permissions) {
+  return permissions.reduce((acc, perm) => {
+    const module = perm.module || 'Other';
+    if (!acc[module]) acc[module] = [];
+    acc[module].push(perm);
+    return acc;
+  }, {});
+}
+
+function buildRoleFetchParams(page, limit, debouncedSearch, filterDomain, filterPermission) {
+  const params = { page, limit };
+  if (debouncedSearch) params.search = debouncedSearch;
+  if (filterDomain) params.domain = filterDomain;
+  if (filterPermission) params.permission = filterPermission;
+  return params;
+}
+
+function buildFormDataFromRole(role) {
+  return {
+    roleId: role.roleId || '', name: role.name || '', description: role.description || '',
+    type: role.type || 'custom', permissions: role.permissions || [], domains: role.domains || [],
+    status: role.status || 'active', priority: role.priority || 0,
+  };
+}
+
+function checkPermissionSelected(formPermissions, perm) {
+  return formPermissions.includes(perm._id) || formPermissions.includes(perm.permissionId) || formPermissions.includes(perm.key);
+}
+
+function checkDomainSelected(formDomains, domain) {
+  return formDomains.includes(domain._id) || formDomains.includes(domain.domainId) || formDomains.includes(domain.domainKey) || formDomains.includes(domain.key);
+}
+
+async function downloadExport(exportFn, format, filename) {
+  const response = await exportFn();
+  const mimeType = format === 'csv' ? 'text/csv' : 'application/json';
+  const blob = new Blob([response.data], { type: mimeType });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}
+
 // --- Main Component ---
 
 const RolesManagement = () => {
@@ -331,10 +477,7 @@ const RolesManagement = () => {
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRole, setEditingRole] = useState(null);
-  const [formData, setFormData] = useState({
-    roleId: '', name: '', description: '', type: 'custom',
-    permissions: [], domains: [], status: 'active', priority: 0,
-  });
+  const [formData, setFormData] = useState({ ...EMPTY_FORM });
 
   // Users modal state
   const [usersModalOpen, setUsersModalOpen] = useState(false);
@@ -352,10 +495,7 @@ const RolesManagement = () => {
   const fetchRoles = useCallback(async () => {
     try {
       setLoading(true);
-      const params = { page, limit };
-      if (debouncedSearch) params.search = debouncedSearch;
-      if (filterDomain) params.domain = filterDomain;
-      if (filterPermission) params.permission = filterPermission;
+      const params = buildRoleFetchParams(page, limit, debouncedSearch, filterDomain, filterPermission);
       const response = await rolesAPI.list(params);
       const responseData = response?.data || {};
       setRoles(responseData.data || []);
@@ -390,32 +530,21 @@ const RolesManagement = () => {
 
   // Clear messages after timeout
   useEffect(() => {
-    if (error || success) {
-      const timer = setTimeout(() => { setError(''); setSuccess(''); }, 5000);
-      return () => clearTimeout(timer);
-    }
+    if (!error && !success) return;
+    const timer = setTimeout(() => { setError(''); setSuccess(''); }, 5000);
+    return () => clearTimeout(timer);
   }, [error, success]);
 
-  // Group permissions by module
-  const groupedPermissions = permissions.reduce((acc, perm) => {
-    const module = perm.module || 'Other';
-    if (!acc[module]) acc[module] = [];
-    acc[module].push(perm);
-    return acc;
-  }, {});
+  const groupedPermissions = groupPermissionsByModule(permissions);
 
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
     setFormData((prev) => ({ ...prev, [name]: type === 'number' ? parseInt(value, 10) : value }));
   };
 
-  const isPermissionSelected = (perm) => {
-    return formData.permissions.includes(perm._id) || formData.permissions.includes(perm.permissionId) || formData.permissions.includes(perm.key);
-  };
+  const isPermissionSelected = (perm) => checkPermissionSelected(formData.permissions, perm);
 
-  const isDomainSelected = (domain) => {
-    return formData.domains.includes(domain._id) || formData.domains.includes(domain.domainId) || formData.domains.includes(domain.domainKey) || formData.domains.includes(domain.key);
-  };
+  const isDomainSelected = (domain) => checkDomainSelected(formData.domains, domain);
 
   const handlePermissionToggle = (perm) => {
     const isSelected = isPermissionSelected(perm);
@@ -459,17 +588,13 @@ const RolesManagement = () => {
 
   const openCreateModal = () => {
     setEditingRole(null);
-    setFormData({ roleId: '', name: '', description: '', type: 'custom', permissions: [], domains: [], status: 'active', priority: 0 });
+    setFormData({ ...EMPTY_FORM });
     setModalOpen(true);
   };
 
   const openEditModal = (role) => {
     setEditingRole(role);
-    setFormData({
-      roleId: role.roleId || '', name: role.name || '', description: role.description || '',
-      type: role.type || 'custom', permissions: role.permissions || [], domains: role.domains || [],
-      status: role.status || 'active', priority: role.priority || 0,
-    });
+    setFormData(buildFormDataFromRole(role));
     setModalOpen(true);
   };
 
@@ -527,131 +652,50 @@ const RolesManagement = () => {
 
   const handleExport = async (format) => {
     try {
-      const response = format === 'csv' ? await exportAPI.roles.csv() : await exportAPI.roles.json();
-      const blob = new Blob([response.data], { type: format === 'csv' ? 'text/csv' : 'application/json' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `roles_export.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      const exportFn = format === 'csv' ? exportAPI.roles.csv : exportAPI.roles.json;
+      await downloadExport(exportFn, format, `roles_export.${format}`);
       setSuccess(`Exported roles as ${format.toUpperCase()}`);
     } catch (err) {
       setError('Failed to export roles');
     }
   };
 
+  const handleFilterDomainChange = (value) => { setFilterDomain(value); setPage(0); };
+  const handleFilterPermissionChange = (value) => { setFilterPermission(value); setPage(0); };
+  const handleClearFilters = () => { setFilterDomain(''); setFilterPermission(''); setPage(0); };
+  const closeModal = () => setModalOpen(false);
+
   if (!isSuperAdmin()) {
-    return (
-      <div className="text-center py-12">
-        <Shield className="mx-auto text-content-muted mb-4" size={48} />
-        <h2 className="text-xl font-semibold text-content mb-2">Access Denied</h2>
-        <p className="text-content-muted">Only Super Administrators can access this page.</p>
-      </div>
-    );
+    return <AccessDeniedView />;
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-content">Roles Management</h1>
-          <p className="text-content-muted text-sm mt-1">Manage roles and their permissions ({total} total)</p>
-        </div>
-        <div className="flex gap-2">
-          <div className="relative">
-            <button className="btn btn-secondary flex items-center gap-2" onClick={() => document.getElementById('export-menu').classList.toggle('hidden')}>
-              <Download size={16} /> Export
-            </button>
-            <div id="export-menu" className="hidden absolute right-0 mt-1 bg-surface border rounded-lg shadow-lg z-10">
-              <button className="block w-full px-4 py-2 text-left hover:bg-surface-hover" onClick={() => { handleExport('csv'); document.getElementById('export-menu').classList.add('hidden'); }}>Export as CSV</button>
-              <button className="block w-full px-4 py-2 text-left hover:bg-surface-hover" onClick={() => { handleExport('json'); document.getElementById('export-menu').classList.add('hidden'); }}>Export as JSON</button>
-            </div>
-          </div>
-          <button className="btn btn-primary flex items-center gap-2" onClick={openCreateModal}>
-            <Plus size={16} /> Add Role
-          </button>
-        </div>
-      </div>
+      <RolesHeader total={total} onExport={handleExport} onCreateClick={openCreateModal} />
+      <AlertMessages error={error} success={success} />
 
-      {/* Alerts */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
-          <AlertCircle size={20} /> {error}
-        </div>
-      )}
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center gap-2">
-          <CheckCircle size={20} /> {success}
-        </div>
-      )}
+      <RolesFilterBar
+        search={search} onSearchChange={setSearch}
+        filterDomain={filterDomain} onFilterDomainChange={handleFilterDomainChange}
+        filterPermission={filterPermission} onFilterPermissionChange={handleFilterPermissionChange}
+        domains={domains} permissions={permissions} onClearFilters={handleClearFilters}
+      />
 
-      {/* Search and Filters */}
-      <div className="card">
-        <div className="flex flex-wrap gap-4">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
-            <input type="text" placeholder="Search roles by name or ID..." className="input pl-10 w-full" value={search} onChange={(e) => setSearch(e.target.value)} />
-          </div>
-          <div className="flex items-center gap-2">
-            <Filter size={18} className="text-content-muted" />
-            <select className="input min-w-[150px]" value={filterDomain} onChange={(e) => { setFilterDomain(e.target.value); setPage(0); }}>
-              <option value="">All Domains</option>
-              {domains.map((domain) => (
-                <option key={domain.key || domain._id} value={domain.key || domain._id}>{domain.name}</option>
-              ))}
-            </select>
-            <select className="input min-w-[150px]" value={filterPermission} onChange={(e) => { setFilterPermission(e.target.value); setPage(0); }}>
-              <option value="">All Permissions</option>
-              {permissions.map((perm) => (
-                <option key={perm.key} value={perm.key}>{perm.name || perm.key}</option>
-              ))}
-            </select>
-            {(filterDomain || filterPermission) && (
-              <button className="btn btn-secondary btn-sm" onClick={() => { setFilterDomain(''); setFilterPermission(''); setPage(0); }}>Clear Filters</button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Roles Table */}
       <div className="card overflow-hidden">
         <RolesTable roles={roles} loading={loading} onShowUsers={showUsers} onEdit={openEditModal} onToggleStatus={handleToggleStatus} onDelete={handleDelete} />
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-edge">
-            <p className="text-sm text-content-muted">
-              Showing {page * limit + 1} to {Math.min((page + 1) * limit, total)} of {total} roles
-            </p>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-content-muted">
-                <ChevronLeft size={20} />
-              </button>
-              <span className="text-sm text-content-muted">Page {page + 1} of {totalPages}</span>
-              <button onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} className="p-2 rounded-lg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-content-muted">
-                <ChevronRight size={20} />
-              </button>
-            </div>
-          </div>
-        )}
+        <RolesPagination page={page} limit={limit} total={total} totalPages={totalPages} onPageChange={setPage} />
       </div>
 
-      {/* Create/Edit Modal */}
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editingRole ? 'Edit Role' : 'Create Role'} size="xl">
+      <Modal isOpen={modalOpen} onClose={closeModal} title={editingRole ? 'Edit Role' : 'Create Role'} size="xl">
         <RoleForm
           formData={formData} editingRole={editingRole} handleInputChange={handleInputChange} handleSubmit={handleSubmit}
           groupedPermissions={groupedPermissions} isPermissionSelected={isPermissionSelected} handlePermissionToggle={handlePermissionToggle}
           handleSelectAllPermissions={handleSelectAllPermissions} handleSelectAllModule={handleSelectAllModule}
           domains={domains} isDomainSelected={isDomainSelected} handleDomainToggle={handleDomainToggle} handleSelectAllDomains={handleSelectAllDomains}
-          onClose={() => setModalOpen(false)}
+          onClose={closeModal}
         />
       </Modal>
 
-      {/* Users Modal */}
       <RoleUsersModal isOpen={usersModalOpen} onClose={() => setUsersModalOpen(false)} selectedRole={selectedRole} loadingUsers={loadingUsers} roleUsers={roleUsers} />
     </div>
   );

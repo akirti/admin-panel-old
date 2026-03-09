@@ -37,6 +37,170 @@ function getStatusLabel(request) {
   return STATUS_LABEL_MAP[request.status] || request.statusDescription || request.status;
 }
 
+function StatCard({ label, value, icon, valueClassName }) {
+  return (
+    <div className="stat-card">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="stat-label">{label}</p>
+          <p className={valueClassName || 'stat-value'}>{value}</p>
+        </div>
+        {icon}
+      </div>
+    </div>
+  );
+}
+
+function getDomainAccessLabel(roles) {
+  const isAdmin = roles?.some(r => ['super-administrator', 'administrator'].includes(r));
+  return isAdmin ? 'All' : 'None';
+}
+
+function QuickActionLink({ to, icon, title, subtitle, className }) {
+  return (
+    <Link to={to} className={`card hover:shadow-md hover:border-primary-200 transition-all group ${className || ''}`}>
+      <div className="flex items-center gap-4">
+        {icon}
+        <div className="flex-1">
+          <h3 className="font-semibold text-content">{title}</h3>
+          <p className="text-sm text-content-muted">{subtitle}</p>
+        </div>
+        <ArrowRight className="text-content-muted group-hover:text-primary-600 transition-colors" size={20} />
+      </div>
+    </Link>
+  );
+}
+
+function RecentRequestsSection({ recent }) {
+  if (!recent || recent.length === 0) return null;
+  return (
+    <div className="card">
+      <div className="card-header flex items-center justify-between">
+        <h3 className="section-title">Recent Requests</h3>
+        <Link to="/my-requests" className="text-primary-600 hover:text-primary-700 text-sm font-medium">
+          View all →
+        </Link>
+      </div>
+      <div className="divide-y divide-edge">
+        {recent.map((request) => (
+          <Link
+            key={request.requestId}
+            to={`/my-requests/${request.requestId}`}
+            className="flex items-center justify-between p-4 hover:bg-surface-hover transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-sm text-primary-600">{request.requestId}</span>
+              <span className="text-content">{request.name}</span>
+            </div>
+            <Badge variant={getStatusVariant(request.status)}>
+              {getStatusLabel(request)}
+            </Badge>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DomainsListSection({ loading, domains }) {
+  return (
+    <div className="card">
+      <div className="card-header flex items-center justify-between">
+        <h3 className="section-title">Your Domains</h3>
+        <Link to="/domains" className="text-primary-600 hover:text-primary-700 text-sm font-medium">
+          View all →
+        </Link>
+      </div>
+      {loading && (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        </div>
+      )}
+      {!loading && domains.length === 0 && (
+        <p className="text-content-muted text-center py-8">
+          No domains available. Contact your administrator.
+        </p>
+      )}
+      {!loading && domains.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {domains.slice(0, 6).map((domain) => (
+            <Link
+              key={domain.key}
+              to={`/domains/${domain.key}`}
+              className="p-4 border border-edge rounded-xl hover:border-primary-300 hover:bg-primary-50 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
+                  <Layers className="text-primary-600" size={20} />
+                </div>
+                <div>
+                  <h4 className="font-medium text-content">{domain.name}</h4>
+                  <p className="text-sm text-content-muted">{domain.key}</p>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BadgeList({ items, variant, emptyText }) {
+  if (!items || items.length === 0) {
+    return <span className="text-content-muted text-sm">{emptyText}</span>;
+  }
+  return items.map((item) => (
+    <Badge key={item} variant={variant}>
+      {item}
+    </Badge>
+  ));
+}
+
+function UserAccessSection({ user }) {
+  return (
+    <div className="card">
+      <h3 className="section-title mb-4">Your Access</h3>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div>
+          <p className="text-sm text-content-muted mb-2">Roles</p>
+          <div className="flex flex-wrap gap-1">
+            {user?.roles?.map((role) => (
+              <Badge key={role} variant="primary">
+                {role}
+              </Badge>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-sm text-content-muted mb-2">Groups</p>
+          <div className="flex flex-wrap gap-1">
+            <BadgeList items={user?.groups} variant="success" emptyText="None" />
+          </div>
+        </div>
+        <div>
+          <p className="text-sm text-content-muted mb-2">Domains Access</p>
+          <div className="flex flex-wrap gap-1">
+            {user?.domains?.length > 0 ? user.domains.map((domain) => (
+              <Badge key={domain} variant="warning">
+                {domain}
+              </Badge>
+            )) : (
+              <Badge variant="default">
+                {getDomainAccessLabel(user?.roles)}
+              </Badge>
+            )}
+          </div>
+        </div>
+        <div>
+          <p className="text-sm text-content-muted mb-2">Email</p>
+          <p className="text-content truncate">{user?.email}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DashboardPage() {
   const { user, isSuperAdmin, canManageUsers } = useAuth();
   const [domains, setDomains] = useState([]);
@@ -70,6 +234,10 @@ function DashboardPage() {
     fetchData();
   }, []);
 
+  const adminPath = isSuperAdmin() ? '/admin' : '/management';
+  const adminTitle = isSuperAdmin() ? 'Admin Panel' : 'Management';
+  const adminSubtitle = isSuperAdmin() ? 'Full system access' : 'Manage your area';
+
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
@@ -84,291 +252,79 @@ function DashboardPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="stat-label">Available Domains</p>
-              <p className="stat-value">{domains.length}</p>
-            </div>
-            <div className="stat-icon">
-              <Layers size={24} />
-            </div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="stat-label">Your Roles</p>
-              <p className="stat-value">{user?.roles?.length || 0}</p>
-            </div>
-            <div className="stat-icon">
-              <Users size={24} />
-            </div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="stat-label">Groups</p>
-              <p className="stat-value">{user?.groups?.length || 0}</p>
-            </div>
-            <div className="stat-icon">
-              <TrendingUp size={24} />
-            </div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="stat-label">Status</p>
-              <p className="text-lg font-semibold text-green-600">Active</p>
-            </div>
-            <div className="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
-              <Activity size={24} />
-            </div>
-          </div>
-        </div>
+        <StatCard label="Available Domains" value={domains.length} icon={<div className="stat-icon"><Layers size={24} /></div>} />
+        <StatCard label="Your Roles" value={user?.roles?.length || 0} icon={<div className="stat-icon"><Users size={24} /></div>} />
+        <StatCard label="Groups" value={user?.groups?.length || 0} icon={<div className="stat-icon"><TrendingUp size={24} /></div>} />
+        <StatCard
+          label="Status"
+          value="Active"
+          valueClassName="text-lg font-semibold text-green-600"
+          icon={<div className="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center text-green-600"><Activity size={24} /></div>}
+        />
       </div>
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="stat-label">Available Domains</p>
-              <p className="stat-value">{domains.length}</p>
-            </div>
-            <div className="stat-icon">
-              <Layers size={24} />
-            </div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="stat-label">My Requests</p>
-              <p className="stat-value">{requestStats.total}</p>
-            </div>
-            <div className="stat-icon">
-              <ClipboardList size={24} />
-            </div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="stat-label">In Progress</p>
-              <p className="stat-value text-yellow-600">{requestStats.inProgress}</p>
-            </div>
-            <div className="w-12 h-12 rounded-lg bg-yellow-50 flex items-center justify-center text-yellow-600">
-              <Clock size={24} />
-            </div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="stat-label">Completed</p>
-              <p className="stat-value text-green-600">{requestStats.deployed}</p>
-            </div>
-            <div className="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
-              <CheckCircle size={24} />
-            </div>
-          </div>
-        </div>
+        <StatCard label="Available Domains" value={domains.length} icon={<div className="stat-icon"><Layers size={24} /></div>} />
+        <StatCard label="My Requests" value={requestStats.total} icon={<div className="stat-icon"><ClipboardList size={24} /></div>} />
+        <StatCard
+          label="In Progress"
+          value={requestStats.inProgress}
+          valueClassName="stat-value text-yellow-600"
+          icon={<div className="w-12 h-12 rounded-lg bg-yellow-50 flex items-center justify-center text-yellow-600"><Clock size={24} /></div>}
+        />
+        <StatCard
+          label="Completed"
+          value={requestStats.deployed}
+          valueClassName="stat-value text-green-600"
+          icon={<div className="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center text-green-600"><CheckCircle size={24} /></div>}
+        />
       </div>
-      {/* Recent Requests */}
-      {requestStats.recent && requestStats.recent.length > 0 && (
-        <div className="card">
-          <div className="card-header flex items-center justify-between">
-            <h3 className="section-title">Recent Requests</h3>
-            <Link to="/my-requests" className="text-primary-600 hover:text-primary-700 text-sm font-medium">
-              View all →
-            </Link>
-          </div>
-          <div className="divide-y divide-edge">
-            {requestStats.recent.map((request) => (
-              <Link
-                key={request.requestId}
-                to={`/my-requests/${request.requestId}`}
-                className="flex items-center justify-between p-4 hover:bg-surface-hover transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="font-mono text-sm text-primary-600">{request.requestId}</span>
-                  <span className="text-content">{request.name}</span>
-                </div>
-                <Badge variant={getStatusVariant(request.status)}>
-                  {getStatusLabel(request)}
-                </Badge>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+
+      <RecentRequestsSection recent={requestStats.recent} />
+
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Link to="/ask-scenario" className="card hover:shadow-md hover:border-primary-200 transition-all group bg-primary-50 border-primary-200">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-primary-600 flex items-center justify-center text-white">
-              <MessageSquarePlus size={24} />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-content">Ask Scenario</h3>
-              <p className="text-sm text-content-muted">Request new feature</p>
-            </div>
-            <ArrowRight className="text-primary-400 group-hover:text-primary-600 transition-colors" size={20} />
-          </div>
-        </Link>
-
-        <Link to="/my-requests" className="card hover:shadow-md hover:border-primary-200 transition-all group">
-          <div className="flex items-center gap-4">
-            <div className="stat-icon">
-              <ClipboardList size={24} />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-content">My Requests</h3>
-              <p className="text-sm text-content-muted">{requestStats.total} requests</p>
-            </div>
-            <ArrowRight className="text-content-muted group-hover:text-primary-600 transition-colors" size={20} />
-          </div>
-        </Link>
-
-        <Link to="/domains" className="card hover:shadow-md hover:border-primary-200 transition-all group">
-          <div className="flex items-center gap-4">
-            <div className="stat-icon">
-              <Layers size={24} />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-content">My Domains</h3>
-              <p className="text-sm text-content-muted">{domains.length} available</p>
-            </div>
-            <ArrowRight className="text-content-muted group-hover:text-primary-600 transition-colors" size={20} />
-          </div>
-        </Link>
-
-        <Link to="/profile" className="card hover:shadow-md hover:border-primary-200 transition-all group">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-surface-hover flex items-center justify-center text-content-secondary">
-              <Settings size={24} />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-content">Profile Settings</h3>
-              <p className="text-sm text-content-muted">Manage your account</p>
-            </div>
-            <ArrowRight className="text-content-muted group-hover:text-primary-600 transition-colors" size={20} />
-          </div>
-        </Link>
+        <QuickActionLink
+          to="/ask-scenario"
+          className="bg-primary-50 border-primary-200"
+          icon={<div className="w-12 h-12 rounded-lg bg-primary-600 flex items-center justify-center text-white"><MessageSquarePlus size={24} /></div>}
+          title="Ask Scenario"
+          subtitle="Request new feature"
+        />
+        <QuickActionLink
+          to="/my-requests"
+          icon={<div className="stat-icon"><ClipboardList size={24} /></div>}
+          title="My Requests"
+          subtitle={`${requestStats.total} requests`}
+        />
+        <QuickActionLink
+          to="/domains"
+          icon={<div className="stat-icon"><Layers size={24} /></div>}
+          title="My Domains"
+          subtitle={`${domains.length} available`}
+        />
+        <QuickActionLink
+          to="/profile"
+          icon={<div className="w-12 h-12 rounded-lg bg-surface-hover flex items-center justify-center text-content-secondary"><Settings size={24} /></div>}
+          title="Profile Settings"
+          subtitle="Manage your account"
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {canManageUsers() && (
-          <Link 
-            to={isSuperAdmin() ? '/admin' : '/management'} 
-            className="card hover:shadow-md hover:border-primary-200 transition-all group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center text-primary-600">
-                <FileText size={24} />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-content">
-                  {isSuperAdmin() ? 'Admin Panel' : 'Management'}
-                </h3>
-                <p className="text-sm text-content-muted">
-                  {isSuperAdmin() ? 'Full system access' : 'Manage your area'}
-                </p>
-              </div>
-              <ArrowRight className="text-content-muted group-hover:text-primary-600 transition-colors" size={20} />
-            </div>
-          </Link>
-        )}
-      </div>
-      
-      {/* Domains List */}
-      <div className="card">
-        <div className="card-header flex items-center justify-between">
-          <h3 className="section-title">Your Domains</h3>
-          <Link to="/domains" className="text-primary-600 hover:text-primary-700 text-sm font-medium">
-            View all →
-          </Link>
-        </div>
-
-        {loading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-          </div>
-        ) : domains.length === 0 ? (
-          <p className="text-content-muted text-center py-8">
-            No domains available. Contact your administrator.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {domains.slice(0, 6).map((domain) => (
-              <Link
-                key={domain.key}
-                to={`/domains/${domain.key}`}
-                className="p-4 border border-edge rounded-xl hover:border-primary-300 hover:bg-primary-50 transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                    <Layers className="text-primary-600" size={20} />
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-content">{domain.name}</h4>
-                    <p className="text-sm text-content-muted">{domain.key}</p>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <QuickActionLink
+            to={adminPath}
+            icon={<div className="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center text-primary-600"><FileText size={24} /></div>}
+            title={adminTitle}
+            subtitle={adminSubtitle}
+          />
         )}
       </div>
 
-      {/* User Info */}
-      <div className="card">
-        <h3 className="section-title mb-4">Your Access</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <p className="text-sm text-content-muted mb-2">Roles</p>
-            <div className="flex flex-wrap gap-1">
-              {user?.roles?.map((role) => (
-                <Badge key={role} variant="primary">
-                  {role}
-                </Badge>
-              ))}
-            </div>
-          </div>
-          <div>
-            <p className="text-sm text-content-muted mb-2">Groups</p>
-            <div className="flex flex-wrap gap-1">
-              {user?.groups?.length > 0 ? user.groups.map((group) => (
-                <Badge key={group} variant="success">
-                  {group}
-                </Badge>
-              )) : (
-                <span className="text-content-muted text-sm">None</span>
-              )}
-            </div>
-          </div>
-          <div>
-            <p className="text-sm text-content-muted mb-2">Domains Access</p>
-            <div className="flex flex-wrap gap-1">
-              {user?.domains?.length > 0 ? user.domains.map((domain) => (
-                <Badge key={domain} variant="warning">
-                  {domain}
-                </Badge>
-              )) : (
-                <Badge variant="default">
-                  {user?.roles?.some(r => ['super-administrator', 'administrator'].includes(r)) ? 'All' : 'None'}
-                </Badge>
-              )}
-            </div>
-          </div>
-          <div>
-            <p className="text-sm text-content-muted mb-2">Email</p>
-            <p className="text-content truncate">{user?.email}</p>
-          </div>
-        </div>
-      </div>
+      <DomainsListSection loading={loading} domains={domains} />
+
+      <UserAccessSection user={user} />
     </div>
   );
 }

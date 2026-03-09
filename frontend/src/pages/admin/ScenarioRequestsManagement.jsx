@@ -253,11 +253,96 @@ const StatusUpdateModal = ({ isOpen, selectedRequest, statuses, newStatus, setNe
   );
 };
 
+// --- Helper functions outside component ---
+
+function computeRequestStats(data, totalCount) {
+  return {
+    total: totalCount,
+    submitted: data.filter(r => r.status === 'submitted').length,
+    inProgress: data.filter(r => PENDING_STATUSES.includes(r.status)).length,
+    deployed: data.filter(r => COMPLETED_STATUSES.includes(r.status)).length,
+    rejected: data.filter(r => REJECTED_STATUSES.includes(r.status)).length
+  };
+}
+
+function extractPaginationTotal(responseData, dataLength) {
+  return responseData?.pagination?.total || responseData?.paginiation?.total || dataLength;
+}
+
+function matchesRequestSearch(request, searchTerm) {
+  if (!searchTerm) return true;
+  const lowerSearch = searchTerm.toLowerCase();
+  return request.requestId?.toLowerCase().includes(lowerSearch) ||
+    request.name?.toLowerCase().includes(lowerSearch) ||
+    request.email?.toLowerCase().includes(lowerSearch);
+}
+
+function filterRequests(requests, searchTerm, statusFilter, domainFilter) {
+  return requests.filter(request => {
+    const matchesSearch = matchesRequestSearch(request, searchTerm);
+    const matchesStatus = !statusFilter || request.status === statusFilter;
+    const matchesDomain = !domainFilter || request.dataDomain === domainFilter;
+    return matchesSearch && matchesStatus && matchesDomain;
+  });
+}
+
+function resolveBasePath(pathname) {
+  return pathname.startsWith('/management') ? '/management' : '/admin';
+}
+
+const RequestsFilterBar = ({ searchTerm, onSearchChange, statusFilter, onStatusFilterChange, domainFilter, onDomainFilterChange, statuses, domains, onRefresh }) => (
+  <div className="card mb-6">
+    <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex-1 relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={18} />
+        <input type="text" placeholder="Search by ID, name or email..." value={searchTerm} onChange={(e) => onSearchChange(e.target.value)} className="w-full pl-10 pr-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content" />
+      </div>
+      <div className="flex gap-3">
+        <select value={statusFilter} onChange={(e) => onStatusFilterChange(e.target.value)} className="w-full md:w-40 px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content">
+          <option value="">All Status</option>
+          {statuses.map(status => (
+            <option key={status.value} value={status.value}>{status.label}</option>
+          ))}
+        </select>
+        <select value={domainFilter} onChange={(e) => onDomainFilterChange(e.target.value)} className="w-full md:w-40 px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content">
+          <option value="">All Domains</option>
+          {domains.map(domain => (
+            <option key={domain.key || domain.value} value={domain.key || domain.value}>{domain.name || domain.label}</option>
+          ))}
+        </select>
+        <button onClick={onRefresh} className="btn-secondary flex items-center gap-2">
+          <RefreshCw size={16} />
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+const RequestsPagination = ({ pagination, totalPages, onPageChange }) => {
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 border-t border-edge bg-surface-secondary">
+      <p className="text-sm text-content-muted">
+        Showing {pagination.page * pagination.limit + 1} to {Math.min((pagination.page + 1) * pagination.limit, pagination.total)} of {pagination.total}
+      </p>
+      <div className="flex items-center gap-2">
+        <button onClick={() => onPageChange(pagination.page - 1)} disabled={pagination.page === 0} className="p-2 rounded-lg border border-edge hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          <ChevronLeft size={18} />
+        </button>
+        <span className="px-4 py-2 text-sm text-content-muted">Page {pagination.page + 1} of {totalPages}</span>
+        <button onClick={() => onPageChange(pagination.page + 1)} disabled={pagination.page >= totalPages - 1} className="p-2 rounded-lg border border-edge hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          <ChevronRight size={18} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // --- Main Component ---
 
 function ScenarioRequestsManagement() {
   const location = useLocation();
-  const basePath = location.pathname.startsWith('/management') ? '/management' : '/admin';
+  const basePath = resolveBasePath(location.pathname);
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -293,15 +378,10 @@ function ScenarioRequestsManagement() {
     try {
       const response = await scenarioRequestAPI.getAll({ page: pagination.page, limit: pagination.limit });
       const data = response.data?.data || [];
+      const totalCount = extractPaginationTotal(response.data, data.length);
       setRequests(data);
-      setPagination(prev => ({ ...prev, total: response.data?.pagination?.total || response.data?.paginiation?.total || data.length }));
-      setStats({
-        total: response.data?.pagination?.total || response.data?.paginiation?.total || data.length,
-        submitted: data.filter(r => r.status === 'submitted').length,
-        inProgress: data.filter(r => PENDING_STATUSES.includes(r.status)).length,
-        deployed: data.filter(r => COMPLETED_STATUSES.includes(r.status)).length,
-        rejected: data.filter(r => REJECTED_STATUSES.includes(r.status)).length
-      });
+      setPagination(prev => ({ ...prev, total: totalCount }));
+      setStats(computeRequestStats(data, totalCount));
     } catch (error) {
       toast.error('Failed to load requests');
     } finally {
@@ -336,21 +416,16 @@ function ScenarioRequestsManagement() {
     setShowStatusModal(true);
   };
 
-  const filteredRequests = requests.filter(request => {
-    const matchesSearch = !searchTerm ||
-      request.requestId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = !statusFilter || request.status === statusFilter;
-    const matchesDomain = !domainFilter || request.dataDomain === domainFilter;
-    return matchesSearch && matchesStatus && matchesDomain;
-  });
+  const handlePageChange = (newPage) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
+  };
 
+  const filteredRequests = filterRequests(requests, searchTerm, statusFilter, domainFilter);
   const totalPages = Math.ceil(pagination.total / pagination.limit);
+  const showPagination = !loading && filteredRequests.length > 0;
 
   return (
     <div className="w-full">
-      {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-content">Scenario Requests</h1>
         <p className="text-content-muted mt-1">Manage and process scenario requests</p>
@@ -358,73 +433,26 @@ function ScenarioRequestsManagement() {
 
       <StatsCards stats={stats} />
 
-      {/* Filters */}
-      <div className="card mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={18} />
-            <input type="text" placeholder="Search by ID, name or email..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content" />
-          </div>
-          <div className="flex gap-3">
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full md:w-40 px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content">
-              <option value="">All Status</option>
-              {statuses.map(status => (
-                <option key={status.value} value={status.value}>{status.label}</option>
-              ))}
-            </select>
-            <select value={domainFilter} onChange={(e) => setDomainFilter(e.target.value)} className="w-full md:w-40 px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content">
-              <option value="">All Domains</option>
-              {domains.map(domain => (
-                <option key={domain.key || domain.value} value={domain.key || domain.value}>{domain.name || domain.label}</option>
-              ))}
-            </select>
-            <button onClick={loadRequests} className="btn-secondary flex items-center gap-2">
-              <RefreshCw size={16} />
-            </button>
-          </div>
-        </div>
-      </div>
+      <RequestsFilterBar
+        searchTerm={searchTerm} onSearchChange={setSearchTerm}
+        statusFilter={statusFilter} onStatusFilterChange={setStatusFilter}
+        domainFilter={domainFilter} onDomainFilterChange={setDomainFilter}
+        statuses={statuses} domains={domains} onRefresh={loadRequests}
+      />
 
-      {/* Table */}
       <div className="card p-0 overflow-hidden">
-        <RequestsTable
-          requests={filteredRequests}
-          loading={loading}
-          basePath={basePath}
-          onUpdateStatus={openStatusModal}
-        />
-
-        {/* Pagination */}
-        {!loading && filteredRequests.length > 0 && totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 border-t border-edge bg-surface-secondary">
-            <p className="text-sm text-content-muted">
-              Showing {pagination.page * pagination.limit + 1} to {Math.min((pagination.page + 1) * pagination.limit, pagination.total)} of {pagination.total}
-            </p>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))} disabled={pagination.page === 0} className="p-2 rounded-lg border border-edge hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                <ChevronLeft size={18} />
-              </button>
-              <span className="px-4 py-2 text-sm text-content-muted">Page {pagination.page + 1} of {totalPages}</span>
-              <button onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))} disabled={pagination.page >= totalPages - 1} className="p-2 rounded-lg border border-edge hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                <ChevronRight size={18} />
-              </button>
-            </div>
-          </div>
+        <RequestsTable requests={filteredRequests} loading={loading} basePath={basePath} onUpdateStatus={openStatusModal} />
+        {showPagination && (
+          <RequestsPagination pagination={pagination} totalPages={totalPages} onPageChange={handlePageChange} />
         )}
       </div>
 
-      {/* Status Update Modal */}
       <StatusUpdateModal
-        isOpen={showStatusModal}
-        selectedRequest={selectedRequest}
-        statuses={statuses}
-        newStatus={newStatus}
-        setNewStatus={setNewStatus}
-        statusComment={statusComment}
-        setStatusComment={setStatusComment}
+        isOpen={showStatusModal} selectedRequest={selectedRequest}
+        statuses={statuses} newStatus={newStatus} setNewStatus={setNewStatus}
+        statusComment={statusComment} setStatusComment={setStatusComment}
         updatingStatus={updatingStatus}
-        onClose={() => setShowStatusModal(false)}
-        onSubmit={handleStatusUpdate}
+        onClose={() => setShowStatusModal(false)} onSubmit={handleStatusUpdate}
       />
     </div>
   );

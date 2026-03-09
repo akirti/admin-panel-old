@@ -276,6 +276,55 @@ function DLPagination({ pagination, onPrev, onNext }) {
   );
 }
 
+/* ─── API helpers (outside component to reduce cognitive complexity) ─── */
+
+async function createDistributionList(formData, onSuccess) {
+  try {
+    await distributionListsAPI.create(formData);
+    toast.success('Distribution list created successfully');
+    onSuccess();
+  } catch (error) {
+    toast.error(error.response?.data?.detail || 'Failed to create distribution list');
+  }
+}
+
+async function updateDistributionList(id, formData, onSuccess) {
+  try {
+    await distributionListsAPI.update(id, formData);
+    toast.success('Distribution list updated successfully');
+    onSuccess();
+  } catch (error) {
+    toast.error(error.response?.data?.detail || 'Failed to update distribution list');
+  }
+}
+
+async function deleteDistributionList(item, onSuccess) {
+  if (!window.confirm(`Are you sure you want to delete "${item.name}"?`)) return;
+  try {
+    await distributionListsAPI.delete(item._id);
+    toast.success('Distribution list deleted');
+    onSuccess();
+  } catch (error) { toast.error('Failed to delete distribution list'); }
+}
+
+async function toggleDistributionListStatus(item, onSuccess) {
+  try {
+    await distributionListsAPI.toggleStatus(item._id);
+    toast.success(`Distribution list ${item.is_active ? 'deactivated' : 'activated'}`);
+    onSuccess();
+  } catch (error) { toast.error('Failed to toggle status'); }
+}
+
+function handleAddEmail(newEmail, formData, setFormData, setNewEmail) {
+  const result = validateAndAddEmail(newEmail, formData.emails);
+  if (!result.valid) {
+    if (result.error) toast.error(result.error);
+    return;
+  }
+  setFormData(prev => ({ ...prev, emails: [...prev.emails, newEmail] }));
+  setNewEmail('');
+}
+
 const DistributionListManagement = () => {
   const [lists, setLists] = useState([]);
   const [listTypes, setListTypes] = useState([]);
@@ -323,6 +372,10 @@ const DistributionListManagement = () => {
     setNewEmail('');
   };
 
+  const closeModalAndReset = () => { setModalOpen(false); resetForm(); };
+
+  const onSaveSuccess = () => { closeModalAndReset(); fetchData(); };
+
   const openCreateModal = () => { resetForm(); setModalOpen(true); };
 
   const openEditModal = (item) => {
@@ -332,59 +385,20 @@ const DistributionListManagement = () => {
     setModalOpen(true);
   };
 
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    try {
-      await distributionListsAPI.create(formData);
-      toast.success('Distribution list created successfully');
-      setModalOpen(false); resetForm(); fetchData();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to create distribution list');
-    }
-  };
-
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-    try {
-      await distributionListsAPI.update(editingItem._id, formData);
-      toast.success('Distribution list updated successfully');
-      setModalOpen(false); resetForm(); fetchData();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to update distribution list');
-    }
-  };
-
-  const handleDelete = async (item) => {
-    if (!window.confirm(`Are you sure you want to delete "${item.name}"?`)) return;
-    try {
-      await distributionListsAPI.delete(item._id);
-      toast.success('Distribution list deleted');
-      fetchData();
-    } catch (error) { toast.error('Failed to delete distribution list'); }
-  };
-
-  const handleToggleStatus = async (item) => {
-    try {
-      await distributionListsAPI.toggleStatus(item._id);
-      toast.success(`Distribution list ${item.is_active ? 'deactivated' : 'activated'}`);
-      fetchData();
-    } catch (error) { toast.error('Failed to toggle status'); }
-  };
-
-  const addEmail = () => {
-    const result = validateAndAddEmail(newEmail, formData.emails);
-    if (!result.valid) { if (result.error) toast.error(result.error); return; }
-    setFormData(prev => ({ ...prev, emails: [...prev.emails, newEmail] }));
-    setNewEmail('');
-  };
+  const handleCreate = (e) => { e.preventDefault(); createDistributionList(formData, onSaveSuccess); };
+  const handleUpdate = (e) => { e.preventDefault(); updateDistributionList(editingItem._id, formData, onSaveSuccess); };
+  const handleDelete = (item) => deleteDistributionList(item, fetchData);
+  const handleToggleStatus = (item) => toggleDistributionListStatus(item, fetchData);
+  const addEmail = () => handleAddEmail(newEmail, formData, setFormData, setNewEmail);
 
   const removeEmail = (emailToRemove) => {
     setFormData(prev => ({ ...prev, emails: prev.emails.filter(email => email !== emailToRemove) }));
   };
 
-  const closeModal = () => { setModalOpen(false); resetForm(); };
   const handlePrev = () => setPagination(prev => ({ ...prev, page: prev.page - 1 }));
   const handleNext = () => setPagination(prev => ({ ...prev, page: prev.page + 1 }));
+  const modalTitle = editingItem ? 'Edit Distribution List' : 'Create Distribution List';
+  const handleSubmit = editingItem ? handleUpdate : handleCreate;
 
   return (
     <div className="space-y-6">
@@ -403,11 +417,11 @@ const DistributionListManagement = () => {
         <DLPagination pagination={pagination} onPrev={handlePrev} onNext={handleNext} />
       </div>
 
-      <Modal isOpen={modalOpen} onClose={closeModal} title={editingItem ? 'Edit Distribution List' : 'Create Distribution List'} size="lg">
+      <Modal isOpen={modalOpen} onClose={closeModalAndReset} title={modalTitle} size="lg">
         <DistributionForm
           formData={formData} setFormData={setFormData} listTypes={listTypes} editingItem={editingItem}
           newEmail={newEmail} onNewEmailChange={setNewEmail} onAddEmail={addEmail} onRemoveEmail={removeEmail}
-          onSubmit={editingItem ? handleUpdate : handleCreate} onCancel={closeModal}
+          onSubmit={handleSubmit} onCancel={closeModalAndReset}
         />
       </Modal>
     </div>

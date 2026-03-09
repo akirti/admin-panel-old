@@ -433,17 +433,82 @@ const ModuleStats = ({ permissionsByModule, moduleFilter, onModuleClick }) => {
   );
 };
 
+// --- Helpers for PermissionsManagement to reduce cognitive complexity ---
+
+const INITIAL_PERM_FORM = { permissionId: '', key: '', name: '', description: '', module: '', actions: ['read'] };
+const COMMON_ACTIONS = ['create', 'read', 'update', 'delete', 'list', 'export', 'import'];
+
+const buildEditPermFormData = (permission) => ({
+  permissionId: permission.permissionId || '', key: permission.key || '', name: permission.name || '',
+  description: permission.description || '', module: permission.module || '', actions: permission.actions || ['read'],
+});
+
+const togglePermsExportMenu = () => document.getElementById('export-menu-perms').classList.toggle('hidden');
+const hidePermsExportMenu = () => document.getElementById('export-menu-perms').classList.add('hidden');
+
+const PermsHeader = ({ total, onExportCsv, onExportJson, onCreateClick }) => (
+  <div className="flex items-center justify-between">
+    <div>
+      <h1 className="text-2xl font-bold text-content">Permissions Management</h1>
+      <p className="text-content-muted text-sm mt-1">Manage granular system permissions by module ({total} total)</p>
+    </div>
+    <div className="flex gap-2">
+      <div className="relative">
+        <button className="btn btn-secondary flex items-center gap-2" onClick={togglePermsExportMenu}>
+          <Download size={16} /> Export
+        </button>
+        <div id="export-menu-perms" className="hidden absolute right-0 mt-1 bg-surface border rounded-lg shadow-lg z-10">
+          <button className="block w-full px-4 py-2 text-left hover:bg-surface-hover" onClick={onExportCsv}>Export as CSV</button>
+          <button className="block w-full px-4 py-2 text-left hover:bg-surface-hover" onClick={onExportJson}>Export as JSON</button>
+        </div>
+      </div>
+      <button className="btn btn-primary flex items-center gap-2" onClick={onCreateClick}><Plus size={16} /> Add Permission</button>
+    </div>
+  </div>
+);
+
+const PermsFilterBar = ({ data }) => (
+  <div className="card">
+    <div className="flex flex-col md:flex-row gap-4">
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
+        <input type="text" placeholder="Search permissions by key or name..." className="input pl-10 w-full" value={data.search} onChange={(e) => data.setSearch(e.target.value)} />
+      </div>
+      <div className="relative flex items-center gap-2">
+        <Filter size={16} className="text-content-muted" />
+        <select className="input" value={data.moduleFilter} onChange={(e) => { data.setModuleFilter(e.target.value); data.setPage(0); }}>
+          <option value="">All Modules</option>
+          {data.modules.map((m) => (<option key={m} value={m}>{m}</option>))}
+        </select>
+        {data.moduleFilter && (<button className="text-sm text-blue-600 hover:underline" onClick={() => data.setModuleFilter('')}>Clear</button>)}
+      </div>
+    </div>
+  </div>
+);
+
+const PermsPagination = ({ data }) => {
+  if (data.totalPages <= 1) return null;
+  return (
+    <div className="px-4 py-3 border-t flex items-center justify-between">
+      <div className="text-sm text-content-muted">Page {data.page + 1} of {data.totalPages} ({data.total} permissions)</div>
+      <div className="flex gap-2">
+        <button className="btn btn-secondary btn-sm" onClick={() => data.setPage((p) => Math.max(0, p - 1))} disabled={data.page === 0}><ChevronLeft size={16} /> Previous</button>
+        <button className="btn btn-secondary btn-sm" onClick={() => data.setPage((p) => Math.min(data.totalPages - 1, p + 1))} disabled={data.page >= data.totalPages - 1}>Next <ChevronRight size={16} /></button>
+      </div>
+    </div>
+  );
+};
+
 // --- Main Component ---
 
 const PermissionsManagement = () => {
   const { isSuperAdmin } = useAuth();
   const data = usePermissionsData(isSuperAdmin);
   const actions = usePermissionActions(data.setError, data.setSuccess, data.fetchPermissions);
-  const commonActions = ['create', 'read', 'update', 'delete', 'list', 'export', 'import'];
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPermission, setEditingPermission] = useState(null);
-  const [formData, setFormData] = useState({ permissionId: '', key: '', name: '', description: '', module: '', actions: ['read'] });
+  const [formData, setFormData] = useState(INITIAL_PERM_FORM);
   const [relationshipModalOpen, setRelationshipModalOpen] = useState(false);
   const [selectedPermission, setSelectedPermission] = useState(null);
   const [permissionRoles, setPermissionRoles] = useState([]);
@@ -456,20 +521,17 @@ const PermissionsManagement = () => {
     setFormData((prev) => ({ ...prev, actions: prev.actions.includes(action) ? prev.actions.filter((a) => a !== action) : [...prev.actions, action] }));
   };
 
-  const handleSelectAllActions = (selected) => setFormData((prev) => ({ ...prev, actions: selected ? [...commonActions] : [] }));
+  const handleSelectAllActions = (selected) => setFormData((prev) => ({ ...prev, actions: selected ? [...COMMON_ACTIONS] : [] }));
 
   const openCreateModal = () => {
     setEditingPermission(null);
-    setFormData({ permissionId: '', key: '', name: '', description: '', module: '', actions: ['read'] });
+    setFormData({ ...INITIAL_PERM_FORM });
     setModalOpen(true);
   };
 
   const openEditModal = (permission) => {
     setEditingPermission(permission);
-    setFormData({
-      permissionId: permission.permissionId || '', key: permission.key || '', name: permission.name || '',
-      description: permission.description || '', module: permission.module || '', actions: permission.actions || ['read'],
-    });
+    setFormData(buildEditPermFormData(permission));
     setModalOpen(true);
   };
 
@@ -503,64 +565,27 @@ const PermissionsManagement = () => {
     finally { setLoadingRelationships(false); }
   };
 
+  const handleExportCsv = () => { actions.handleExport('csv'); hidePermsExportMenu(); };
+  const handleExportJson = () => { actions.handleExport('json'); hidePermsExportMenu(); };
+
   if (!isSuperAdmin()) return <PermAccessDenied />;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-content">Permissions Management</h1>
-          <p className="text-content-muted text-sm mt-1">Manage granular system permissions by module ({data.total} total)</p>
-        </div>
-        <div className="flex gap-2">
-          <div className="relative">
-            <button className="btn btn-secondary flex items-center gap-2" onClick={() => document.getElementById('export-menu-perms').classList.toggle('hidden')}>
-              <Download size={16} /> Export
-            </button>
-            <div id="export-menu-perms" className="hidden absolute right-0 mt-1 bg-surface border rounded-lg shadow-lg z-10">
-              <button className="block w-full px-4 py-2 text-left hover:bg-surface-hover" onClick={() => { actions.handleExport('csv'); document.getElementById('export-menu-perms').classList.add('hidden'); }}>Export as CSV</button>
-              <button className="block w-full px-4 py-2 text-left hover:bg-surface-hover" onClick={() => { actions.handleExport('json'); document.getElementById('export-menu-perms').classList.add('hidden'); }}>Export as JSON</button>
-            </div>
-          </div>
-          <button className="btn btn-primary flex items-center gap-2" onClick={openCreateModal}><Plus size={16} /> Add Permission</button>
-        </div>
-      </div>
+      <PermsHeader total={data.total} onExportCsv={handleExportCsv} onExportJson={handleExportJson} onCreateClick={openCreateModal} />
 
       <PermAlertMessages error={data.error} success={data.success} />
       <ModuleStats permissionsByModule={data.permissionsByModule} moduleFilter={data.moduleFilter} onModuleClick={data.setModuleFilter} />
 
-      <div className="card">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
-            <input type="text" placeholder="Search permissions by key or name..." className="input pl-10 w-full" value={data.search} onChange={(e) => data.setSearch(e.target.value)} />
-          </div>
-          <div className="relative flex items-center gap-2">
-            <Filter size={16} className="text-content-muted" />
-            <select className="input" value={data.moduleFilter} onChange={(e) => { data.setModuleFilter(e.target.value); data.setPage(0); }}>
-              <option value="">All Modules</option>
-              {data.modules.map((m) => (<option key={m} value={m}>{m}</option>))}
-            </select>
-            {data.moduleFilter && (<button className="text-sm text-blue-600 hover:underline" onClick={() => data.setModuleFilter('')}>Clear</button>)}
-          </div>
-        </div>
-      </div>
+      <PermsFilterBar data={data} />
 
       <div className="card overflow-hidden">
         <PermissionsTable permissions={data.permissions} loading={data.loading} onShowRelationships={showRelationships} onEdit={openEditModal} onDelete={actions.handleDelete} />
-        {data.totalPages > 1 && (
-          <div className="px-4 py-3 border-t flex items-center justify-between">
-            <div className="text-sm text-content-muted">Page {data.page + 1} of {data.totalPages} ({data.total} permissions)</div>
-            <div className="flex gap-2">
-              <button className="btn btn-secondary btn-sm" onClick={() => data.setPage((p) => Math.max(0, p - 1))} disabled={data.page === 0}><ChevronLeft size={16} /> Previous</button>
-              <button className="btn btn-secondary btn-sm" onClick={() => data.setPage((p) => Math.min(data.totalPages - 1, p + 1))} disabled={data.page >= data.totalPages - 1}>Next <ChevronRight size={16} /></button>
-            </div>
-          </div>
-        )}
+        <PermsPagination data={data} />
       </div>
 
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editingPermission ? 'Edit Permission' : 'Create Permission'} size="lg">
-        <PermissionForm formData={formData} editingPermission={editingPermission} modules={data.modules} commonActions={commonActions}
+        <PermissionForm formData={formData} editingPermission={editingPermission} modules={data.modules} commonActions={COMMON_ACTIONS}
           handleInputChange={handleInputChange} handleActionToggle={handleActionToggle} handleSelectAllActions={handleSelectAllActions}
           handleSubmit={handleSubmit} onClose={() => setModalOpen(false)} />
       </Modal>

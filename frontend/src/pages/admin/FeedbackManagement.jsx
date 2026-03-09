@@ -79,6 +79,105 @@ function FeedbackStats({ stats }) {
   );
 }
 
+function getSortIndicator(sortBy, sortOrder, field) {
+  if (sortBy !== field) return null;
+  return <span>{sortOrder === 'desc' ? '\u2193' : '\u2191'}</span>;
+}
+
+function FeedbackTypeBadge({ isPublic }) {
+  if (isPublic) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">
+        <Globe size={12} />
+        Public
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-green-100 text-green-800">
+      <User size={12} />
+      User
+    </span>
+  );
+}
+
+function FeedbackRatingCell({ rating }) {
+  if (rating) return renderStars(rating);
+  return <span className="text-content-muted text-sm">No rating</span>;
+}
+
+function FeedbackRow({ feedback, onViewFeedback }) {
+  return (
+    <tr className="hover:bg-surface-hover">
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-content">
+        {feedback.email}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <FeedbackRatingCell rating={feedback.rating} />
+      </td>
+      <td className="px-6 py-4 text-sm text-content-muted max-w-xs">
+        <div className="truncate" title={feedback.improvements}>
+          {feedback.improvements || '-'}
+        </div>
+      </td>
+      <td className="px-6 py-4 text-sm text-content-muted max-w-xs">
+        <div className="truncate" title={feedback.suggestions}>
+          {feedback.suggestions || '-'}
+        </div>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <FeedbackTypeBadge isPublic={feedback.is_public} />
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-content-muted">
+        {feedback.createdAt}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <button
+          onClick={() => onViewFeedback(feedback)}
+          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+        >
+          <Eye size={16} />
+          View
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+function FeedbackTableHeader({ sortBy, sortOrder, onSort }) {
+  return (
+    <thead>
+      <tr className="table-header">
+        <th className="px-6 py-3 text-left cursor-pointer hover:bg-surface-hover" onClick={() => onSort('email')}>
+          <div className="flex items-center gap-1">
+            <Mail size={16} />
+            Email
+            {getSortIndicator(sortBy, sortOrder, 'email')}
+          </div>
+        </th>
+        <th className="px-6 py-3 text-left cursor-pointer hover:bg-surface-hover" onClick={() => onSort('rating')}>
+          <div className="flex items-center gap-1">
+            <Star size={16} />
+            Rating
+            {getSortIndicator(sortBy, sortOrder, 'rating')}
+          </div>
+        </th>
+        <th className="px-6 py-3 text-left">Improvements</th>
+        <th className="px-6 py-3 text-left">Suggestions</th>
+        <th className="px-6 py-3 text-left">Type</th>
+        <th className="px-6 py-3 text-left cursor-pointer hover:bg-surface-hover" onClick={() => onSort('createdAt')}>
+          <div className="flex items-center gap-1">
+            <Calendar size={16} />
+            Date
+            {getSortIndicator(sortBy, sortOrder, 'createdAt')}
+          </div>
+        </th>
+        <th className="px-6 py-3 text-left">Actions</th>
+      </tr>
+    </thead>
+  );
+}
+
 function FeedbackTable({ feedbackList, loading, sortBy, sortOrder, onSort, onViewFeedback }) {
   if (loading) {
     return (
@@ -91,52 +190,7 @@ function FeedbackTable({ feedbackList, loading, sortBy, sortOrder, onSort, onVie
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-edge">
-        <thead>
-          <tr className="table-header">
-            <th
-              className="px-6 py-3 text-left cursor-pointer hover:bg-surface-hover"
-              onClick={() => onSort('email')}
-            >
-              <div className="flex items-center gap-1">
-                <Mail size={16} />
-                Email
-                {sortBy === 'email' && <span>{sortOrder === 'desc' ? '\u2193' : '\u2191'}</span>}
-              </div>
-            </th>
-            <th
-              className="px-6 py-3 text-left cursor-pointer hover:bg-surface-hover"
-              onClick={() => onSort('rating')}
-            >
-              <div className="flex items-center gap-1">
-                <Star size={16} />
-                Rating
-                {sortBy === 'rating' && <span>{sortOrder === 'desc' ? '\u2193' : '\u2191'}</span>}
-              </div>
-            </th>
-            <th className="px-6 py-3 text-left">
-              Improvements
-            </th>
-            <th className="px-6 py-3 text-left">
-              Suggestions
-            </th>
-            <th className="px-6 py-3 text-left">
-              Type
-            </th>
-            <th
-              className="px-6 py-3 text-left cursor-pointer hover:bg-surface-hover"
-              onClick={() => onSort('createdAt')}
-            >
-              <div className="flex items-center gap-1">
-                <Calendar size={16} />
-                Date
-                {sortBy === 'createdAt' && <span>{sortOrder === 'desc' ? '\u2193' : '\u2191'}</span>}
-              </div>
-            </th>
-            <th className="px-6 py-3 text-left">
-              Actions
-            </th>
-          </tr>
-        </thead>
+        <FeedbackTableHeader sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} />
         <tbody className="bg-surface divide-y divide-edge">
           {feedbackList.length === 0 ? (
             <tr>
@@ -146,51 +200,7 @@ function FeedbackTable({ feedbackList, loading, sortBy, sortOrder, onSort, onVie
             </tr>
           ) : (
             feedbackList.map((feedback) => (
-              <tr key={feedback._id} className="hover:bg-surface-hover">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-content">
-                  {feedback.email}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {feedback.rating ? renderStars(feedback.rating) : (
-                    <span className="text-content-muted text-sm">No rating</span>
-                  )}
-                </td>
-                <td className="px-6 py-4 text-sm text-content-muted max-w-xs">
-                  <div className="truncate" title={feedback.improvements}>
-                    {feedback.improvements || '-'}
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-sm text-content-muted max-w-xs">
-                  <div className="truncate" title={feedback.suggestions}>
-                    {feedback.suggestions || '-'}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {feedback.is_public ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">
-                      <Globe size={12} />
-                      Public
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-green-100 text-green-800">
-                      <User size={12} />
-                      User
-                    </span>
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-content-muted">
-                  {feedback.createdAt}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <button
-                    onClick={() => onViewFeedback(feedback)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
-                  >
-                    <Eye size={16} />
-                    View
-                  </button>
-                </td>
-              </tr>
+              <FeedbackRow key={feedback._id} feedback={feedback} onViewFeedback={onViewFeedback} />
             ))
           )}
         </tbody>

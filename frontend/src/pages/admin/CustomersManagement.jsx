@@ -436,23 +436,34 @@ function CustomersHeader({ total, onExport, onAddNew }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   Main Component
-   ═══════════════════════════════════════════════════════════ */
-const CustomersManagement = () => {
-  const { isSuperAdmin } = useAuth();
+/* ─── Build search params for API ─── */
+function buildSearchParams(page, limit, debouncedSearch, filterTag, filterLocation, filterUnit) {
+  const params = { page, limit };
+  if (debouncedSearch) params.search = debouncedSearch;
+  if (filterTag) params.tag = filterTag;
+  if (filterLocation) params.location = filterLocation;
+  if (filterUnit) params.unit = filterUnit;
+  return params;
+}
 
-  const [customers, setCustomers] = useState([]);
-  const [allUsers, setAllUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+/* ─── Customer Modals Section ─── */
+function CustomerModals({ modalState, formProps, usersProps }) {
+  const { modalOpen, usersModalOpen, editingCustomer, selectedCustomer } = modalState;
+  return (
+    <>
+      <Modal isOpen={modalOpen} onClose={formProps.onClose} title={editingCustomer ? 'Edit Customer' : 'Create Customer'} size="lg">
+        <CustomerForm {...formProps.formFields} onSubmit={formProps.onSubmit} onCancel={formProps.onClose} />
+      </Modal>
 
-  const [page, setPage] = useState(0);
-  const [limit] = useState(25);
-  const [totalPages, setTotalPages] = useState(0);
-  const [total, setTotal] = useState(0);
+      <Modal isOpen={usersModalOpen} onClose={usersProps.onClose} title={`Manage Users: ${selectedCustomer?.name || ''}`} size="xl">
+        <UsersManagementContent {...usersProps.fields} onClose={usersProps.onClose} />
+      </Modal>
+    </>
+  );
+}
 
+/* ─── Custom hooks to reduce main component complexity ─── */
+function useCustomerFilters() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterTag, setFilterTag] = useState('');
@@ -461,39 +472,12 @@ const CustomersManagement = () => {
   const [availableTags, setAvailableTags] = useState([]);
   const [availableLocations, setAvailableLocations] = useState([]);
   const [availableUnits, setAvailableUnits] = useState([]);
-
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingCustomer, setEditingCustomer] = useState(null);
-  const [formData, setFormData] = useState({ ...DEFAULT_CUSTOMER_FORM });
-  const [newTag, setNewTag] = useState('');
-
-  const [usersModalOpen, setUsersModalOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [customerUsers, setCustomerUsers] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
-  const [userSearch, setUserSearch] = useState('');
+  const [page, setPage] = useState(0);
 
   useEffect(() => {
     const timer = setTimeout(() => { setDebouncedSearch(search); setPage(0); }, 300);
     return () => clearTimeout(timer);
   }, [search]);
-
-  const fetchCustomers = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params = { page, limit };
-      if (debouncedSearch) params.search = debouncedSearch;
-      if (filterTag) params.tag = filterTag;
-      if (filterLocation) params.location = filterLocation;
-      if (filterUnit) params.unit = filterUnit;
-      const response = await customersAPI.list(params);
-      const responseData = response?.data || {};
-      setCustomers(responseData.data || []);
-      setTotalPages(responseData.pagination?.pages || 0);
-      setTotal(responseData.pagination?.total || 0);
-    } catch (err) { setError('Failed to fetch customers'); }
-    finally { setLoading(false); }
-  }, [page, limit, debouncedSearch, filterTag, filterLocation, filterUnit]);
 
   const fetchFilterOptions = useCallback(async () => {
     try {
@@ -505,22 +489,32 @@ const CustomersManagement = () => {
     } catch (err) { /* silent */ }
   }, []);
 
-  const fetchAllUsers = useCallback(async () => {
-    try {
-      const response = await usersAPI.list({ limit: 1000 });
-      setAllUsers(response?.data?.data || []);
-    } catch (err) { /* silent */ }
-  }, []);
+  return {
+    search, setSearch, debouncedSearch, filterTag, setFilterTag,
+    filterLocation, setFilterLocation, filterUnit, setFilterUnit,
+    availableTags, availableLocations, availableUnits,
+    page, setPage, fetchFilterOptions,
+  };
+}
 
-  useEffect(() => {
-    if (isSuperAdmin()) { fetchCustomers(); fetchAllUsers(); fetchFilterOptions(); }
-  }, [fetchCustomers, fetchAllUsers, fetchFilterOptions, isSuperAdmin]);
+function useAlertMessages() {
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     if (!error && !success) return;
     const timer = setTimeout(() => { setError(''); setSuccess(''); }, 5000);
     return () => clearTimeout(timer);
   }, [error, success]);
+
+  return { error, setError, success, setSuccess };
+}
+
+function useCustomerForm() {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [formData, setFormData] = useState({ ...DEFAULT_CUSTOMER_FORM });
+  const [newTag, setNewTag] = useState('');
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -556,17 +550,71 @@ const CustomersManagement = () => {
     setModalOpen(true);
   };
 
+  return {
+    modalOpen, setModalOpen, editingCustomer, formData,
+    newTag, setNewTag, handleInputChange, handleAddTag,
+    handleRemoveTag, handleTagKeyDown, openCreateModal, openEditModal,
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Main Component
+   ═══════════════════════════════════════════════════════════ */
+const CustomersManagement = () => {
+  const { isSuperAdmin } = useAuth();
+
+  const [customers, setCustomers] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [limit] = useState(25);
+  const [totalPages, setTotalPages] = useState(0);
+  const [total, setTotal] = useState(0);
+
+  const { error, setError, success, setSuccess } = useAlertMessages();
+  const filters = useCustomerFilters();
+  const form = useCustomerForm();
+
+  const [usersModalOpen, setUsersModalOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [customerUsers, setCustomerUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
+
+  const fetchCustomers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const params = buildSearchParams(filters.page, limit, filters.debouncedSearch, filters.filterTag, filters.filterLocation, filters.filterUnit);
+      const response = await customersAPI.list(params);
+      const responseData = response?.data || {};
+      setCustomers(responseData.data || []);
+      setTotalPages(responseData.pagination?.pages || 0);
+      setTotal(responseData.pagination?.total || 0);
+    } catch (err) { setError('Failed to fetch customers'); }
+    finally { setLoading(false); }
+  }, [filters.page, limit, filters.debouncedSearch, filters.filterTag, filters.filterLocation, filters.filterUnit, setError]);
+
+  const fetchAllUsers = useCallback(async () => {
+    try {
+      const response = await usersAPI.list({ limit: 1000 });
+      setAllUsers(response?.data?.data || []);
+    } catch (err) { /* silent */ }
+  }, []);
+
+  useEffect(() => {
+    if (isSuperAdmin()) { fetchCustomers(); fetchAllUsers(); filters.fetchFilterOptions(); }
+  }, [fetchCustomers, fetchAllUsers, filters.fetchFilterOptions, isSuperAdmin]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editingCustomer) {
-        await customersAPI.update(getCustomerId(editingCustomer), formData);
+      if (form.editingCustomer) {
+        await customersAPI.update(getCustomerId(form.editingCustomer), form.formData);
         setSuccess('Customer updated successfully');
       } else {
-        await customersAPI.create(formData);
+        await customersAPI.create(form.formData);
         setSuccess('Customer created successfully');
       }
-      setModalOpen(false); fetchCustomers();
+      form.setModalOpen(false); fetchCustomers();
     } catch (err) { setError(err.response?.data?.detail || 'Failed to save customer'); }
   };
 
@@ -631,45 +679,50 @@ const CustomersManagement = () => {
 
   if (!isSuperAdmin()) return <AccessDenied />;
 
+  const modalState = { modalOpen: form.modalOpen, usersModalOpen, editingCustomer: form.editingCustomer, selectedCustomer };
+
+  const formProps = {
+    onClose: () => form.setModalOpen(false),
+    onSubmit: handleSubmit,
+    formFields: {
+      formData: form.formData, handleInputChange: form.handleInputChange,
+      editingCustomer: form.editingCustomer, newTag: form.newTag, setNewTag: form.setNewTag,
+      handleAddTag: form.handleAddTag, handleRemoveTag: form.handleRemoveTag,
+      handleTagKeyDown: form.handleTagKeyDown,
+    },
+  };
+
+  const usersProps = {
+    onClose: () => setUsersModalOpen(false),
+    fields: {
+      loadingUsers, customerUsers,
+      userSearch, setUserSearch,
+      availableUsers,
+      onAssignUser: handleAssignUser, onRemoveUser: handleRemoveUser,
+    },
+  };
+
   return (
     <div className="space-y-6">
-      <CustomersHeader total={total} onExport={handleExport} onAddNew={openCreateModal} />
+      <CustomersHeader total={total} onExport={handleExport} onAddNew={form.openCreateModal} />
       <AlertMessages error={error} success={success} />
 
       <SearchFiltersBar
-        search={search} setSearch={setSearch}
-        filterLocation={filterLocation} setFilterLocation={setFilterLocation}
-        filterUnit={filterUnit} setFilterUnit={setFilterUnit}
-        availableLocations={availableLocations} availableUnits={availableUnits}
-        setPage={setPage}
+        search={filters.search} setSearch={filters.setSearch}
+        filterLocation={filters.filterLocation} setFilterLocation={filters.setFilterLocation}
+        filterUnit={filters.filterUnit} setFilterUnit={filters.setFilterUnit}
+        availableLocations={filters.availableLocations} availableUnits={filters.availableUnits}
+        setPage={filters.setPage}
       />
 
       <CustomersTable
         loading={loading} customers={customers}
-        onShowUsers={showUsers} onEdit={openEditModal}
+        onShowUsers={showUsers} onEdit={form.openEditModal}
         onToggleStatus={handleToggleStatus} onDelete={handleDelete}
-        page={page} limit={limit} total={total} totalPages={totalPages} setPage={setPage}
+        page={filters.page} limit={limit} total={total} totalPages={totalPages} setPage={filters.setPage}
       />
 
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editingCustomer ? 'Edit Customer' : 'Create Customer'} size="lg">
-        <CustomerForm
-          formData={formData} handleInputChange={handleInputChange}
-          editingCustomer={editingCustomer} newTag={newTag} setNewTag={setNewTag}
-          handleAddTag={handleAddTag} handleRemoveTag={handleRemoveTag}
-          handleTagKeyDown={handleTagKeyDown}
-          onSubmit={handleSubmit} onCancel={() => setModalOpen(false)}
-        />
-      </Modal>
-
-      <Modal isOpen={usersModalOpen} onClose={() => setUsersModalOpen(false)} title={`Manage Users: ${selectedCustomer?.name || ''}`} size="xl">
-        <UsersManagementContent
-          loadingUsers={loadingUsers} customerUsers={customerUsers}
-          userSearch={userSearch} setUserSearch={setUserSearch}
-          availableUsers={availableUsers}
-          onAssignUser={handleAssignUser} onRemoveUser={handleRemoveUser}
-          onClose={() => setUsersModalOpen(false)}
-        />
-      </Modal>
+      <CustomerModals modalState={modalState} formProps={formProps} usersProps={usersProps} />
     </div>
   );
 };

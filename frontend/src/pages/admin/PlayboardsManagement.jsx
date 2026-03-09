@@ -131,19 +131,29 @@ const BasicInfoTab = ({ formData, setFormData, scenarios, domains, addonInput, s
   </div>
 );
 
+const resolveFilterType = (filter) => {
+  if (filter.type) return filter.type;
+  if (Array.isArray(filter.attributes)) {
+    const typeAttr = filter.attributes.find(a => a.name === 'type' || a.key === 'type');
+    return typeAttr?.value || 'input';
+  }
+  if (filter.attributes && typeof filter.attributes === 'object') {
+    return filter.attributes.value || filter.attributes.name || 'input';
+  }
+  return 'input';
+};
+
+const FilterCardBadges = ({ filterType, attrCount, validatorCount, isEditing }) => (
+  <>
+    <Badge variant="default" className="ml-1 text-xs">{filterType}</Badge>
+    {attrCount > 0 && <Badge variant="primary" className="text-xs">{attrCount} attrs</Badge>}
+    {validatorCount > 0 && <Badge variant="warning" className="text-xs">{validatorCount} validators</Badge>}
+    {isEditing && <Badge variant="warning" className="text-xs">Editing</Badge>}
+  </>
+);
+
 const FilterCard = ({ filter, idx, editingFilterIndex, filtersLength, onEdit, onMoveFilter, onRemoveFilter }) => {
-  const getFilterType = () => {
-    if (filter.type) return filter.type;
-    if (Array.isArray(filter.attributes)) {
-      const typeAttr = filter.attributes.find(a => a.name === 'type' || a.key === 'type');
-      return typeAttr?.value || 'input';
-    }
-    if (filter.attributes && typeof filter.attributes === 'object') {
-      return filter.attributes.value || filter.attributes.name || 'input';
-    }
-    return 'input';
-  };
-  const filterType = getFilterType();
+  const filterType = resolveFilterType(filter);
   const attrCount = Array.isArray(filter.attributes) ? filter.attributes.length : 0;
   const validatorCount = Array.isArray(filter.validators) ? filter.validators.length : 0;
   const isEditing = editingFilterIndex === idx;
@@ -159,10 +169,7 @@ const FilterCard = ({ filter, idx, editingFilterIndex, filtersLength, onEdit, on
           <span className="font-medium">{filter.displayName}</span>
           <span className="text-content-muted text-xs ml-2">{filter.dataKey}</span>
         </div>
-        <Badge variant="default" className="ml-1 text-xs">{filterType}</Badge>
-        {attrCount > 0 && <Badge variant="primary" className="text-xs">{attrCount} attrs</Badge>}
-        {validatorCount > 0 && <Badge variant="warning" className="text-xs">{validatorCount} validators</Badge>}
-        {isEditing && <Badge variant="warning" className="text-xs">Editing</Badge>}
+        <FilterCardBadges filterType={filterType} attrCount={attrCount} validatorCount={validatorCount} isEditing={isEditing} />
       </div>
       <div className="flex items-center space-x-1">
         {idx > 0 && (
@@ -644,6 +651,59 @@ function usePlayboardsData() {
   return { playboards, scenarios, domains, loading, search, setSearch, pagination, setPagination, fetchData, handlePageChange };
 }
 
+// --- Helpers for useFilterBuilder to reduce cognitive complexity ---
+
+function updateOrAddAttribute(attributes, attrName, value) {
+  const existingIdx = attributes.findIndex(a => a.name === attrName);
+  if (existingIdx >= 0) {
+    attributes[existingIdx] = { name: attrName, key: attrName, value };
+  } else if (value !== undefined && value !== '' && value !== null) {
+    attributes.push({ name: attrName, key: attrName, value });
+  }
+  return attributes;
+}
+
+function buildFilterAttributes(currentFilter) {
+  let attributes = currentFilter.attributes.map(a => ({ name: a.name, key: a.key || a.name, value: a.value }));
+  attributes = updateOrAddAttribute(attributes, 'type', currentFilter.type);
+  if (currentFilter.defaultValue) attributes = updateOrAddAttribute(attributes, 'defaultValue', currentFilter.defaultValue);
+  if (currentFilter.regex) attributes = updateOrAddAttribute(attributes, 'regex', currentFilter.regex);
+  const hasOptions = [...OPTION_TYPES, TOGGLE_TYPE].includes(currentFilter.type) && currentFilter.options.length > 0;
+  if (hasOptions) attributes = updateOrAddAttribute(attributes, 'options', currentFilter.options);
+  return attributes;
+}
+
+function buildFilterObject(currentFilter, attributes, editingFilterIndex, filtersLength) {
+  return {
+    name: currentFilter.name, dataKey: currentFilter.dataKey || currentFilter.name, displayName: currentFilter.displayName,
+    index: editingFilterIndex !== null ? editingFilterIndex : filtersLength,
+    visible: currentFilter.visible, status: currentFilter.status, inputHint: currentFilter.inputHint, title: currentFilter.title,
+    type: currentFilter.type, attributes, description: [], validators: currentFilter.validators || [], styleClasses: currentFilter.styleClasses || '',
+  };
+}
+
+function getFilterAttrValue(filter, attrName) {
+  if (!Array.isArray(filter.attributes)) return '';
+  const attr = filter.attributes.find(a => (a.name === attrName || a.key === attrName));
+  return attr?.value || '';
+}
+
+function buildCurrentFilterFromExisting(filter, index) {
+  const filterType = filter.type || getFilterAttrValue(filter, 'type') || 'input';
+  const options = getFilterAttrValue(filter, 'options');
+  const allAttributes = Array.isArray(filter.attributes)
+    ? filter.attributes.map(a => ({ name: a.name || a.key, key: a.key || a.name, value: a.value }))
+    : [];
+  return {
+    name: filter.name || '', dataKey: filter.dataKey || filter.name || '', displayName: filter.displayName || '',
+    index: filter.index || index, visible: filter.visible !== false, status: filter.status || 'Y',
+    inputHint: filter.inputHint || '', title: filter.title || '', type: filterType,
+    defaultValue: getFilterAttrValue(filter, 'defaultValue'), regex: getFilterAttrValue(filter, 'regex'),
+    options: Array.isArray(options) ? options : [], attributes: allAttributes,
+    validators: filter.validators || [], styleClasses: filter.styleClasses || '',
+  };
+}
+
 function useFilterBuilder(formData, setFormData) {
   const [currentFilter, setCurrentFilter] = useState({ ...DEFAULT_FILTER });
   const [editingFilterIndex, setEditingFilterIndex] = useState(null);
@@ -698,24 +758,8 @@ function useFilterBuilder(formData, setFormData) {
   };
 
   const addFilter = () => {
-    let attributes = currentFilter.attributes.map(a => ({ name: a.name, key: a.key || a.name, value: a.value }));
-    const updateOrAddAttr = (attrName, value) => {
-      const existingIdx = attributes.findIndex(a => a.name === attrName);
-      if (existingIdx >= 0) { attributes[existingIdx] = { name: attrName, key: attrName, value }; }
-      else if (value !== undefined && value !== '' && value !== null) { attributes.push({ name: attrName, key: attrName, value }); }
-    };
-    updateOrAddAttr('type', currentFilter.type);
-    if (currentFilter.defaultValue) updateOrAddAttr('defaultValue', currentFilter.defaultValue);
-    if (currentFilter.regex) updateOrAddAttr('regex', currentFilter.regex);
-    if ([...OPTION_TYPES, TOGGLE_TYPE].includes(currentFilter.type) && currentFilter.options.length > 0) updateOrAddAttr('options', currentFilter.options);
-
-    const newFilter = {
-      name: currentFilter.name, dataKey: currentFilter.dataKey || currentFilter.name, displayName: currentFilter.displayName,
-      index: editingFilterIndex !== null ? editingFilterIndex : formData.widgets.filters.length,
-      visible: currentFilter.visible, status: currentFilter.status, inputHint: currentFilter.inputHint, title: currentFilter.title,
-      type: currentFilter.type, attributes, description: [], validators: currentFilter.validators || [], styleClasses: currentFilter.styleClasses || '',
-    };
-
+    const attributes = buildFilterAttributes(currentFilter);
+    const newFilter = buildFilterObject(currentFilter, attributes, editingFilterIndex, formData.widgets.filters.length);
     const newFilters = editingFilterIndex !== null
       ? formData.widgets.filters.map((f, i) => i === editingFilterIndex ? newFilter : f)
       : [...formData.widgets.filters, newFilter];
@@ -725,22 +769,7 @@ function useFilterBuilder(formData, setFormData) {
 
   const editFilter = (index) => {
     const filter = formData.widgets.filters[index];
-    const getAttrValue = (attrName) => {
-      if (!Array.isArray(filter.attributes)) return '';
-      const attr = filter.attributes.find(a => (a.name === attrName || a.key === attrName));
-      return attr?.value || '';
-    };
-    const filterType = filter.type || getAttrValue('type') || 'input';
-    const options = getAttrValue('options');
-    const allAttributes = Array.isArray(filter.attributes) ? filter.attributes.map(a => ({ name: a.name || a.key, key: a.key || a.name, value: a.value })) : [];
-    setCurrentFilter({
-      name: filter.name || '', dataKey: filter.dataKey || filter.name || '', displayName: filter.displayName || '',
-      index: filter.index || index, visible: filter.visible !== false, status: filter.status || 'Y',
-      inputHint: filter.inputHint || '', title: filter.title || '', type: filterType,
-      defaultValue: getAttrValue('defaultValue'), regex: getAttrValue('regex'),
-      options: Array.isArray(options) ? options : [], attributes: allAttributes,
-      validators: filter.validators || [], styleClasses: filter.styleClasses || '',
-    });
+    setCurrentFilter(buildCurrentFilterFromExisting(filter, index));
     setEditingFilterIndex(index);
   };
 
@@ -867,6 +896,204 @@ function useGridColumns(formData, setFormData) {
   return { columnInput, setColumnInput, addColumn, removeColumn, moveColumn };
 }
 
+// --- Helpers for PlayboardsManagement to reduce cognitive complexity ---
+
+function buildEditFormDataFromItem(item) {
+  const itemData = item.data || {};
+  const sourceWidgets = item.widgets || itemData.widgets;
+  const widgets = buildWidgetsFromSource(sourceWidgets);
+  return {
+    key: item.key || itemData.key || item.name || '', name: item.name || '', description: item.description || '',
+    scenarioKey: item.scenarioKey || itemData.scenarioKey || '', dataDomain: item.dataDomain || itemData.dataDomain || '',
+    status: itemData.status || (item.status === 'active' ? 'active' : 'inactive'), order: item.order || itemData.order || 0,
+    program_key: item.program_key || itemData.program_key || '', config_type: item.config_type || itemData.config_type || 'db',
+    addon_configurations: item.addon_configurations || itemData.addon_configurations || [], widgets,
+    scenarioDescription: item.scenarioDescription || itemData.scenarioDescription || [],
+  };
+}
+
+async function downloadPlayboardJson(item) {
+  const response = await playboardsAPI.download(item.id || item._id);
+  const dataStr = JSON.stringify(response.data, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${item.data?.key || item.name || 'playboard'}.json`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+const PlayboardsHeader = ({ onUploadClick, onBuildClick }) => (
+  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 className="text-2xl font-bold text-content">Playboards</h1>
+      <p className="text-content-muted mt-1">Manage playboard configurations with widgets, filters, and actions</p>
+    </div>
+    <div className="flex space-x-3">
+      <Button variant="secondary" onClick={onUploadClick}><Upload size={16} className="mr-2" />Upload JSON</Button>
+      <Button onClick={onBuildClick}><Plus size={16} className="mr-2" />Build Playboard</Button>
+    </div>
+  </div>
+);
+
+const PlayboardActionsCell = ({ item, onView, onDownload, onEdit, onDelete }) => (
+  <div className="flex items-center space-x-2">
+    <button onClick={(e) => { e.stopPropagation(); onView(item); }} className="p-1 text-content-muted hover:text-blue-600" title="View JSON"><Eye size={16} /></button>
+    <button onClick={(e) => { e.stopPropagation(); onDownload(item); }} className="p-1 text-content-muted hover:text-green-600" title="Download JSON"><Download size={16} /></button>
+    <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-1 text-content-muted hover:text-primary-600" title="Edit"><Pencil size={16} /></button>
+    <button onClick={(e) => { e.stopPropagation(); onDelete(item); }} className="p-1 text-red-500 hover:text-red-600" title="Delete"><Trash2 size={16} /></button>
+  </div>
+);
+
+const FiltersTab = ({ formData, filterBuilder }) => (
+  <div className="space-y-4">
+    {formData.widgets.filters.length > 0 && (
+      <div className="bg-surface-secondary rounded-lg p-4 mb-4">
+        <h4 className="font-medium text-content mb-2">Configured Filters ({formData.widgets.filters.length})</h4>
+        <div className="space-y-2">
+          {formData.widgets.filters.map((filter, idx) => (
+            <FilterCard key={idx} filter={filter} idx={idx} editingFilterIndex={filterBuilder.editingFilterIndex} filtersLength={formData.widgets.filters.length} onEdit={filterBuilder.editFilter} onMoveFilter={filterBuilder.moveFilter} onRemoveFilter={filterBuilder.removeFilter} />
+          ))}
+        </div>
+      </div>
+    )}
+    <div className={`border rounded-lg p-4 ${filterBuilder.editingFilterIndex !== null ? 'border-blue-500 bg-blue-50' : ''}`}>
+      <h4 className="font-medium text-content mb-3">{filterBuilder.editingFilterIndex !== null ? `Edit Filter: ${filterBuilder.currentFilter.displayName || filterBuilder.currentFilter.name}` : 'Add New Filter'}</h4>
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <Input label="Name (key) *" value={filterBuilder.currentFilter.name} onChange={(e) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, name: e.target.value, dataKey: e.target.value })} placeholder="query_text" />
+          <Input label="Display Name *" value={filterBuilder.currentFilter.displayName} onChange={(e) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, displayName: e.target.value })} placeholder="Customer#" />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Input label="Data Key" value={filterBuilder.currentFilter.dataKey} onChange={(e) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, dataKey: e.target.value })} placeholder="query_text" />
+          <Select label="Type" value={filterBuilder.currentFilter.type} onChange={(e) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, type: e.target.value })} options={FILTER_TYPE_OPTIONS} />
+        </div>
+      </div>
+      <div className="mt-4">
+        <CollapsibleSection title="Appearance" badge={(filterBuilder.currentFilter.inputHint || filterBuilder.currentFilter.title || filterBuilder.currentFilter.styleClasses) ? <Badge variant="primary" className="text-xs">configured</Badge> : null}>
+          <div className="space-y-4 mt-3">
+            <div className="grid grid-cols-2 gap-4">
+              <Input label="Input Hint" value={filterBuilder.currentFilter.inputHint} onChange={(e) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, inputHint: e.target.value })} placeholder="Enter Customer# or name" />
+              <Input label="Title" value={filterBuilder.currentFilter.title} onChange={(e) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, title: e.target.value })} placeholder="Enter Customer#'s or name" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Input label="Default Value" value={filterBuilder.currentFilter.defaultValue} onChange={(e) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, defaultValue: e.target.value })} />
+              <Input label="Regex Pattern" value={filterBuilder.currentFilter.regex} onChange={(e) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, regex: e.target.value })} placeholder="[A-Za-z0-9]" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Input label="Style Classes" value={filterBuilder.currentFilter.styleClasses} onChange={(e) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, styleClasses: e.target.value })} placeholder="col-md-4 custom-filter" />
+              <div className="flex items-end pb-2"><Toggle enabled={filterBuilder.currentFilter.visible} onChange={(val) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, visible: val })} label="Visible" /></div>
+            </div>
+          </div>
+        </CollapsibleSection>
+      </div>
+      <FilterOptionsSection currentFilter={filterBuilder.currentFilter} optionInput={filterBuilder.optionInput} setOptionInput={filterBuilder.setOptionInput} addOption={filterBuilder.addOption} removeOption={filterBuilder.removeOption} toggleOptionInput={filterBuilder.toggleOptionInput} setToggleOptionInput={filterBuilder.setToggleOptionInput} addToggleOption={filterBuilder.addToggleOption} />
+      <FilterValidationSection currentFilter={filterBuilder.currentFilter} validatorInput={filterBuilder.validatorInput} setValidatorInput={filterBuilder.setValidatorInput} addValidator={filterBuilder.addValidator} removeValidator={filterBuilder.removeValidator} />
+      <FilterAttributesSection currentFilter={filterBuilder.currentFilter} filterAttributeInput={filterBuilder.filterAttributeInput} setFilterAttributeInput={filterBuilder.setFilterAttributeInput} addFilterAttribute={filterBuilder.addFilterAttribute} removeFilterAttribute={filterBuilder.removeFilterAttribute} />
+      <div className="flex space-x-2 mt-4">
+        <Button type="button" onClick={filterBuilder.addFilter} variant={filterBuilder.editingFilterIndex !== null ? 'primary' : 'secondary'} disabled={!filterBuilder.currentFilter.name || !filterBuilder.currentFilter.displayName}>{filterBuilder.editingFilterIndex !== null ? 'Update Filter' : 'Add Filter'}</Button>
+        {filterBuilder.editingFilterIndex !== null && <Button type="button" onClick={filterBuilder.resetCurrentFilter} variant="secondary">Cancel Edit</Button>}
+      </div>
+    </div>
+  </div>
+);
+
+const RowActionsFormSection = ({ rowActionBuilder, domains }) => (
+  <div className={`border rounded-lg p-4 ${rowActionBuilder.editingRowActionIndex !== null ? 'border-blue-500 bg-blue-50' : ''}`}>
+    <h4 className="font-medium text-content mb-3">{rowActionBuilder.editingRowActionIndex !== null ? `Edit Row Action: ${rowActionBuilder.currentRowAction.name}` : 'Add New Row Action'}</h4>
+    <div className="grid grid-cols-2 gap-4">
+      <Input label="Key" value={rowActionBuilder.currentRowAction.key} onChange={(e) => rowActionBuilder.setCurrentRowAction({ ...rowActionBuilder.currentRowAction, key: e.target.value })} placeholder="orders_scenario_6" />
+      <Input label="Button Name" value={rowActionBuilder.currentRowAction.name} onChange={(e) => rowActionBuilder.setCurrentRowAction({ ...rowActionBuilder.currentRowAction, name: e.target.value })} placeholder="Orders" />
+    </div>
+    <div className="grid grid-cols-2 gap-4 mt-4">
+      <Input label="Path" value={rowActionBuilder.currentRowAction.path} onChange={(e) => rowActionBuilder.setCurrentRowAction({ ...rowActionBuilder.currentRowAction, path: e.target.value })} placeholder="/report/orders_scenario_6" />
+      <Select label="Data Domain" value={rowActionBuilder.currentRowAction.dataDomain} onChange={(e) => rowActionBuilder.setCurrentRowAction({ ...rowActionBuilder.currentRowAction, dataDomain: e.target.value })} options={[{ value: '', label: 'Select Domain' }, ...domains.map(d => ({ value: d.key, label: d.name }))]} />
+    </div>
+    <div className="grid grid-cols-2 gap-4 mt-4">
+      <Select label="Status" value={rowActionBuilder.currentRowAction.status} onChange={(e) => rowActionBuilder.setCurrentRowAction({ ...rowActionBuilder.currentRowAction, status: e.target.value })} options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
+    </div>
+    <div className="mt-4 border-t pt-4">
+      <label className="block text-sm font-medium text-content-secondary mb-2">Filters (maps row data to navigation params)</label>
+      <div className="flex space-x-2 mb-2">
+        <Input placeholder="inputKey (e.g., query_customer)" value={rowActionBuilder.actionFilterInput.inputKey} onChange={(e) => rowActionBuilder.setActionFilterInput({ ...rowActionBuilder.actionFilterInput, inputKey: e.target.value })} />
+        <Input placeholder="dataKey (e.g., customer)" value={rowActionBuilder.actionFilterInput.dataKey} onChange={(e) => rowActionBuilder.setActionFilterInput({ ...rowActionBuilder.actionFilterInput, dataKey: e.target.value })} />
+        <Button type="button" onClick={rowActionBuilder.addActionFilter} variant="secondary">Add</Button>
+      </div>
+      {rowActionBuilder.currentRowAction.filters.length > 0 && (
+        <div className="bg-surface-secondary rounded p-2 space-y-1">
+          {rowActionBuilder.currentRowAction.filters.map((filter, idx) => (
+            <div key={idx} className="flex items-center justify-between bg-surface p-2 rounded border text-sm">
+              <span><span className="text-content-muted">inputKey:</span> <span className="font-medium">{filter.inputKey}</span><span className="mx-2">-&gt;</span><span className="text-content-muted">dataKey:</span> <span className="font-medium">{filter.dataKey}</span></span>
+              <button type="button" onClick={() => rowActionBuilder.removeActionFilter(idx)} className="text-red-500 hover:text-red-700">x</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+    <div className="flex space-x-2 mt-4">
+      <Button type="button" onClick={rowActionBuilder.addRowAction} variant={rowActionBuilder.editingRowActionIndex !== null ? 'primary' : 'secondary'} disabled={!rowActionBuilder.currentRowAction.key || !rowActionBuilder.currentRowAction.name}>{rowActionBuilder.editingRowActionIndex !== null ? 'Update Row Action' : 'Add Row Action'}</Button>
+      {rowActionBuilder.editingRowActionIndex !== null && <Button type="button" onClick={rowActionBuilder.resetCurrentRowAction} variant="secondary">Cancel Edit</Button>}
+    </div>
+  </div>
+);
+
+const GridSettingsSection = ({ formData, setFormData, gridColumns, onRenderAsChange, onPageSizeChange, onPaginatedChange }) => (
+  <div className="border-t pt-6">
+    <h3 className="text-lg font-medium text-content mb-3">Grid Settings</h3>
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <Select label="Row Actions Render As" value={formData.widgets?.grid?.actions?.rowActions?.renderAs || 'button'} onChange={onRenderAsChange} options={[{ value: 'button', label: 'Buttons' }, { value: 'dropdown', label: 'Dropdown Menu' }, { value: 'icons', label: 'Icon Buttons' }]} />
+        <Input label="Default Page Size" type="number" value={formData.widgets?.grid?.layout?.defaultSize || 25} onChange={onPageSizeChange} />
+      </div>
+      <Toggle enabled={formData.widgets?.grid?.layout?.ispaginated === true} onChange={onPaginatedChange} label="Enable Pagination" />
+      <GridColumnsSection formData={formData} columnInput={gridColumns.columnInput} setColumnInput={gridColumns.setColumnInput} addColumn={gridColumns.addColumn} removeColumn={gridColumns.removeColumn} moveColumn={gridColumns.moveColumn} />
+      <PaginationWidgetSection formData={formData} setFormData={setFormData} />
+    </div>
+  </div>
+);
+
+const GridTab = ({ formData, setFormData, rowActionBuilder, gridColumns, domains, onRenderAsChange, onPageSizeChange, onPaginatedChange }) => {
+  const events = formData.widgets?.grid?.actions?.rowActions?.events || [];
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium text-content mb-3">Row Actions</h3>
+        {events.length > 0 && (
+          <div className="bg-surface-secondary rounded-lg p-4 mb-4">
+            <h4 className="font-medium text-content mb-2">Configured Row Actions ({events.length})</h4>
+            <div className="space-y-2">
+              {events.map((action, idx) => (
+                <RowActionCard key={idx} action={action} idx={idx} editingRowActionIndex={rowActionBuilder.editingRowActionIndex} eventsLength={events.length} onEdit={rowActionBuilder.editRowAction} onMoveRowAction={rowActionBuilder.moveRowAction} onRemoveRowAction={rowActionBuilder.removeRowAction} />
+              ))}
+            </div>
+          </div>
+        )}
+        <RowActionsFormSection rowActionBuilder={rowActionBuilder} domains={domains} />
+      </div>
+      <GridSettingsSection formData={formData} setFormData={setFormData} gridColumns={gridColumns} onRenderAsChange={onRenderAsChange} onPageSizeChange={onPageSizeChange} onPaginatedChange={onPaginatedChange} />
+    </div>
+  );
+};
+
+const TabNav = ({ activeTab, onTabChange }) => (
+  <div className="border-b border-edge mb-4">
+    <nav className="flex space-x-4 overflow-x-auto">
+      {TABS.map((tab) => (
+        <button key={tab.id} type="button" onClick={() => onTabChange(tab.id)} className={`py-2 px-3 text-sm font-medium border-b-2 whitespace-nowrap ${activeTab === tab.id ? 'border-primary-500 text-primary-600' : 'border-transparent text-content-muted hover:text-content-secondary'}`}>
+          {tab.label}
+        </button>
+      ))}
+    </nav>
+  </div>
+);
+
+function getGridParts(formData) {
+  const ra = formData.widgets?.grid?.actions?.rowActions || { renderAs: 'button', attributes: [], events: [] };
+  const act = formData.widgets?.grid?.actions || { rowActions: ra, headerActions: {} };
+  const g = formData.widgets?.grid || { actions: act, layout: { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 } };
+  const l = g.layout || { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 };
+  return { ra, act, g, l };
+}
+
 // --- Main Component ---
 
 const PlayboardsManagement = () => {
@@ -878,7 +1105,6 @@ const PlayboardsManagement = () => {
   const [selectedPlayboard, setSelectedPlayboard] = useState(null);
   const [activeTab, setActiveTab] = useState('basic');
 
-  // Upload state
   const [uploadFile, setUploadFile] = useState(null);
   const [uploadScenarioKey, setUploadScenarioKey] = useState('');
   const [uploadName, setUploadName] = useState('');
@@ -923,17 +1149,7 @@ const PlayboardsManagement = () => {
 
   const openEditModal = (item) => {
     setEditingItem(item);
-    const itemData = item.data || {};
-    const sourceWidgets = item.widgets || itemData.widgets;
-    const widgets = buildWidgetsFromSource(sourceWidgets);
-    setFormData({
-      key: item.key || itemData.key || item.name || '', name: item.name || '', description: item.description || '',
-      scenarioKey: item.scenarioKey || itemData.scenarioKey || '', dataDomain: item.dataDomain || itemData.dataDomain || '',
-      status: itemData.status || (item.status === 'active' ? 'active' : 'inactive'), order: item.order || itemData.order || 0,
-      program_key: item.program_key || itemData.program_key || '', config_type: item.config_type || itemData.config_type || 'db',
-      addon_configurations: item.addon_configurations || itemData.addon_configurations || [], widgets,
-      scenarioDescription: item.scenarioDescription || itemData.scenarioDescription || [],
-    });
+    setFormData(buildEditFormDataFromItem(item));
     setModalOpen(true);
   };
 
@@ -941,15 +1157,14 @@ const PlayboardsManagement = () => {
 
   const handleFileSelect = async (file) => {
     setUploadFile(file);
-    if (file && file.name.endsWith('.json')) {
-      try {
-        const text = await file.text();
-        const json = JSON.parse(text);
-        setJsonPreview(json);
-        if (json.scenarioKey) setUploadScenarioKey(json.scenarioKey);
-        if (json.key) setUploadName(json.key);
-      } catch (e) { toast.error('Invalid JSON file'); setJsonPreview(null); }
-    }
+    if (!file || !file.name.endsWith('.json')) return;
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      setJsonPreview(json);
+      if (json.scenarioKey) setUploadScenarioKey(json.scenarioKey);
+      if (json.key) setUploadName(json.key);
+    } catch (e) { toast.error('Invalid JSON file'); setJsonPreview(null); }
   };
 
   const resetUploadForm = () => { setUploadFile(null); setUploadScenarioKey(''); setUploadName(''); setUploadDescription(''); setJsonPreview(null); };
@@ -968,13 +1183,7 @@ const PlayboardsManagement = () => {
 
   const handleDownload = async (item) => {
     try {
-      const response = await playboardsAPI.download(item.id || item._id);
-      const dataStr = JSON.stringify(response.data, null, 2);
-      const blob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = `${item.data?.key || item.name || 'playboard'}.json`; a.click();
-      URL.revokeObjectURL(url);
+      await downloadPlayboardJson(item);
       toast.success('Download started');
     } catch (error) { toast.error('Failed to download playboard'); }
   };
@@ -1002,6 +1211,21 @@ const PlayboardsManagement = () => {
     navigator.clipboard.writeText(jsonStr).then(() => toast.success('JSON copied to clipboard')).catch(() => toast.error('Failed to copy JSON'));
   };
 
+  const handleRenderAsChange = (e) => {
+    const { ra, act, g } = getGridParts(formData);
+    setFormData({ ...formData, widgets: { ...formData.widgets, grid: { ...g, actions: { ...act, rowActions: { ...ra, renderAs: e.target.value } } } } });
+  };
+
+  const handlePageSizeChange = (e) => {
+    const { g, l } = getGridParts(formData);
+    setFormData({ ...formData, widgets: { ...formData.widgets, grid: { ...g, layout: { ...l, defaultSize: parseInt(e.target.value) || 25 } } } });
+  };
+
+  const handlePaginatedChange = (val) => {
+    const { g, l } = getGridParts(formData);
+    setFormData({ ...formData, widgets: { ...formData.widgets, grid: { ...g, layout: { ...l, ispaginated: val } } } });
+  };
+
   const columns = [
     { key: 'name', title: 'Name' },
     { key: 'data', title: 'Key', render: (val) => val?.key || '-' },
@@ -1011,27 +1235,13 @@ const PlayboardsManagement = () => {
     { key: 'data', title: 'Actions', render: (val) => <Badge variant="success">{val?.widgets?.grid?.actions?.rowActions?.events?.length || 0}</Badge> },
     { key: 'status', title: 'Status', render: (val) => <Badge variant={val === 'active' ? 'success' : 'danger'}>{val === 'active' ? 'Active' : 'Inactive'}</Badge> },
     { key: 'actions', title: 'Actions', render: (_, item) => (
-      <div className="flex items-center space-x-2">
-        <button onClick={(e) => { e.stopPropagation(); handleViewDetails(item); }} className="p-1 text-content-muted hover:text-blue-600" title="View JSON"><Eye size={16} /></button>
-        <button onClick={(e) => { e.stopPropagation(); handleDownload(item); }} className="p-1 text-content-muted hover:text-green-600" title="Download JSON"><Download size={16} /></button>
-        <button onClick={(e) => { e.stopPropagation(); openEditModal(item); }} className="p-1 text-content-muted hover:text-primary-600" title="Edit"><Pencil size={16} /></button>
-        <button onClick={(e) => { e.stopPropagation(); handleDelete(item); }} className="p-1 text-red-500 hover:text-red-600" title="Delete"><Trash2 size={16} /></button>
-      </div>
+      <PlayboardActionsCell item={item} onView={handleViewDetails} onDownload={handleDownload} onEdit={openEditModal} onDelete={handleDelete} />
     )}
   ];
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-content">Playboards</h1>
-          <p className="text-content-muted mt-1">Manage playboard configurations with widgets, filters, and actions</p>
-        </div>
-        <div className="flex space-x-3">
-          <Button variant="secondary" onClick={() => { resetUploadForm(); setUploadModalOpen(true); }}><Upload size={16} className="mr-2" />Upload JSON</Button>
-          <Button onClick={() => { resetForm(); setModalOpen(true); }}><Plus size={16} className="mr-2" />Build Playboard</Button>
-        </div>
-      </div>
+      <PlayboardsHeader onUploadClick={() => { resetUploadForm(); setUploadModalOpen(true); }} onBuildClick={() => { resetForm(); setModalOpen(true); }} />
 
       <Card className="p-4">
         <SearchInput value={pbData.search} onChange={(val) => { pbData.setSearch(val); pbData.setPagination(prev => ({ ...prev, page: 0 })); }} placeholder="Search playboards..." />
@@ -1042,162 +1252,13 @@ const PlayboardsManagement = () => {
         {pbData.pagination.pages > 1 && <Pagination currentPage={pbData.pagination.page} totalPages={pbData.pagination.pages} total={pbData.pagination.total} limit={pbData.pagination.limit} onPageChange={pbData.handlePageChange} />}
       </Card>
 
-      {/* Create/Edit Modal */}
       <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); resetForm(); }} title={editingItem ? 'Edit Playboard' : 'Create Playboard'} size="xl">
         <form onSubmit={editingItem ? handleUpdate : handleCreate}>
-          <div className="border-b border-edge mb-4">
-            <nav className="flex space-x-4 overflow-x-auto">
-              {TABS.map((tab) => (
-                <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} className={`py-2 px-3 text-sm font-medium border-b-2 whitespace-nowrap ${activeTab === tab.id ? 'border-primary-500 text-primary-600' : 'border-transparent text-content-muted hover:text-content-secondary'}`}>
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
-          </div>
+          <TabNav activeTab={activeTab} onTabChange={setActiveTab} />
 
           {activeTab === 'basic' && <BasicInfoTab formData={formData} setFormData={setFormData} scenarios={pbData.scenarios} domains={pbData.domains} addonInput={addonInput} setAddonInput={setAddonInput} addAddon={addAddon} removeAddon={removeAddon} />}
-
-          {activeTab === 'filters' && (
-            <div className="space-y-4">
-              {formData.widgets.filters.length > 0 && (
-                <div className="bg-surface-secondary rounded-lg p-4 mb-4">
-                  <h4 className="font-medium text-content mb-2">Configured Filters ({formData.widgets.filters.length})</h4>
-                  <div className="space-y-2">
-                    {formData.widgets.filters.map((filter, idx) => (
-                      <FilterCard key={idx} filter={filter} idx={idx} editingFilterIndex={filterBuilder.editingFilterIndex} filtersLength={formData.widgets.filters.length} onEdit={filterBuilder.editFilter} onMoveFilter={filterBuilder.moveFilter} onRemoveFilter={filterBuilder.removeFilter} />
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div className={`border rounded-lg p-4 ${filterBuilder.editingFilterIndex !== null ? 'border-blue-500 bg-blue-50' : ''}`}>
-                <h4 className="font-medium text-content mb-3">{filterBuilder.editingFilterIndex !== null ? `Edit Filter: ${filterBuilder.currentFilter.displayName || filterBuilder.currentFilter.name}` : 'Add New Filter'}</h4>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input label="Name (key) *" value={filterBuilder.currentFilter.name} onChange={(e) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, name: e.target.value, dataKey: e.target.value })} placeholder="query_text" />
-                    <Input label="Display Name *" value={filterBuilder.currentFilter.displayName} onChange={(e) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, displayName: e.target.value })} placeholder="Customer#" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input label="Data Key" value={filterBuilder.currentFilter.dataKey} onChange={(e) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, dataKey: e.target.value })} placeholder="query_text" />
-                    <Select label="Type" value={filterBuilder.currentFilter.type} onChange={(e) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, type: e.target.value })} options={FILTER_TYPE_OPTIONS} />
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <CollapsibleSection title="Appearance" badge={(filterBuilder.currentFilter.inputHint || filterBuilder.currentFilter.title || filterBuilder.currentFilter.styleClasses) ? <Badge variant="primary" className="text-xs">configured</Badge> : null}>
-                    <div className="space-y-4 mt-3">
-                      <div className="grid grid-cols-2 gap-4">
-                        <Input label="Input Hint" value={filterBuilder.currentFilter.inputHint} onChange={(e) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, inputHint: e.target.value })} placeholder="Enter Customer# or name" />
-                        <Input label="Title" value={filterBuilder.currentFilter.title} onChange={(e) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, title: e.target.value })} placeholder="Enter Customer#'s or name" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <Input label="Default Value" value={filterBuilder.currentFilter.defaultValue} onChange={(e) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, defaultValue: e.target.value })} />
-                        <Input label="Regex Pattern" value={filterBuilder.currentFilter.regex} onChange={(e) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, regex: e.target.value })} placeholder="[A-Za-z0-9]" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <Input label="Style Classes" value={filterBuilder.currentFilter.styleClasses} onChange={(e) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, styleClasses: e.target.value })} placeholder="col-md-4 custom-filter" />
-                        <div className="flex items-end pb-2"><Toggle enabled={filterBuilder.currentFilter.visible} onChange={(val) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, visible: val })} label="Visible" /></div>
-                      </div>
-                    </div>
-                  </CollapsibleSection>
-                </div>
-                <FilterOptionsSection currentFilter={filterBuilder.currentFilter} optionInput={filterBuilder.optionInput} setOptionInput={filterBuilder.setOptionInput} addOption={filterBuilder.addOption} removeOption={filterBuilder.removeOption} toggleOptionInput={filterBuilder.toggleOptionInput} setToggleOptionInput={filterBuilder.setToggleOptionInput} addToggleOption={filterBuilder.addToggleOption} />
-                <FilterValidationSection currentFilter={filterBuilder.currentFilter} validatorInput={filterBuilder.validatorInput} setValidatorInput={filterBuilder.setValidatorInput} addValidator={filterBuilder.addValidator} removeValidator={filterBuilder.removeValidator} />
-                <FilterAttributesSection currentFilter={filterBuilder.currentFilter} filterAttributeInput={filterBuilder.filterAttributeInput} setFilterAttributeInput={filterBuilder.setFilterAttributeInput} addFilterAttribute={filterBuilder.addFilterAttribute} removeFilterAttribute={filterBuilder.removeFilterAttribute} />
-                <div className="flex space-x-2 mt-4">
-                  <Button type="button" onClick={filterBuilder.addFilter} variant={filterBuilder.editingFilterIndex !== null ? 'primary' : 'secondary'} disabled={!filterBuilder.currentFilter.name || !filterBuilder.currentFilter.displayName}>{filterBuilder.editingFilterIndex !== null ? 'Update Filter' : 'Add Filter'}</Button>
-                  {filterBuilder.editingFilterIndex !== null && <Button type="button" onClick={filterBuilder.resetCurrentFilter} variant="secondary">Cancel Edit</Button>}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'grid' && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-medium text-content mb-3">Row Actions</h3>
-                {(formData.widgets?.grid?.actions?.rowActions?.events?.length || 0) > 0 && (
-                  <div className="bg-surface-secondary rounded-lg p-4 mb-4">
-                    <h4 className="font-medium text-content mb-2">Configured Row Actions ({formData.widgets?.grid?.actions?.rowActions?.events?.length || 0})</h4>
-                    <div className="space-y-2">
-                      {(formData.widgets?.grid?.actions?.rowActions?.events || []).map((action, idx) => (
-                        <RowActionCard key={idx} action={action} idx={idx} editingRowActionIndex={rowActionBuilder.editingRowActionIndex} eventsLength={(formData.widgets?.grid?.actions?.rowActions?.events || []).length} onEdit={rowActionBuilder.editRowAction} onMoveRowAction={rowActionBuilder.moveRowAction} onRemoveRowAction={rowActionBuilder.removeRowAction} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div className={`border rounded-lg p-4 ${rowActionBuilder.editingRowActionIndex !== null ? 'border-blue-500 bg-blue-50' : ''}`}>
-                  <h4 className="font-medium text-content mb-3">{rowActionBuilder.editingRowActionIndex !== null ? `Edit Row Action: ${rowActionBuilder.currentRowAction.name}` : 'Add New Row Action'}</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input label="Key" value={rowActionBuilder.currentRowAction.key} onChange={(e) => rowActionBuilder.setCurrentRowAction({ ...rowActionBuilder.currentRowAction, key: e.target.value })} placeholder="orders_scenario_6" />
-                    <Input label="Button Name" value={rowActionBuilder.currentRowAction.name} onChange={(e) => rowActionBuilder.setCurrentRowAction({ ...rowActionBuilder.currentRowAction, name: e.target.value })} placeholder="Orders" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 mt-4">
-                    <Input label="Path" value={rowActionBuilder.currentRowAction.path} onChange={(e) => rowActionBuilder.setCurrentRowAction({ ...rowActionBuilder.currentRowAction, path: e.target.value })} placeholder="/report/orders_scenario_6" />
-                    <Select label="Data Domain" value={rowActionBuilder.currentRowAction.dataDomain} onChange={(e) => rowActionBuilder.setCurrentRowAction({ ...rowActionBuilder.currentRowAction, dataDomain: e.target.value })} options={[{ value: '', label: 'Select Domain' }, ...pbData.domains.map(d => ({ value: d.key, label: d.name }))]} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 mt-4">
-                    <Select label="Status" value={rowActionBuilder.currentRowAction.status} onChange={(e) => rowActionBuilder.setCurrentRowAction({ ...rowActionBuilder.currentRowAction, status: e.target.value })} options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
-                  </div>
-                  <div className="mt-4 border-t pt-4">
-                    <label className="block text-sm font-medium text-content-secondary mb-2">Filters (maps row data to navigation params)</label>
-                    <div className="flex space-x-2 mb-2">
-                      <Input placeholder="inputKey (e.g., query_customer)" value={rowActionBuilder.actionFilterInput.inputKey} onChange={(e) => rowActionBuilder.setActionFilterInput({ ...rowActionBuilder.actionFilterInput, inputKey: e.target.value })} />
-                      <Input placeholder="dataKey (e.g., customer)" value={rowActionBuilder.actionFilterInput.dataKey} onChange={(e) => rowActionBuilder.setActionFilterInput({ ...rowActionBuilder.actionFilterInput, dataKey: e.target.value })} />
-                      <Button type="button" onClick={rowActionBuilder.addActionFilter} variant="secondary">Add</Button>
-                    </div>
-                    {rowActionBuilder.currentRowAction.filters.length > 0 && (
-                      <div className="bg-surface-secondary rounded p-2 space-y-1">
-                        {rowActionBuilder.currentRowAction.filters.map((filter, idx) => (
-                          <div key={idx} className="flex items-center justify-between bg-surface p-2 rounded border text-sm">
-                            <span><span className="text-content-muted">inputKey:</span> <span className="font-medium">{filter.inputKey}</span><span className="mx-2">-&gt;</span><span className="text-content-muted">dataKey:</span> <span className="font-medium">{filter.dataKey}</span></span>
-                            <button type="button" onClick={() => rowActionBuilder.removeActionFilter(idx)} className="text-red-500 hover:text-red-700">x</button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex space-x-2 mt-4">
-                    <Button type="button" onClick={rowActionBuilder.addRowAction} variant={rowActionBuilder.editingRowActionIndex !== null ? 'primary' : 'secondary'} disabled={!rowActionBuilder.currentRowAction.key || !rowActionBuilder.currentRowAction.name}>{rowActionBuilder.editingRowActionIndex !== null ? 'Update Row Action' : 'Add Row Action'}</Button>
-                    {rowActionBuilder.editingRowActionIndex !== null && <Button type="button" onClick={rowActionBuilder.resetCurrentRowAction} variant="secondary">Cancel Edit</Button>}
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-medium text-content mb-3">Grid Settings</h3>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <Select label="Row Actions Render As" value={formData.widgets?.grid?.actions?.rowActions?.renderAs || 'button'}
-                      onChange={(e) => {
-                        const ra = formData.widgets?.grid?.actions?.rowActions || { renderAs: 'button', attributes: [], events: [] };
-                        const act = formData.widgets?.grid?.actions || { rowActions: ra, headerActions: {} };
-                        const g = formData.widgets?.grid || { actions: act, layout: { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 } };
-                        setFormData({ ...formData, widgets: { ...formData.widgets, grid: { ...g, actions: { ...act, rowActions: { ...ra, renderAs: e.target.value } } } } });
-                      }}
-                      options={[{ value: 'button', label: 'Buttons' }, { value: 'dropdown', label: 'Dropdown Menu' }, { value: 'icons', label: 'Icon Buttons' }]}
-                    />
-                    <Input label="Default Page Size" type="number" value={formData.widgets?.grid?.layout?.defaultSize || 25}
-                      onChange={(e) => {
-                        const l = formData.widgets?.grid?.layout || { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 };
-                        const g = formData.widgets?.grid || { actions: { rowActions: { renderAs: 'button', attributes: [], events: [] }, headerActions: {} }, layout: l };
-                        setFormData({ ...formData, widgets: { ...formData.widgets, grid: { ...g, layout: { ...l, defaultSize: parseInt(e.target.value) || 25 } } } });
-                      }}
-                    />
-                  </div>
-                  <Toggle enabled={formData.widgets?.grid?.layout?.ispaginated === true}
-                    onChange={(val) => {
-                      const l = formData.widgets?.grid?.layout || { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 };
-                      const g = formData.widgets?.grid || { actions: { rowActions: { renderAs: 'button', attributes: [], events: [] }, headerActions: {} }, layout: l };
-                      setFormData({ ...formData, widgets: { ...formData.widgets, grid: { ...g, layout: { ...l, ispaginated: val } } } });
-                    }}
-                    label="Enable Pagination"
-                  />
-                  <GridColumnsSection formData={formData} columnInput={gridColumns.columnInput} setColumnInput={gridColumns.setColumnInput} addColumn={gridColumns.addColumn} removeColumn={gridColumns.removeColumn} moveColumn={gridColumns.moveColumn} />
-                  <PaginationWidgetSection formData={formData} setFormData={setFormData} />
-                </div>
-              </div>
-            </div>
-          )}
-
+          {activeTab === 'filters' && <FiltersTab formData={formData} filterBuilder={filterBuilder} />}
+          {activeTab === 'grid' && <GridTab formData={formData} setFormData={setFormData} rowActionBuilder={rowActionBuilder} gridColumns={gridColumns} domains={pbData.domains} onRenderAsChange={handleRenderAsChange} onPageSizeChange={handlePageSizeChange} onPaginatedChange={handlePaginatedChange} />}
           {activeTab === 'description' && <DescriptionTab formData={formData} currentDescription={currentDescription} setCurrentDescription={setCurrentDescription} addDescription={addDescription} removeDescription={removeDescription} />}
           {activeTab === 'json' && <JsonPreviewTab formData={formData} copyJsonToClipboard={copyJsonToClipboard} />}
 

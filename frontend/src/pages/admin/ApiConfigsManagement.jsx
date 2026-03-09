@@ -328,68 +328,148 @@ function ApiConfigForm({ formData, setFormData, editingItem, headersJson, setHea
   );
 }
 
+/* ─── Test Result Sub-Components ─── */
+function TestLoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center py-8">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      <span className="ml-3 text-content-muted">Testing API connection...</span>
+    </div>
+  );
+}
+
+function TestResultStatusBanner({ success }) {
+  const bgClass = success ? 'bg-green-50' : 'bg-red-50';
+  const textClass = success ? 'text-green-700' : 'text-red-700';
+  const icon = success ? <Check size={20} className="text-green-500" /> : <X size={20} className="text-red-500" />;
+  const label = success ? 'Connection Successful' : 'Connection Failed';
+  return (
+    <div className={`p-4 rounded-lg ${bgClass}`}>
+      <div className="flex items-center gap-2">
+        {icon}
+        <span className={`font-medium ${textClass}`}>{label}</span>
+      </div>
+    </div>
+  );
+}
+
+function TestResultMetrics({ testResult }) {
+  return (
+    <div className="grid grid-cols-3 gap-4">
+      <div className="bg-surface-secondary p-3 rounded-lg">
+        <p className="text-xs text-content-muted">Status Code</p>
+        <p className="text-lg font-semibold">{testResult.status_code || 'N/A'}</p>
+      </div>
+      <div className="bg-surface-secondary p-3 rounded-lg">
+        <p className="text-xs text-content-muted">Response Time</p>
+        <p className="text-lg font-semibold">{testResult.response_time_ms ? `${testResult.response_time_ms}ms` : 'N/A'}</p>
+      </div>
+      <div className="bg-surface-secondary p-3 rounded-lg">
+        <p className="text-xs text-content-muted">SSL Version</p>
+        <p className="text-lg font-semibold">{testResult.ssl_info?.version || 'N/A'}</p>
+      </div>
+    </div>
+  );
+}
+
+function formatResponseBody(body) {
+  return typeof body === 'string' ? body : JSON.stringify(body, null, 2);
+}
+
+function TestResultDetails({ testResult }) {
+  return (
+    <>
+      <TestResultStatusBanner success={testResult.success} />
+      <TestResultMetrics testResult={testResult} />
+      {testResult.error && (
+        <div className="bg-red-50 p-3 rounded-lg">
+          <p className="text-sm font-medium text-red-700">Error</p>
+          <p className="text-sm text-red-600">{testResult.error}</p>
+        </div>
+      )}
+      {testResult.response_headers && (
+        <div>
+          <p className="text-sm font-medium text-content-secondary mb-2">Response Headers</p>
+          <pre className="bg-neutral-900 text-green-400 p-3 rounded-lg overflow-auto max-h-32 text-xs">
+            {JSON.stringify(testResult.response_headers, null, 2)}
+          </pre>
+        </div>
+      )}
+      {testResult.response_body && (
+        <div>
+          <p className="text-sm font-medium text-content-secondary mb-2">Response Body</p>
+          <pre className="bg-neutral-900 text-green-400 p-3 rounded-lg overflow-auto max-h-48 text-xs">
+            {formatResponseBody(testResult.response_body)}
+          </pre>
+        </div>
+      )}
+    </>
+  );
+}
+
 /* ─── Test Result Modal Content ─── */
 function TestResultContent({ testLoading, testResult, onClose }) {
   return (
     <div className="space-y-4">
-      {testLoading ? (
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-          <span className="ml-3 text-content-muted">Testing API connection...</span>
-        </div>
-      ) : testResult ? (
-        <>
-          <div className={`p-4 rounded-lg ${testResult.success ? 'bg-green-50' : 'bg-red-50'}`}>
-            <div className="flex items-center gap-2">
-              {testResult.success ? <Check size={20} className="text-green-500" /> : <X size={20} className="text-red-500" />}
-              <span className={`font-medium ${testResult.success ? 'text-green-700' : 'text-red-700'}`}>
-                {testResult.success ? 'Connection Successful' : 'Connection Failed'}
-              </span>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-surface-secondary p-3 rounded-lg">
-              <p className="text-xs text-content-muted">Status Code</p>
-              <p className="text-lg font-semibold">{testResult.status_code || 'N/A'}</p>
-            </div>
-            <div className="bg-surface-secondary p-3 rounded-lg">
-              <p className="text-xs text-content-muted">Response Time</p>
-              <p className="text-lg font-semibold">{testResult.response_time_ms ? `${testResult.response_time_ms}ms` : 'N/A'}</p>
-            </div>
-            <div className="bg-surface-secondary p-3 rounded-lg">
-              <p className="text-xs text-content-muted">SSL Version</p>
-              <p className="text-lg font-semibold">{testResult.ssl_info?.version || 'N/A'}</p>
-            </div>
-          </div>
-          {testResult.error && (
-            <div className="bg-red-50 p-3 rounded-lg">
-              <p className="text-sm font-medium text-red-700">Error</p>
-              <p className="text-sm text-red-600">{testResult.error}</p>
-            </div>
-          )}
-          {testResult.response_headers && (
-            <div>
-              <p className="text-sm font-medium text-content-secondary mb-2">Response Headers</p>
-              <pre className="bg-neutral-900 text-green-400 p-3 rounded-lg overflow-auto max-h-32 text-xs">
-                {JSON.stringify(testResult.response_headers, null, 2)}
-              </pre>
-            </div>
-          )}
-          {testResult.response_body && (
-            <div>
-              <p className="text-sm font-medium text-content-secondary mb-2">Response Body</p>
-              <pre className="bg-neutral-900 text-green-400 p-3 rounded-lg overflow-auto max-h-48 text-xs">
-                {typeof testResult.response_body === 'string' ? testResult.response_body : JSON.stringify(testResult.response_body, null, 2)}
-              </pre>
-            </div>
-          )}
-        </>
-      ) : null}
+      {testLoading && <TestLoadingSpinner />}
+      {!testLoading && testResult && <TestResultDetails testResult={testResult} />}
       <div className="flex justify-end pt-4">
         <Button variant="secondary" onClick={onClose}>Close</Button>
       </div>
     </div>
   );
+}
+
+/* ─── Detail View Sub-Components ─── */
+function DetailField({ label, children }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-content-muted">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function DetailSslCerts({ config }) {
+  const hasCerts = config.ssl_cert_gcs_path || config.ssl_key_gcs_path || config.ssl_ca_gcs_path;
+  if (!hasCerts) return null;
+  return (
+    <div className="bg-purple-50 p-4 rounded-lg">
+      <h4 className="font-medium text-purple-900 mb-2">SSL Certificates</h4>
+      <div className="space-y-1 text-sm">
+        {config.ssl_cert_gcs_path && <p><span className="text-purple-600">Client Cert:</span> {config.ssl_cert_gcs_path}</p>}
+        {config.ssl_key_gcs_path && <p><span className="text-purple-600">Client Key:</span> {config.ssl_key_gcs_path}</p>}
+        {config.ssl_ca_gcs_path && <p><span className="text-purple-600">CA Cert:</span> {config.ssl_ca_gcs_path}</p>}
+      </div>
+    </div>
+  );
+}
+
+function DetailTimestamps({ config }) {
+  return (
+    <div className="grid grid-cols-2 gap-4 text-sm">
+      <DetailField label="Created">
+        <p className="text-content">
+          {config.created_at ? new Date(config.created_at).toLocaleString() : '-'}
+          {config.created_by && <span className="text-content-muted"> by {config.created_by}</span>}
+        </p>
+      </DetailField>
+      <DetailField label="Updated">
+        <p className="text-content">
+          {config.updated_at ? new Date(config.updated_at).toLocaleString() : '-'}
+          {config.updated_by && <span className="text-content-muted"> by {config.updated_by}</span>}
+        </p>
+      </DetailField>
+    </div>
+  );
+}
+
+function hasHeaders(config) {
+  return Object.keys(config.headers || {}).length > 0;
+}
+
+function hasTags(config) {
+  return (config.tags || []).length > 0;
 }
 
 /* ─── Detail View Modal Content ─── */
@@ -398,52 +478,24 @@ function DetailViewContent({ selectedConfig, onTest, onEdit, onClose }) {
   return (
     <div className="space-y-4 max-h-[70vh] overflow-y-auto">
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-content-muted">Key</label>
-          <p className="text-content font-mono">{selectedConfig.key}</p>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-content-muted">Name</label>
-          <p className="text-content">{selectedConfig.name}</p>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-content-muted">Status</label>
-          {getStatusBadge(selectedConfig.status)}
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-content-muted">Auth Type</label>
-          {getAuthTypeBadge(selectedConfig.auth_type)}
-        </div>
+        <DetailField label="Key"><p className="text-content font-mono">{selectedConfig.key}</p></DetailField>
+        <DetailField label="Name"><p className="text-content">{selectedConfig.name}</p></DetailField>
+        <DetailField label="Status">{getStatusBadge(selectedConfig.status)}</DetailField>
+        <DetailField label="Auth Type">{getAuthTypeBadge(selectedConfig.auth_type)}</DetailField>
       </div>
-      <div>
-        <label className="block text-sm font-medium text-content-muted">Endpoint</label>
+      <DetailField label="Endpoint">
         <p className="text-content font-mono text-sm break-all">{selectedConfig.endpoint}</p>
-      </div>
+      </DetailField>
       {selectedConfig.description && (
-        <div>
-          <label className="block text-sm font-medium text-content-muted">Description</label>
-          <p className="text-content">{selectedConfig.description}</p>
-        </div>
+        <DetailField label="Description"><p className="text-content">{selectedConfig.description}</p></DetailField>
       )}
       <div className="grid grid-cols-4 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-content-muted">Method</label>
-          <Badge variant="primary">{selectedConfig.method}</Badge>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-content-muted">Timeout</label>
-          <p className="text-content">{selectedConfig.timeout}s</p>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-content-muted">SSL Verify</label>
-          <p className="text-content">{selectedConfig.ssl_verify ? 'Yes' : 'No'}</p>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-content-muted">Use Proxy</label>
-          <p className="text-content">{selectedConfig.use_proxy ? 'Yes' : 'No'}</p>
-        </div>
+        <DetailField label="Method"><Badge variant="primary">{selectedConfig.method}</Badge></DetailField>
+        <DetailField label="Timeout"><p className="text-content">{selectedConfig.timeout}s</p></DetailField>
+        <DetailField label="SSL Verify"><p className="text-content">{selectedConfig.ssl_verify ? 'Yes' : 'No'}</p></DetailField>
+        <DetailField label="Use Proxy"><p className="text-content">{selectedConfig.use_proxy ? 'Yes' : 'No'}</p></DetailField>
       </div>
-      {(selectedConfig.tags || []).length > 0 && (
+      {hasTags(selectedConfig) && (
         <div>
           <label className="block text-sm font-medium text-content-muted mb-2">Tags</label>
           <div className="flex flex-wrap gap-2">
@@ -453,17 +505,8 @@ function DetailViewContent({ selectedConfig, onTest, onEdit, onClose }) {
           </div>
         </div>
       )}
-      {(selectedConfig.ssl_cert_gcs_path || selectedConfig.ssl_key_gcs_path || selectedConfig.ssl_ca_gcs_path) && (
-        <div className="bg-purple-50 p-4 rounded-lg">
-          <h4 className="font-medium text-purple-900 mb-2">SSL Certificates</h4>
-          <div className="space-y-1 text-sm">
-            {selectedConfig.ssl_cert_gcs_path && <p><span className="text-purple-600">Client Cert:</span> {selectedConfig.ssl_cert_gcs_path}</p>}
-            {selectedConfig.ssl_key_gcs_path && <p><span className="text-purple-600">Client Key:</span> {selectedConfig.ssl_key_gcs_path}</p>}
-            {selectedConfig.ssl_ca_gcs_path && <p><span className="text-purple-600">CA Cert:</span> {selectedConfig.ssl_ca_gcs_path}</p>}
-          </div>
-        </div>
-      )}
-      {Object.keys(selectedConfig.headers || {}).length > 0 && (
+      <DetailSslCerts config={selectedConfig} />
+      {hasHeaders(selectedConfig) && (
         <div>
           <label className="block text-sm font-medium text-content-muted mb-2">Headers</label>
           <pre className="bg-neutral-900 text-green-400 p-3 rounded-lg overflow-auto max-h-32 text-xs">
@@ -471,22 +514,7 @@ function DetailViewContent({ selectedConfig, onTest, onEdit, onClose }) {
           </pre>
         </div>
       )}
-      <div className="grid grid-cols-2 gap-4 text-sm">
-        <div>
-          <label className="block text-sm font-medium text-content-muted">Created</label>
-          <p className="text-content">
-            {selectedConfig.created_at ? new Date(selectedConfig.created_at).toLocaleString() : '-'}
-            {selectedConfig.created_by && <span className="text-content-muted"> by {selectedConfig.created_by}</span>}
-          </p>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-content-muted">Updated</label>
-          <p className="text-content">
-            {selectedConfig.updated_at ? new Date(selectedConfig.updated_at).toLocaleString() : '-'}
-            {selectedConfig.updated_by && <span className="text-content-muted"> by {selectedConfig.updated_by}</span>}
-          </p>
-        </div>
-      </div>
+      <DetailTimestamps config={selectedConfig} />
       <div className="flex justify-end space-x-3 pt-4 border-t">
         <Button variant="secondary" onClick={() => onTest(selectedConfig)}>Test API</Button>
         <Button onClick={() => onEdit(selectedConfig)}>Edit</Button>
@@ -509,22 +537,27 @@ function getDefaultFormData() {
 }
 
 /* ─── Build form data from existing item ─── */
+const FORM_FIELD_DEFAULTS = {
+  description: '', method: 'GET', headers: {}, params: {}, body: {},
+  auth_type: 'none', auth_config: {}, use_proxy: false, proxy_url: '',
+  ping_endpoint: '', ping_method: 'GET', cache_enabled: false, status: 'active', tags: [],
+};
+
+const FORM_NUMERIC_DEFAULTS = {
+  timeout: DEFAULT_TIMEOUT, retry_count: DEFAULT_RETRY_COUNT, retry_delay: DEFAULT_RETRY_DELAY,
+  ping_expected_status: DEFAULT_PING_EXPECTED_STATUS, ping_timeout: DEFAULT_PING_TIMEOUT,
+  cache_ttl: DEFAULT_CACHE_TTL,
+};
+
 function buildFormDataFromItem(item) {
-  return {
-    key: item.key, name: item.name, description: item.description || '',
-    endpoint: item.endpoint, method: item.method || 'GET',
-    headers: item.headers || {}, params: item.params || {},
-    body: item.body || {}, auth_type: item.auth_type || 'none',
-    auth_config: item.auth_config || {}, ssl_verify: item.ssl_verify !== false,
-    timeout: item.timeout || DEFAULT_TIMEOUT, retry_count: item.retry_count || DEFAULT_RETRY_COUNT,
-    retry_delay: item.retry_delay || DEFAULT_RETRY_DELAY, use_proxy: item.use_proxy || false,
-    proxy_url: item.proxy_url || '', ping_endpoint: item.ping_endpoint || '',
-    ping_method: item.ping_method || 'GET',
-    ping_expected_status: item.ping_expected_status || DEFAULT_PING_EXPECTED_STATUS,
-    ping_timeout: item.ping_timeout || DEFAULT_PING_TIMEOUT,
-    cache_enabled: item.cache_enabled || false, cache_ttl: item.cache_ttl || DEFAULT_CACHE_TTL,
-    status: item.status || 'active', tags: item.tags || [],
-  };
+  const result = { key: item.key, name: item.name, ssl_verify: item.ssl_verify !== false, endpoint: item.endpoint };
+  for (const [field, fallback] of Object.entries(FORM_FIELD_DEFAULTS)) {
+    result[field] = item[field] || fallback;
+  }
+  for (const [field, fallback] of Object.entries(FORM_NUMERIC_DEFAULTS)) {
+    result[field] = item[field] || fallback;
+  }
+  return result;
 }
 
 /* ─── Header Section ─── */
@@ -591,6 +624,53 @@ function CertUploadContent({ certFile, setCertFile, certType, setCertType, onSub
   );
 }
 
+/* ─── Modals Section ─── */
+function ApiConfigModals({ modalState, formProps, testProps, detailProps, certProps }) {
+  const { modalOpen, testModalOpen, detailModalOpen, certModalOpen, editingItem, selectedConfig } = modalState;
+
+  return (
+    <>
+      <Modal isOpen={modalOpen} onClose={formProps.onClose} title={editingItem ? 'Edit API Configuration' : 'Add API Configuration'} size="xl">
+        <ApiConfigForm {...formProps.formFields} onSubmit={formProps.onSubmit} onCancel={formProps.onClose} />
+      </Modal>
+
+      <Modal isOpen={testModalOpen} onClose={testProps.onClose} title={`Test: ${selectedConfig?.name || ''}`} size="lg">
+        <TestResultContent testLoading={testProps.testLoading} testResult={testProps.testResult} onClose={testProps.onClose} />
+      </Modal>
+
+      <Modal isOpen={detailModalOpen} onClose={detailProps.onClose} title="API Configuration Details" size="xl">
+        <DetailViewContent selectedConfig={selectedConfig} onTest={detailProps.onTest} onEdit={detailProps.onEdit} onClose={detailProps.onClose} />
+      </Modal>
+
+      <Modal isOpen={certModalOpen} onClose={certProps.onClose} title="Upload Certificate" size="md">
+        <CertUploadContent certFile={certProps.certFile} setCertFile={certProps.setCertFile} certType={certProps.certType} setCertType={certProps.setCertType} onSubmit={certProps.onSubmit} onCancel={certProps.onClose} />
+      </Modal>
+    </>
+  );
+}
+
+/* ─── CRUD helpers (outside component to reduce complexity) ─── */
+function buildPayloadFromForm(formData, headersJson, paramsJson, bodyJson, authConfigJson, tagsInput) {
+  return {
+    ...formData,
+    headers: JSON.parse(headersJson || '{}'),
+    params: JSON.parse(paramsJson || '{}'),
+    body: JSON.parse(bodyJson || '{}'),
+    auth_config: JSON.parse(authConfigJson || '{}'),
+    tags: tagsInput.split(',').map(t => t.trim()).filter(Boolean),
+  };
+}
+
+function populateJsonFields(item) {
+  return {
+    headersJson: JSON.stringify(item.headers || {}, null, 2),
+    paramsJson: JSON.stringify(item.params || {}, null, 2),
+    bodyJson: JSON.stringify(item.body || {}, null, 2),
+    authConfigJson: JSON.stringify(item.auth_config || {}, null, 2),
+    tagsInput: (item.tags || []).join(', '),
+  };
+}
+
 /* ═══════════════════════════════════════════════════════════
    Main Component
    ═══════════════════════════════════════════════════════════ */
@@ -654,27 +734,19 @@ const ApiConfigsManagement = () => {
   const openEditModal = (item) => {
     setEditingItem(item);
     setFormData(buildFormDataFromItem(item));
-    setHeadersJson(JSON.stringify(item.headers || {}, null, 2));
-    setParamsJson(JSON.stringify(item.params || {}, null, 2));
-    setBodyJson(JSON.stringify(item.body || {}, null, 2));
-    setAuthConfigJson(JSON.stringify(item.auth_config || {}, null, 2));
-    setTagsInput((item.tags || []).join(', '));
+    const fields = populateJsonFields(item);
+    setHeadersJson(fields.headersJson);
+    setParamsJson(fields.paramsJson);
+    setBodyJson(fields.bodyJson);
+    setAuthConfigJson(fields.authConfigJson);
+    setTagsInput(fields.tagsInput);
     setModalOpen(true);
   };
-
-  const buildPayload = () => ({
-    ...formData,
-    headers: JSON.parse(headersJson || '{}'),
-    params: JSON.parse(paramsJson || '{}'),
-    body: JSON.parse(bodyJson || '{}'),
-    auth_config: JSON.parse(authConfigJson || '{}'),
-    tags: tagsInput.split(',').map(t => t.trim()).filter(Boolean),
-  });
 
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      await apiConfigsAPI.create(buildPayload());
+      await apiConfigsAPI.create(buildPayloadFromForm(formData, headersJson, paramsJson, bodyJson, authConfigJson, tagsInput));
       toast.success('API configuration created successfully');
       setModalOpen(false); resetForm(); fetchData();
     } catch (error) {
@@ -685,7 +757,7 @@ const ApiConfigsManagement = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      const data = buildPayload();
+      const data = buildPayloadFromForm(formData, headersJson, paramsJson, bodyJson, authConfigJson, tagsInput);
       delete data.key;
       await apiConfigsAPI.update(editingItem._id, data);
       toast.success('API configuration updated successfully');
@@ -747,6 +819,25 @@ const ApiConfigsManagement = () => {
   const handleFilterStatusChange = (e) => { setFilterStatus(e.target.value); resetPage(); };
   const handleFilterTagChange = (e) => { setFilterTag(e.target.value); resetPage(); };
 
+  const closeFormModal = () => { setModalOpen(false); resetForm(); };
+
+  const modalState = { modalOpen, testModalOpen, detailModalOpen, certModalOpen, editingItem, selectedConfig };
+
+  const formProps = {
+    onClose: closeFormModal,
+    onSubmit: editingItem ? handleUpdate : handleCreate,
+    formFields: {
+      formData, setFormData, editingItem,
+      headersJson, setHeadersJson, paramsJson, setParamsJson,
+      bodyJson, setBodyJson, authConfigJson, setAuthConfigJson,
+      tagsInput, setTagsInput,
+    },
+  };
+
+  const testProps = { testLoading, testResult, onClose: () => setTestModalOpen(false) };
+  const detailProps = { onTest: handleTest, onEdit: (config) => { setDetailModalOpen(false); openEditModal(config); }, onClose: () => setDetailModalOpen(false) };
+  const certProps = { certFile, setCertFile, certType, setCertType, onSubmit: handleUploadCert, onClose: () => setCertModalOpen(false) };
+
   return (
     <div className="space-y-6">
       <ApiConfigsHeader gcsStatus={gcsStatus} onAddNew={() => { resetForm(); setModalOpen(true); }} />
@@ -765,39 +856,7 @@ const ApiConfigsManagement = () => {
         )}
       </Card>
 
-      <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); resetForm(); }} title={editingItem ? 'Edit API Configuration' : 'Add API Configuration'} size="xl">
-        <ApiConfigForm
-          formData={formData} setFormData={setFormData} editingItem={editingItem}
-          headersJson={headersJson} setHeadersJson={setHeadersJson}
-          paramsJson={paramsJson} setParamsJson={setParamsJson}
-          bodyJson={bodyJson} setBodyJson={setBodyJson}
-          authConfigJson={authConfigJson} setAuthConfigJson={setAuthConfigJson}
-          tagsInput={tagsInput} setTagsInput={setTagsInput}
-          onSubmit={editingItem ? handleUpdate : handleCreate}
-          onCancel={() => { setModalOpen(false); resetForm(); }}
-        />
-      </Modal>
-
-      <Modal isOpen={testModalOpen} onClose={() => setTestModalOpen(false)} title={`Test: ${selectedConfig?.name || ''}`} size="lg">
-        <TestResultContent testLoading={testLoading} testResult={testResult} onClose={() => setTestModalOpen(false)} />
-      </Modal>
-
-      <Modal isOpen={detailModalOpen} onClose={() => setDetailModalOpen(false)} title="API Configuration Details" size="xl">
-        <DetailViewContent
-          selectedConfig={selectedConfig}
-          onTest={handleTest}
-          onEdit={(config) => { setDetailModalOpen(false); openEditModal(config); }}
-          onClose={() => setDetailModalOpen(false)}
-        />
-      </Modal>
-
-      <Modal isOpen={certModalOpen} onClose={() => setCertModalOpen(false)} title="Upload Certificate" size="md">
-        <CertUploadContent
-          certFile={certFile} setCertFile={setCertFile}
-          certType={certType} setCertType={setCertType}
-          onSubmit={handleUploadCert} onCancel={() => setCertModalOpen(false)}
-        />
-      </Modal>
+      <ApiConfigModals modalState={modalState} formProps={formProps} testProps={testProps} detailProps={detailProps} certProps={certProps} />
     </div>
   );
 };
