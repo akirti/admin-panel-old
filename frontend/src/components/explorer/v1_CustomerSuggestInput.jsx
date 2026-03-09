@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback, useLayoutEffect } from 'react';
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, X, Tag, ChevronDown } from 'lucide-react';
 

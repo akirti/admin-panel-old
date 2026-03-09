@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { scenariosAPI, playboardsAPI, domainsAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, Button, Input, Modal, Badge, Select, Toggle, FileUpload } from '../../components/shared';
@@ -109,7 +109,6 @@ function buildPayload(formData, scenarioKey) {
 
 function ScenarioDetailPage() {
   const { scenarioKey, domainKey } = useParams();
-  const navigate = useNavigate();
   const { isSuperAdmin, isEditor, hasPermission } = useAuth();
 
   const [scenario, setScenario] = useState(null);
@@ -373,16 +372,6 @@ function ScenarioDetailPage() {
       toast.success('Playboard downloaded');
     } catch (error) {
       toast.error('Failed to download playboard');
-    }
-  };
-
-  const handleToggleStatus = async (playboard) => {
-    try {
-      await playboardsAPI.toggleStatus(playboard._id || playboard.id);
-      toast.success(`Playboard ${playboard.status === 'active' ? 'deactivated' : 'activated'}`);
-      fetchData();
-    } catch (error) {
-      toast.error('Failed to toggle playboard status');
     }
   };
 
@@ -1215,13 +1204,15 @@ function RowActionsTab({ events, currentRowAction, setCurrentRowAction, addRowAc
         <div className="bg-surface-secondary rounded-lg p-4 mb-4">
           <h4 className="font-medium text-content mb-2">Configured Row Actions ({events.length})</h4>
           <div className="space-y-2">
-            {events.map((action, idx) => (
+            {events.map((action, idx) => {
+              const isActive = action.status === 'A';
+              return (
               <div key={idx} className="bg-surface p-3 rounded border">
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="font-medium">{action.name}</span>
                     <span className="text-content-muted text-sm ml-2">-&gt; {action.path}</span>
-                    <Badge variant={action.status === 'A' ? 'success' : 'danger'} className="ml-2">{action.status === 'A' ? 'Active' : 'Inactive'}</Badge>
+                    <Badge variant={isActive ? 'success' : 'danger'} className="ml-2">{isActive ? 'Active' : 'Inactive'}</Badge>
                     {action.filters && action.filters.length > 0 && (
                       <Badge variant="primary" className="ml-2">{action.filters.length} filters</Badge>
                     )}
@@ -1236,7 +1227,8 @@ function RowActionsTab({ events, currentRowAction, setCurrentRowAction, addRowAc
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -1395,6 +1387,7 @@ function UploadJsonModal({ isOpen, onClose, onSubmit, onFileSelect, uploadFile, 
 }
 
 function JsonPreviewSummary({ jsonPreview }) {
+  const isActive = jsonPreview.status === 'A';
   return (
     <div>
       <label className="block text-sm font-medium text-content-secondary mb-2">JSON Preview</label>
@@ -1403,7 +1396,7 @@ function JsonPreviewSummary({ jsonPreview }) {
           <div><span className="text-content-muted">Key:</span>{' '}<span className="font-medium">{jsonPreview.key || '-'}</span></div>
           <div><span className="text-content-muted">Scenario:</span>{' '}<span className="font-medium">{jsonPreview.scenarioKey || '-'}</span></div>
           <div><span className="text-content-muted">Data Domain:</span>{' '}<span className="font-medium">{jsonPreview.dataDomain || '-'}</span></div>
-          <div><span className="text-content-muted">Status:</span>{' '}<Badge variant={jsonPreview.status === 'A' ? 'success' : 'danger'}>{jsonPreview.status === 'A' ? 'Active' : 'Inactive'}</Badge></div>
+          <div><span className="text-content-muted">Status:</span>{' '}<Badge variant={isActive ? 'success' : 'danger'}>{isActive ? 'Active' : 'Inactive'}</Badge></div>
           <div><span className="text-content-muted">Filters:</span>{' '}<Badge variant="primary">{jsonPreview.widgets?.filters?.length || 0}</Badge></div>
           <div><span className="text-content-muted">Row Actions:</span>{' '}<Badge variant="success">{jsonPreview.widgets?.grid?.actions?.rowActions?.events?.length || 0}</Badge></div>
         </div>

@@ -4,9 +4,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { dashboardAPI, scenarioRequestAPI, feedbackAPI } from '../../services/api';
 import { Badge } from '../../components/shared';
 import {
-  Users, Layers, FileText, Shield, ArrowRight, TrendingUp,
-  ClipboardList, Clock, CheckCircle, XCircle, Settings,
-  Upload, Database, Key, Building, MessageSquare, Star
+  Users, Layers, FileText, Shield, TrendingUp,
+  Clock, CheckCircle, XCircle, Settings,
+  Upload, Database, Key, MessageSquare, Star
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 

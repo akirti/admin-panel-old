@@ -390,7 +390,7 @@ const UsersManagement = () => {
     e.preventDefault();
     try {
       if (editingUser) {
-        const { password: _password, send_password_email: _send_password_email, ...updateData } = formData;
+        const { password: _password, send_password_email: _send_password_email, ...updateData } = formData; // eslint-disable-line no-unused-vars
         await usersAPI.update(editingUser.email, updateData);
         toast.success('User updated successfully');
       } else {

@@ -41,13 +41,14 @@ const TagList = ({ items, colorClass, maxShow = 3 }) => {
 };
 
 const RoleRow = ({ role, onShowUsers, onEdit, onToggleStatus, onDelete }) => {
+  const isActive = role.status === 'active';
   const typeClass = role.type === 'system'
     ? 'bg-purple-100 text-purple-700'
     : 'bg-surface-hover text-content-secondary';
-  const statusClass = role.status === 'active'
+  const statusClass = isActive
     ? 'bg-green-100 text-green-700'
     : 'bg-red-100 text-red-700';
-  const toggleClass = role.status === 'active'
+  const toggleClass = isActive
     ? 'text-green-600 hover:bg-green-50'
     : 'text-content-muted hover:bg-surface-hover';
 
@@ -87,8 +88,8 @@ const RoleRow = ({ role, onShowUsers, onEdit, onToggleStatus, onDelete }) => {
           <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" onClick={() => onEdit(role)} title="Edit">
             <Edit2 size={18} />
           </button>
-          <button className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${toggleClass}`} onClick={() => onToggleStatus(role)} title={role.status === 'active' ? 'Deactivate' : 'Activate'}>
-            {role.status === 'active' ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+          <button className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${toggleClass}`} onClick={() => onToggleStatus(role)} title={isActive ? 'Deactivate' : 'Activate'}>
+            {isActive ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
           </button>
           <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" onClick={() => onDelete(role)} title="Delete">
             <Trash2 size={18} />

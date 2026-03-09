@@ -19,7 +19,6 @@ import {
   Calendar,
   Upload,
   Package,
-  X,
   ChevronLeft,
   ChevronRight,
   ExternalLink,

@@ -187,7 +187,7 @@ function SidebarUserMenu({ user, sidebarOpen, iconSize, userMenuOpen, setUserMen
 }
 
 function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
-  const { user, logout, isSuperAdmin, canManageUsers, isEditor } = useAuth();
+  const { user, logout, isSuperAdmin, canManageUsers } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);

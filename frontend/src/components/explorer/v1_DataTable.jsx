@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import ReactDOM from "react-dom";
 import {
   ArrowUpDown,
@@ -39,11 +39,6 @@ const formatHeaderLabel = (label) => {
 };
 
 // Sorting helpers
-const isDateString = (value) =>
-  typeof value === "string" &&
-  (/^\d{4}-\d{2}-\d{2}$/.test(value) || /^\d{2}\/\d{2}\/\d{4}$/.test(value));
-
-const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
 
 // Compute portal menu position relative to a button, clamped to viewport
 const computeMenuPosition = (buttonEl, itemCount) => {
@@ -244,7 +239,10 @@ const createToggleActionMenu = (openMenuIdx, setOpenMenuIdx, setMenuPosition, bu
 
 const toBoolString = (val) => {
   if (val === undefined || val === null) return val;
-  return typeof val === "boolean" ? (val ? "True" : "False") : val;
+  if (typeof val === "boolean") {
+    return val ? "True" : "False";
+  }
+  return val;
 };
 
 const applyColumnFilters = (data, columnFilters) => {

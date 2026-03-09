@@ -3,7 +3,7 @@ import { Card, Button, Input, Table, Modal, Badge, SearchInput, Select, Paginati
 import { apiConfigsAPI } from '../../services/api';
 import { PlayCircle, Eye, Pencil, ShieldCheck, ToggleLeft, Trash2, Plus, Check, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { getAuthConfigTemplate, AUTH_CONFIG_HINTS, PLACEHOLDER_URLS, AUTH_FIELDS } from '../../constants/apiConfigDefaults';
+import { AUTH_CONFIG_HINTS, PLACEHOLDER_URLS } from '../../constants/apiConfigDefaults';
 
 /* ─── helpers (outside component) ─── */
 

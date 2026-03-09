@@ -343,18 +343,21 @@ function UsersManagementContent({ loadingUsers, customerUsers, userSearch, setUs
                 <p className="text-content-muted text-center py-4 border rounded-lg">No users assigned to this customer</p>
               ) : (
                 <div className="border rounded-lg divide-y max-h-64 overflow-y-auto">
-                  {customerUsers.map((user) => (
+                  {customerUsers.map((user) => {
+                    const isActive = user.is_active;
+                    return (
                     <div key={user._id} className="p-3 hover:bg-surface-hover flex items-center justify-between">
                       <div>
                         <div className="font-medium text-content">{user.full_name || user.username || user.email}</div>
                         <div className="text-sm text-content-muted">{user.email}</div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant={user.is_active ? 'success' : 'danger'}>{user.is_active ? 'Active' : 'Inactive'}</Badge>
+                        <Badge variant={isActive ? 'success' : 'danger'}>{isActive ? 'Active' : 'Inactive'}</Badge>
                         <button className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded" onClick={() => onRemoveUser(user._id)} title="Remove from customer"><UserMinus size={16} /></button>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

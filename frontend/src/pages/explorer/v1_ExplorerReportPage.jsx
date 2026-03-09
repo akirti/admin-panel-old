@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { Loader2, AlertCircle, BarChart3, BookOpen, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { useExplorer } from '../../components/explorer/v1_ExplorerContext';
@@ -144,7 +144,7 @@ function buildPaginationConfig(pagWidget, effectivePageSize, effectivePage) {
 /**
  * Resolves the pagination flags (countEvaluated, end) based on the current page.
  */
-function resolvePaginationFlags(effectivePage, totalPages, currentCountEvaluated, currentEnd) {
+function resolvePaginationFlags(effectivePage, totalPages, currentCountEvaluated, _currentEnd) {
   if (effectivePage === 1) {
     return { sendCountEvaluated: false, sendEnd: false };
   }
@@ -355,7 +355,7 @@ function V1ExplorerReportPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [pages, setPages] = useState(1);
-  const [isPaginated, setIsPaginated] = useState(true);
+  const [, setIsPaginated] = useState(true);
   const [paginationOptions, setPaginationOptions] = useState([10, 20, 30, 40, 50]);
 
   // Backend pagination tracking
@@ -369,7 +369,7 @@ function V1ExplorerReportPage() {
   const [sortOrder, setSortOrder] = useState('asc');
 
   // Column visibility
-  const [allColumns, setAllColumns] = useState([]);
+  const [, setAllColumns] = useState([]);
   const [visibleColumns, setVisibleColumns] = useState([]);
 
   // Action grid from playboard
@@ -505,6 +505,7 @@ function V1ExplorerReportPage() {
       setLoading(true);
       setError('');
       try {
+        // eslint-disable-next-line no-unused-vars
         const { page: reqPage, pageSize: reqPageSize, autosubmit: _autosubmit, ...filterValues } = params;
 
         const logicArgs = buildLogicArgs(filterConfig, filterValues);

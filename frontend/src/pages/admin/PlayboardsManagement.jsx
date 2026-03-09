@@ -309,6 +309,7 @@ const FilterAttributesSection = ({ currentFilter, filterAttributeInput, setFilte
 
 const RowActionCard = ({ action, idx, editingRowActionIndex, eventsLength, onEdit, onMoveRowAction, onRemoveRowAction }) => {
   const isEditing = editingRowActionIndex === idx;
+  const isActive = action.status === 'active';
   return (
     <div
       className={`bg-surface p-3 rounded border cursor-pointer hover:bg-surface-secondary ${isEditing ? 'ring-2 ring-blue-500' : ''}`}
@@ -319,7 +320,7 @@ const RowActionCard = ({ action, idx, editingRowActionIndex, eventsLength, onEdi
           <span className="font-medium">{action.name}</span>
           <span className="text-content-muted text-xs">({action.key})</span>
           <span className="text-content-muted text-xs">-&gt; {action.path}</span>
-          <Badge variant={action.status === 'active' ? 'success' : 'danger'} className="text-xs">{action.status === 'active' ? 'Active' : 'Inactive'}</Badge>
+          <Badge variant={isActive ? 'success' : 'danger'} className="text-xs">{isActive ? 'Active' : 'Inactive'}</Badge>
           {action.filters && action.filters.length > 0 && <Badge variant="primary" className="text-xs">{action.filters.length} filters</Badge>}
           {isEditing && <Badge variant="warning" className="text-xs">Editing</Badge>}
         </div>
@@ -537,7 +538,9 @@ const UploadModal = ({ isOpen, onClose, scenarios, uploadFile, uploadScenarioKey
   </Modal>
 );
 
-const JsonPreviewPanel = ({ jsonPreview }) => (
+const JsonPreviewPanel = ({ jsonPreview }) => {
+  const isActive = jsonPreview.status === 'active';
+  return (
   <div>
     <label className="block text-sm font-medium text-content-secondary mb-2">JSON Preview</label>
     <div className="bg-surface-secondary rounded-lg p-4 border">
@@ -545,7 +548,7 @@ const JsonPreviewPanel = ({ jsonPreview }) => (
         <div><span className="text-content-muted">Key:</span> <span className="font-medium">{jsonPreview.key || '-'}</span></div>
         <div><span className="text-content-muted">Scenario:</span> <span className="font-medium">{jsonPreview.scenarioKey || '-'}</span></div>
         <div><span className="text-content-muted">Data Domain:</span> <span className="font-medium">{jsonPreview.dataDomain || '-'}</span></div>
-        <div><span className="text-content-muted">Status:</span> <Badge variant={jsonPreview.status === 'active' ? 'success' : 'danger'}>{jsonPreview.status === 'active' ? 'Active' : 'Inactive'}</Badge></div>
+        <div><span className="text-content-muted">Status:</span> <Badge variant={isActive ? 'success' : 'danger'}>{isActive ? 'Active' : 'Inactive'}</Badge></div>
         <div><span className="text-content-muted">Filters:</span> <Badge variant="primary">{jsonPreview.widgets?.filters?.length || 0}</Badge></div>
         <div><span className="text-content-muted">Row Actions:</span> <Badge variant="success">{jsonPreview.widgets?.grid?.actions?.rowActions?.events?.length || 0}</Badge></div>
       </div>
@@ -555,7 +558,8 @@ const JsonPreviewPanel = ({ jsonPreview }) => (
       </details>
     </div>
   </div>
-);
+  );
+};
 
 const DetailViewModal = ({ isOpen, onClose, selectedPlayboard }) => (
   <Modal isOpen={isOpen} onClose={onClose} title="Playboard Details" size="xl">
@@ -760,9 +764,12 @@ function useFilterBuilder(formData, setFormData) {
   const addFilter = () => {
     const attributes = buildFilterAttributes(currentFilter);
     const newFilter = buildFilterObject(currentFilter, attributes, editingFilterIndex, formData.widgets.filters.length);
-    const newFilters = editingFilterIndex !== null
-      ? formData.widgets.filters.map((f, i) => i === editingFilterIndex ? newFilter : f)
-      : [...formData.widgets.filters, newFilter];
+    let newFilters;
+    if (editingFilterIndex !== null) {
+      newFilters = formData.widgets.filters.map((f, i) => i === editingFilterIndex ? newFilter : f);
+    } else {
+      newFilters = [...formData.widgets.filters, newFilter];
+    }
     setFormData({ ...formData, widgets: { ...formData.widgets, filters: newFilters } });
     resetCurrentFilter();
   };
@@ -816,10 +823,14 @@ function useRowActionBuilder(formData, setFormData) {
 
   const addRowAction = () => {
     const { rowActionsObj, actionsObj, gridObj, events } = getGridParts();
-    const newAction = { ...currentRowAction, order: editingRowActionIndex !== null ? editingRowActionIndex : events.length };
-    const newEvents = editingRowActionIndex !== null
-      ? events.map((e, i) => i === editingRowActionIndex ? newAction : e)
-      : [...events, newAction];
+    const isEditingRowAction = editingRowActionIndex !== null;
+    const newAction = { ...currentRowAction, order: isEditingRowAction ? editingRowActionIndex : events.length };
+    let newEvents;
+    if (isEditingRowAction) {
+      newEvents = events.map((e, i) => i === editingRowActionIndex ? newAction : e);
+    } else {
+      newEvents = [...events, newAction];
+    }
     setFormData({ ...formData, widgets: { ...formData.widgets, grid: { ...gridObj, actions: { ...actionsObj, rowActions: { ...rowActionsObj, events: newEvents } } } } });
     resetCurrentRowAction();
   };
@@ -944,7 +955,9 @@ const PlayboardActionsCell = ({ item, onView, onDownload, onEdit, onDelete }) =>
   </div>
 );
 
-const FiltersTab = ({ formData, filterBuilder }) => (
+const FiltersTab = ({ formData, filterBuilder }) => {
+  const isEditingFilter = filterBuilder.editingFilterIndex !== null;
+  return (
   <div className="space-y-4">
     {formData.widgets.filters.length > 0 && (
       <div className="bg-surface-secondary rounded-lg p-4 mb-4">
@@ -956,8 +969,8 @@ const FiltersTab = ({ formData, filterBuilder }) => (
         </div>
       </div>
     )}
-    <div className={`border rounded-lg p-4 ${filterBuilder.editingFilterIndex !== null ? 'border-blue-500 bg-blue-50' : ''}`}>
-      <h4 className="font-medium text-content mb-3">{filterBuilder.editingFilterIndex !== null ? `Edit Filter: ${filterBuilder.currentFilter.displayName || filterBuilder.currentFilter.name}` : 'Add New Filter'}</h4>
+    <div className={`border rounded-lg p-4 ${isEditingFilter ? 'border-blue-500 bg-blue-50' : ''}`}>
+      <h4 className="font-medium text-content mb-3">{isEditingFilter ? `Edit Filter: ${filterBuilder.currentFilter.displayName || filterBuilder.currentFilter.name}` : 'Add New Filter'}</h4>
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <Input label="Name (key) *" value={filterBuilder.currentFilter.name} onChange={(e) => filterBuilder.setCurrentFilter({ ...filterBuilder.currentFilter, name: e.target.value, dataKey: e.target.value })} placeholder="query_text" />
@@ -990,16 +1003,19 @@ const FiltersTab = ({ formData, filterBuilder }) => (
       <FilterValidationSection currentFilter={filterBuilder.currentFilter} validatorInput={filterBuilder.validatorInput} setValidatorInput={filterBuilder.setValidatorInput} addValidator={filterBuilder.addValidator} removeValidator={filterBuilder.removeValidator} />
       <FilterAttributesSection currentFilter={filterBuilder.currentFilter} filterAttributeInput={filterBuilder.filterAttributeInput} setFilterAttributeInput={filterBuilder.setFilterAttributeInput} addFilterAttribute={filterBuilder.addFilterAttribute} removeFilterAttribute={filterBuilder.removeFilterAttribute} />
       <div className="flex space-x-2 mt-4">
-        <Button type="button" onClick={filterBuilder.addFilter} variant={filterBuilder.editingFilterIndex !== null ? 'primary' : 'secondary'} disabled={!filterBuilder.currentFilter.name || !filterBuilder.currentFilter.displayName}>{filterBuilder.editingFilterIndex !== null ? 'Update Filter' : 'Add Filter'}</Button>
-        {filterBuilder.editingFilterIndex !== null && <Button type="button" onClick={filterBuilder.resetCurrentFilter} variant="secondary">Cancel Edit</Button>}
+        <Button type="button" onClick={filterBuilder.addFilter} variant={isEditingFilter ? 'primary' : 'secondary'} disabled={!filterBuilder.currentFilter.name || !filterBuilder.currentFilter.displayName}>{isEditingFilter ? 'Update Filter' : 'Add Filter'}</Button>
+        {isEditingFilter && <Button type="button" onClick={filterBuilder.resetCurrentFilter} variant="secondary">Cancel Edit</Button>}
       </div>
     </div>
   </div>
-);
+  );
+};
 
-const RowActionsFormSection = ({ rowActionBuilder, domains }) => (
-  <div className={`border rounded-lg p-4 ${rowActionBuilder.editingRowActionIndex !== null ? 'border-blue-500 bg-blue-50' : ''}`}>
-    <h4 className="font-medium text-content mb-3">{rowActionBuilder.editingRowActionIndex !== null ? `Edit Row Action: ${rowActionBuilder.currentRowAction.name}` : 'Add New Row Action'}</h4>
+const RowActionsFormSection = ({ rowActionBuilder, domains }) => {
+  const isEditingRowAction = rowActionBuilder.editingRowActionIndex !== null;
+  return (
+  <div className={`border rounded-lg p-4 ${isEditingRowAction ? 'border-blue-500 bg-blue-50' : ''}`}>
+    <h4 className="font-medium text-content mb-3">{isEditingRowAction ? `Edit Row Action: ${rowActionBuilder.currentRowAction.name}` : 'Add New Row Action'}</h4>
     <div className="grid grid-cols-2 gap-4">
       <Input label="Key" value={rowActionBuilder.currentRowAction.key} onChange={(e) => rowActionBuilder.setCurrentRowAction({ ...rowActionBuilder.currentRowAction, key: e.target.value })} placeholder="orders_scenario_6" />
       <Input label="Button Name" value={rowActionBuilder.currentRowAction.name} onChange={(e) => rowActionBuilder.setCurrentRowAction({ ...rowActionBuilder.currentRowAction, name: e.target.value })} placeholder="Orders" />
@@ -1030,11 +1046,12 @@ const RowActionsFormSection = ({ rowActionBuilder, domains }) => (
       )}
     </div>
     <div className="flex space-x-2 mt-4">
-      <Button type="button" onClick={rowActionBuilder.addRowAction} variant={rowActionBuilder.editingRowActionIndex !== null ? 'primary' : 'secondary'} disabled={!rowActionBuilder.currentRowAction.key || !rowActionBuilder.currentRowAction.name}>{rowActionBuilder.editingRowActionIndex !== null ? 'Update Row Action' : 'Add Row Action'}</Button>
-      {rowActionBuilder.editingRowActionIndex !== null && <Button type="button" onClick={rowActionBuilder.resetCurrentRowAction} variant="secondary">Cancel Edit</Button>}
+      <Button type="button" onClick={rowActionBuilder.addRowAction} variant={isEditingRowAction ? 'primary' : 'secondary'} disabled={!rowActionBuilder.currentRowAction.key || !rowActionBuilder.currentRowAction.name}>{isEditingRowAction ? 'Update Row Action' : 'Add Row Action'}</Button>
+      {isEditingRowAction && <Button type="button" onClick={rowActionBuilder.resetCurrentRowAction} variant="secondary">Cancel Edit</Button>}
     </div>
   </div>
-);
+  );
+};
 
 const GridSettingsSection = ({ formData, setFormData, gridColumns, onRenderAsChange, onPageSizeChange, onPaginatedChange }) => (
   <div className="border-t pt-6">
@@ -1233,7 +1250,7 @@ const PlayboardsManagement = () => {
     { key: 'data', title: 'Data Domain', render: (val) => val?.dataDomain || '-' },
     { key: 'data', title: 'Filters', render: (val) => <Badge variant="primary">{val?.widgets?.filters?.length || 0}</Badge> },
     { key: 'data', title: 'Actions', render: (val) => <Badge variant="success">{val?.widgets?.grid?.actions?.rowActions?.events?.length || 0}</Badge> },
-    { key: 'status', title: 'Status', render: (val) => <Badge variant={val === 'active' ? 'success' : 'danger'}>{val === 'active' ? 'Active' : 'Inactive'}</Badge> },
+    { key: 'status', title: 'Status', render: (val) => { const isActive = val === 'active'; return <Badge variant={isActive ? 'success' : 'danger'}>{isActive ? 'Active' : 'Inactive'}</Badge>; } },
     { key: 'actions', title: 'Actions', render: (_, item) => (
       <PlayboardActionsCell item={item} onView={handleViewDetails} onDownload={handleDownload} onEdit={openEditModal} onDelete={handleDelete} />
     )}

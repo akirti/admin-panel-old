@@ -353,7 +353,6 @@ function AskScenarioPage() {
   const [originalRequest, setOriginalRequest] = useState(null);
   const [jiraBoards, setJiraBoards] = useState([]);
   const [jiraUsers, setJiraUsers] = useState([]);
-  const [loadingJiraUsers, setLoadingJiraUsers] = useState(false);
 
   const [formData, setFormData] = useState({
     requestType: 'scenario',
