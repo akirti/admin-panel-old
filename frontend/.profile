@@ -2,7 +2,7 @@
 # PCF runs this script before starting the app
 
 ENVIRONMENT="${ENVIRONMENT:-production}"
-CONFIG_SRC="config/env-config.${ENVIRONMENT}.js"
+CONFIG_SRC="envConfig/env-${ENVIRONMENT}.js"
 CONFIG_DEST="public/env-config.js"
 
 if [ -f "$CONFIG_SRC" ]; then
@@ -10,5 +10,5 @@ if [ -f "$CONFIG_SRC" ]; then
   cp "$CONFIG_SRC" "$CONFIG_DEST"
 else
   echo "WARNING: Config not found for '${ENVIRONMENT}', falling back to production"
-  cp "config/env-config.production.js" "$CONFIG_DEST"
+  cp "envConfig/env-production.js" "$CONFIG_DEST"
 fi
