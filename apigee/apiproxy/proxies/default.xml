@@ -9,6 +9,11 @@
                 <Name>RF-CORSPreflight</Name>
                 <Condition>request.verb == "OPTIONS"</Condition>
             </Step>
+            <!-- Retrieve credentials (hostname, JWT secret) from encrypted KVM - MUST run before JWT verification -->
+            <Step>
+                <Name>KVM-Get-Credentials</Name>
+                <Condition>request.verb != "OPTIONS"</Condition>
+            </Step>
             <!-- Spike Arrest to prevent abuse (rate limit by client IP) -->
             <Step>
                 <Name>SA-RateLimit</Name>

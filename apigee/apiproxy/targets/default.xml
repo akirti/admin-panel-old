@@ -48,6 +48,7 @@
         </Properties>
         <!-- Use LoadBalancer for multiple backend instances -->
         <LoadBalancer>
+            <Algorithm>RoundRobin</Algorithm>
             <Server name="easylife-backend-1"/>
             <Server name="easylife-backend-2"/>
             <MaxFailures>3</MaxFailures>

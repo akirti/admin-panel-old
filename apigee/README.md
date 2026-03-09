@@ -13,6 +13,7 @@ apigee/
 │   ├── targets/
 │   │   └── default.xml                  # Target endpoint (backend load balancer)
 │   ├── policies/
+│   │   ├── KVM-Get-Credentials.xml      # KVM lookup for hostname + JWT secret (runs FIRST)
 │   │   ├── SA-RateLimit.xml             # Spike Arrest - rate limiting by client IP
 │   │   ├── JWT-VerifyAccessToken.xml    # JWT token verification (HS256)
 │   │   ├── Q-EnforceQuota.xml           # Quota enforcement by JWT user_id
@@ -55,9 +56,10 @@ Every request passes through these steps in order:
 | Step | Policy | Condition | Purpose |
 |------|--------|-----------|---------|
 | 1 | `RF-CORSPreflight` | OPTIONS only | Return CORS headers, skip remaining steps |
-| 2 | `SA-RateLimit` | Always | Spike arrest at 100 req/sec per client IP |
-| 3 | `JWT-VerifyAccessToken` | Protected endpoints only | Verify HS256 JWT from Authorization header |
-| 4 | `Q-EnforceQuota` | Authenticated endpoints only | 10,000 req/month per user_id |
+| 2 | `KVM-Get-Credentials` | Non-OPTIONS | Load hostname + JWT secret from encrypted KVM |
+| 3 | `SA-RateLimit` | Always | Spike arrest at 100 req/sec per client IP |
+| 4 | `JWT-VerifyAccessToken` | Protected endpoints only | Verify HS256 JWT from Authorization header |
+| 5 | `Q-EnforceQuota` | Authenticated endpoints only | 10,000 req/month per user_id |
 
 ### JWT-Exempt Endpoints (public access)
 
@@ -397,19 +399,31 @@ apigeecli targetservers create \
 
 ### 2. Configure KVM (Key-Value Map)
 
-Store the JWT secret used to verify access tokens:
+Store the backend hostname and JWT secret in an encrypted KVM:
 
 ```bash
-apigeecli kvms create --name easylife-secrets --org YOUR_ORG --env YOUR_ENV
+# Create the encrypted KVM
+apigeecli kvms create --name easylife-proxykvm --encrypted true --org YOUR_ORG --env YOUR_ENV
+
+# Store the backend hostname
 apigeecli kvms entries create \
-  --map easylife-secrets \
-  --key jwt.secret \
+  --map easylife-proxykvm \
+  --key hostname \
+  --value "your-backend-hostname.com" \
+  --org YOUR_ORG \
+  --env YOUR_ENV
+
+# Store the JWT secret (MUST match backend AUTH_SECRET_KEY)
+apigeecli kvms entries create \
+  --map easylife-proxykvm \
+  --key secretKey \
   --value "your-jwt-secret-key" \
   --org YOUR_ORG \
   --env YOUR_ENV
 ```
 
-> The JWT secret must match the `AUTH_SECRET_KEY` used by the backend to sign tokens.
+> The JWT secret (`secretKey`) must match exactly the `AUTH_SECRET_KEY` used by the backend to sign tokens.
+> See [APIGEE-POLICY-DOCUMENTATION.md](./APIGEE-POLICY-DOCUMENTATION.md) for detailed policy reference and debug guide.
 
 ### 3. Deploy the Proxy
 
@@ -482,8 +496,9 @@ All errors follow a consistent JSON format:
 
 ## Target Configuration
 
-The target endpoint uses a load balancer with two backend servers:
+The target endpoint uses a **RoundRobin** load balancer with two backend servers:
 
+- Algorithm: RoundRobin (alternates requests evenly)
 - Path rewrite: Apigee base `/easylife/v1` maps to backend `/api/v1`
 - Connection timeout: 30s
 - I/O timeout: 60s
