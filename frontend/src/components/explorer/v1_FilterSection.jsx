@@ -28,6 +28,55 @@ const isCustomerFilter = (filter) => {
   return CUSTOMER_DISPLAY_PATTERN.test(display);
 };
 
+const hasNonEmptyValue = (val) => val !== undefined && val !== null && val !== '';
+
+const DATE_RANGE_DEFAULT = (filter) => {
+  const startRaw = getAttrValue(filter.attributes, 'defaultValue_start');
+  const endRaw = getAttrValue(filter.attributes, 'defaultValue_end');
+  const start = parseCurrentDateString(startRaw);
+  const end = parseCurrentDateString(endRaw);
+  return (start || end) ? { start, end } : undefined;
+};
+
+const DATE_DEFAULT = (filter) => {
+  const raw = getAttrValue(filter.attributes, 'defaultValue');
+  const val = parseCurrentDateString(raw);
+  return hasNonEmptyValue(val) ? val : undefined;
+};
+
+const MULTISELECT_DEFAULT = (filter) => {
+  const defaultVal = getAttrValue(filter.attributes, 'defaultValue');
+  if (typeof defaultVal === 'string' && defaultVal.trim() !== '') {
+    return defaultVal.split(',').map((v) => v.trim());
+  }
+  return Array.isArray(defaultVal) ? defaultVal : undefined;
+};
+
+const RADIO_DEFAULT = (filter) => {
+  const val = getAttrValue(filter.attributes, 'defaultValue');
+  return hasNonEmptyValue(val) ? val : undefined;
+};
+
+const TOGGLE_DEFAULT = (filter) => {
+  const val = getAttrValue(filter.attributes, 'defaultValue');
+  return (val === true || val === false) ? val : undefined;
+};
+
+const GENERIC_DEFAULT = (filter) => {
+  const val = getAttrValue(filter.attributes, 'defaultValue');
+  return hasNonEmptyValue(val) ? val : undefined;
+};
+
+const DEFAULT_RESOLVERS = {
+  'date-range': DATE_RANGE_DEFAULT,
+  'date-picker': DATE_DEFAULT,
+  'date': DATE_DEFAULT,
+  'multiselect': MULTISELECT_DEFAULT,
+  'multi-select': MULTISELECT_DEFAULT,
+  'radioButton': RADIO_DEFAULT,
+  'toggleButton': TOGGLE_DEFAULT,
+};
+
 /**
  * Returns the default form value for a single filter config object.
  * If `initialValues` is provided and contains a value for the filter's dataKey,
@@ -37,61 +86,12 @@ const isCustomerFilter = (filter) => {
  * Returns `undefined` when no default value should be set.
  */
 const getFilterDefaultValue = (filter, initialValues) => {
-  if (
-    initialValues &&
-    initialValues[filter.dataKey] !== undefined
-  ) {
+  if (initialValues && initialValues[filter.dataKey] !== undefined) {
     return initialValues[filter.dataKey];
   }
-
   const type = getAttrValue(filter.attributes, 'type');
-
-  if (type === 'date-range') {
-    const startRaw = getAttrValue(filter.attributes, 'defaultValue_start');
-    const endRaw = getAttrValue(filter.attributes, 'defaultValue_end');
-    const start = parseCurrentDateString(startRaw);
-    const end = parseCurrentDateString(endRaw);
-    return (start || end) ? { start, end } : undefined;
-  }
-
-  if (type === 'date-picker' || type === 'date') {
-    const defaultValRaw = getAttrValue(filter.attributes, 'defaultValue');
-    const defaultVal = parseCurrentDateString(defaultValRaw);
-    return (defaultVal !== undefined && defaultVal !== null && defaultVal !== '')
-      ? defaultVal
-      : undefined;
-  }
-
-  if (type === 'multiselect' || type === 'multi-select') {
-    const defaultVal = getAttrValue(filter.attributes, 'defaultValue');
-    if (typeof defaultVal === 'string' && defaultVal.trim() !== '') {
-      return defaultVal.split(',').map((v) => v.trim());
-    }
-    if (Array.isArray(defaultVal)) {
-      return defaultVal;
-    }
-    return undefined;
-  }
-
-  if (type === 'radioButton') {
-    const defaultVal = getAttrValue(filter.attributes, 'defaultValue');
-    return (defaultVal !== undefined && defaultVal !== null && defaultVal !== '')
-      ? defaultVal
-      : undefined;
-  }
-
-  if (type === 'toggleButton') {
-    const defaultVal = getAttrValue(filter.attributes, 'defaultValue');
-    return (defaultVal !== undefined && defaultVal !== null && (defaultVal === true || defaultVal === false))
-      ? defaultVal
-      : undefined;
-  }
-
-  // Generic fallback
-  const defaultVal = getAttrValue(filter.attributes, 'defaultValue');
-  return (defaultVal !== undefined && defaultVal !== null && defaultVal !== '')
-    ? defaultVal
-    : undefined;
+  const resolver = DEFAULT_RESOLVERS[type] || GENERIC_DEFAULT;
+  return resolver(filter);
 };
 
 /**
@@ -219,6 +219,109 @@ const FilterLabel = ({ filter }) => {
   );
 };
 
+const runValidation = (filterConfig, filledForm) => {
+  const errorMessages = [];
+  for (const filter of filterConfig) {
+    const val = filledForm[filter.dataKey];
+    const result = validateFilter(filter, val);
+    if (!result.valid) {
+      const msg = (result.message || 'Invalid input.').replace(/\s*\([^)]*\)\s*$/, '');
+      const displayName = filter.displayName || filter.label || filter.dataKey || 'Field';
+      errorMessages.push({ msg, displayName });
+    }
+  }
+  return errorMessages;
+};
+
+const buildSubmitForm = (form, filterConfig) => {
+  const filledForm = { ...form };
+  filterConfig.forEach((filter) => {
+    const val = filledForm[filter.dataKey];
+    if (val === undefined || val === null || val === '') {
+      filledForm[filter.dataKey] = getDefaultValue(filter);
+    }
+    filledForm[filter.dataKey] = formatDateValue(filter, filledForm[filter.dataKey]);
+  });
+  return filledForm;
+};
+
+const FilterAccordionBody = ({
+  externalLoading,
+  filterError,
+  filterConfig,
+  rows,
+  form,
+  errorMsg,
+  handleChange,
+  handleReset,
+  handleSubmit,
+  customerData,
+  useCustomerSuggest,
+}) => {
+  if (externalLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[120px]">
+        <div className="w-8 h-8 border-4 border-neutral-200 border-t-primary-600 rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (filterError) {
+    return (
+      <div className="flex items-center justify-center py-4">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+          {filterError}
+        </div>
+      </div>
+    );
+  }
+  if (filterConfig.length === 0) {
+    return (
+      <div className="text-center py-8 text-content-muted text-sm">
+        No filters available.
+      </div>
+    );
+  }
+  return (
+    <>
+      {rows.map((row, idx) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4 mb-4 w-full" key={idx}>
+          {row.map((filter) => (
+            <div className="flex flex-col w-full" key={filter.dataKey}>
+              <FilterLabel filter={filter} />
+              <V1DynamicFilterControl
+                filter={filter}
+                value={form[filter.dataKey]}
+                onChange={handleChange}
+                allFilters={filterConfig}
+                form={form}
+                placeholder={getFilterPlaceholder(filter)}
+                customerData={customerData}
+                useCustomerSuggest={useCustomerSuggest}
+              />
+            </div>
+          ))}
+        </div>
+      ))}
+      {errorMsg && (
+        <div className="flex justify-center w-full mt-2">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm whitespace-pre-line max-w-lg text-center">
+            {errorMsg}
+          </div>
+        </div>
+      )}
+      <div className="flex items-center justify-center gap-3 mt-5">
+        <button type="button" onClick={handleReset} className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-content-secondary bg-surface border border-edge rounded-md hover:bg-surface-hover hover:text-content transition-colors shadow-sm">
+          <RotateCcw className="w-3.5 h-3.5" />
+          Reset
+        </button>
+        <button onClick={handleSubmit} className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed" type="button" disabled={externalLoading}>
+          Submit
+        </button>
+      </div>
+    </>
+  );
+};
+
 const V1FilterSection = ({
   onSubmit,
   filterConfig = [],
@@ -296,39 +399,10 @@ const V1FilterSection = ({
 
   const handleSubmit = useCallback(() => {
     if (externalLoading) return;
+    const filledForm = buildSubmitForm(form, filterConfig);
+    const errorMessages = runValidation(filterConfig, filledForm);
 
-    let filledForm = { ...form };
-    filterConfig.forEach((filter) => {
-      let val = filledForm[filter.dataKey];
-      if (
-        (val === undefined || val === null || val === '') &&
-        filter.attributes
-      ) {
-        filledForm[filter.dataKey] = getDefaultValue(filter);
-      }
-      filledForm[filter.dataKey] = formatDateValue(
-        filter,
-        filledForm[filter.dataKey]
-      );
-    });
-
-    // Validation using validateFilter
-    let allValid = true;
-    let errorMessages = [];
-    for (const filter of filterConfig) {
-      const val = filledForm[filter.dataKey];
-      const result = validateFilter(filter, val);
-      if (!result.valid) {
-        allValid = false;
-        let msg = result.message || 'Invalid input.';
-        msg = msg.replace(/\s*\([^)]*\)\s*$/, '');
-        let displayName =
-          filter.displayName || filter.label || filter.dataKey || 'Field';
-        errorMessages.push({ msg, displayName });
-      }
-    }
-
-    if (allValid) {
+    if (errorMessages.length === 0) {
       setErrorMsg('');
       onSubmit(filledForm);
       setShow(false);
@@ -402,79 +476,19 @@ const V1FilterSection = ({
         {/* Accordion Body */}
         {show && (
           <div className="px-5 py-4">
-            {externalLoading ? (
-              <div className="flex justify-center items-center min-h-[120px]">
-                <div className="w-8 h-8 border-4 border-neutral-200 border-t-primary-600 rounded-full animate-spin" />
-              </div>
-            ) : filterError ? (
-              <div className="flex items-center justify-center py-4">
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
-                  {filterError}
-                </div>
-              </div>
-            ) : filterConfig.length === 0 ? (
-              <div className="text-center py-8 text-content-muted text-sm">
-                No filters available.
-              </div>
-            ) : (
-              <>
-                {rows.map((row, idx) => (
-                  <div
-                    className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4 mb-4 w-full"
-                    key={idx}
-                  >
-                    {row.map((filter) => (
-                      <div
-                        className="flex flex-col w-full"
-                        key={filter.dataKey}
-                      >
-                        <FilterLabel filter={filter} />
-
-                        <V1DynamicFilterControl
-                          filter={filter}
-                          value={form[filter.dataKey]}
-                          onChange={handleChange}
-                          allFilters={filterConfig}
-                          form={form}
-                          placeholder={getFilterPlaceholder(filter)}
-                          customerData={customerData}
-                          useCustomerSuggest={useCustomerSuggest}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ))}
-
-                {/* Error message */}
-                {errorMsg && (
-                  <div className="flex justify-center w-full mt-2">
-                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm whitespace-pre-line max-w-lg text-center">
-                      {errorMsg}
-                    </div>
-                  </div>
-                )}
-
-                {/* Action buttons */}
-                <div className="flex items-center justify-center gap-3 mt-5">
-                  <button
-                    type="button"
-                    onClick={handleReset}
-                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-content-secondary bg-surface border border-edge rounded-md hover:bg-surface-hover hover:text-content transition-colors shadow-sm"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    Reset
-                  </button>
-                  <button
-                    onClick={handleSubmit}
-                    className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    type="button"
-                    disabled={externalLoading}
-                  >
-                    Submit
-                  </button>
-                </div>
-              </>
-            )}
+            <FilterAccordionBody
+              externalLoading={externalLoading}
+              filterError={filterError}
+              filterConfig={filterConfig}
+              rows={rows}
+              form={form}
+              errorMsg={errorMsg}
+              handleChange={handleChange}
+              handleReset={handleReset}
+              handleSubmit={handleSubmit}
+              customerData={customerData}
+              useCustomerSuggest={useCustomerSuggest}
+            />
           </div>
         )}
       </div>

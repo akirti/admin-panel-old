@@ -1,6 +1,22 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 
+const isClickInside = (event, ...refs) =>
+  refs.some((ref) => ref.current?.contains(event.target));
+
+const PageSizeOption = ({ size, isActive, onSelect }) => (
+  <li
+    className={`px-3 py-1.5 cursor-pointer text-sm hover:bg-blue-50 ${
+      isActive
+        ? "bg-blue-100 font-semibold text-blue-700"
+        : "text-content-secondary"
+    }`}
+    onClick={onSelect}
+  >
+    {size}
+  </li>
+);
+
 const V1Pagination = ({
   page = 1,
   totalPages = 1,
@@ -15,19 +31,14 @@ const V1Pagination = ({
   const dropdownRef = useRef(null);
 
   useEffect(() => {
+    if (!dropdownOpen) return;
     const handleClickOutside = (event) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target)
-      ) {
+      if (!isClickInside(event, dropdownRef)) {
         setDropdownOpen(false);
       }
     };
-    if (dropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
-    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownOpen]);
 
   const handlePrev = () => {
@@ -69,20 +80,15 @@ const V1Pagination = ({
           {dropdownOpen && (
             <ul className="absolute z-10 bottom-full mb-1 w-full bg-surface border border-edge rounded-md shadow-lg max-h-48 overflow-auto">
               {paginationOptions.map((size) => (
-                <li
+                <PageSizeOption
                   key={size}
-                  className={`px-3 py-1.5 cursor-pointer text-sm hover:bg-blue-50 ${
-                    size === pageSize
-                      ? "bg-blue-100 font-semibold text-blue-700"
-                      : "text-content-secondary"
-                  }`}
-                  onClick={() => {
+                  size={size}
+                  isActive={size === pageSize}
+                  onSelect={() => {
                     setDropdownOpen(false);
                     if (size !== pageSize) onPageSizeChange(size);
                   }}
-                >
-                  {size}
-                </li>
+                />
               ))}
             </ul>
           )}

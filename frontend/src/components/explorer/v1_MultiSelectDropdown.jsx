@@ -2,6 +2,79 @@ import React, { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffe
 import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronUp, Search } from 'lucide-react';
 
+// --- Extracted helpers ---
+
+const isClickInside = (event, ...refs) =>
+  refs.some((ref) => ref.current?.contains(event.target));
+
+const applyPositionStyle = (el, style) => {
+  if (!el || !style) return;
+  el.style.top = style.top != null ? `${style.top}px` : '';
+  el.style.bottom = style.bottom != null ? `${style.bottom}px` : '';
+  el.style.left = `${style.left}px`;
+  el.style.width = `${style.width}px`;
+};
+
+const getSelectedLabel = (selectedOptions, options, placeholder) => {
+  if (selectedOptions.length === 0) return placeholder;
+  if (selectedOptions.length === options.length && options.length > 0) {
+    return `All selected (${options.length})`;
+  }
+  return selectedOptions
+    .map((val) => {
+      const opt = options.find((o) => o.value === val);
+      return opt ? opt.name : val;
+    })
+    .join(', ') || placeholder;
+};
+
+const trimLabel = (value, maxLength = 45) => {
+  if (typeof value === 'string' && value.length > maxLength) {
+    return <span title={value}>{value.slice(0, maxLength)}&hellip;</span>;
+  }
+  return value;
+};
+
+// --- Extracted sub-components ---
+
+const MultiSelectOption = ({ option, idx, isChecked, onClick }) => (
+  <li
+    key={option.value || option.id || idx}
+    className={`px-3 py-2 cursor-pointer flex items-center text-sm transition-colors ${
+      isChecked ? 'bg-primary-50' : 'hover:bg-surface-hover'
+    }`}
+    onClick={() => onClick(option)}
+  >
+    <input
+      type="checkbox"
+      checked={isChecked}
+      readOnly
+      className="mr-2.5 accent-primary-600 w-4 h-4 rounded cursor-pointer"
+    />
+    <span className={isChecked ? 'font-medium text-content' : 'text-content-secondary'}>
+      {option.name || option.label || option.value}
+    </span>
+  </li>
+);
+
+const SelectAllFooter = ({ allSelected, onToggle }) => (
+  <div className="border-t border-edge px-3 py-2 bg-surface-secondary flex items-center">
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`w-full px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
+        allSelected
+          ? 'bg-surface text-content-secondary hover:bg-surface-hover border-edge'
+          : 'bg-primary-600 text-white hover:bg-primary-700 border-primary-600'
+      }`}
+    >
+      {allSelected ? 'Clear All' : 'Select All'}
+    </button>
+  </div>
+);
+
+// --- Main component ---
+
 const V1MultiSelectDropdown = ({
   options = [],
   selectedOptions = [],
@@ -49,10 +122,7 @@ const V1MultiSelectDropdown = ({
   // Close on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        btnRef.current && !btnRef.current.contains(event.target) &&
-        menuRef.current && !menuRef.current.contains(event.target)
-      ) {
+      if (!isClickInside(event, btnRef, menuRef)) {
         setIsOpen(false);
         setSearchTerm('');
       }
@@ -64,17 +134,7 @@ const V1MultiSelectDropdown = ({
   // Reposition on scroll / resize while open (useLayoutEffect to avoid flash)
   useLayoutEffect(() => {
     if (!isOpen) return;
-    const reposition = () => {
-      const style = computePosition();
-      if (style && menuRef.current) {
-        Object.assign(menuRef.current.style, {
-          top: style.top !== null && style.top !== undefined ? `${style.top}px` : '',
-          bottom: style.bottom !== null && style.bottom !== undefined ? `${style.bottom}px` : '',
-          left: `${style.left}px`,
-          width: `${style.width}px`,
-        });
-      }
-    };
+    const reposition = () => applyPositionStyle(menuRef.current, computePosition());
     window.addEventListener('scroll', reposition, true);
     window.addEventListener('resize', reposition);
     return () => {
@@ -108,31 +168,6 @@ const V1MultiSelectDropdown = ({
     );
   }, [options, searchTerm]);
 
-  const selectedLabel = () => {
-    if (selectedOptions.length === 0) return placeholder;
-    if (selectedOptions.length === options.length && options.length > 0) {
-      return `All selected (${options.length})`;
-    }
-    const names = selectedOptions
-      .map((val) => {
-        const opt = options.find((o) => o.value === val);
-        return opt ? opt.name : val;
-      });
-    const text = names.join(', ');
-    return text || placeholder;
-  };
-
-  const trimLabel = (value, maxLength = 45) => {
-    if (typeof value === 'string' && value.length > maxLength) {
-      return (
-        <span title={value}>
-          {value.slice(0, maxLength)}&hellip;
-        </span>
-      );
-    }
-    return value;
-  };
-
   const dropdownMenu = isOpen && menuStyleRef.current
     ? createPortal(
         <div
@@ -161,51 +196,19 @@ const V1MultiSelectDropdown = ({
                 No results found
               </li>
             ) : (
-              filteredOptions.map((option, idx) => {
-                const key = option.value || option.id || idx;
-                const isChecked = selectedOptions.includes(option.value);
-                return (
-                  <li
-                    key={key}
-                    className={`px-3 py-2 cursor-pointer flex items-center text-sm transition-colors ${
-                      isChecked ? 'bg-primary-50' : 'hover:bg-surface-hover'
-                    }`}
-                    onClick={() => handleOptionClick(option)}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      readOnly
-                      className="mr-2.5 accent-primary-600 w-4 h-4 rounded cursor-pointer"
-                    />
-                    <span
-                      className={
-                        isChecked
-                          ? 'font-medium text-content'
-                          : 'text-content-secondary'
-                      }
-                    >
-                      {option.name || option.label || option.value}
-                    </span>
-                  </li>
-                );
-              })
+              filteredOptions.map((option, idx) => (
+                <MultiSelectOption
+                  key={option.value || option.id || idx}
+                  option={option}
+                  idx={idx}
+                  isChecked={selectedOptions.includes(option.value)}
+                  onClick={handleOptionClick}
+                />
+              ))
             )}
           </ul>
           {multiSelectFooter && handleToggleSelectAll && (
-            <div className="border-t border-edge px-3 py-2 bg-surface-secondary flex items-center">
-              <button
-                type="button"
-                onClick={handleToggleSelectAll}
-                className={`w-full px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
-                  allSelected
-                    ? 'bg-surface text-content-secondary hover:bg-surface-hover border-edge'
-                    : 'bg-primary-600 text-white hover:bg-primary-700 border-primary-600'
-                }`}
-              >
-                {allSelected ? 'Clear All' : 'Select All'}
-              </button>
-            </div>
+            <SelectAllFooter allSelected={allSelected} onToggle={handleToggleSelectAll} />
           )}
         </div>,
         document.body
@@ -226,7 +229,7 @@ const V1MultiSelectDropdown = ({
         onClick={handleToggle}
       >
         <span className="flex-1 text-left text-sm text-content truncate">
-          {trimLabel(selectedLabel())}
+          {trimLabel(getSelectedLabel(selectedOptions, options, placeholder))}
         </span>
         <span className="ml-2 flex-shrink-0">
           {isOpen ? (

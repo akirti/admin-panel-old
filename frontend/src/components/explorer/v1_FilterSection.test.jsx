@@ -18,7 +18,7 @@ jest.mock('lucide-react', () => ({
   X: () => null,
 }));
 jest.mock('../../hooks/useAssignedCustomers', () => ({
-  __esModule: true, default: () => ({ customers: [], tags: [], loading: false, hasAssigned: false, search: () => {}, filterByTag: () => {} }),
+  __esModule: true, default: () => ({ customers: [], tags: [], loading: false, hasAssigned: false, search: Function.prototype, filterByTag: Function.prototype }),
 }));
 jest.mock('../../utils/v1_reportUtils', () => ({
   getAttrValue: (attrs, key) => attrs?.find(a => a.key === key)?.value,
