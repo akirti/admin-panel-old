@@ -4,8 +4,7 @@ module.exports = {
   testTimeout: 30000,
   setupFiles: ['./jest/jest-globals.js'],
   setupFilesAfterEnv: ['./jest/setup.js'],
-  roots: ['<rootDir>/src/__test__'],
-  testMatch: ['**/*.test.{js,jsx}'],
+  testMatch: ['<rootDir>/src/__test__/**/*.test.{js,jsx}'],
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     '\\.(jpg|jpeg|png|gif|svg|webp|ico|woff|woff2|eot|ttf|otf)$':
