@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import { domainAPI } from '../../services/api';
 import { Layers, ArrowRight, Search } from 'lucide-react';
 
 function DomainsPage() {
-  const { hasAccessToDomain } = useAuth();
   const [domains, setDomains] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -59,11 +57,11 @@ function DomainsPage() {
         <div className="card text-center py-12">
           <Layers className="mx-auto text-content-muted mb-4" size={48} />
           <h3 className="text-lg font-medium text-content mb-2">No Domains Found</h3>
-          <p className="text-content-muted">
-            {searchTerm
-              ? 'No domains match your search criteria.'
-              : 'You don\'t have access to any domains yet.'}
-          </p>
+          {searchTerm ? (
+            <p className="text-content-muted">No domains match your search criteria.</p>
+          ) : (
+            <p className="text-content-muted">You don&apos;t have access to any domains yet.</p>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

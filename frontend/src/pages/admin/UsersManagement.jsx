@@ -113,10 +113,11 @@ const SelectionSection = ({ label, count, items, isSelected, onToggle, onSelectA
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
         {items.map((item) => {
           const selected = isSelected(item);
+          const selectionClass = selected ? `${colorSelected} ${colorBorder}` : 'bg-surface border-edge hover:border-edge';
           return (
             <label
               key={item._id || item.roleId || item.groupId || item.customerId}
-              className={`flex items-center p-2 rounded-lg border cursor-pointer transition-colors ${selected ? `${colorSelected} ${colorBorder}` : 'bg-surface border-edge hover:border-edge'}`}
+              className={`flex items-center p-2 rounded-lg border cursor-pointer transition-colors ${selectionClass}`}
             >
               <input type="checkbox" checked={selected} onChange={(e) => onToggle(item, e.target.checked)} className={`h-4 w-4 ${colorCheckbox} rounded`} />
               <span className="ml-2 text-sm text-content-secondary">{item.name}</span>

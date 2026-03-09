@@ -28,6 +28,10 @@ function V1ExplorerDomainPage() {
     navigate(`/explorer/${dataDomain}/${scenario.key}`);
   };
 
+  const emptyMessage = searchQuery
+    ? 'Try a different search term'
+    : 'No scenarios available for this domain';
+
   return (
     <div>
       <V1Breadcrumbs
@@ -70,9 +74,7 @@ function V1ExplorerDomainPage() {
         <div className="text-center py-12 text-content-muted">
           <FileText size={48} className="mx-auto mb-4 text-content-muted" />
           <p className="text-lg font-medium">No scenarios found</p>
-          <p className="text-sm mt-1">
-            {searchQuery ? 'Try a different search term' : 'No scenarios available for this domain'}
-          </p>
+          <p className="text-sm mt-1">{emptyMessage}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

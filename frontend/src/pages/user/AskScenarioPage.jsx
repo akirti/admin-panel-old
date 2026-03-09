@@ -38,7 +38,7 @@ function RichTextEditor({ value, onChange, placeholder, rows = 6 }) {
     }
   };
 
-  const execCommand = (command, value = null) => {
+  const execCommand = (command, commandValue = null) => {
     editorRef.current?.focus();
 
     // For list commands, ensure we're in the editor first
@@ -56,7 +56,7 @@ function RichTextEditor({ value, onChange, placeholder, rows = 6 }) {
       }
     }
 
-    document.execCommand(command, false, value);
+    document.execCommand(command, false, commandValue);
     setTimeout(() => handleInput(), 10);
   };
 
