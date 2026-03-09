@@ -123,49 +123,42 @@ const DATE_INPUT_CLASS =
 const DATE_RANGE_INPUT_CLASS =
   'border border-edge rounded-md h-10 px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors hover:border-neutral-400';
 
+// --- Helper: resolve paired date-picker default when two date pickers exist ---
+const resolvePairedDateDefault = (value, filter, allFilters, form, format) => {
+  const datePickers = allFilters?.filter(
+    (f) => {
+      const t = getAttrValue(f.attributes, 'type');
+      return t === 'date-picker' || t === 'date';
+    }
+  );
+  if (!datePickers || datePickers.length !== 2 || !isEmpty(value)) return value;
+
+  const [first, second] = datePickers;
+  const today = getCurrentDate();
+
+  if (filter.dataKey === first.dataKey) {
+    const toVal = form[second.dataKey]
+      || formatApiDateForInput(getAttrValue(second.attributes, 'defaultValue'), format)
+      || today;
+    return toVal === today ? addDays(today, -60) : value;
+  }
+  if (filter.dataKey === second.dataKey) {
+    const fromVal = form[first.dataKey]
+      || formatApiDateForInput(getAttrValue(first.attributes, 'defaultValue'), format)
+      || today;
+    return fromVal === today ? addDays(today, 60) : value;
+  }
+  return value;
+};
+
 // --- Type-specific render functions ---
 
 const renderDatePicker = ({ filter, value, onChange, attrs, format, defaultVal, allFilters, form, width }) => {
-  const datePickers = allFilters?.filter(
-    (f) =>
-      getAttrValue(f.attributes, 'type') === 'date-picker' ||
-      getAttrValue(f.attributes, 'type') === 'date'
+  const v = resolveDateValue(
+    resolvePairedDateDefault(value, filter, allFilters, form, format),
+    defaultVal,
+    format
   );
-  let v = value;
-
-  if (datePickers?.length === 2) {
-    const [first, second] = datePickers;
-    const isFrom = filter.dataKey === first.dataKey;
-    const isTo = filter.dataKey === second.dataKey;
-    const today = getCurrentDate();
-
-    if (isFrom) {
-      const toVal =
-        form[second.dataKey] ||
-        formatApiDateForInput(
-          getAttrValue(second.attributes, 'defaultValue'),
-          format
-        ) ||
-        today;
-      if (isEmpty(v) && toVal === today) {
-        v = addDays(today, -60);
-      }
-    }
-    if (isTo) {
-      const fromVal =
-        form[first.dataKey] ||
-        formatApiDateForInput(
-          getAttrValue(first.attributes, 'defaultValue'),
-          format
-        ) ||
-        today;
-      if (isEmpty(v) && fromVal === today) {
-        v = addDays(today, 60);
-      }
-    }
-  }
-
-  v = resolveDateValue(v, defaultVal, format);
 
   return (
     <input
@@ -342,6 +335,22 @@ const TYPE_RENDERERS = {
   'date-range': renderDateRange,
 };
 
+// --- Helper: normalize options from string/array/other ---
+const normalizeOptions = (raw) => {
+  if (typeof raw === 'string') {
+    return raw.split(',').map((opt) => ({ name: opt.trim(), value: opt.trim() }));
+  }
+  return Array.isArray(raw) ? raw : [];
+};
+
+// --- Helper: resolve input placeholder ---
+const resolveInputPlaceholder = (value, filter, fallback) =>
+  isEmpty(value) && filter.inputHint ? filter.inputHint : fallback;
+
+// --- Helper: check if customer suggest should be used ---
+const shouldUseCustomerSuggest = (type, filter, useCustomerSuggest, customerData) =>
+  type === 'input' && isCustomerFilter(filter) && useCustomerSuggest && customerData?.hasAssigned;
+
 const V1DynamicFilterControl = ({
   filter,
   value,
@@ -356,18 +365,9 @@ const V1DynamicFilterControl = ({
   const attrs = filter.attributes || [];
   const type = getAttrValue(attrs, 'type') || 'input';
   const width = getAttrValue(attrs, 'width') || '100%';
-  let options = getAttrValue(attrs, 'options');
+  const options = normalizeOptions(getAttrValue(attrs, 'options'));
   const format = getAttrValue(attrs, 'format') || 'YYYYMMDD';
   const defaultVal = getAttrValue(attrs, 'defaultValue');
-
-  if (typeof options === 'string') {
-    options = options.split(',').map((opt) => ({
-      name: opt.trim(),
-      value: opt.trim(),
-    }));
-  } else if (!Array.isArray(options)) {
-    options = [];
-  }
 
   // Type-specific renderer
   const TypeRenderer = TYPE_RENDERERS[type];
@@ -389,8 +389,7 @@ const V1DynamicFilterControl = ({
   }
 
   // Customer suggest fallback
-  const isCustomerField = isCustomerFilter(filter);
-  if (type === 'input' && isCustomerField && useCustomerSuggest && customerData?.hasAssigned) {
+  if (shouldUseCustomerSuggest(type, filter, useCustomerSuggest, customerData)) {
     return (
       <V1CustomerSuggestInput
         value={value || ''}
@@ -400,11 +399,7 @@ const V1DynamicFilterControl = ({
         loading={customerData.loading}
         onSearch={customerData.search}
         onFilterByTag={customerData.filterByTag}
-        placeholder={
-          (!value || value === '') && filter.inputHint
-            ? filter.inputHint
-            : placeholder || 'Type customer # or name...'
-        }
+        placeholder={resolveInputPlaceholder(value, filter, placeholder || 'Type customer # or name...')}
       />
     );
   }
@@ -416,11 +411,7 @@ const V1DynamicFilterControl = ({
       value={value || ''}
       onChange={(e) => onChange(filter.dataKey, e.target.value)}
       className={DATE_INPUT_CLASS}
-      placeholder={
-        (!value || value === '') && filter.inputHint
-          ? filter.inputHint
-          : placeholder || type
-      }
+      placeholder={resolveInputPlaceholder(value, filter, placeholder || type)}
       {...(props.title ? { title: props.title } : {})}
     />
   );

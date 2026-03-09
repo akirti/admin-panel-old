@@ -612,7 +612,7 @@ describe('V1DataTable', () => {
 
   it('closes menu after action click', async () => {
     const user = userEvent.setup();
-    jest.spyOn(window, 'open').mockImplementation(() => {});
+    jest.spyOn(window, 'open').mockImplementation(Function.prototype);
 
     render(
       <V1DataTable

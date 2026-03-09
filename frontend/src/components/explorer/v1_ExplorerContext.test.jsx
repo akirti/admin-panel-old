@@ -135,7 +135,7 @@ describe('ExplorerContext', () => {
 
   it('throws error when useExplorer is used outside provider', () => {
     // Suppress console.error for this test
-    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const spy = jest.spyOn(console, 'error').mockImplementation(Function.prototype);
 
     expect(() => render(<TestConsumer />)).toThrow(
       'useExplorer must be used within an ExplorerProvider'
