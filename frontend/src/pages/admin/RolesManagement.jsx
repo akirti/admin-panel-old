@@ -450,49 +450,29 @@ async function downloadExport(exportFn, format, filename) {
   window.URL.revokeObjectURL(url);
 }
 
-// --- Main Component ---
+// --- Custom hook for roles data fetching ---
 
-const RolesManagement = () => {
-  const { isSuperAdmin } = useAuth();
-
-  // Data state
+function useRolesData(isSuperAdmin) {
   const [roles, setRoles] = useState([]);
   const [permissions, setPermissions] = useState([]);
   const [domains, setDomains] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  // Pagination state
   const [page, setPage] = useState(0);
   const [limit] = useState(25);
   const [totalPages, setTotalPages] = useState(0);
   const [total, setTotal] = useState(0);
-
-  // Search and filter state
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterDomain, setFilterDomain] = useState('');
   const [filterPermission, setFilterPermission] = useState('');
 
-  // Modal state
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingRole, setEditingRole] = useState(null);
-  const [formData, setFormData] = useState({ ...EMPTY_FORM });
-
-  // Users modal state
-  const [usersModalOpen, setUsersModalOpen] = useState(false);
-  const [selectedRole, setSelectedRole] = useState(null);
-  const [roleUsers, setRoleUsers] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
-
-  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => { setDebouncedSearch(search); setPage(0); }, 300);
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Fetch roles
   const fetchRoles = useCallback(async () => {
     try {
       setLoading(true);
@@ -504,37 +484,44 @@ const RolesManagement = () => {
         setTotalPages(responseData.pagination.pages || 0);
         setTotal(responseData.pagination.total || 0);
       }
-    } catch (err) {
-      setError('Failed to fetch roles');
-    } finally {
-      setLoading(false);
-    }
+    } catch { setError('Failed to fetch roles'); }
+    finally { setLoading(false); }
   }, [page, limit, debouncedSearch, filterDomain, filterPermission]);
 
-  // Fetch permissions and domains for the form
   const fetchFormData = useCallback(async () => {
     try {
-      const [permRes, domRes] = await Promise.all([
-        permissionsAPI.list({ limit: 1000 }),
-        domainsAPI.list({ limit: 1000 }),
-      ]);
+      const [permRes, domRes] = await Promise.all([permissionsAPI.list({ limit: 1000 }), domainsAPI.list({ limit: 1000 })]);
       setPermissions(permRes?.data?.data || []);
       setDomains(domRes?.data?.data || []);
-    } catch (err) {
-      // error handled silently
-    }
+    } catch { /* silently handled */ }
   }, []);
 
-  useEffect(() => {
-    if (isSuperAdmin()) { fetchRoles(); fetchFormData(); }
-  }, [fetchRoles, fetchFormData, isSuperAdmin]);
+  useEffect(() => { if (isSuperAdmin()) { fetchRoles(); fetchFormData(); } }, [fetchRoles, fetchFormData, isSuperAdmin]);
 
-  // Clear messages after timeout
   useEffect(() => {
     if (!error && !success) return;
     const timer = setTimeout(() => { setError(''); setSuccess(''); }, 5000);
     return () => clearTimeout(timer);
   }, [error, success]);
+
+  const handleFilterDomainChange = (value) => { setFilterDomain(value); setPage(0); };
+  const handleFilterPermissionChange = (value) => { setFilterPermission(value); setPage(0); };
+  const handleClearFilters = () => { setFilterDomain(''); setFilterPermission(''); setPage(0); };
+
+  return {
+    roles, permissions, domains, loading, error, success, setError, setSuccess,
+    page, setPage, limit, totalPages, total, search, setSearch,
+    filterDomain, filterPermission, fetchRoles,
+    handleFilterDomainChange, handleFilterPermissionChange, handleClearFilters,
+  };
+}
+
+// --- Custom hook for role form state and selection helpers ---
+
+function useRoleForm(permissions, domains) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingRole, setEditingRole] = useState(null);
+  const [formData, setFormData] = useState({ ...EMPTY_FORM });
 
   const groupedPermissions = groupPermissionsByModule(permissions);
 
@@ -544,7 +531,6 @@ const RolesManagement = () => {
   };
 
   const isPermissionSelected = (perm) => checkPermissionSelected(formData.permissions, perm);
-
   const isDomainSelected = (domain) => checkDomainSelected(formData.domains, domain);
 
   const handlePermissionToggle = (perm) => {
@@ -579,41 +565,32 @@ const RolesManagement = () => {
     }));
   };
 
-  const handleSelectAllDomains = (selected) => {
-    setFormData((prev) => ({ ...prev, domains: selected ? domains.map((d) => d._id) : [] }));
-  };
+  const handleSelectAllDomains = (selected) => { setFormData((prev) => ({ ...prev, domains: selected ? domains.map((d) => d._id) : [] })); };
+  const handleSelectAllPermissions = (selected) => { setFormData((prev) => ({ ...prev, permissions: selected ? permissions.map((p) => p._id) : [] })); };
 
-  const handleSelectAllPermissions = (selected) => {
-    setFormData((prev) => ({ ...prev, permissions: selected ? permissions.map((p) => p._id) : [] }));
-  };
+  const openCreateModal = () => { setEditingRole(null); setFormData({ ...EMPTY_FORM }); setModalOpen(true); };
+  const openEditModal = (role) => { setEditingRole(role); setFormData(buildFormDataFromRole(role)); setModalOpen(true); };
+  const closeModal = () => setModalOpen(false);
 
-  const openCreateModal = () => {
-    setEditingRole(null);
-    setFormData({ ...EMPTY_FORM });
-    setModalOpen(true);
+  return {
+    modalOpen, editingRole, formData, groupedPermissions,
+    handleInputChange, isPermissionSelected, isDomainSelected,
+    handlePermissionToggle, handleDomainToggle, handleSelectAllModule,
+    handleSelectAllDomains, handleSelectAllPermissions,
+    openCreateModal, openEditModal, closeModal,
   };
+}
 
-  const openEditModal = (role) => {
-    setEditingRole(role);
-    setFormData(buildFormDataFromRole(role));
-    setModalOpen(true);
-  };
+// --- Custom hook for role CRUD actions ---
 
-  const handleSubmit = async (e) => {
+function useRoleActions(setError, setSuccess, fetchRoles) {
+  const handleSubmit = async (e, editingRole, formData, closeModal) => {
     e.preventDefault();
     try {
-      if (editingRole) {
-        await rolesAPI.update(editingRole._id || editingRole.roleId, formData);
-        setSuccess('Role updated successfully');
-      } else {
-        await rolesAPI.create(formData);
-        setSuccess('Role created successfully');
-      }
-      setModalOpen(false);
+      await submitRole(editingRole, formData, setSuccess);
+      closeModal();
       fetchRoles();
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to save role');
-    }
+    } catch (err) { setError(err.response?.data?.detail || 'Failed to save role'); }
   };
 
   const handleDelete = async (role) => {
@@ -622,9 +599,7 @@ const RolesManagement = () => {
       await rolesAPI.delete(role._id || role.roleId);
       setSuccess('Role deleted successfully');
       fetchRoles();
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to delete role');
-    }
+    } catch (err) { setError(err.response?.data?.detail || 'Failed to delete role'); }
   };
 
   const handleToggleStatus = async (role) => {
@@ -632,10 +607,37 @@ const RolesManagement = () => {
       await rolesAPI.toggleStatus(role._id || role.roleId);
       setSuccess(`Role ${role.status === 'active' ? 'deactivated' : 'activated'} successfully`);
       fetchRoles();
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to toggle role status');
-    }
+    } catch (err) { setError(err.response?.data?.detail || 'Failed to toggle role status'); }
   };
+
+  const handleExport = async (format) => {
+    try {
+      const exportFn = format === 'csv' ? exportAPI.roles.csv : exportAPI.roles.json;
+      await downloadExport(exportFn, format, `roles_export.${format}`);
+      setSuccess(`Exported roles as ${format.toUpperCase()}`);
+    } catch { setError('Failed to export roles'); }
+  };
+
+  return { handleSubmit, handleDelete, handleToggleStatus, handleExport };
+}
+
+async function submitRole(editingRole, formData, setSuccess) {
+  if (editingRole) {
+    await rolesAPI.update(editingRole._id || editingRole.roleId, formData);
+    setSuccess('Role updated successfully');
+  } else {
+    await rolesAPI.create(formData);
+    setSuccess('Role created successfully');
+  }
+}
+
+// --- Custom hook for role users modal ---
+
+function useRoleUsersModal() {
+  const [usersModalOpen, setUsersModalOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState(null);
+  const [roleUsers, setRoleUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   const showUsers = async (role) => {
     setSelectedRole(role);
@@ -644,27 +646,25 @@ const RolesManagement = () => {
     try {
       const response = await rolesAPI.getUsers(role._id || role.roleId);
       setRoleUsers(response?.data || []);
-    } catch (err) {
-      setRoleUsers([]);
-    } finally {
-      setLoadingUsers(false);
-    }
+    } catch { setRoleUsers([]); }
+    finally { setLoadingUsers(false); }
   };
 
-  const handleExport = async (format) => {
-    try {
-      const exportFn = format === 'csv' ? exportAPI.roles.csv : exportAPI.roles.json;
-      await downloadExport(exportFn, format, `roles_export.${format}`);
-      setSuccess(`Exported roles as ${format.toUpperCase()}`);
-    } catch (err) {
-      setError('Failed to export roles');
-    }
-  };
+  const closeUsersModal = () => setUsersModalOpen(false);
 
-  const handleFilterDomainChange = (value) => { setFilterDomain(value); setPage(0); };
-  const handleFilterPermissionChange = (value) => { setFilterPermission(value); setPage(0); };
-  const handleClearFilters = () => { setFilterDomain(''); setFilterPermission(''); setPage(0); };
-  const closeModal = () => setModalOpen(false);
+  return { usersModalOpen, selectedRole, roleUsers, loadingUsers, showUsers, closeUsersModal };
+}
+
+// --- Main Component ---
+
+const RolesManagement = () => {
+  const { isSuperAdmin } = useAuth();
+  const data = useRolesData(isSuperAdmin);
+  const form = useRoleForm(data.permissions, data.domains);
+  const crud = useRoleActions(data.setError, data.setSuccess, data.fetchRoles);
+  const usersModal = useRoleUsersModal();
+
+  const onSubmit = (e) => crud.handleSubmit(e, form.editingRole, form.formData, form.closeModal);
 
   if (!isSuperAdmin()) {
     return <AccessDeniedView />;
@@ -672,32 +672,32 @@ const RolesManagement = () => {
 
   return (
     <div className="space-y-6">
-      <RolesHeader total={total} onExport={handleExport} onCreateClick={openCreateModal} />
-      <AlertMessages error={error} success={success} />
+      <RolesHeader total={data.total} onExport={crud.handleExport} onCreateClick={form.openCreateModal} />
+      <AlertMessages error={data.error} success={data.success} />
 
       <RolesFilterBar
-        search={search} onSearchChange={setSearch}
-        filterDomain={filterDomain} onFilterDomainChange={handleFilterDomainChange}
-        filterPermission={filterPermission} onFilterPermissionChange={handleFilterPermissionChange}
-        domains={domains} permissions={permissions} onClearFilters={handleClearFilters}
+        search={data.search} onSearchChange={data.setSearch}
+        filterDomain={data.filterDomain} onFilterDomainChange={data.handleFilterDomainChange}
+        filterPermission={data.filterPermission} onFilterPermissionChange={data.handleFilterPermissionChange}
+        domains={data.domains} permissions={data.permissions} onClearFilters={data.handleClearFilters}
       />
 
       <div className="card overflow-hidden">
-        <RolesTable roles={roles} loading={loading} onShowUsers={showUsers} onEdit={openEditModal} onToggleStatus={handleToggleStatus} onDelete={handleDelete} />
-        <RolesPagination page={page} limit={limit} total={total} totalPages={totalPages} onPageChange={setPage} />
+        <RolesTable roles={data.roles} loading={data.loading} onShowUsers={usersModal.showUsers} onEdit={form.openEditModal} onToggleStatus={crud.handleToggleStatus} onDelete={crud.handleDelete} />
+        <RolesPagination page={data.page} limit={data.limit} total={data.total} totalPages={data.totalPages} onPageChange={data.setPage} />
       </div>
 
-      <Modal isOpen={modalOpen} onClose={closeModal} title={editingRole ? 'Edit Role' : 'Create Role'} size="xl">
+      <Modal isOpen={form.modalOpen} onClose={form.closeModal} title={form.editingRole ? 'Edit Role' : 'Create Role'} size="xl">
         <RoleForm
-          formData={formData} editingRole={editingRole} handleInputChange={handleInputChange} handleSubmit={handleSubmit}
-          groupedPermissions={groupedPermissions} isPermissionSelected={isPermissionSelected} handlePermissionToggle={handlePermissionToggle}
-          handleSelectAllPermissions={handleSelectAllPermissions} handleSelectAllModule={handleSelectAllModule}
-          domains={domains} isDomainSelected={isDomainSelected} handleDomainToggle={handleDomainToggle} handleSelectAllDomains={handleSelectAllDomains}
-          onClose={closeModal}
+          formData={form.formData} editingRole={form.editingRole} handleInputChange={form.handleInputChange} handleSubmit={onSubmit}
+          groupedPermissions={form.groupedPermissions} isPermissionSelected={form.isPermissionSelected} handlePermissionToggle={form.handlePermissionToggle}
+          handleSelectAllPermissions={form.handleSelectAllPermissions} handleSelectAllModule={form.handleSelectAllModule}
+          domains={data.domains} isDomainSelected={form.isDomainSelected} handleDomainToggle={form.handleDomainToggle} handleSelectAllDomains={form.handleSelectAllDomains}
+          onClose={form.closeModal}
         />
       </Modal>
 
-      <RoleUsersModal isOpen={usersModalOpen} onClose={() => setUsersModalOpen(false)} selectedRole={selectedRole} loadingUsers={loadingUsers} roleUsers={roleUsers} />
+      <RoleUsersModal isOpen={usersModal.usersModalOpen} onClose={usersModal.closeUsersModal} selectedRole={usersModal.selectedRole} loadingUsers={usersModal.loadingUsers} roleUsers={usersModal.roleUsers} />
     </div>
   );
 };

@@ -224,7 +224,7 @@ function DashboardPage() {
         setRequestStats(statsRes.data || {
           total: 0, submitted: 0, inProgress: 0, deployed: 0, recent: []
         });
-      } catch (error) {
+      } catch {
         // error handled silently
       } finally {
         setLoading(false);

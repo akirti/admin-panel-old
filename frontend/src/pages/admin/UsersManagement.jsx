@@ -346,9 +346,9 @@ const UsersPagination = ({ pagination, totalPages, onPageChange, loading }) => {
   );
 };
 
-// --- Main Component ---
+// --- Custom hook for users data fetching ---
 
-const UsersManagement = () => {
+function useUsersData() {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [groups, setGroups] = useState([]);
@@ -357,10 +357,7 @@ const UsersManagement = () => {
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('');
   const [filterGroup, setFilterGroup] = useState('');
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
   const [pagination, setPagination] = useState({ page: 0, limit: 25, total: 0, pages: 0 });
-  const [formData, setFormData] = useState({ ...EMPTY_USER_FORM });
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -374,46 +371,38 @@ const UsersManagement = () => {
       setRoles(extractResponseData(rolesRes));
       setGroups(extractResponseData(groupsRes));
       setCustomers(extractResponseData(customersRes));
-    } catch (error) {
-      toast.error('Failed to load users');
-    } finally {
-      setLoading(false);
-    }
+    } catch { toast.error('Failed to load users'); }
+    finally { setLoading(false); }
   }, [search, filterRole, filterGroup, pagination.page, pagination.limit]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const resetPageToFirst = () => setPagination(prev => ({ ...prev, page: 0 }));
   const handlePageChange = (newPage) => { setPagination(prev => ({ ...prev, page: newPage })); };
+  const handleSearchChange = (value) => { setSearch(value); resetPageToFirst(); };
+  const handleFilterRoleChange = (value) => { setFilterRole(value); resetPageToFirst(); };
+  const handleFilterGroupChange = (value) => { setFilterGroup(value); resetPageToFirst(); };
+  const handleClearFilters = () => { setFilterRole(''); setFilterGroup(''); resetPageToFirst(); };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingUser) {
-        const { password: _password, send_password_email: _send_password_email, ...updateData } = formData; // eslint-disable-line no-unused-vars
-        await usersAPI.update(editingUser.email, updateData);
-        toast.success('User updated successfully');
-      } else {
-        await usersAPI.create(formData);
-        toast.success('User created successfully');
-      }
-      setModalOpen(false);
-      resetForm();
-      fetchData();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Operation failed');
-    }
+  const totalPages = pagination.pages || Math.ceil(pagination.total / pagination.limit);
+
+  return {
+    users, roles, groups, customers, loading, search, filterRole, filterGroup,
+    pagination, totalPages, fetchData,
+    handlePageChange, handleSearchChange, handleFilterRoleChange, handleFilterGroupChange, handleClearFilters,
   };
+}
 
+// --- Custom hook for user CRUD actions ---
+
+function useUserActions(fetchData) {
   const handleDelete = async (user) => {
     if (!window.confirm(`Are you sure you want to delete ${user.email}?`)) return;
     try {
       await usersAPI.delete(user.email);
       toast.success('User deleted successfully');
       fetchData();
-    } catch (error) {
-      toast.error('Failed to delete user');
-    }
+    } catch { toast.error('Failed to delete user'); }
   };
 
   const handleToggleStatus = async (user) => {
@@ -421,9 +410,7 @@ const UsersManagement = () => {
       await usersAPI.toggleStatus(user.email);
       toast.success(`User ${user.is_active ? 'disabled' : 'enabled'} successfully`);
       fetchData();
-    } catch (error) {
-      toast.error('Failed to update user status');
-    }
+    } catch { toast.error('Failed to update user status'); }
   };
 
   const handleSendPasswordReset = async (user, sendEmail = true) => {
@@ -431,9 +418,7 @@ const UsersManagement = () => {
       const response = await usersAPI.sendPasswordReset(user.email, sendEmail);
       const message = sendEmail ? 'Password reset email sent' : `Reset token: ${response.data.token}`;
       toast.success(message);
-    } catch (error) {
-      toast.error('Failed to send password reset');
-    }
+    } catch { toast.error('Failed to send password reset'); }
   };
 
   const handleExport = async (format) => {
@@ -441,23 +426,33 @@ const UsersManagement = () => {
       const exportFn = format === 'csv' ? exportAPI.users.csv : exportAPI.users.json;
       await downloadUserExport(exportFn, format, `users.${format}`);
       toast.success(`Exported users as ${format.toUpperCase()}`);
-    } catch (error) {
-      toast.error('Failed to export users');
-    }
+    } catch { toast.error('Failed to export users'); }
   };
 
-  const resetForm = () => {
-    setFormData({ ...EMPTY_USER_FORM });
-    setEditingUser(null);
-  };
+  return { handleDelete, handleToggleStatus, handleSendPasswordReset, handleExport };
+}
 
-  const openEditModal = (user) => {
-    setEditingUser(user);
-    setFormData(buildUserFormData(user));
-    setModalOpen(true);
-  };
+// --- Custom hook for user form modal ---
 
+function useUserFormModal(roles, groups, customers, fetchData) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [formData, setFormData] = useState({ ...EMPTY_USER_FORM });
+
+  const resetForm = () => { setFormData({ ...EMPTY_USER_FORM }); setEditingUser(null); };
   const openAddModal = () => { resetForm(); setModalOpen(true); };
+  const openEditModal = (user) => { setEditingUser(user); setFormData(buildUserFormData(user)); setModalOpen(true); };
+  const closeModal = () => { setModalOpen(false); resetForm(); };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await submitUser(editingUser, formData);
+      setModalOpen(false);
+      resetForm();
+      fetchData();
+    } catch (error) { toast.error(error.response?.data?.detail || 'Operation failed'); }
+  };
 
   const isRoleSelected = (role) => formData.roles.includes(role._id) || formData.roles.includes(role.roleId);
   const isGroupSelected = (group) => formData.groups.includes(group._id) || formData.groups.includes(group.groupId);
@@ -470,39 +465,57 @@ const UsersManagement = () => {
   const selectAllCustomers = () => { setFormData(prev => ({ ...prev, customers: customers.map(c => c._id) })); };
   const clearAllCustomers = () => { setFormData(prev => ({ ...prev, customers: [] })); };
 
-  const totalPages = pagination.pages || Math.ceil(pagination.total / pagination.limit);
-  const closeModal = () => { setModalOpen(false); resetForm(); };
+  return {
+    modalOpen, editingUser, formData, setFormData,
+    openAddModal, openEditModal, closeModal, handleSubmit,
+    isRoleSelected, isGroupSelected, isCustomerSelected,
+    selectAllRoles, clearAllRoles, selectAllGroups, clearAllGroups, selectAllCustomers, clearAllCustomers,
+  };
+}
 
-  const handleSearchChange = (value) => { setSearch(value); resetPageToFirst(); };
-  const handleFilterRoleChange = (value) => { setFilterRole(value); resetPageToFirst(); };
-  const handleFilterGroupChange = (value) => { setFilterGroup(value); resetPageToFirst(); };
-  const handleClearFilters = () => { setFilterRole(''); setFilterGroup(''); resetPageToFirst(); };
+async function submitUser(editingUser, formData) {
+  if (editingUser) {
+    const { password: _password, send_password_email: _send_password_email, ...updateData } = formData; // eslint-disable-line no-unused-vars
+    await usersAPI.update(editingUser.email, updateData);
+    toast.success('User updated successfully');
+  } else {
+    await usersAPI.create(formData);
+    toast.success('User created successfully');
+  }
+}
+
+// --- Main Component ---
+
+const UsersManagement = () => {
+  const data = useUsersData();
+  const actions = useUserActions(data.fetchData);
+  const form = useUserFormModal(data.roles, data.groups, data.customers, data.fetchData);
 
   return (
     <div className="space-y-6">
-      <UsersHeader onExportCsv={() => handleExport('csv')} onExportJson={() => handleExport('json')} onAddUser={openAddModal} />
+      <UsersHeader onExportCsv={() => actions.handleExport('csv')} onExportJson={() => actions.handleExport('json')} onAddUser={form.openAddModal} />
 
       <UsersFilterBar
-        search={search} onSearchChange={handleSearchChange}
-        filterRole={filterRole} onFilterRoleChange={handleFilterRoleChange}
-        filterGroup={filterGroup} onFilterGroupChange={handleFilterGroupChange}
-        roles={roles} groups={groups} onClearFilters={handleClearFilters}
+        search={data.search} onSearchChange={data.handleSearchChange}
+        filterRole={data.filterRole} onFilterRoleChange={data.handleFilterRoleChange}
+        filterGroup={data.filterGroup} onFilterGroupChange={data.handleFilterGroupChange}
+        roles={data.roles} groups={data.groups} onClearFilters={data.handleClearFilters}
       />
 
       <div className="card overflow-hidden p-0">
-        <UsersTable users={users} loading={loading} onEdit={openEditModal} onToggleStatus={handleToggleStatus} onSendPasswordReset={handleSendPasswordReset} onDelete={handleDelete} />
-        <UsersPagination pagination={pagination} totalPages={totalPages} onPageChange={handlePageChange} loading={loading} />
+        <UsersTable users={data.users} loading={data.loading} onEdit={form.openEditModal} onToggleStatus={actions.handleToggleStatus} onSendPasswordReset={actions.handleSendPasswordReset} onDelete={actions.handleDelete} />
+        <UsersPagination pagination={data.pagination} totalPages={data.totalPages} onPageChange={data.handlePageChange} loading={data.loading} />
       </div>
 
-      <Modal isOpen={modalOpen} onClose={closeModal} title={editingUser ? 'Edit User' : 'Add User'} size="xl">
+      <Modal isOpen={form.modalOpen} onClose={form.closeModal} title={form.editingUser ? 'Edit User' : 'Add User'} size="xl">
         <UserForm
-          formData={formData} setFormData={setFormData} editingUser={editingUser}
-          roles={roles} groups={groups} customers={customers}
-          isRoleSelected={isRoleSelected} isGroupSelected={isGroupSelected} isCustomerSelected={isCustomerSelected}
-          selectAllRoles={selectAllRoles} clearAllRoles={clearAllRoles}
-          selectAllGroups={selectAllGroups} clearAllGroups={clearAllGroups}
-          selectAllCustomers={selectAllCustomers} clearAllCustomers={clearAllCustomers}
-          handleSubmit={handleSubmit} onClose={closeModal}
+          formData={form.formData} setFormData={form.setFormData} editingUser={form.editingUser}
+          roles={data.roles} groups={data.groups} customers={data.customers}
+          isRoleSelected={form.isRoleSelected} isGroupSelected={form.isGroupSelected} isCustomerSelected={form.isCustomerSelected}
+          selectAllRoles={form.selectAllRoles} clearAllRoles={form.clearAllRoles}
+          selectAllGroups={form.selectAllGroups} clearAllGroups={form.clearAllGroups}
+          selectAllCustomers={form.selectAllCustomers} clearAllCustomers={form.clearAllCustomers}
+          handleSubmit={form.handleSubmit} onClose={form.closeModal}
         />
       </Modal>
     </div>

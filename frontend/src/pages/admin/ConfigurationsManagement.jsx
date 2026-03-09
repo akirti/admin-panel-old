@@ -381,27 +381,11 @@ async function handleDownloadItem(item) {
 /* ═══════════════════════════════════════════════════════════
    Main Component
    ═══════════════════════════════════════════════════════════ */
-const ConfigurationsManagement = () => {
+/* ─── Data-fetching hook ─── */
+function useConfigurationsData(search, filterType, pagination, setPagination) {
   const [configurations, setConfigurations] = useState([]);
   const [configTypes, setConfigTypes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [filterType, setFilterType] = useState('');
-  const [modalOpen, setModalOpen] = useState(false);
-  const [uploadModalOpen, setUploadModalOpen] = useState(false);
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [versionsModalOpen, setVersionsModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [selectedConfig, setSelectedConfig] = useState(null);
-  const [versions, setVersions] = useState([]);
-  const [pagination, setPagination] = useState({ page: 0, limit: 25, total: 0, pages: 0 });
-  const [formData, setFormData] = useState({ ...DEFAULT_CONFIG_FORM });
-  const [uploadFile, setUploadFile] = useState(null);
-  const [uploadKey, setUploadKey] = useState('');
-  const [uploadType, setUploadType] = useState('');
-  const [jsonInput, setJsonInput] = useState('');
-
-  const resetPage = useCallback(() => setPagination(prev => ({ ...prev, page: 0 })), []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -413,23 +397,20 @@ const ConfigurationsManagement = () => {
       setConfigurations(configsData.data || (Array.isArray(configsData) ? configsData : []));
       setPagination(prev => ({ ...prev, ...(configsData.pagination || {}) }));
       setConfigTypes(typesRes?.data?.types || []);
-    } catch (error) {
+    } catch {
       toast.error('Failed to load configurations');
     } finally {
       setLoading(false);
     }
-  }, [search, filterType, pagination.page, pagination.limit]);
+  }, [search, filterType, pagination.page, pagination.limit, setPagination]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handlePageChange = (newPage) => setPagination(prev => ({ ...prev, page: newPage }));
+  return { configurations, configTypes, loading, fetchData };
+}
 
-  const resetForm = () => {
-    setFormData({ ...DEFAULT_CONFIG_FORM });
-    setJsonInput('');
-    setEditingItem(null);
-  };
-
+/* ─── CRUD handlers hook ─── */
+function useConfigurationsCrud(fetchData, editingItem, formData, resetForm, setModalOpen) {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
@@ -458,8 +439,22 @@ const ConfigurationsManagement = () => {
       await configurationsAPI.delete(item.config_id);
       toast.success('Configuration deleted successfully');
       fetchData();
-    } catch (error) { toast.error('Failed to delete configuration'); }
+    } catch { toast.error('Failed to delete configuration'); }
   };
+
+  return { handleCreate, handleUpdate, handleDelete };
+}
+
+/* ─── Upload / download / versions hook ─── */
+function useConfigurationsActions(fetchData) {
+  const [selectedConfig, setSelectedConfig] = useState(null);
+  const [versions, setVersions] = useState([]);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [versionsModalOpen, setVersionsModalOpen] = useState(false);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadKey, setUploadKey] = useState('');
+  const [uploadType, setUploadType] = useState('');
 
   const handleUpload = async (e) => {
     e.preventDefault();
@@ -477,7 +472,7 @@ const ConfigurationsManagement = () => {
     try {
       await handleDownloadItem(item);
       toast.success('Download started');
-    } catch (error) { toast.error('Failed to download'); }
+    } catch { toast.error('Failed to download'); }
   };
 
   const handleViewVersions = async (item) => {
@@ -486,7 +481,7 @@ const ConfigurationsManagement = () => {
       setVersions(response?.data?.versions || []);
       setSelectedConfig(item);
       setVersionsModalOpen(true);
-    } catch (error) { toast.error('Failed to load versions'); }
+    } catch { toast.error('Failed to load versions'); }
   };
 
   const handleDownloadVersion = async (version) => {
@@ -494,10 +489,49 @@ const ConfigurationsManagement = () => {
       const response = await configurationsAPI.download(selectedConfig.config_id, version.version);
       triggerDownload(response.data, version.file_name);
       toast.success('Download started');
-    } catch (error) { toast.error('Failed to download version'); }
+    } catch { toast.error('Failed to download version'); }
   };
 
   const handleViewDetails = (item) => { setSelectedConfig(item); setDetailModalOpen(true); };
+
+  const closeUploadModal = () => { setUploadModalOpen(false); setUploadFile(null); setUploadKey(''); setUploadType(''); };
+
+  return {
+    selectedConfig, versions, detailModalOpen, setDetailModalOpen,
+    versionsModalOpen, setVersionsModalOpen,
+    uploadModalOpen, setUploadModalOpen, uploadFile, setUploadFile,
+    uploadKey, setUploadKey, uploadType, setUploadType,
+    handleUpload, handleDownload, handleViewVersions, handleDownloadVersion,
+    handleViewDetails, closeUploadModal,
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Main Component
+   ═══════════════════════════════════════════════════════════ */
+const ConfigurationsManagement = () => {
+  const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [pagination, setPagination] = useState({ page: 0, limit: 25, total: 0, pages: 0 });
+  const [formData, setFormData] = useState({ ...DEFAULT_CONFIG_FORM });
+  const [jsonInput, setJsonInput] = useState('');
+
+  const resetPage = useCallback(() => setPagination(prev => ({ ...prev, page: 0 })), []);
+
+  const { configurations, configTypes, loading, fetchData } = useConfigurationsData(search, filterType, pagination, setPagination);
+
+  const resetForm = () => {
+    setFormData({ ...DEFAULT_CONFIG_FORM });
+    setJsonInput('');
+    setEditingItem(null);
+  };
+
+  const crud = useConfigurationsCrud(fetchData, editingItem, formData, resetForm, setModalOpen);
+  const actions = useConfigurationsActions(fetchData);
+
+  const handlePageChange = (newPage) => setPagination(prev => ({ ...prev, page: newPage }));
 
   const openEditModal = (item) => {
     setEditingItem(item);
@@ -521,32 +555,31 @@ const ConfigurationsManagement = () => {
   const handleSearchChange = (val) => { setSearch(val); resetPage(); };
   const handleFilterTypeChange = (e) => { setFilterType(e.target.value); resetPage(); };
 
-  const columns = buildColumns({ configTypes, handleViewDetails, openEditModal, handleDownload, handleViewVersions, handleDelete });
+  const columns = buildColumns({ configTypes, handleViewDetails: actions.handleViewDetails, openEditModal, handleDownload: actions.handleDownload, handleViewVersions: actions.handleViewVersions, handleDelete: crud.handleDelete });
 
   const closeFormModal = () => { setModalOpen(false); resetForm(); };
-  const closeUploadModal = () => { setUploadModalOpen(false); setUploadFile(null); setUploadKey(''); setUploadType(''); };
 
-  const modalState = { modalOpen, uploadModalOpen, detailModalOpen, versionsModalOpen, editingItem, selectedConfig };
+  const modalState = { modalOpen, uploadModalOpen: actions.uploadModalOpen, detailModalOpen: actions.detailModalOpen, versionsModalOpen: actions.versionsModalOpen, editingItem, selectedConfig: actions.selectedConfig };
 
   const formProps = {
     onClose: closeFormModal,
-    onSubmit: editingItem ? handleUpdate : handleCreate,
+    onSubmit: editingItem ? crud.handleUpdate : crud.handleCreate,
     formFields: { formData, setFormData, editingItem, jsonInput, onJsonInputChange: handleJsonInputChange, configTypes },
   };
 
   const uploadProps = {
-    onClose: closeUploadModal,
-    onCancel: () => { setUploadModalOpen(false); setUploadFile(null); setUploadKey(''); },
-    onSubmit: handleUpload,
-    fields: { uploadKey, setUploadKey, uploadType, setUploadType, uploadFile, setUploadFile, configTypes },
+    onClose: actions.closeUploadModal,
+    onCancel: () => { actions.setUploadModalOpen(false); actions.setUploadFile(null); actions.setUploadKey(''); },
+    onSubmit: actions.handleUpload,
+    fields: { uploadKey: actions.uploadKey, setUploadKey: actions.setUploadKey, uploadType: actions.uploadType, setUploadType: actions.setUploadType, uploadFile: actions.uploadFile, setUploadFile: actions.setUploadFile, configTypes },
   };
 
-  const detailProps = { onClose: () => setDetailModalOpen(false), configTypes };
-  const versionsProps = { versions, onDownloadVersion: handleDownloadVersion, onClose: () => setVersionsModalOpen(false) };
+  const detailProps = { onClose: () => actions.setDetailModalOpen(false), configTypes };
+  const versionsProps = { versions: actions.versions, onDownloadVersion: actions.handleDownloadVersion, onClose: () => actions.setVersionsModalOpen(false) };
 
   return (
     <div className="space-y-6">
-      <ConfigsHeader onOpenUpload={() => setUploadModalOpen(true)} onAddNew={() => { resetForm(); setModalOpen(true); }} />
+      <ConfigsHeader onOpenUpload={() => actions.setUploadModalOpen(true)} onAddNew={() => { resetForm(); setModalOpen(true); }} />
 
       <ConfigsFilters search={search} onSearchChange={handleSearchChange} filterType={filterType} onFilterTypeChange={handleFilterTypeChange} configTypes={configTypes} />
 

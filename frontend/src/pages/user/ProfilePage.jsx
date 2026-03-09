@@ -24,6 +24,93 @@ function getDomainAccessLabel(user) {
   return isAdminRole(user?.roles) ? 'All Domains' : 'No Domains Assigned';
 }
 
+function BadgeList({ items, variant, emptyText, icon: Icon }) {
+  if (!items || items.length === 0) {
+    return <span className="text-content-muted text-sm">{emptyText}</span>;
+  }
+  return items.map((item) => (
+    <Badge key={item} variant={variant} className={Icon ? 'flex items-center gap-1' : undefined}>
+      {Icon && <Icon size={12} />}
+      {item}
+    </Badge>
+  ));
+}
+
+function DomainAccessBadges({ domains, domainAccessLabel }) {
+  if (domains && domains.length > 0) {
+    return domains.map((domain) => (
+      <Badge key={domain} variant="warning">{domain}</Badge>
+    ));
+  }
+  return <Badge variant="default">{domainAccessLabel}</Badge>;
+}
+
+function RolesAccessSection({ user, domainAccessLabel }) {
+  return (
+    <div className="card">
+      <div className="card-header">
+        <h2 className="section-title">Roles & Access</h2>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="text-sm font-medium text-content-secondary mb-2 block">Roles</label>
+          <div className="flex flex-wrap gap-2">
+            <BadgeList items={user?.roles} variant="primary" emptyText="No roles assigned" icon={Shield} />
+          </div>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-content-secondary mb-2 block">Groups</label>
+          <div className="flex flex-wrap gap-2">
+            <BadgeList items={user?.groups} variant="success" emptyText="No groups assigned" />
+          </div>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-content-secondary mb-2 block">Domain Access</label>
+          <div className="flex flex-wrap gap-2">
+            <DomainAccessBadges domains={user?.domains} domainAccessLabel={domainAccessLabel} />
+          </div>
+        </div>
+      </div>
+
+      <p className="text-xs text-content-muted mt-4">
+        Contact your administrator to change roles or access levels.
+      </p>
+    </div>
+  );
+}
+
+function PasswordField({ label, name, value, onChange, showPasswords, toggleVisibility, placeholder }) {
+  return (
+    <div>
+      <label className="input-label">{label}</label>
+      <div className="relative">
+        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
+        <input
+          type={showPasswords ? 'text' : 'password'}
+          name={name}
+          value={value}
+          onChange={onChange}
+          className={`input-field pl-10${toggleVisibility ? ' pr-10' : ''}`}
+          placeholder={placeholder}
+          required
+        />
+        {toggleVisibility && (
+          <button
+            type="button"
+            onClick={toggleVisibility}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-content-muted hover:text-content-secondary"
+          >
+            {showPasswords ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ProfilePage() {
   const { user, updateProfile } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -96,12 +183,10 @@ function ProfilePage() {
         <div className="card-header">
           <h2 className="section-title">Personal Information</h2>
         </div>
-        
+
         <form onSubmit={handleProfileSubmit} className="space-y-4">
           <div>
-            <label className="input-label">
-              Email
-            </label>
+            <label className="input-label">Email</label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
               <input
@@ -115,9 +200,7 @@ function ProfilePage() {
           </div>
 
           <div>
-            <label className="input-label">
-              Full Name
-            </label>
+            <label className="input-label">Full Name</label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
               <input
@@ -132,9 +215,7 @@ function ProfilePage() {
           </div>
 
           <div>
-            <label className="input-label">
-              Username
-            </label>
+            <label className="input-label">Username</label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
               <input
@@ -159,132 +240,42 @@ function ProfilePage() {
         </form>
       </div>
 
-      {/* Roles & Access */}
-      <div className="card">
-        <div className="card-header">
-          <h2 className="section-title">Roles & Access</h2>
-        </div>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-content-secondary mb-2 block">
-              Roles
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {user?.roles?.map((role) => (
-                <Badge key={role} variant="primary" className="flex items-center gap-1">
-                  <Shield size={12} />
-                  {role}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-content-secondary mb-2 block">
-              Groups
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {user?.groups?.length > 0 ? user.groups.map((group) => (
-                <Badge key={group} variant="success">
-                  {group}
-                </Badge>
-              )) : (
-                <span className="text-content-muted text-sm">No groups assigned</span>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-content-secondary mb-2 block">
-              Domain Access
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {user?.domains?.length > 0 ? user.domains.map((domain) => (
-                <Badge key={domain} variant="warning">
-                  {domain}
-                </Badge>
-              )) : (
-                <Badge variant="default">
-                  {domainAccessLabel}
-                </Badge>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <p className="text-xs text-content-muted mt-4">
-          Contact your administrator to change roles or access levels.
-        </p>
-      </div>
+      <RolesAccessSection user={user} domainAccessLabel={domainAccessLabel} />
 
       {/* Change Password */}
       <div className="card">
         <div className="card-header">
           <h2 className="section-title">Change Password</h2>
         </div>
-        
+
         <form onSubmit={handlePasswordSubmit} className="space-y-4">
-          <div>
-            <label className="input-label">
-              Current Password
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
-              <input
-                type={showPasswords ? 'text' : 'password'}
-                name="password"
-                value={passwordData.password}
-                onChange={handlePasswordChange}
-                className="input-field pl-10 pr-10"
-                placeholder="Enter current password"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPasswords(!showPasswords)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-content-muted hover:text-content-secondary"
-              >
-                {showPasswords ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-          </div>
+          <PasswordField
+            label="Current Password"
+            name="password"
+            value={passwordData.password}
+            onChange={handlePasswordChange}
+            showPasswords={showPasswords}
+            toggleVisibility={() => setShowPasswords(!showPasswords)}
+            placeholder="Enter current password"
+          />
 
-          <div>
-            <label className="input-label">
-              New Password
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
-              <input
-                type={showPasswords ? 'text' : 'password'}
-                name="new_password"
-                value={passwordData.new_password}
-                onChange={handlePasswordChange}
-                className="input-field pl-10"
-                placeholder="Enter new password"
-                required
-              />
-            </div>
-          </div>
+          <PasswordField
+            label="New Password"
+            name="new_password"
+            value={passwordData.new_password}
+            onChange={handlePasswordChange}
+            showPasswords={showPasswords}
+            placeholder="Enter new password"
+          />
 
-          <div>
-            <label className="input-label">
-              Confirm New Password
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
-              <input
-                type={showPasswords ? 'text' : 'password'}
-                name="confirm_password"
-                value={passwordData.confirm_password}
-                onChange={handlePasswordChange}
-                className="input-field pl-10"
-                placeholder="Confirm new password"
-                required
-              />
-            </div>
-          </div>
+          <PasswordField
+            label="Confirm New Password"
+            name="confirm_password"
+            value={passwordData.confirm_password}
+            onChange={handlePasswordChange}
+            showPasswords={showPasswords}
+            placeholder="Confirm new password"
+          />
 
           <button
             type="submit"

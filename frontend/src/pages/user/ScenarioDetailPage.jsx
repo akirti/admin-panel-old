@@ -107,6 +107,132 @@ function buildPayload(formData, scenarioKey) {
   };
 }
 
+const FORM_TABS = [
+  { id: 'basic', label: 'Basic Info' },
+  { id: 'filters', label: 'Filters' },
+  { id: 'actions', label: 'Row Actions' },
+  { id: 'grid', label: 'Grid Settings' },
+  { id: 'description', label: 'Description' },
+  { id: 'json', label: 'JSON Preview' }
+];
+
+const INITIAL_FILTER = {
+  name: '', dataKey: '', displayName: '', index: 0, visible: true,
+  status: 'Y', inputHint: '', title: '', type: 'input', defaultValue: '', regex: '', options: []
+};
+
+const INITIAL_ROW_ACTION = { key: '', name: '', path: '', dataDomain: '', status: 'A', order: 0, filters: [] };
+
+const INITIAL_DESCRIPTION = { index: 0, type: 'h3', text: '', nodes: [] };
+
+function buildNewFilter(currentFilter, existingFiltersCount) {
+  const newFilter = {
+    name: currentFilter.name,
+    dataKey: currentFilter.dataKey || currentFilter.name,
+    displayName: currentFilter.displayName,
+    index: existingFiltersCount,
+    visible: currentFilter.visible,
+    status: currentFilter.status,
+    inputHint: currentFilter.inputHint,
+    title: currentFilter.title,
+    attributes: [
+      { key: 'type', value: currentFilter.type },
+      { key: 'defaultValue', value: currentFilter.defaultValue },
+      { key: 'regex', value: currentFilter.regex }
+    ],
+    description: [],
+    validators: []
+  };
+
+  if (currentFilter.type === 'select' && currentFilter.options.length > 0) {
+    newFilter.attributes.push({ key: 'options', value: currentFilter.options });
+  }
+
+  return newFilter;
+}
+
+function addFilterToFormData(formData, newFilter) {
+  return {
+    ...formData,
+    widgets: {
+      ...formData.widgets,
+      filters: [...formData.widgets.filters, newFilter]
+    }
+  };
+}
+
+function removeFilterFromFormData(formData, index) {
+  const newFilters = formData.widgets.filters.filter((_, i) => i !== index);
+  return {
+    ...formData,
+    widgets: {
+      ...formData.widgets,
+      filters: newFilters.map((f, i) => ({ ...f, index: i }))
+    }
+  };
+}
+
+function addRowActionToFormData(formData, currentRowAction) {
+  const newAction = {
+    key: currentRowAction.key,
+    name: currentRowAction.name,
+    path: currentRowAction.path,
+    dataDomain: currentRowAction.dataDomain,
+    status: currentRowAction.status,
+    order: formData.widgets.grid.actions.rowActions.events.length,
+    filters: currentRowAction.filters
+  };
+
+  return {
+    ...formData,
+    widgets: {
+      ...formData.widgets,
+      grid: {
+        ...formData.widgets.grid,
+        actions: {
+          ...formData.widgets.grid.actions,
+          rowActions: {
+            ...formData.widgets.grid.actions.rowActions,
+            events: [...formData.widgets.grid.actions.rowActions.events, newAction]
+          }
+        }
+      }
+    }
+  };
+}
+
+function removeRowActionFromFormData(formData, index) {
+  const newEvents = formData.widgets.grid.actions.rowActions.events.filter((_, i) => i !== index);
+  return {
+    ...formData,
+    widgets: {
+      ...formData.widgets,
+      grid: {
+        ...formData.widgets.grid,
+        actions: {
+          ...formData.widgets.grid.actions,
+          rowActions: {
+            ...formData.widgets.grid.actions.rowActions,
+            events: newEvents.map((e, i) => ({ ...e, order: i }))
+          }
+        }
+      }
+    }
+  };
+}
+
+function triggerPlayboardDownload(playboard, responseData) {
+  const blob = new Blob([JSON.stringify(responseData, null, 2)], { type: 'application/json' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${playboard.data?.key || playboard.key || playboard.name}.json`;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+}
+
 function ScenarioDetailPage() {
   const { scenarioKey, domainKey } = useParams();
   const { isSuperAdmin, isEditor, hasPermission } = useAuth();
@@ -169,42 +295,16 @@ function ScenarioDetailPage() {
   });
 
   // Filter builder state
-  const [currentFilter, setCurrentFilter] = useState({
-    name: '',
-    dataKey: '',
-    displayName: '',
-    index: 0,
-    visible: true,
-    status: 'Y',
-    inputHint: '',
-    title: '',
-    type: 'input',
-    defaultValue: '',
-    regex: '',
-    options: []
-  });
+  const [currentFilter, setCurrentFilter] = useState({ ...INITIAL_FILTER });
 
   // Row action builder state
-  const [currentRowAction, setCurrentRowAction] = useState({
-    key: '',
-    name: '',
-    path: '',
-    dataDomain: '',
-    status: 'A',
-    order: 0,
-    filters: []
-  });
+  const [currentRowAction, setCurrentRowAction] = useState({ ...INITIAL_ROW_ACTION });
 
   // Row action filter input state
   const [actionFilterInput, setActionFilterInput] = useState({ inputKey: '', dataKey: '' });
 
   // Description builder state
-  const [currentDescription, setCurrentDescription] = useState({
-    index: 0,
-    type: 'h3',
-    text: '',
-    nodes: []
-  });
+  const [currentDescription, setCurrentDescription] = useState({ ...INITIAL_DESCRIPTION });
 
   // Options management for select filters
   const [optionInput, setOptionInput] = useState({ value: '', name: '' });
@@ -228,7 +328,7 @@ function ScenarioDetailPage() {
       setScenario(scenarioRes.data);
       setPlayboards(playboardsRes.data || []);
       setDomains(domainsRes.data.data || domainsRes.data || []);
-    } catch (error) {
+    } catch {
       toast.error('Failed to load scenario details');
     } finally {
       setLoading(false);
@@ -290,12 +390,9 @@ function ScenarioDetailPage() {
     });
     setEditingItem(null);
     setFormActiveTab('basic');
-    setCurrentFilter({
-      name: '', dataKey: '', displayName: '', index: 0, visible: true,
-      status: 'Y', inputHint: '', title: '', type: 'input', defaultValue: '', regex: '', options: []
-    });
-    setCurrentRowAction({ key: '', name: '', path: '', dataDomain: '', status: 'A', order: 0, filters: [] });
-    setCurrentDescription({ index: 0, type: 'h3', text: '', nodes: [] });
+    setCurrentFilter({ ...INITIAL_FILTER });
+    setCurrentRowAction({ ...INITIAL_ROW_ACTION });
+    setCurrentDescription({ ...INITIAL_DESCRIPTION });
   };
 
   const handleAddPlayboard = () => {
@@ -310,38 +407,38 @@ function ScenarioDetailPage() {
     setModalOpen(true);
   };
 
-  const handleCreate = async (e) => {
-    e.preventDefault();
+  const handleSavePlayboard = async (apiCall, successMsg, errorMsg) => {
     setSaving(true);
     try {
       const payload = buildPayload(formData, scenarioKey);
-      await playboardsAPI.create(payload);
-      toast.success('Playboard created successfully');
+      await apiCall(payload);
+      toast.success(successMsg);
       setModalOpen(false);
       resetForm();
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to create playboard');
+      toast.error(error.response?.data?.detail || errorMsg);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleUpdate = async (e) => {
+  const handleCreate = (e) => {
     e.preventDefault();
-    setSaving(true);
-    try {
-      const payload = buildPayload(formData, scenarioKey);
-      await playboardsAPI.update(editingItem.id || editingItem._id, payload);
-      toast.success('Playboard updated successfully');
-      setModalOpen(false);
-      resetForm();
-      fetchData();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to update playboard');
-    } finally {
-      setSaving(false);
-    }
+    handleSavePlayboard(
+      (payload) => playboardsAPI.create(payload),
+      'Playboard created successfully',
+      'Failed to create playboard'
+    );
+  };
+
+  const handleUpdate = (e) => {
+    e.preventDefault();
+    handleSavePlayboard(
+      (payload) => playboardsAPI.update(editingItem.id || editingItem._id, payload),
+      'Playboard updated successfully',
+      'Failed to update playboard'
+    );
   };
 
   const handleDeletePlayboard = async (playboard) => {
@@ -360,17 +457,9 @@ function ScenarioDetailPage() {
   const handleDownloadPlayboard = async (playboard) => {
     try {
       const response = await playboardsAPI.download(playboard._id || playboard.id);
-      const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${playboard.data?.key || playboard.key || playboard.name}.json`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      triggerPlayboardDownload(playboard, response.data);
       toast.success('Playboard downloaded');
-    } catch (error) {
+    } catch {
       toast.error('Failed to download playboard');
     }
   };
@@ -389,7 +478,7 @@ function ScenarioDetailPage() {
         const json = JSON.parse(text);
         setJsonPreview(json);
         if (json.key) setUploadName(json.key);
-      } catch (e) {
+      } catch {
         toast.error('Invalid JSON file');
         setJsonPreview(null);
       }
@@ -430,103 +519,23 @@ function ScenarioDetailPage() {
 
   // Filter management
   const addFilter = () => {
-    const newFilter = {
-      name: currentFilter.name,
-      dataKey: currentFilter.dataKey || currentFilter.name,
-      displayName: currentFilter.displayName,
-      index: formData.widgets.filters.length,
-      visible: currentFilter.visible,
-      status: currentFilter.status,
-      inputHint: currentFilter.inputHint,
-      title: currentFilter.title,
-      attributes: [
-        { key: 'type', value: currentFilter.type },
-        { key: 'defaultValue', value: currentFilter.defaultValue },
-        { key: 'regex', value: currentFilter.regex }
-      ],
-      description: [],
-      validators: []
-    };
-
-    if (currentFilter.type === 'select' && currentFilter.options.length > 0) {
-      newFilter.attributes.push({ key: 'options', value: currentFilter.options });
-    }
-
-    setFormData({
-      ...formData,
-      widgets: {
-        ...formData.widgets,
-        filters: [...formData.widgets.filters, newFilter]
-      }
-    });
-
-    setCurrentFilter({
-      name: '', dataKey: '', displayName: '', index: 0, visible: true,
-      status: 'Y', inputHint: '', title: '', type: 'input', defaultValue: '', regex: '', options: []
-    });
+    const newFilter = buildNewFilter(currentFilter, formData.widgets.filters.length);
+    setFormData(addFilterToFormData(formData, newFilter));
+    setCurrentFilter({ ...INITIAL_FILTER });
   };
 
   const removeFilter = (index) => {
-    const newFilters = formData.widgets.filters.filter((_, i) => i !== index);
-    setFormData({
-      ...formData,
-      widgets: {
-        ...formData.widgets,
-        filters: newFilters.map((f, i) => ({ ...f, index: i }))
-      }
-    });
+    setFormData(removeFilterFromFormData(formData, index));
   };
 
   // Row action management
   const addRowAction = () => {
-    const newAction = {
-      key: currentRowAction.key,
-      name: currentRowAction.name,
-      path: currentRowAction.path,
-      dataDomain: currentRowAction.dataDomain,
-      status: currentRowAction.status,
-      order: formData.widgets.grid.actions.rowActions.events.length,
-      filters: currentRowAction.filters
-    };
-
-    setFormData({
-      ...formData,
-      widgets: {
-        ...formData.widgets,
-        grid: {
-          ...formData.widgets.grid,
-          actions: {
-            ...formData.widgets.grid.actions,
-            rowActions: {
-              ...formData.widgets.grid.actions.rowActions,
-              events: [...formData.widgets.grid.actions.rowActions.events, newAction]
-            }
-          }
-        }
-      }
-    });
-
-    setCurrentRowAction({ key: '', name: '', path: '', dataDomain: '', status: 'A', order: 0, filters: [] });
+    setFormData(addRowActionToFormData(formData, currentRowAction));
+    setCurrentRowAction({ ...INITIAL_ROW_ACTION });
   };
 
   const removeRowAction = (index) => {
-    const newEvents = formData.widgets.grid.actions.rowActions.events.filter((_, i) => i !== index);
-    setFormData({
-      ...formData,
-      widgets: {
-        ...formData.widgets,
-        grid: {
-          ...formData.widgets.grid,
-          actions: {
-            ...formData.widgets.grid.actions,
-            rowActions: {
-              ...formData.widgets.grid.actions.rowActions,
-              events: newEvents.map((e, i) => ({ ...e, order: i }))
-            }
-          }
-        }
-      }
-    });
+    setFormData(removeRowActionFromFormData(formData, index));
   };
 
   // Action filter management
@@ -561,7 +570,7 @@ function ScenarioDetailPage() {
       scenarioDescription: [...formData.scenarioDescription, newDesc]
     });
 
-    setCurrentDescription({ index: 0, type: 'h3', text: '', nodes: [] });
+    setCurrentDescription({ ...INITIAL_DESCRIPTION });
   };
 
   const removeDescription = (index) => {
@@ -608,14 +617,7 @@ function ScenarioDetailPage() {
     });
   };
 
-  const formTabs = [
-    { id: 'basic', label: 'Basic Info' },
-    { id: 'filters', label: 'Filters' },
-    { id: 'actions', label: 'Row Actions' },
-    { id: 'grid', label: 'Grid Settings' },
-    { id: 'description', label: 'Description' },
-    { id: 'json', label: 'JSON Preview' }
-  ];
+  const formTabs = FORM_TABS;
 
   // Grid settings helpers to reduce nesting depth
   const updateRowActionsRenderAs = (value) => {

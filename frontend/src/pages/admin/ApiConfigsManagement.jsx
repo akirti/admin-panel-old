@@ -671,37 +671,12 @@ function populateJsonFields(item) {
   };
 }
 
-/* ═══════════════════════════════════════════════════════════
-   Main Component
-   ═══════════════════════════════════════════════════════════ */
-const ApiConfigsManagement = () => {
+/* ─── Data-fetching hook ─── */
+function useApiConfigsData(search, filterStatus, filterTag, pagination, setPagination) {
   const [configs, setConfigs] = useState([]);
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterTag, setFilterTag] = useState('');
-  const [modalOpen, setModalOpen] = useState(false);
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [testModalOpen, setTestModalOpen] = useState(false);
-  const [certModalOpen, setCertModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [selectedConfig, setSelectedConfig] = useState(null);
-  const [testResult, setTestResult] = useState(null);
-  const [testLoading, setTestLoading] = useState(false);
   const [gcsStatus, setGcsStatus] = useState(null);
-  const [pagination, setPagination] = useState({ page: 0, limit: DEFAULT_PAGE_LIMIT, total: 0, pages: 0 });
-
-  const [formData, setFormData] = useState(getDefaultFormData());
-  const [headersJson, setHeadersJson] = useState('{}');
-  const [paramsJson, setParamsJson] = useState('{}');
-  const [bodyJson, setBodyJson] = useState('{}');
-  const [authConfigJson, setAuthConfigJson] = useState('{}');
-  const [tagsInput, setTagsInput] = useState('');
-  const [certFile, setCertFile] = useState(null);
-  const [certType, setCertType] = useState('cert');
-
-  const resetPage = useCallback(() => setPagination(prev => ({ ...prev, page: 0 })), []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -718,31 +693,16 @@ const ApiConfigsManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, filterStatus, filterTag, pagination.page, pagination.limit]);
+  }, [search, filterStatus, filterTag, pagination.page, pagination.limit, setPagination]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => { apiConfigsAPI.getGCSStatus().then(res => setGcsStatus(res.data)).catch(Function.prototype); }, []);
 
-  const handlePageChange = (newPage) => setPagination(prev => ({ ...prev, page: newPage }));
+  return { configs, tags, loading, gcsStatus, fetchData };
+}
 
-  const resetForm = () => {
-    setFormData(getDefaultFormData());
-    setHeadersJson('{}'); setParamsJson('{}'); setBodyJson('{}');
-    setAuthConfigJson('{}'); setTagsInput(''); setEditingItem(null);
-  };
-
-  const openEditModal = (item) => {
-    setEditingItem(item);
-    setFormData(buildFormDataFromItem(item));
-    const fields = populateJsonFields(item);
-    setHeadersJson(fields.headersJson);
-    setParamsJson(fields.paramsJson);
-    setBodyJson(fields.bodyJson);
-    setAuthConfigJson(fields.authConfigJson);
-    setTagsInput(fields.tagsInput);
-    setModalOpen(true);
-  };
-
+/* ─── CRUD handlers hook ─── */
+function useApiConfigsCrud(fetchData, editingItem, formData, headersJson, paramsJson, bodyJson, authConfigJson, tagsInput, resetForm, setModalOpen) {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
@@ -781,8 +741,22 @@ const ApiConfigsManagement = () => {
       await apiConfigsAPI.toggleStatus(item._id);
       toast.success(`Configuration ${item.status === 'active' ? 'deactivated' : 'activated'}`);
       fetchData();
-    } catch (error) { toast.error('Failed to toggle status'); }
+    } catch { toast.error('Failed to toggle status'); }
   };
+
+  return { handleCreate, handleUpdate, handleDelete, handleToggleStatus };
+}
+
+/* ─── Test & cert handlers hook ─── */
+function useApiConfigsActions(fetchData) {
+  const [selectedConfig, setSelectedConfig] = useState(null);
+  const [testResult, setTestResult] = useState(null);
+  const [testLoading, setTestLoading] = useState(false);
+  const [testModalOpen, setTestModalOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [certModalOpen, setCertModalOpen] = useState(false);
+  const [certFile, setCertFile] = useState(null);
+  const [certType, setCertType] = useState('cert');
 
   const handleTest = async (item) => {
     setSelectedConfig(item); setTestResult(null); setTestModalOpen(true); setTestLoading(true);
@@ -813,7 +787,60 @@ const ApiConfigsManagement = () => {
 
   const openCertModal = (item) => { setSelectedConfig(item); setCertFile(null); setCertType('cert'); setCertModalOpen(true); };
 
-  const columns = buildColumns({ handleTest, handleViewDetails, openEditModal, gcsStatus, openCertModal, handleToggleStatus, handleDelete });
+  return {
+    selectedConfig, testResult, testLoading, testModalOpen, setTestModalOpen,
+    detailModalOpen, setDetailModalOpen, certModalOpen, setCertModalOpen,
+    certFile, setCertFile, certType, setCertType,
+    handleTest, handleViewDetails, handleUploadCert, openCertModal,
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Main Component
+   ═══════════════════════════════════════════════════════════ */
+const ApiConfigsManagement = () => {
+  const [search, setSearch] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterTag, setFilterTag] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [pagination, setPagination] = useState({ page: 0, limit: DEFAULT_PAGE_LIMIT, total: 0, pages: 0 });
+
+  const [formData, setFormData] = useState(getDefaultFormData());
+  const [headersJson, setHeadersJson] = useState('{}');
+  const [paramsJson, setParamsJson] = useState('{}');
+  const [bodyJson, setBodyJson] = useState('{}');
+  const [authConfigJson, setAuthConfigJson] = useState('{}');
+  const [tagsInput, setTagsInput] = useState('');
+
+  const resetPage = useCallback(() => setPagination(prev => ({ ...prev, page: 0 })), []);
+
+  const { configs, tags, loading, gcsStatus, fetchData } = useApiConfigsData(search, filterStatus, filterTag, pagination, setPagination);
+
+  const resetForm = () => {
+    setFormData(getDefaultFormData());
+    setHeadersJson('{}'); setParamsJson('{}'); setBodyJson('{}');
+    setAuthConfigJson('{}'); setTagsInput(''); setEditingItem(null);
+  };
+
+  const openEditModal = (item) => {
+    setEditingItem(item);
+    setFormData(buildFormDataFromItem(item));
+    const fields = populateJsonFields(item);
+    setHeadersJson(fields.headersJson);
+    setParamsJson(fields.paramsJson);
+    setBodyJson(fields.bodyJson);
+    setAuthConfigJson(fields.authConfigJson);
+    setTagsInput(fields.tagsInput);
+    setModalOpen(true);
+  };
+
+  const crud = useApiConfigsCrud(fetchData, editingItem, formData, headersJson, paramsJson, bodyJson, authConfigJson, tagsInput, resetForm, setModalOpen);
+  const actions = useApiConfigsActions(fetchData);
+
+  const handlePageChange = (newPage) => setPagination(prev => ({ ...prev, page: newPage }));
+
+  const columns = buildColumns({ handleTest: actions.handleTest, handleViewDetails: actions.handleViewDetails, openEditModal, gcsStatus, openCertModal: actions.openCertModal, handleToggleStatus: crud.handleToggleStatus, handleDelete: crud.handleDelete });
 
   const handleSearchChange = (val) => { setSearch(val); resetPage(); };
   const handleFilterStatusChange = (e) => { setFilterStatus(e.target.value); resetPage(); };
@@ -821,11 +848,11 @@ const ApiConfigsManagement = () => {
 
   const closeFormModal = () => { setModalOpen(false); resetForm(); };
 
-  const modalState = { modalOpen, testModalOpen, detailModalOpen, certModalOpen, editingItem, selectedConfig };
+  const modalState = { modalOpen, testModalOpen: actions.testModalOpen, detailModalOpen: actions.detailModalOpen, certModalOpen: actions.certModalOpen, editingItem, selectedConfig: actions.selectedConfig };
 
   const formProps = {
     onClose: closeFormModal,
-    onSubmit: editingItem ? handleUpdate : handleCreate,
+    onSubmit: editingItem ? crud.handleUpdate : crud.handleCreate,
     formFields: {
       formData, setFormData, editingItem,
       headersJson, setHeadersJson, paramsJson, setParamsJson,
@@ -834,9 +861,9 @@ const ApiConfigsManagement = () => {
     },
   };
 
-  const testProps = { testLoading, testResult, onClose: () => setTestModalOpen(false) };
-  const detailProps = { onTest: handleTest, onEdit: (config) => { setDetailModalOpen(false); openEditModal(config); }, onClose: () => setDetailModalOpen(false) };
-  const certProps = { certFile, setCertFile, certType, setCertType, onSubmit: handleUploadCert, onClose: () => setCertModalOpen(false) };
+  const testProps = { testLoading: actions.testLoading, testResult: actions.testResult, onClose: () => actions.setTestModalOpen(false) };
+  const detailProps = { onTest: actions.handleTest, onEdit: (config) => { actions.setDetailModalOpen(false); openEditModal(config); }, onClose: () => actions.setDetailModalOpen(false) };
+  const certProps = { certFile: actions.certFile, setCertFile: actions.setCertFile, certType: actions.certType, setCertType: actions.setCertType, onSubmit: actions.handleUploadCert, onClose: () => actions.setCertModalOpen(false) };
 
   return (
     <div className="space-y-6">

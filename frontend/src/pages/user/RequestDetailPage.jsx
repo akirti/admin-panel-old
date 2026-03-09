@@ -780,6 +780,31 @@ function JiraLinkModalContent({ newJiraLink, setNewJiraLink, onSubmit, onCancel,
   );
 }
 
+const DEFAULT_JIRA_LINK = { ticket_key: '', ticket_url: '', title: '', link_type: 'dependency' };
+
+function extractErrorMessage(error, fallback) {
+  const errorMsg = error.response?.data?.detail || error.response?.data?.error || fallback;
+  return typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg);
+}
+
+function triggerFileDownload(blob, fileName) {
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+
+function buildJiraLinkPayload(newJiraLink) {
+  return {
+    ticket_key: newJiraLink.ticket_key.trim().toUpperCase(),
+    ticket_url: newJiraLink.ticket_url.trim() || null,
+    title: newJiraLink.title.trim() || null,
+    link_type: newJiraLink.link_type
+  };
+}
+
 function RequestDetailPage() {
   const { requestId } = useParams();
   const navigate = useNavigate();
@@ -804,7 +829,7 @@ function RequestDetailPage() {
 
   // Jira link states
   const [showAddJiraLinkModal, setShowAddJiraLinkModal] = useState(false);
-  const [newJiraLink, setNewJiraLink] = useState({ ticket_key: '', ticket_url: '', title: '', link_type: 'dependency' });
+  const [newJiraLink, setNewJiraLink] = useState({ ...DEFAULT_JIRA_LINK });
   const [addingJiraLink, setAddingJiraLink] = useState(false);
   const [removingJiraLinkIndex, setRemovingJiraLinkIndex] = useState(null);
 
@@ -817,7 +842,7 @@ function RequestDetailPage() {
     try {
       const response = await scenarioRequestAPI.get(requestId);
       setRequest(response.data);
-    } catch (error) {
+    } catch {
       toast.error('Failed to load request');
       navigate('/my-requests');
     } finally {
@@ -834,7 +859,7 @@ function RequestDetailPage() {
       setNewComment('');
       loadRequest();
       toast.success('Comment added');
-    } catch (error) {
+    } catch {
       toast.error('Failed to add comment');
     } finally {
       setSubmittingComment(false);
@@ -847,7 +872,7 @@ function RequestDetailPage() {
     try {
       const response = await scenarioRequestAPI.previewFile(requestId, filePath);
       setPreviewData({ ...response.data, fileName: filePath.split('/').pop() });
-    } catch (error) {
+    } catch {
       toast.error('Failed to load preview');
     } finally {
       setPreviewLoading(false);
@@ -857,14 +882,8 @@ function RequestDetailPage() {
   const handleDownloadFile = async (filePath) => {
     try {
       const response = await scenarioRequestAPI.downloadFile(requestId, filePath);
-      const blob = new Blob([response.data]);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filePath.split('/').pop();
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
+      triggerFileDownload(new Blob([response.data]), filePath.split('/').pop());
+    } catch {
       toast.error('Failed to download file');
     }
   };
@@ -891,17 +910,13 @@ function RequestDetailPage() {
       setUploadComment('');
       loadRequest();
     } catch (error) {
-      const errorMsg = error.response?.data?.detail || error.response?.data?.error || 'Failed to upload file';
-      toast.error(typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg));
+      toast.error(extractErrorMessage(error, 'Failed to upload file'));
     } finally {
       setUploading(false);
     }
   };
 
-  const canUploadBucketFiles = () => {
-    if (!isEditor()) return false;
-    return UPLOAD_ALLOWED_STATUSES.includes(request?.status);
-  };
+  const canUploadBucketFiles = () => isEditor() && UPLOAD_ALLOWED_STATUSES.includes(request?.status);
 
   const handleAddJiraLink = async () => {
     if (!newJiraLink.ticket_key.trim()) {
@@ -911,15 +926,10 @@ function RequestDetailPage() {
 
     setAddingJiraLink(true);
     try {
-      await scenarioRequestAPI.addJiraLink(requestId, {
-        ticket_key: newJiraLink.ticket_key.trim().toUpperCase(),
-        ticket_url: newJiraLink.ticket_url.trim() || null,
-        title: newJiraLink.title.trim() || null,
-        link_type: newJiraLink.link_type
-      });
+      await scenarioRequestAPI.addJiraLink(requestId, buildJiraLinkPayload(newJiraLink));
       toast.success('Jira link added');
       setShowAddJiraLinkModal(false);
-      setNewJiraLink({ ticket_key: '', ticket_url: '', title: '', link_type: 'dependency' });
+      setNewJiraLink({ ...DEFAULT_JIRA_LINK });
       loadRequest();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to add Jira link');
@@ -949,7 +959,7 @@ function RequestDetailPage() {
 
   const closeJiraLinkModal = () => {
     setShowAddJiraLinkModal(false);
-    setNewJiraLink({ ticket_key: '', ticket_url: '', title: '', link_type: 'dependency' });
+    setNewJiraLink({ ...DEFAULT_JIRA_LINK });
   };
 
   if (loading) {

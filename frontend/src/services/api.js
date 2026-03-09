@@ -528,7 +528,7 @@ export const scenarioRequestAPI = {
         recent: data.slice(0, 5)
       };
       return { data: stats };
-    } catch (error) {
+    } catch {
       return { data: { total: 0, submitted: 0, inProgress: 0, deployed: 0, rejected: 0, recent: [] } };
     }
   },

@@ -208,6 +208,31 @@ function buildFormDataFromRequest(request) {
   };
 }
 
+// Checks if a field has changed from the original request and adds it to the update object
+function addChangedField(updateData, formData, originalRequest, field, originalField) {
+  const origField = originalField || field;
+  const origValue = originalRequest[origField] || '';
+  const normalizedOrig = origField === 'fulfilmentDate' && origValue ? origValue.split('T')[0] : origValue;
+  if (formData[field] !== normalizedOrig) {
+    updateData[field] = formData[field] || null;
+  }
+}
+
+// Builds the admin update payload by comparing formData to the original request
+function buildAdminUpdate(formData, originalRequest, isEditorFn) {
+  if (!isEditorFn() || !originalRequest) return {};
+  const adminUpdateData = {};
+  if (formData.status && formData.status !== originalRequest.status) {
+    adminUpdateData.status = formData.status;
+    adminUpdateData.status_comment = formData.statusComment.trim();
+  }
+  addChangedField(adminUpdateData, formData, originalRequest, 'dataDomain');
+  addChangedField(adminUpdateData, formData, originalRequest, 'scenarioKey');
+  addChangedField(adminUpdateData, formData, originalRequest, 'configName');
+  addChangedField(adminUpdateData, formData, originalRequest, 'fulfilmentDate');
+  return adminUpdateData;
+}
+
 // Returns the submit button icon based on state
 function SubmitButtonIcon({ loading: isLoading, isEditMode }) {
   if (isLoading) return <Loader2 className="animate-spin" size={18} />;
@@ -387,37 +412,47 @@ function AskScenarioPage() {
     }
   }, [requestId]);
 
+  const buildLookupPromises = () => {
+    const promises = [
+      scenarioRequestAPI.getDomains(),
+      scenarioRequestAPI.getRequestTypes(),
+      scenarioRequestAPI.getDefaults()
+    ];
+    if (isEditMode && isEditor()) {
+      promises.push(scenarioRequestAPI.getStatuses());
+    }
+    return promises;
+  };
+
+  const applyLookupResults = (results) => {
+    setDomains(results[0].data || []);
+    setRequestTypes(results[1].data || []);
+    const defaults = results[2].data || {};
+    if (results[3]) {
+      setStatuses(results[3].data || []);
+    }
+    return { defaults, requestTypes: results[1].data };
+  };
+
+  const applyDefaultFormValues = (defaults, requestTypesData) => {
+    if (isEditMode) return;
+    if (!requestTypesData || requestTypesData.length === 0) return;
+    setFormData(prev => ({
+      ...prev,
+      requestType: requestTypesData[0].value,
+      team: defaults.team || '',
+      assignee: defaults.assignee || '',
+      assignee_name: defaults.assignee_name || ''
+    }));
+  };
+
   const loadLookups = async () => {
     try {
-      const promises = [
-        scenarioRequestAPI.getDomains(),
-        scenarioRequestAPI.getRequestTypes(),
-        scenarioRequestAPI.getDefaults()
-      ];
-      if (isEditMode && isEditor()) {
-        promises.push(scenarioRequestAPI.getStatuses());
-      }
-
-      const results = await Promise.all(promises);
-      setDomains(results[0].data || []);
-      setRequestTypes(results[1].data || []);
-      const defaults = results[2].data || {};
-      if (results[3]) {
-        setStatuses(results[3].data || []);
-      }
-
-      if (!isEditMode && results[1].data && results[1].data.length > 0) {
-        setFormData(prev => ({
-          ...prev,
-          requestType: results[1].data[0].value,
-          team: defaults.team || '',
-          assignee: defaults.assignee || '',
-          assignee_name: defaults.assignee_name || ''
-        }));
-      }
-
+      const results = await Promise.all(buildLookupPromises());
+      const { defaults, requestTypes: requestTypesData } = applyLookupResults(results);
+      applyDefaultFormValues(defaults, requestTypesData);
       loadJiraData();
-    } catch (error) {
+    } catch {
       // error handled silently
     }
   };
@@ -430,7 +465,7 @@ function AskScenarioPage() {
       ]);
       setJiraBoards(boardsRes.data || []);
       setJiraUsers(usersRes.data || []);
-    } catch (error) {
+    } catch {
       // error handled silently
     }
   };
@@ -533,7 +568,8 @@ function AskScenarioPage() {
     if (!isEditMode || !isEditor() || !originalRequest) return true;
     const statusChanged = formData.status && formData.status !== originalRequest.status;
     if (!statusChanged) return true;
-    if (!formData.statusComment || !formData.statusComment.trim()) {
+    const hasComment = formData.statusComment && formData.statusComment.trim();
+    if (!hasComment) {
       toast.error('Please provide a comment for the status change');
       return false;
     }
@@ -552,27 +588,7 @@ function AskScenarioPage() {
     assignee_name: formData.assignee_name || null
   });
 
-  const buildAdminUpdateData = () => {
-    if (!isEditor() || !originalRequest) return {};
-    const adminUpdateData = {};
-    if (formData.status && formData.status !== originalRequest.status) {
-      adminUpdateData.status = formData.status;
-      adminUpdateData.status_comment = formData.statusComment.trim();
-    }
-    if (formData.dataDomain !== originalRequest.dataDomain) {
-      adminUpdateData.dataDomain = formData.dataDomain;
-    }
-    if (formData.scenarioKey !== (originalRequest.scenarioKey || '')) {
-      adminUpdateData.scenarioKey = formData.scenarioKey || null;
-    }
-    if (formData.configName !== (originalRequest.configName || '')) {
-      adminUpdateData.configName = formData.configName || null;
-    }
-    if (formData.fulfilmentDate !== (originalRequest.fulfilmentDate?.split('T')[0] || '')) {
-      adminUpdateData.fulfilmentDate = formData.fulfilmentDate || null;
-    }
-    return adminUpdateData;
-  };
+  const buildAdminUpdateData = () => buildAdminUpdate(formData, originalRequest, isEditor);
 
   const uploadFiles = async (targetRequestId) => {
     for (const file of uploadedFiles) {

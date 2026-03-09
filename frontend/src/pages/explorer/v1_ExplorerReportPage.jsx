@@ -325,6 +325,84 @@ function ScenarioDocButton({ description }) {
   );
 }
 
+/**
+ * Extracts the playboard data object from the API response.
+ */
+function extractPlayboardData(resData) {
+  if (Array.isArray(resData?.data) && resData.data.length > 0) return resData.data[0];
+  if (Array.isArray(resData) && resData.length > 0) return resData[0];
+  if (resData && typeof resData === 'object' && resData.widgets) return resData;
+  return null;
+}
+
+/**
+ * Applies a search param override to a single filter's defaultValue attribute.
+ */
+function applySearchParamToFilter(filter, searchParams) {
+  if (!searchParams.has(filter.dataKey)) return;
+  if (!Array.isArray(filter.attributes)) return;
+  const defaultAttr = filter.attributes.find((attr) => attr.key === 'defaultValue');
+  if (defaultAttr) {
+    defaultAttr.value = searchParams.get(filter.dataKey);
+  } else {
+    filter.attributes.push({ key: 'defaultValue', value: searchParams.get(filter.dataKey) });
+  }
+}
+
+/**
+ * Extracts visible filters from a playboard, applying URL search param overrides.
+ */
+function extractPlayboardFilters(playboardData, searchParams) {
+  const filtersArr = Array.isArray(playboardData.widgets?.filters)
+    ? playboardData.widgets.filters
+        .filter((f) => f.visible !== false && f.status !== 'N')
+        .map((f) => ({ ...f, status: f.status === 'active' ? 'Y' : f.status }))
+    : [];
+
+  filtersArr.forEach((filter) => applySearchParamToFilter(filter, searchParams));
+  return filtersArr;
+}
+
+/**
+ * Parses pagination options from a string or array value.
+ */
+function parsePaginationOptions(opts) {
+  if (typeof opts === 'string') return opts.split(',').map((v) => parseInt(v.trim(), 10)).filter(Boolean);
+  if (Array.isArray(opts)) return opts.map((v) => parseInt(v, 10)).filter(Boolean);
+  return [10, 20, 30, 40, 50];
+}
+
+/**
+ * Reads the pagination widget from playboard config and applies page size and options.
+ */
+function applyPaginationConfig(playboardData, setPaginationOptions, setPageSize) {
+  const pagWidget = resolvePaginationWidget(playboardData.widgets?.pagination);
+  if (!pagWidget) return;
+
+  const opts = pagWidget.attributes?.find((a) => a.key === 'options')?.value;
+  if (opts) setPaginationOptions(parsePaginationOptions(opts));
+
+  const defaultVal = pagWidget.attributes?.find((a) => a.key === 'defaultValue')?.value;
+  if (defaultVal) setPageSize(parseInt(defaultVal, 10));
+}
+
+/**
+ * Comparator for sorting data rows by a given key and order.
+ */
+function compareValues(aVal, bVal, order) {
+  if (aVal === undefined || bVal === undefined) return 0;
+
+  const aNum = parseFloat(aVal);
+  const bNum = parseFloat(bVal);
+  if (!isNaN(aNum) && !isNaN(bNum)) {
+    return order === 'asc' ? aNum - bNum : bNum - aNum;
+  }
+
+  return order === 'asc'
+    ? String(aVal).localeCompare(String(bVal))
+    : String(bVal).localeCompare(String(aVal));
+}
+
 function V1ExplorerReportPage() {
   const { dataDomain, scenarioKey } = useParams();
   const location = useLocation();
@@ -387,51 +465,6 @@ function V1ExplorerReportPage() {
 
   // --- Fetch playboard config on mount ---
   useEffect(() => {
-    const extractPlayboardData = (resData) => {
-      if (Array.isArray(resData?.data) && resData.data.length > 0) return resData.data[0];
-      if (Array.isArray(resData) && resData.length > 0) return resData[0];
-      if (resData && typeof resData === 'object' && resData.widgets) return resData;
-      return null;
-    };
-
-    const extractFilters = (playboardData, searchParams) => {
-      const filtersArr = Array.isArray(playboardData.widgets?.filters)
-        ? playboardData.widgets.filters
-            .filter((f) => f.visible !== false && f.status !== 'N')
-            .map((f) => ({ ...f, status: f.status === 'active' ? 'Y' : f.status }))
-        : [];
-
-      filtersArr.forEach((filter) => {
-        if (!searchParams.has(filter.dataKey)) return;
-        if (!Array.isArray(filter.attributes)) return;
-        const defaultAttr = filter.attributes.find((attr) => attr.key === 'defaultValue');
-        if (defaultAttr) {
-          defaultAttr.value = searchParams.get(filter.dataKey);
-        } else {
-          filter.attributes.push({ key: 'defaultValue', value: searchParams.get(filter.dataKey) });
-        }
-      });
-
-      return filtersArr;
-    };
-
-    const parsePaginationOptions = (opts) => {
-      if (typeof opts === 'string') return opts.split(',').map((v) => parseInt(v.trim(), 10)).filter(Boolean);
-      if (Array.isArray(opts)) return opts.map((v) => parseInt(v, 10)).filter(Boolean);
-      return [10, 20, 30, 40, 50];
-    };
-
-    const applyPaginationConfig = (playboardData) => {
-      const pagWidget = resolvePaginationWidget(playboardData.widgets?.pagination);
-      if (!pagWidget) return;
-
-      const opts = pagWidget.attributes?.find((a) => a.key === 'options')?.value;
-      if (opts) setPaginationOptions(parsePaginationOptions(opts));
-
-      const defaultVal = pagWidget.attributes?.find((a) => a.key === 'defaultValue')?.value;
-      if (defaultVal) setPageSize(parseInt(defaultVal, 10));
-    };
-
     const fetchPlayboard = async () => {
       setPlayboardLoading(true);
       setPlayboardError('');
@@ -449,10 +482,10 @@ function V1ExplorerReportPage() {
         setPlayboard(playboardData);
 
         const params = new URLSearchParams(location.search);
-        const filtersArr = extractFilters(playboardData, params);
+        const filtersArr = extractPlayboardFilters(playboardData, params);
         setFilterConfig(filtersArr);
 
-        applyPaginationConfig(playboardData);
+        applyPaginationConfig(playboardData, setPaginationOptions, setPageSize);
 
         if (playboardData.widgets?.grid?.layout?.ispaginated !== undefined) {
           setIsPaginated(!!playboardData.widgets.grid.layout.ispaginated);
@@ -461,7 +494,7 @@ function V1ExplorerReportPage() {
         if (!filtersArr || filtersArr.length === 0) {
           setPlayboardError('No filters available for this scenario.');
         }
-      } catch (err) {
+      } catch {
         setPlayboard(null);
         setFilterConfig([]);
         setPlayboardError('Failed to load filters. Please try again.');
@@ -556,7 +589,7 @@ function V1ExplorerReportPage() {
             setEnd(meta.end);
           }
         }
-      } catch (err) {
+      } catch {
         setError('Failed to fetch data. Please try again.');
       } finally {
         setLoading(false);
@@ -614,29 +647,13 @@ function V1ExplorerReportPage() {
 
   const handleSort = useCallback(
     (key) => {
-      let order = 'asc';
-      if (sortBy === key && sortOrder === 'asc') order = 'desc';
+      const order = (sortBy === key && sortOrder === 'asc') ? 'desc' : 'asc';
       setSortBy(key);
       setSortOrder(order);
 
-      setData((prevData) => {
-        const sorted = [...prevData].sort((a, b) => {
-          const aVal = a[key];
-          const bVal = b[key];
-          if (aVal === undefined || bVal === undefined) return 0;
-
-          const aNum = parseFloat(aVal);
-          const bNum = parseFloat(bVal);
-          if (!isNaN(aNum) && !isNaN(bNum)) {
-            return order === 'asc' ? aNum - bNum : bNum - aNum;
-          }
-
-          return order === 'asc'
-            ? String(aVal).localeCompare(String(bVal))
-            : String(bVal).localeCompare(String(aVal));
-        });
-        return sorted;
-      });
+      setData((prevData) =>
+        [...prevData].sort((a, b) => compareValues(a[key], b[key], order))
+      );
     },
     [sortBy, sortOrder]
   );

@@ -119,16 +119,16 @@ const getAriaSort = (colKey, sortBy, sortOrder) => {
   return sortOrder === "asc" ? "ascending" : "descending";
 };
 
+// Sort icon helper to avoid nested ternaries
+const getSortIcon = (colKey, sortBy, sortOrder) => {
+  if (sortBy !== colKey || !sortOrder) return <ArrowUpDown size={14} className="text-content-muted" />;
+  if (sortOrder === "asc") return <ArrowUp size={14} className="text-blue-600" />;
+  return <ArrowDown size={14} className="text-blue-600" />;
+};
+
 // Sort button for column headers
 const SortButton = ({ colKey, sortBy, sortOrder, label, onSort }) => {
-  const icon =
-    sortBy !== colKey || !sortOrder ? (
-      <ArrowUpDown size={14} className="text-content-muted" />
-    ) : sortOrder === "asc" ? (
-      <ArrowUp size={14} className="text-blue-600" />
-    ) : (
-      <ArrowDown size={14} className="text-blue-600" />
-    );
+  const icon = getSortIcon(colKey, sortBy, sortOrder);
 
   return (
     <button

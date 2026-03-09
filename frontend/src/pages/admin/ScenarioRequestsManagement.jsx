@@ -338,39 +338,22 @@ const RequestsPagination = ({ pagination, totalPages, onPageChange }) => {
   );
 };
 
-// --- Main Component ---
+// --- Custom hook for requests data loading ---
 
-function ScenarioRequestsManagement() {
-  const location = useLocation();
-  const basePath = resolveBasePath(location.pathname);
+function useRequestsData() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [domainFilter, setDomainFilter] = useState('');
   const [domains, setDomains] = useState([]);
   const [statuses, setStatuses] = useState([]);
   const [pagination, setPagination] = useState({ page: 0, limit: 15, total: 0 });
   const [stats, setStats] = useState({ total: 0, submitted: 0, inProgress: 0, deployed: 0, rejected: 0 });
 
-  // Modal states
-  const [selectedRequest, setSelectedRequest] = useState(null);
-  const [showStatusModal, setShowStatusModal] = useState(false);
-  const [newStatus, setNewStatus] = useState('');
-  const [statusComment, setStatusComment] = useState('');
-  const [updatingStatus, setUpdatingStatus] = useState(false);
-
   const loadLookups = useCallback(async () => {
     try {
-      const [domainsRes, statusesRes] = await Promise.all([
-        scenarioRequestAPI.getDomains(),
-        scenarioRequestAPI.getStatuses()
-      ]);
+      const [domainsRes, statusesRes] = await Promise.all([scenarioRequestAPI.getDomains(), scenarioRequestAPI.getStatuses()]);
       setDomains(domainsRes.data || []);
       setStatuses(statusesRes.data || []);
-    } catch (error) {
-      // error handled silently
-    }
+    } catch { /* silently handled */ }
   }, []);
 
   const loadRequests = useCallback(async () => {
@@ -382,15 +365,26 @@ function ScenarioRequestsManagement() {
       setRequests(data);
       setPagination(prev => ({ ...prev, total: totalCount }));
       setStats(computeRequestStats(data, totalCount));
-    } catch (error) {
-      toast.error('Failed to load requests');
-    } finally {
-      setLoading(false);
-    }
+    } catch { toast.error('Failed to load requests'); }
+    finally { setLoading(false); }
   }, [pagination.page, pagination.limit]);
 
-  useEffect(() => { loadLookups(); }, [loadLookups]);
-  useEffect(() => { loadRequests(); }, [loadRequests, statusFilter, domainFilter]);
+  const handlePageChange = (newPage) => { setPagination(prev => ({ ...prev, page: newPage })); };
+
+  return { requests, loading, domains, statuses, pagination, stats, loadLookups, loadRequests, handlePageChange };
+}
+
+// --- Custom hook for status update modal ---
+
+function useStatusModal(loadRequests) {
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [newStatus, setNewStatus] = useState('');
+  const [statusComment, setStatusComment] = useState('');
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  const openStatusModal = (request) => { setSelectedRequest(request); setNewStatus(request.status); setShowStatusModal(true); };
+  const closeStatusModal = () => setShowStatusModal(false);
 
   const handleStatusUpdate = async () => {
     if (!selectedRequest || !newStatus) return;
@@ -410,19 +404,27 @@ function ScenarioRequestsManagement() {
     }
   };
 
-  const openStatusModal = (request) => {
-    setSelectedRequest(request);
-    setNewStatus(request.status);
-    setShowStatusModal(true);
-  };
+  return { selectedRequest, showStatusModal, newStatus, setNewStatus, statusComment, setStatusComment, updatingStatus, openStatusModal, closeStatusModal, handleStatusUpdate };
+}
 
-  const handlePageChange = (newPage) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
-  };
+// --- Main Component ---
 
-  const filteredRequests = filterRequests(requests, searchTerm, statusFilter, domainFilter);
-  const totalPages = Math.ceil(pagination.total / pagination.limit);
-  const showPagination = !loading && filteredRequests.length > 0;
+function ScenarioRequestsManagement() {
+  const location = useLocation();
+  const basePath = resolveBasePath(location.pathname);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [domainFilter, setDomainFilter] = useState('');
+
+  const data = useRequestsData();
+  const statusModal = useStatusModal(data.loadRequests);
+
+  useEffect(() => { data.loadLookups(); }, [data.loadLookups]);
+  useEffect(() => { data.loadRequests(); }, [data.loadRequests, statusFilter, domainFilter]);
+
+  const filteredRequests = filterRequests(data.requests, searchTerm, statusFilter, domainFilter);
+  const totalPages = Math.ceil(data.pagination.total / data.pagination.limit);
+  const showPagination = !data.loading && filteredRequests.length > 0;
 
   return (
     <div className="w-full">
@@ -431,28 +433,28 @@ function ScenarioRequestsManagement() {
         <p className="text-content-muted mt-1">Manage and process scenario requests</p>
       </div>
 
-      <StatsCards stats={stats} />
+      <StatsCards stats={data.stats} />
 
       <RequestsFilterBar
         searchTerm={searchTerm} onSearchChange={setSearchTerm}
         statusFilter={statusFilter} onStatusFilterChange={setStatusFilter}
         domainFilter={domainFilter} onDomainFilterChange={setDomainFilter}
-        statuses={statuses} domains={domains} onRefresh={loadRequests}
+        statuses={data.statuses} domains={data.domains} onRefresh={data.loadRequests}
       />
 
       <div className="card p-0 overflow-hidden">
-        <RequestsTable requests={filteredRequests} loading={loading} basePath={basePath} onUpdateStatus={openStatusModal} />
+        <RequestsTable requests={filteredRequests} loading={data.loading} basePath={basePath} onUpdateStatus={statusModal.openStatusModal} />
         {showPagination && (
-          <RequestsPagination pagination={pagination} totalPages={totalPages} onPageChange={handlePageChange} />
+          <RequestsPagination pagination={data.pagination} totalPages={totalPages} onPageChange={data.handlePageChange} />
         )}
       </div>
 
       <StatusUpdateModal
-        isOpen={showStatusModal} selectedRequest={selectedRequest}
-        statuses={statuses} newStatus={newStatus} setNewStatus={setNewStatus}
-        statusComment={statusComment} setStatusComment={setStatusComment}
-        updatingStatus={updatingStatus}
-        onClose={() => setShowStatusModal(false)} onSubmit={handleStatusUpdate}
+        isOpen={statusModal.showStatusModal} selectedRequest={statusModal.selectedRequest}
+        statuses={data.statuses} newStatus={statusModal.newStatus} setNewStatus={statusModal.setNewStatus}
+        statusComment={statusModal.statusComment} setStatusComment={statusModal.setStatusComment}
+        updatingStatus={statusModal.updatingStatus}
+        onClose={statusModal.closeStatusModal} onSubmit={statusModal.handleStatusUpdate}
       />
     </div>
   );

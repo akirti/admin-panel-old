@@ -335,28 +335,18 @@ function DomainsHeader({ searchTerm, onSearchChange, onAddNew }) {
 /* ═══════════════════════════════════════════════════════════
    Main Component
    ═══════════════════════════════════════════════════════════ */
-function DomainsManagement() {
-  const { isEditor } = useAuth();
+/* ─── Data-fetching hook ─── */
+function useDomainsData() {
   const [domains, setDomains] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingDomain, setEditingDomain] = useState(null);
-  const [iconPickerOpen, setIconPickerOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    key: '', name: '', description: '', path: '', icon: '', order: 0,
-    type: 'custom', dataDomain: '', status: 'active', defaultSelected: false, subDomains: [],
-  });
-  const [newSubDomain, setNewSubDomain] = useState({ ...EMPTY_SUBDOMAIN });
   const [domainTypes, setDomainTypes] = useState([]);
-  const [saving, setSaving] = useState(false);
 
   const fetchDomains = async () => {
     setLoading(true);
     try {
       const response = await domainAPI.getAll();
       setDomains(response?.data || []);
-    } catch (error) { toast.error('Failed to fetch domains'); }
+    } catch { toast.error('Failed to fetch domains'); }
     finally { setLoading(false); }
   };
 
@@ -364,16 +354,26 @@ function DomainsManagement() {
     try {
       const response = await domainAPI.getTypes();
       setDomainTypes(response?.data || []);
-    } catch (error) { /* silent */ }
+    } catch { /* silent */ }
   };
 
   useEffect(() => { fetchDomains(); fetchDomainTypes(); }, []);
 
-  const handleChange = (e) => handleDomainFieldChange(e, setFormData);
+  return { domains, loading, domainTypes, fetchDomains };
+}
 
-  const resetModalState = () => {
-    setNewSubDomain({ ...EMPTY_SUBDOMAIN });
-  };
+/* ─── Modal / form management hook ─── */
+function useDomainModal(domainTypes, fetchDomains) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingDomain, setEditingDomain] = useState(null);
+  const [formData, setFormData] = useState({
+    key: '', name: '', description: '', path: '', icon: '', order: 0,
+    type: 'custom', dataDomain: '', status: 'active', defaultSelected: false, subDomains: [],
+  });
+  const [newSubDomain, setNewSubDomain] = useState({ ...EMPTY_SUBDOMAIN });
+  const [saving, setSaving] = useState(false);
+
+  const resetModalState = () => { setNewSubDomain({ ...EMPTY_SUBDOMAIN }); };
 
   const openCreateModal = () => {
     setEditingDomain(null);
@@ -415,6 +415,27 @@ function DomainsManagement() {
     finally { setSaving(false); }
   };
 
+  const handleChange = (e) => handleDomainFieldChange(e, setFormData);
+
+  return {
+    modalOpen, editingDomain, formData, setFormData,
+    newSubDomain, setNewSubDomain, saving,
+    openCreateModal, openEditModal, closeModal,
+    addSubDomain, removeSubDomain, handleSubmit, handleChange,
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Main Component
+   ═══════════════════════════════════════════════════════════ */
+function DomainsManagement() {
+  const { isEditor } = useAuth();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
+
+  const { domains, loading, domainTypes, fetchDomains } = useDomainsData();
+  const modal = useDomainModal(domainTypes, fetchDomains);
+
   const handleDelete = (domain) => deleteDomain(domain, fetchDomains);
 
   const filteredDomains = domains.filter(domain =>
@@ -424,29 +445,29 @@ function DomainsManagement() {
 
   if (!isEditor()) return <DomainsAccessDenied />;
 
-  const modalTitle = editingDomain ? 'Edit Domain' : 'Create Domain';
+  const modalTitle = modal.editingDomain ? 'Edit Domain' : 'Create Domain';
 
   return (
     <div className="space-y-6">
-      <DomainsHeader searchTerm={searchTerm} onSearchChange={setSearchTerm} onAddNew={openCreateModal} />
+      <DomainsHeader searchTerm={searchTerm} onSearchChange={setSearchTerm} onAddNew={modal.openCreateModal} />
 
-      <DomainsTable loading={loading} filteredDomains={filteredDomains} onEdit={openEditModal} onDelete={handleDelete} />
+      <DomainsTable loading={loading} filteredDomains={filteredDomains} onEdit={modal.openEditModal} onDelete={handleDelete} />
 
-      <Modal isOpen={modalOpen} onClose={closeModal} title={modalTitle} size="lg">
+      <Modal isOpen={modal.modalOpen} onClose={modal.closeModal} title={modalTitle} size="lg">
         <DomainForm
-          formData={formData} handleChange={handleChange} setFormData={setFormData}
-          editingDomain={editingDomain} saving={saving} domainTypes={domainTypes}
-          newSubDomain={newSubDomain} setNewSubDomain={setNewSubDomain}
-          addSubDomain={addSubDomain} removeSubDomain={removeSubDomain}
-          onSubmit={handleSubmit} onCancel={closeModal}
+          formData={modal.formData} handleChange={modal.handleChange} setFormData={modal.setFormData}
+          editingDomain={modal.editingDomain} saving={modal.saving} domainTypes={domainTypes}
+          newSubDomain={modal.newSubDomain} setNewSubDomain={modal.setNewSubDomain}
+          addSubDomain={modal.addSubDomain} removeSubDomain={modal.removeSubDomain}
+          onSubmit={modal.handleSubmit} onCancel={modal.closeModal}
           onOpenIconPicker={() => setIconPickerOpen(true)}
         />
       </Modal>
 
       {iconPickerOpen && (
         <LucideIconPicker
-          value={formData.icon}
-          onChange={(iconDataUri) => setFormData(prev => ({ ...prev, icon: iconDataUri }))}
+          value={modal.formData.icon}
+          onChange={(iconDataUri) => modal.setFormData(prev => ({ ...prev, icon: iconDataUri }))}
           onClose={() => setIconPickerOpen(false)}
         />
       )}

@@ -418,7 +418,7 @@ async function downloadArchive(archiveId) {
   try {
     const response = await errorLogsAPI.getArchiveDownloadUrl(archiveId);
     window.open(response.data.download_url, '_blank');
-  } catch (error) { toast.error('Failed to get download URL'); }
+  } catch { toast.error('Failed to get download URL'); }
 }
 
 async function deleteArchive(archiveId, onSuccess) {
@@ -427,7 +427,7 @@ async function deleteArchive(archiveId, onSuccess) {
     await errorLogsAPI.deleteArchive(archiveId);
     toast.success('Archive deleted successfully');
     onSuccess();
-  } catch (error) { toast.error('Failed to delete archive'); }
+  } catch { toast.error('Failed to delete archive'); }
 }
 
 async function forceArchive(onSuccess) {
@@ -438,7 +438,7 @@ async function forceArchive(onSuccess) {
     const toastFn = response.data.archived ? toast.success : toast.info;
     toastFn(message);
     if (response.data.archived) onSuccess();
-  } catch (error) { toast.error('Failed to archive logs'); }
+  } catch { toast.error('Failed to archive logs'); }
 }
 
 async function cleanupArchives(onSuccess) {
@@ -448,7 +448,7 @@ async function cleanupArchives(onSuccess) {
     const response = await errorLogsAPI.cleanup(parseInt(daysToKeep));
     toast.success(`Deleted ${response.data.deleted_count} old archives`);
     onSuccess();
-  } catch (error) { toast.error('Failed to cleanup archives'); }
+  } catch { toast.error('Failed to cleanup archives'); }
 }
 
 function toggleExpandedRow(expandedRows, id, setExpandedRows) {
@@ -461,24 +461,13 @@ function toggleExpandedRow(expandedRows, id, setExpandedRows) {
 /* ═══════════════════════════════════════════════════════════
    Main Component
    ═══════════════════════════════════════════════════════════ */
-const ErrorLogsPage = () => {
-  const [activeTab, setActiveTab] = useState('current');
+/* ─── Current logs data hook ─── */
+function useCurrentLogsData(level, errorType, search, days, pagination, setPagination) {
   const [logs, setLogs] = useState([]);
   const [stats, setStats] = useState(null);
-  const [archives, setArchives] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [archiveLoading, setArchiveLoading] = useState(false);
-
-  const [level, setLevel] = useState('');
-  const [errorType, setErrorType] = useState('');
-  const [search, setSearch] = useState('');
-  const [days, setDays] = useState(7);
   const [levels, setLevels] = useState(['ERROR', 'WARNING', 'CRITICAL']);
   const [errorTypes, setErrorTypes] = useState([]);
-  const [pagination, setPagination] = useState({ page: 0, limit: 25, total: 0, pages: 0 });
-
-  const [expandedRows, setExpandedRows] = useState(new Set());
-  const [fileInfo, setFileInfo] = useState(null);
 
   const fetchCurrentLogs = useCallback(async () => {
     try {
@@ -494,9 +483,18 @@ const ErrorLogsPage = () => {
       setStats(statsRes.data);
       setLevels(levelsRes.data.levels || ['ERROR', 'WARNING', 'CRITICAL']);
       setErrorTypes(typesRes.data.types || []);
-    } catch (error) { toast.error('Failed to load error logs'); }
+    } catch { toast.error('Failed to load error logs'); }
     finally { setLoading(false); }
-  }, [level, errorType, search, days, pagination.page, pagination.limit]);
+  }, [level, errorType, search, days, pagination.page, pagination.limit, setPagination]);
+
+  return { logs, stats, loading, levels, errorTypes, fetchCurrentLogs };
+}
+
+/* ─── Archives data hook ─── */
+function useArchivesData() {
+  const [archives, setArchives] = useState([]);
+  const [archiveLoading, setArchiveLoading] = useState(false);
+  const [fileInfo, setFileInfo] = useState(null);
 
   const fetchArchives = useCallback(async () => {
     try {
@@ -507,21 +505,39 @@ const ErrorLogsPage = () => {
       ]);
       setArchives(archivesRes.data.archives || []);
       setFileInfo(fileRes.data);
-    } catch (error) { toast.error('Failed to load archives'); }
+    } catch { toast.error('Failed to load archives'); }
     finally { setArchiveLoading(false); }
   }, []);
 
+  return { archives, archiveLoading, fileInfo, fetchArchives };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Main Component
+   ═══════════════════════════════════════════════════════════ */
+const ErrorLogsPage = () => {
+  const [activeTab, setActiveTab] = useState('current');
+  const [level, setLevel] = useState('');
+  const [errorType, setErrorType] = useState('');
+  const [search, setSearch] = useState('');
+  const [days, setDays] = useState(7);
+  const [pagination, setPagination] = useState({ page: 0, limit: 25, total: 0, pages: 0 });
+  const [expandedRows, setExpandedRows] = useState(new Set());
+
+  const currentLogs = useCurrentLogsData(level, errorType, search, days, pagination, setPagination);
+  const archivesData = useArchivesData();
+
   useEffect(() => {
-    if (activeTab === 'current') { fetchCurrentLogs(); }
-    else { fetchArchives(); }
-  }, [activeTab, fetchCurrentLogs, fetchArchives]);
+    if (activeTab === 'current') { currentLogs.fetchCurrentLogs(); }
+    else { archivesData.fetchArchives(); }
+  }, [activeTab, currentLogs.fetchCurrentLogs, archivesData.fetchArchives]);
 
   const handlePageChange = (newPage) => setPagination(prev => ({ ...prev, page: newPage }));
   const toggleRow = (id) => toggleExpandedRow(expandedRows, id, setExpandedRows);
   const handleDownloadArchive = (archiveId) => downloadArchive(archiveId);
-  const handleDeleteArchive = (archiveId) => deleteArchive(archiveId, fetchArchives);
-  const handleForceArchive = () => forceArchive(fetchArchives);
-  const handleCleanup = () => cleanupArchives(fetchArchives);
+  const handleDeleteArchive = (archiveId) => deleteArchive(archiveId, archivesData.fetchArchives);
+  const handleForceArchive = () => forceArchive(archivesData.fetchArchives);
+  const handleCleanup = () => cleanupArchives(archivesData.fetchArchives);
 
   const handleDaysChange = (e) => {
     setDays(parseInt(e.target.value));
@@ -535,19 +551,19 @@ const ErrorLogsPage = () => {
 
       {activeTab === 'current' ? (
         <CurrentLogsTab
-          stats={stats} search={search} setSearch={setSearch}
-          level={level} setLevel={setLevel} levels={levels}
-          errorType={errorType} setErrorType={setErrorType} errorTypes={errorTypes}
-          setPagination={setPagination} loading={loading} logs={logs}
+          stats={currentLogs.stats} search={search} setSearch={setSearch}
+          level={level} setLevel={setLevel} levels={currentLogs.levels}
+          errorType={errorType} setErrorType={setErrorType} errorTypes={currentLogs.errorTypes}
+          setPagination={setPagination} loading={currentLogs.loading} logs={currentLogs.logs}
           expandedRows={expandedRows} toggleRow={toggleRow}
           pagination={pagination} handlePageChange={handlePageChange}
         />
       ) : (
         <ArchivesContent
-          fileInfo={fileInfo} archives={archives} archiveLoading={archiveLoading}
+          fileInfo={archivesData.fileInfo} archives={archivesData.archives} archiveLoading={archivesData.archiveLoading}
           onForceArchive={handleForceArchive} onCleanup={handleCleanup}
           onDownloadArchive={handleDownloadArchive} onDeleteArchive={handleDeleteArchive}
-          onRefresh={fetchArchives}
+          onRefresh={archivesData.fetchArchives}
         />
       )}
     </div>

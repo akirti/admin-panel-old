@@ -619,7 +619,7 @@ function buildWidgetsFromSource(sourceWidgets) {
         rowActions: { renderAs: sourceWidgets.grid?.actions?.rowActions?.renderAs || 'button', attributes: sourceWidgets.grid?.actions?.rowActions?.attributes || [], events: sourceWidgets.grid?.actions?.rowActions?.events || [] },
         headerActions: sourceWidgets.grid?.actions?.headerActions || {},
       },
-      layout: { colums: sourceWidgets.grid?.layout?.colums || [], headers: sourceWidgets.grid?.layout?.headers || [], footer: sourceWidgets.grid?.layout?.footer || [], ispaginated: sourceWidgets.grid?.layout?.ispaginated !== undefined ? sourceWidgets.grid.layout.ispaginated : true, defaultSize: sourceWidgets.grid?.layout?.defaultSize || 25 },
+      layout: { colums: sourceWidgets.grid?.layout?.colums || [], headers: sourceWidgets.grid?.layout?.headers || [], footer: sourceWidgets.grid?.layout?.footer || [], ispaginated: sourceWidgets.grid?.layout?.ispaginated ?? true, defaultSize: sourceWidgets.grid?.layout?.defaultSize || 25 },
     },
     pagination: sourceWidgets.pagination || [],
   };
@@ -1111,39 +1111,28 @@ function getGridParts(formData) {
   return { ra, act, g, l };
 }
 
-// --- Main Component ---
+// --- Custom hook for playboard CRUD operations ---
 
-const PlayboardsManagement = () => {
-  const pbData = usePlayboardsData();
+function usePlayboardCrud(pbData) {
   const [modalOpen, setModalOpen] = useState(false);
-  const [uploadModalOpen, setUploadModalOpen] = useState(false);
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [selectedPlayboard, setSelectedPlayboard] = useState(null);
   const [activeTab, setActiveTab] = useState('basic');
-
-  const [uploadFile, setUploadFile] = useState(null);
-  const [uploadScenarioKey, setUploadScenarioKey] = useState('');
-  const [uploadName, setUploadName] = useState('');
-  const [uploadDescription, setUploadDescription] = useState('');
-  const [jsonPreview, setJsonPreview] = useState(null);
-
   const [formData, setFormData] = useState({ ...DEFAULT_FORM });
-  const [currentDescription, setCurrentDescription] = useState({ index: 0, type: 'h3', text: '', nodes: [] });
-  const [addonInput, setAddonInput] = useState('');
-
-  const filterBuilder = useFilterBuilder(formData, setFormData);
-  const rowActionBuilder = useRowActionBuilder(formData, setFormData);
-  const gridColumns = useGridColumns(formData, setFormData);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedPlayboard, setSelectedPlayboard] = useState(null);
 
   const resetForm = () => { setFormData({ ...DEFAULT_FORM }); setEditingItem(null); setActiveTab('basic'); };
+  const openBuildModal = () => { resetForm(); setModalOpen(true); };
+  const openEditModal = (item) => { setEditingItem(item); setFormData(buildEditFormDataFromItem(item)); setModalOpen(true); };
+  const closeModal = () => { setModalOpen(false); resetForm(); };
+  const handleViewDetails = (item) => { setSelectedPlayboard(item); setDetailModalOpen(true); };
 
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
       await playboardsAPI.create(buildFormPayload(formData));
       toast.success('Playboard created successfully');
-      setModalOpen(false); resetForm(); pbData.fetchData();
+      closeModal(); pbData.fetchData();
     } catch (error) { toast.error(error.response?.data?.detail || 'Failed to create playboard'); }
   };
 
@@ -1152,7 +1141,7 @@ const PlayboardsManagement = () => {
     try {
       await playboardsAPI.update(editingItem.id || editingItem._id, buildFormPayload(formData));
       toast.success('Playboard updated successfully');
-      setModalOpen(false); resetForm(); pbData.fetchData();
+      closeModal(); pbData.fetchData();
     } catch (error) { toast.error(error.response?.data?.detail || 'Failed to update playboard'); }
   };
 
@@ -1164,13 +1153,27 @@ const PlayboardsManagement = () => {
     } catch { toast.error('Failed to delete playboard'); }
   };
 
-  const openEditModal = (item) => {
-    setEditingItem(item);
-    setFormData(buildEditFormDataFromItem(item));
-    setModalOpen(true);
+  const handleDownload = async (item) => {
+    try { await downloadPlayboardJson(item); toast.success('Download started'); }
+    catch { toast.error('Failed to download playboard'); }
   };
 
-  const handleViewDetails = (item) => { setSelectedPlayboard(item); setDetailModalOpen(true); };
+  return { modalOpen, editingItem, activeTab, setActiveTab, formData, setFormData, detailModalOpen, setDetailModalOpen, selectedPlayboard, resetForm, openBuildModal, openEditModal, closeModal, handleViewDetails, handleCreate, handleUpdate, handleDelete, handleDownload };
+}
+
+// --- Custom hook for playboard upload ---
+
+function usePlayboardUpload(pbData) {
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadScenarioKey, setUploadScenarioKey] = useState('');
+  const [uploadName, setUploadName] = useState('');
+  const [uploadDescription, setUploadDescription] = useState('');
+  const [jsonPreview, setJsonPreview] = useState(null);
+
+  const resetUploadForm = () => { setUploadFile(null); setUploadScenarioKey(''); setUploadName(''); setUploadDescription(''); setJsonPreview(null); };
+  const openUploadModal = () => { resetUploadForm(); setUploadModalOpen(true); };
+  const closeUploadModal = () => { setUploadModalOpen(false); resetUploadForm(); };
 
   const handleFileSelect = async (file) => {
     setUploadFile(file);
@@ -1181,10 +1184,8 @@ const PlayboardsManagement = () => {
       setJsonPreview(json);
       if (json.scenarioKey) setUploadScenarioKey(json.scenarioKey);
       if (json.key) setUploadName(json.key);
-    } catch (e) { toast.error('Invalid JSON file'); setJsonPreview(null); }
+    } catch { toast.error('Invalid JSON file'); setJsonPreview(null); }
   };
-
-  const resetUploadForm = () => { setUploadFile(null); setUploadScenarioKey(''); setUploadName(''); setUploadDescription(''); setJsonPreview(null); };
 
   const handleFileUpload = async (e) => {
     e.preventDefault();
@@ -1194,16 +1195,18 @@ const PlayboardsManagement = () => {
     try {
       await playboardsAPI.upload(formDataUpload, { scenario_key: uploadScenarioKey || undefined, name: uploadName || undefined, description: uploadDescription || undefined });
       toast.success('Playboard uploaded successfully');
-      setUploadModalOpen(false); resetUploadForm(); pbData.fetchData();
+      closeUploadModal(); pbData.fetchData();
     } catch (error) { toast.error(error.response?.data?.detail || 'Upload failed'); }
   };
 
-  const handleDownload = async (item) => {
-    try {
-      await downloadPlayboardJson(item);
-      toast.success('Download started');
-    } catch (error) { toast.error('Failed to download playboard'); }
-  };
+  return { uploadModalOpen, uploadFile, uploadScenarioKey, setUploadScenarioKey, uploadName, setUploadName, uploadDescription, setUploadDescription, jsonPreview, openUploadModal, closeUploadModal, handleFileSelect, handleFileUpload };
+}
+
+// --- Custom hook for form extras (description, addon, grid settings, clipboard) ---
+
+function useFormExtras(formData, setFormData) {
+  const [currentDescription, setCurrentDescription] = useState({ index: 0, type: 'h3', text: '', nodes: [] });
+  const [addonInput, setAddonInput] = useState('');
 
   const addDescription = () => {
     setFormData({ ...formData, scenarioDescription: [...formData.scenarioDescription, { index: formData.scenarioDescription.length, type: currentDescription.type, text: currentDescription.text, nodes: currentDescription.nodes }] });
@@ -1243,7 +1246,13 @@ const PlayboardsManagement = () => {
     setFormData({ ...formData, widgets: { ...formData.widgets, grid: { ...g, layout: { ...l, ispaginated: val } } } });
   };
 
-  const columns = [
+  return { currentDescription, setCurrentDescription, addonInput, setAddonInput, addDescription, removeDescription, addAddon, removeAddon, copyJsonToClipboard, handleRenderAsChange, handlePageSizeChange, handlePaginatedChange };
+}
+
+// --- Column definitions factory ---
+
+function buildPlayboardColumns(crud) {
+  return [
     { key: 'name', title: 'Name' },
     { key: 'data', title: 'Key', render: (val) => val?.key || '-' },
     { key: 'scenarioKey', title: 'Scenario' },
@@ -1252,13 +1261,39 @@ const PlayboardsManagement = () => {
     { key: 'data', title: 'Actions', render: (val) => <Badge variant="success">{val?.widgets?.grid?.actions?.rowActions?.events?.length || 0}</Badge> },
     { key: 'status', title: 'Status', render: (val) => { const isActive = val === 'active'; return <Badge variant={isActive ? 'success' : 'danger'}>{isActive ? 'Active' : 'Inactive'}</Badge>; } },
     { key: 'actions', title: 'Actions', render: (_, item) => (
-      <PlayboardActionsCell item={item} onView={handleViewDetails} onDownload={handleDownload} onEdit={openEditModal} onDelete={handleDelete} />
+      <PlayboardActionsCell item={item} onView={crud.handleViewDetails} onDownload={crud.handleDownload} onEdit={crud.openEditModal} onDelete={crud.handleDelete} />
     )}
   ];
+}
+
+// --- Tab content renderer ---
+
+const PlayboardTabContent = ({ activeTab, formData, setFormData, pbData, extras, filterBuilder, rowActionBuilder, gridColumns }) => {
+  if (activeTab === 'basic') return <BasicInfoTab formData={formData} setFormData={setFormData} scenarios={pbData.scenarios} domains={pbData.domains} addonInput={extras.addonInput} setAddonInput={extras.setAddonInput} addAddon={extras.addAddon} removeAddon={extras.removeAddon} />;
+  if (activeTab === 'filters') return <FiltersTab formData={formData} filterBuilder={filterBuilder} />;
+  if (activeTab === 'grid') return <GridTab formData={formData} setFormData={setFormData} rowActionBuilder={rowActionBuilder} gridColumns={gridColumns} domains={pbData.domains} onRenderAsChange={extras.handleRenderAsChange} onPageSizeChange={extras.handlePageSizeChange} onPaginatedChange={extras.handlePaginatedChange} />;
+  if (activeTab === 'description') return <DescriptionTab formData={formData} currentDescription={extras.currentDescription} setCurrentDescription={extras.setCurrentDescription} addDescription={extras.addDescription} removeDescription={extras.removeDescription} />;
+  if (activeTab === 'json') return <JsonPreviewTab formData={formData} copyJsonToClipboard={extras.copyJsonToClipboard} />;
+  return null;
+};
+
+// --- Main Component ---
+
+const PlayboardsManagement = () => {
+  const pbData = usePlayboardsData();
+  const crud = usePlayboardCrud(pbData);
+  const upload = usePlayboardUpload(pbData);
+  const extras = useFormExtras(crud.formData, crud.setFormData);
+
+  const filterBuilder = useFilterBuilder(crud.formData, crud.setFormData);
+  const rowActionBuilder = useRowActionBuilder(crud.formData, crud.setFormData);
+  const gridColumns = useGridColumns(crud.formData, crud.setFormData);
+
+  const columns = buildPlayboardColumns(crud);
 
   return (
     <div className="space-y-6">
-      <PlayboardsHeader onUploadClick={() => { resetUploadForm(); setUploadModalOpen(true); }} onBuildClick={() => { resetForm(); setModalOpen(true); }} />
+      <PlayboardsHeader onUploadClick={upload.openUploadModal} onBuildClick={crud.openBuildModal} />
 
       <Card className="p-4">
         <SearchInput value={pbData.search} onChange={(val) => { pbData.setSearch(val); pbData.setPagination(prev => ({ ...prev, page: 0 })); }} placeholder="Search playboards..." />
@@ -1269,25 +1304,19 @@ const PlayboardsManagement = () => {
         {pbData.pagination.pages > 1 && <Pagination currentPage={pbData.pagination.page} totalPages={pbData.pagination.pages} total={pbData.pagination.total} limit={pbData.pagination.limit} onPageChange={pbData.handlePageChange} />}
       </Card>
 
-      <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); resetForm(); }} title={editingItem ? 'Edit Playboard' : 'Create Playboard'} size="xl">
-        <form onSubmit={editingItem ? handleUpdate : handleCreate}>
-          <TabNav activeTab={activeTab} onTabChange={setActiveTab} />
-
-          {activeTab === 'basic' && <BasicInfoTab formData={formData} setFormData={setFormData} scenarios={pbData.scenarios} domains={pbData.domains} addonInput={addonInput} setAddonInput={setAddonInput} addAddon={addAddon} removeAddon={removeAddon} />}
-          {activeTab === 'filters' && <FiltersTab formData={formData} filterBuilder={filterBuilder} />}
-          {activeTab === 'grid' && <GridTab formData={formData} setFormData={setFormData} rowActionBuilder={rowActionBuilder} gridColumns={gridColumns} domains={pbData.domains} onRenderAsChange={handleRenderAsChange} onPageSizeChange={handlePageSizeChange} onPaginatedChange={handlePaginatedChange} />}
-          {activeTab === 'description' && <DescriptionTab formData={formData} currentDescription={currentDescription} setCurrentDescription={setCurrentDescription} addDescription={addDescription} removeDescription={removeDescription} />}
-          {activeTab === 'json' && <JsonPreviewTab formData={formData} copyJsonToClipboard={copyJsonToClipboard} />}
-
+      <Modal isOpen={crud.modalOpen} onClose={crud.closeModal} title={crud.editingItem ? 'Edit Playboard' : 'Create Playboard'} size="xl">
+        <form onSubmit={crud.editingItem ? crud.handleUpdate : crud.handleCreate}>
+          <TabNav activeTab={crud.activeTab} onTabChange={crud.setActiveTab} />
+          <PlayboardTabContent activeTab={crud.activeTab} formData={crud.formData} setFormData={crud.setFormData} pbData={pbData} extras={extras} filterBuilder={filterBuilder} rowActionBuilder={rowActionBuilder} gridColumns={gridColumns} />
           <div className="flex justify-end space-x-3 pt-6 border-t mt-6">
-            <Button type="button" variant="secondary" onClick={() => { setModalOpen(false); resetForm(); }}>Cancel</Button>
-            <Button type="submit">{editingItem ? 'Update Playboard' : 'Create Playboard'}</Button>
+            <Button type="button" variant="secondary" onClick={crud.closeModal}>Cancel</Button>
+            <Button type="submit">{crud.editingItem ? 'Update Playboard' : 'Create Playboard'}</Button>
           </div>
         </form>
       </Modal>
 
-      <UploadModal isOpen={uploadModalOpen} onClose={() => { setUploadModalOpen(false); resetUploadForm(); }} scenarios={pbData.scenarios} uploadFile={uploadFile} uploadScenarioKey={uploadScenarioKey} setUploadScenarioKey={setUploadScenarioKey} uploadName={uploadName} setUploadName={setUploadName} uploadDescription={uploadDescription} setUploadDescription={setUploadDescription} jsonPreview={jsonPreview} handleFileSelect={handleFileSelect} handleFileUpload={handleFileUpload} />
-      <DetailViewModal isOpen={detailModalOpen} onClose={() => setDetailModalOpen(false)} selectedPlayboard={selectedPlayboard} />
+      <UploadModal isOpen={upload.uploadModalOpen} onClose={upload.closeUploadModal} scenarios={pbData.scenarios} uploadFile={upload.uploadFile} uploadScenarioKey={upload.uploadScenarioKey} setUploadScenarioKey={upload.setUploadScenarioKey} uploadName={upload.uploadName} setUploadName={upload.setUploadName} uploadDescription={upload.uploadDescription} setUploadDescription={upload.setUploadDescription} jsonPreview={upload.jsonPreview} handleFileSelect={upload.handleFileSelect} handleFileUpload={upload.handleFileUpload} />
+      <DetailViewModal isOpen={crud.detailModalOpen} onClose={() => crud.setDetailModalOpen(false)} selectedPlayboard={crud.selectedPlayboard} />
     </div>
   );
 };

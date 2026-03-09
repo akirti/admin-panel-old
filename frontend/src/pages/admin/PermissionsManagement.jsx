@@ -340,7 +340,7 @@ function usePermissionsData(isSuperAdmin) {
         setTotal(permsRes.data.pagination.total || 0);
       }
       setModules(modulesRes.data.modules || []);
-    } catch (err) { setError('Failed to fetch permissions'); }
+    } catch { setError('Failed to fetch permissions'); }
     finally { setLoading(false); }
   }, [page, limit, debouncedSearch, moduleFilter]);
 
@@ -389,7 +389,7 @@ function usePermissionActions(setError, setSuccess, fetchPermissions) {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       setSuccess(`Exported permissions as ${format.toUpperCase()}`);
-    } catch (err) { setError('Failed to export permissions'); }
+    } catch { setError('Failed to export permissions'); }
   };
 
   return { handleDelete, handleExport };
@@ -499,21 +499,12 @@ const PermsPagination = ({ data }) => {
   );
 };
 
-// --- Main Component ---
+// --- Custom hook for permission modal state and handlers ---
 
-const PermissionsManagement = () => {
-  const { isSuperAdmin } = useAuth();
-  const data = usePermissionsData(isSuperAdmin);
-  const actions = usePermissionActions(data.setError, data.setSuccess, data.fetchPermissions);
-
+function usePermissionModal(data) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPermission, setEditingPermission] = useState(null);
   const [formData, setFormData] = useState(INITIAL_PERM_FORM);
-  const [relationshipModalOpen, setRelationshipModalOpen] = useState(false);
-  const [selectedPermission, setSelectedPermission] = useState(null);
-  const [permissionRoles, setPermissionRoles] = useState([]);
-  const [permissionGroups, setPermissionGroups] = useState([]);
-  const [loadingRelationships, setLoadingRelationships] = useState(false);
 
   const handleInputChange = (e) => { const { name, value } = e.target; setFormData((prev) => ({ ...prev, [name]: value })); };
 
@@ -523,32 +514,40 @@ const PermissionsManagement = () => {
 
   const handleSelectAllActions = (selected) => setFormData((prev) => ({ ...prev, actions: selected ? [...COMMON_ACTIONS] : [] }));
 
-  const openCreateModal = () => {
-    setEditingPermission(null);
-    setFormData({ ...INITIAL_PERM_FORM });
-    setModalOpen(true);
-  };
-
-  const openEditModal = (permission) => {
-    setEditingPermission(permission);
-    setFormData(buildEditPermFormData(permission));
-    setModalOpen(true);
-  };
+  const openCreateModal = () => { setEditingPermission(null); setFormData({ ...INITIAL_PERM_FORM }); setModalOpen(true); };
+  const openEditModal = (permission) => { setEditingPermission(permission); setFormData(buildEditPermFormData(permission)); setModalOpen(true); };
+  const closeModal = () => setModalOpen(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editingPermission) {
-        await permissionsAPI.update(editingPermission._id || editingPermission.key, formData);
-        data.setSuccess('Permission updated successfully');
-      } else {
-        await permissionsAPI.create(formData);
-        data.setSuccess('Permission created successfully');
-      }
+      await submitPermission(editingPermission, formData, data.setSuccess);
       setModalOpen(false);
       data.fetchPermissions();
     } catch (err) { data.setError(err.response?.data?.detail || 'Failed to save permission'); }
   };
+
+  return { modalOpen, editingPermission, formData, handleInputChange, handleActionToggle, handleSelectAllActions, openCreateModal, openEditModal, closeModal, handleSubmit };
+}
+
+async function submitPermission(editingPermission, formData, setSuccess) {
+  if (editingPermission) {
+    await permissionsAPI.update(editingPermission._id || editingPermission.key, formData);
+    setSuccess('Permission updated successfully');
+  } else {
+    await permissionsAPI.create(formData);
+    setSuccess('Permission created successfully');
+  }
+}
+
+// --- Custom hook for relationship modal state and handlers ---
+
+function useRelationshipModal() {
+  const [relationshipModalOpen, setRelationshipModalOpen] = useState(false);
+  const [selectedPermission, setSelectedPermission] = useState(null);
+  const [permissionRoles, setPermissionRoles] = useState([]);
+  const [permissionGroups, setPermissionGroups] = useState([]);
+  const [loadingRelationships, setLoadingRelationships] = useState(false);
 
   const showRelationships = async (permission) => {
     setSelectedPermission(permission);
@@ -561,9 +560,23 @@ const PermissionsManagement = () => {
       ]);
       setPermissionRoles(rolesRes.data || []);
       setPermissionGroups(groupsRes.data || []);
-    } catch (err) { setPermissionRoles([]); setPermissionGroups([]); }
+    } catch { setPermissionRoles([]); setPermissionGroups([]); }
     finally { setLoadingRelationships(false); }
   };
+
+  const closeRelationshipModal = () => setRelationshipModalOpen(false);
+
+  return { relationshipModalOpen, selectedPermission, permissionRoles, permissionGroups, loadingRelationships, showRelationships, closeRelationshipModal };
+}
+
+// --- Main Component ---
+
+const PermissionsManagement = () => {
+  const { isSuperAdmin } = useAuth();
+  const data = usePermissionsData(isSuperAdmin);
+  const actions = usePermissionActions(data.setError, data.setSuccess, data.fetchPermissions);
+  const modal = usePermissionModal(data);
+  const relModal = useRelationshipModal();
 
   const handleExportCsv = () => { actions.handleExport('csv'); hidePermsExportMenu(); };
   const handleExportJson = () => { actions.handleExport('json'); hidePermsExportMenu(); };
@@ -572,7 +585,7 @@ const PermissionsManagement = () => {
 
   return (
     <div className="space-y-6">
-      <PermsHeader total={data.total} onExportCsv={handleExportCsv} onExportJson={handleExportJson} onCreateClick={openCreateModal} />
+      <PermsHeader total={data.total} onExportCsv={handleExportCsv} onExportJson={handleExportJson} onCreateClick={modal.openCreateModal} />
 
       <PermAlertMessages error={data.error} success={data.success} />
       <ModuleStats permissionsByModule={data.permissionsByModule} moduleFilter={data.moduleFilter} onModuleClick={data.setModuleFilter} />
@@ -580,18 +593,18 @@ const PermissionsManagement = () => {
       <PermsFilterBar data={data} />
 
       <div className="card overflow-hidden">
-        <PermissionsTable permissions={data.permissions} loading={data.loading} onShowRelationships={showRelationships} onEdit={openEditModal} onDelete={actions.handleDelete} />
+        <PermissionsTable permissions={data.permissions} loading={data.loading} onShowRelationships={relModal.showRelationships} onEdit={modal.openEditModal} onDelete={actions.handleDelete} />
         <PermsPagination data={data} />
       </div>
 
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editingPermission ? 'Edit Permission' : 'Create Permission'} size="lg">
-        <PermissionForm formData={formData} editingPermission={editingPermission} modules={data.modules} commonActions={COMMON_ACTIONS}
-          handleInputChange={handleInputChange} handleActionToggle={handleActionToggle} handleSelectAllActions={handleSelectAllActions}
-          handleSubmit={handleSubmit} onClose={() => setModalOpen(false)} />
+      <Modal isOpen={modal.modalOpen} onClose={modal.closeModal} title={modal.editingPermission ? 'Edit Permission' : 'Create Permission'} size="lg">
+        <PermissionForm formData={modal.formData} editingPermission={modal.editingPermission} modules={data.modules} commonActions={COMMON_ACTIONS}
+          handleInputChange={modal.handleInputChange} handleActionToggle={modal.handleActionToggle} handleSelectAllActions={modal.handleSelectAllActions}
+          handleSubmit={modal.handleSubmit} onClose={modal.closeModal} />
       </Modal>
 
-      <RelationshipModal isOpen={relationshipModalOpen} onClose={() => setRelationshipModalOpen(false)} selectedPermission={selectedPermission}
-        loadingRelationships={loadingRelationships} permissionRoles={permissionRoles} permissionGroups={permissionGroups} />
+      <RelationshipModal isOpen={relModal.relationshipModalOpen} onClose={relModal.closeRelationshipModal} selectedPermission={relModal.selectedPermission}
+        loadingRelationships={relModal.loadingRelationships} permissionRoles={relModal.permissionRoles} permissionGroups={relModal.permissionGroups} />
     </div>
   );
 };

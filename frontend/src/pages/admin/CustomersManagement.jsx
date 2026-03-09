@@ -489,7 +489,7 @@ function useCustomerFilters() {
       setAvailableTags(filterData.tags || []);
       setAvailableLocations(filterData.locations || []);
       setAvailableUnits(filterData.units || []);
-    } catch (err) { /* silent */ }
+    } catch { /* silent */ }
   }, []);
 
   return {
@@ -563,25 +563,13 @@ function useCustomerForm() {
 /* ═══════════════════════════════════════════════════════════
    Main Component
    ═══════════════════════════════════════════════════════════ */
-const CustomersManagement = () => {
-  const { isSuperAdmin } = useAuth();
-
+/* ─── Data-fetching hook ─── */
+function useCustomersData(filters, limit, setError) {
   const [customers, setCustomers] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [limit] = useState(25);
   const [totalPages, setTotalPages] = useState(0);
   const [total, setTotal] = useState(0);
-
-  const { error, setError, success, setSuccess } = useAlertMessages();
-  const filters = useCustomerFilters();
-  const form = useCustomerForm();
-
-  const [usersModalOpen, setUsersModalOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [customerUsers, setCustomerUsers] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
-  const [userSearch, setUserSearch] = useState('');
 
   const fetchCustomers = useCallback(async () => {
     try {
@@ -592,7 +580,7 @@ const CustomersManagement = () => {
       setCustomers(responseData.data || []);
       setTotalPages(responseData.pagination?.pages || 0);
       setTotal(responseData.pagination?.total || 0);
-    } catch (err) { setError('Failed to fetch customers'); }
+    } catch { setError('Failed to fetch customers'); }
     finally { setLoading(false); }
   }, [filters.page, limit, filters.debouncedSearch, filters.filterTag, filters.filterLocation, filters.filterUnit, setError]);
 
@@ -600,13 +588,14 @@ const CustomersManagement = () => {
     try {
       const response = await usersAPI.list({ limit: 1000 });
       setAllUsers(response?.data?.data || []);
-    } catch (err) { /* silent */ }
+    } catch { /* silent */ }
   }, []);
 
-  useEffect(() => {
-    if (isSuperAdmin()) { fetchCustomers(); fetchAllUsers(); filters.fetchFilterOptions(); }
-  }, [fetchCustomers, fetchAllUsers, filters.fetchFilterOptions, isSuperAdmin]);
+  return { customers, allUsers, loading, totalPages, total, fetchCustomers, fetchAllUsers };
+}
 
+/* ─── CRUD handlers hook ─── */
+function useCustomersCrud(form, fetchCustomers, setSuccess, setError) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -638,8 +627,26 @@ const CustomersManagement = () => {
     } catch (err) { setError(err.response?.data?.detail || 'Failed to toggle customer status'); }
   };
 
-  const refreshCustomerUsers = async () => {
-    const response = await customersAPI.getUsers(getCustomerId(selectedCustomer));
+  const handleExport = async (format) => {
+    try {
+      await performExport(format);
+      setSuccess(`Exported customers as ${format.toUpperCase()}`);
+    } catch { setError('Failed to export customers'); }
+  };
+
+  return { handleSubmit, handleDelete, handleToggleStatus, handleExport };
+}
+
+/* ─── User assignment hook ─── */
+function useCustomerUsers(setSuccess, setError) {
+  const [usersModalOpen, setUsersModalOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [customerUsers, setCustomerUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
+
+  const refreshCustomerUsers = async (customer) => {
+    const response = await customersAPI.getUsers(getCustomerId(customer));
     setCustomerUsers(response?.data || []);
   };
 
@@ -651,7 +658,7 @@ const CustomersManagement = () => {
     try {
       const response = await customersAPI.getUsers(getCustomerId(customer));
       setCustomerUsers(response?.data || []);
-    } catch (err) { setCustomerUsers([]); }
+    } catch { setCustomerUsers([]); }
     finally { setLoadingUsers(false); }
   };
 
@@ -659,7 +666,7 @@ const CustomersManagement = () => {
     try {
       await customersAPI.assignUsers(getCustomerId(selectedCustomer), [userId]);
       setSuccess('User assigned to customer');
-      await refreshCustomerUsers();
+      await refreshCustomerUsers(selectedCustomer);
     } catch (err) { setError(err.response?.data?.detail || 'Failed to assign user'); }
   };
 
@@ -667,26 +674,45 @@ const CustomersManagement = () => {
     try {
       await customersAPI.removeUsers(getCustomerId(selectedCustomer), [userId]);
       setSuccess('User removed from customer');
-      await refreshCustomerUsers();
+      await refreshCustomerUsers(selectedCustomer);
     } catch (err) { setError(err.response?.data?.detail || 'Failed to remove user'); }
   };
 
-  const availableUsers = filterAvailableUsers(allUsers, customerUsers, userSearch);
-
-  const handleExport = async (format) => {
-    try {
-      await performExport(format);
-      setSuccess(`Exported customers as ${format.toUpperCase()}`);
-    } catch (err) { setError('Failed to export customers'); }
+  return {
+    usersModalOpen, setUsersModalOpen, selectedCustomer,
+    customerUsers, loadingUsers, userSearch, setUserSearch,
+    showUsers, handleAssignUser, handleRemoveUser,
   };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Main Component
+   ═══════════════════════════════════════════════════════════ */
+const CustomersManagement = () => {
+  const { isSuperAdmin } = useAuth();
+  const [limit] = useState(25);
+
+  const { error, setError, success, setSuccess } = useAlertMessages();
+  const filters = useCustomerFilters();
+  const form = useCustomerForm();
+
+  const { customers, allUsers, loading, totalPages, total, fetchCustomers, fetchAllUsers } = useCustomersData(filters, limit, setError);
+  const crud = useCustomersCrud(form, fetchCustomers, setSuccess, setError);
+  const users = useCustomerUsers(setSuccess, setError);
+
+  useEffect(() => {
+    if (isSuperAdmin()) { fetchCustomers(); fetchAllUsers(); filters.fetchFilterOptions(); }
+  }, [fetchCustomers, fetchAllUsers, filters.fetchFilterOptions, isSuperAdmin]);
+
+  const availableUsers = filterAvailableUsers(allUsers, users.customerUsers, users.userSearch);
 
   if (!isSuperAdmin()) return <AccessDenied />;
 
-  const modalState = { modalOpen: form.modalOpen, usersModalOpen, editingCustomer: form.editingCustomer, selectedCustomer };
+  const modalState = { modalOpen: form.modalOpen, usersModalOpen: users.usersModalOpen, editingCustomer: form.editingCustomer, selectedCustomer: users.selectedCustomer };
 
   const formProps = {
     onClose: () => form.setModalOpen(false),
-    onSubmit: handleSubmit,
+    onSubmit: crud.handleSubmit,
     formFields: {
       formData: form.formData, handleInputChange: form.handleInputChange,
       editingCustomer: form.editingCustomer, newTag: form.newTag, setNewTag: form.setNewTag,
@@ -696,18 +722,18 @@ const CustomersManagement = () => {
   };
 
   const usersProps = {
-    onClose: () => setUsersModalOpen(false),
+    onClose: () => users.setUsersModalOpen(false),
     fields: {
-      loadingUsers, customerUsers,
-      userSearch, setUserSearch,
+      loadingUsers: users.loadingUsers, customerUsers: users.customerUsers,
+      userSearch: users.userSearch, setUserSearch: users.setUserSearch,
       availableUsers,
-      onAssignUser: handleAssignUser, onRemoveUser: handleRemoveUser,
+      onAssignUser: users.handleAssignUser, onRemoveUser: users.handleRemoveUser,
     },
   };
 
   return (
     <div className="space-y-6">
-      <CustomersHeader total={total} onExport={handleExport} onAddNew={form.openCreateModal} />
+      <CustomersHeader total={total} onExport={crud.handleExport} onAddNew={form.openCreateModal} />
       <AlertMessages error={error} success={success} />
 
       <SearchFiltersBar
@@ -720,8 +746,8 @@ const CustomersManagement = () => {
 
       <CustomersTable
         loading={loading} customers={customers}
-        onShowUsers={showUsers} onEdit={form.openEditModal}
-        onToggleStatus={handleToggleStatus} onDelete={handleDelete}
+        onShowUsers={users.showUsers} onEdit={form.openEditModal}
+        onToggleStatus={crud.handleToggleStatus} onDelete={crud.handleDelete}
         page={filters.page} limit={limit} total={total} totalPages={totalPages} setPage={filters.setPage}
       />
 

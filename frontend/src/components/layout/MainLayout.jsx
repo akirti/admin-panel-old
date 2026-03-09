@@ -112,6 +112,9 @@ function NavItem({ item, isActive, sidebarOpen, iconSize }) {
     </>
   );
 
+  const activeClass = active ? 'active' : '';
+  const alignClass = !sidebarOpen ? 'justify-center' : '';
+
   return (
     <li key={item.path || item.label}>
       {item.external ? (
@@ -119,14 +122,14 @@ function NavItem({ item, isActive, sidebarOpen, iconSize }) {
           href={item.href}
           target="_blank"
           rel="noopener noreferrer"
-          className={`sidebar-link ${!sidebarOpen ? 'justify-center' : ''}`}
+          className={`sidebar-link ${alignClass}`}
         >
           {linkContent}
         </a>
       ) : (
         <Link
           to={item.path}
-          className={`sidebar-link ${active ? 'active' : ''} ${!sidebarOpen ? 'justify-center' : ''}`}
+          className={`sidebar-link ${activeClass} ${alignClass}`}
         >
           {linkContent}
         </Link>

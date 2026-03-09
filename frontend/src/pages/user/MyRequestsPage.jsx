@@ -107,7 +107,7 @@ function MyRequestsPage() {
         ...prev,
         total: response.data?.pagination?.total || response.data?.paginiation?.total || 0
       }));
-    } catch (error) {
+    } catch {
       toast.error('Failed to load requests');
     } finally {
       setLoading(false);
