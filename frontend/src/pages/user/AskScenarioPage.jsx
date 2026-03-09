@@ -364,12 +364,116 @@ function FileUploadSection({ isEditMode, existingFiles, uploadedFiles, handleFil
   );
 }
 
-function AskScenarioPage() {
-  const navigate = useNavigate();
-  const { requestId } = useParams();
-  const { user, isEditor } = useAuth();
+// --- Extracted sub-components for the main form sections ---
 
-  const isEditMode = !!requestId;
+const INITIAL_FORM_DATA = {
+  requestType: 'scenario',
+  dataDomain: '',
+  name: '',
+  description: '',
+  has_suggestion: false,
+  knows_steps: false,
+  steps: [],
+  reason: '',
+  team: '',
+  assignee: '',
+  assignee_name: '',
+  status: '',
+  scenarioKey: '',
+  configName: '',
+  fulfilmentDate: '',
+  statusComment: ''
+};
+
+const INITIAL_STEP = { description: '', database: '', query: '' };
+
+// --- Custom hook: form state and handlers ---
+
+function useAskScenarioForm() {
+  const [formData, setFormData] = useState({ ...INITIAL_FORM_DATA });
+  const [newStep, setNewStep] = useState({ ...INITIAL_STEP });
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [existingFiles, setExistingFiles] = useState([]);
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleRichTextChange = (name, value) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const makeAssigneeChangeHandler = (jiraUsers) => (e) => {
+    const selectedUser = jiraUsers.find(u => u.accountId === e.target.value);
+    setFormData(prev => ({
+      ...prev,
+      assignee: e.target.value,
+      assignee_name: selectedUser ? selectedUser.displayName : ''
+    }));
+  };
+
+  const handleAddStep = () => {
+    if (!newStep.description.trim()) return;
+    const stepData = {
+      description: newStep.description,
+      database: newStep.database || null,
+      query: newStep.query ? [newStep.query] : [],
+      order: formData.steps.length + 1
+    };
+    setFormData(prev => ({
+      ...prev,
+      steps: [...prev.steps, stepData]
+    }));
+    setNewStep({ ...INITIAL_STEP });
+  };
+
+  const handleRemoveStep = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      steps: prev.steps.filter((_, i) => i !== index).map((step, i) => ({ ...step, order: i + 1 }))
+    }));
+  };
+
+  const handleFileUpload = (e) => {
+    const files = Array.from(e.target.files);
+    setUploadedFiles(prev => [...prev, ...files]);
+  };
+
+  const handleRemoveFile = (index) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const resetFormFromRequest = (request) => {
+    setFormData(buildFormDataFromRequest(request));
+    setExistingFiles(request.files || []);
+  };
+
+  const applyDefaults = (defaults, requestTypesData) => {
+    setFormData(prev => ({
+      ...prev,
+      requestType: requestTypesData[0].value,
+      team: defaults.team || '',
+      assignee: defaults.assignee || '',
+      assignee_name: defaults.assignee_name || ''
+    }));
+  };
+
+  return {
+    formData, setFormData, newStep, setNewStep,
+    uploadedFiles, existingFiles,
+    handleChange, handleRichTextChange, makeAssigneeChangeHandler,
+    handleAddStep, handleRemoveStep, handleFileUpload, handleRemoveFile,
+    resetFormFromRequest, applyDefaults
+  };
+}
+
+// --- Custom hook: data loading ---
+
+function useAskScenarioData({ isEditMode, isEditor, requestId, user, navigate, form }) {
   const [loading, setLoading] = useState(false);
   const [loadingRequest, setLoadingRequest] = useState(false);
   const [domains, setDomains] = useState([]);
@@ -378,39 +482,6 @@ function AskScenarioPage() {
   const [originalRequest, setOriginalRequest] = useState(null);
   const [jiraBoards, setJiraBoards] = useState([]);
   const [jiraUsers, setJiraUsers] = useState([]);
-
-  const [formData, setFormData] = useState({
-    requestType: 'scenario',
-    dataDomain: '',
-    name: '',
-    description: '',
-    has_suggestion: false,
-    knows_steps: false,
-    steps: [],
-    reason: '',
-    team: '',
-    assignee: '',
-    assignee_name: '',
-    status: '',
-    scenarioKey: '',
-    configName: '',
-    fulfilmentDate: '',
-    statusComment: ''
-  });
-
-  const [newStep, setNewStep] = useState({ description: '', database: '', query: '' });
-  const [uploadedFiles, setUploadedFiles] = useState([]);
-  const [existingFiles, setExistingFiles] = useState([]);
-
-  useEffect(() => {
-    loadLookups();
-  }, []);
-
-  useEffect(() => {
-    if (isEditMode) {
-      loadRequest();
-    }
-  }, [requestId]);
 
   const buildLookupPromises = () => {
     const promises = [
@@ -434,29 +505,6 @@ function AskScenarioPage() {
     return { defaults, requestTypes: results[1].data };
   };
 
-  const applyDefaultFormValues = (defaults, requestTypesData) => {
-    if (isEditMode) return;
-    if (!requestTypesData || requestTypesData.length === 0) return;
-    setFormData(prev => ({
-      ...prev,
-      requestType: requestTypesData[0].value,
-      team: defaults.team || '',
-      assignee: defaults.assignee || '',
-      assignee_name: defaults.assignee_name || ''
-    }));
-  };
-
-  const loadLookups = async () => {
-    try {
-      const results = await Promise.all(buildLookupPromises());
-      const { defaults, requestTypes: requestTypesData } = applyLookupResults(results);
-      applyDefaultFormValues(defaults, requestTypesData);
-      loadJiraData();
-    } catch {
-      // error handled silently
-    }
-  };
-
   const loadJiraData = async () => {
     try {
       const [boardsRes, usersRes] = await Promise.all([
@@ -465,6 +513,19 @@ function AskScenarioPage() {
       ]);
       setJiraBoards(boardsRes.data || []);
       setJiraUsers(usersRes.data || []);
+    } catch {
+      // error handled silently
+    }
+  };
+
+  const loadLookups = async () => {
+    try {
+      const results = await Promise.all(buildLookupPromises());
+      const { defaults, requestTypes: requestTypesData } = applyLookupResults(results);
+      if (!isEditMode && requestTypesData && requestTypesData.length > 0) {
+        form.applyDefaults(defaults, requestTypesData);
+      }
+      loadJiraData();
     } catch {
       // error handled silently
     }
@@ -486,8 +547,7 @@ function AskScenarioPage() {
         return;
       }
 
-      setFormData(buildFormDataFromRequest(request));
-      setExistingFiles(request.files || []);
+      form.resetFormFromRequest(request);
     } catch (error) {
       toast.error('Failed to load request');
       navigate('/my-requests');
@@ -496,87 +556,54 @@ function AskScenarioPage() {
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
+  useEffect(() => {
+    loadLookups();
+  }, []);
 
-  const handleRichTextChange = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleAssigneeChange = (e) => {
-    const selectedUser = jiraUsers.find(u => u.accountId === e.target.value);
-    setFormData(prev => ({
-      ...prev,
-      assignee: e.target.value,
-      assignee_name: selectedUser ? selectedUser.displayName : ''
-    }));
-  };
-
-  const handleAddStep = () => {
-    if (!newStep.description.trim()) return;
-    const stepData = {
-      description: newStep.description,
-      database: newStep.database || null,
-      query: newStep.query ? [newStep.query] : [],
-      order: formData.steps.length + 1
-    };
-    setFormData(prev => ({
-      ...prev,
-      steps: [...prev.steps, stepData]
-    }));
-    setNewStep({ description: '', database: '', query: '' });
-  };
-
-  const handleRemoveStep = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      steps: prev.steps.filter((_, i) => i !== index).map((step, i) => ({ ...step, order: i + 1 }))
-    }));
-  };
-
-  const handleFileUpload = (e) => {
-    const files = Array.from(e.target.files);
-    setUploadedFiles(prev => [...prev, ...files]);
-  };
-
-  const handleRemoveFile = (index) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const validateForm = () => {
-    if (!formData.dataDomain) {
-      toast.error('Please select a domain');
-      return false;
+  useEffect(() => {
+    if (isEditMode) {
+      loadRequest();
     }
-    if (!formData.name.trim()) {
-      toast.error('Please enter a scenario name');
-      return false;
-    }
-    if (!stripHtml(formData.description).trim()) {
-      toast.error('Please enter a description');
-      return false;
-    }
-    return true;
-  };
+  }, [requestId]);
 
-  const validateStatusChangeComment = () => {
-    if (!isEditMode || !isEditor() || !originalRequest) return true;
-    const statusChanged = formData.status && formData.status !== originalRequest.status;
-    if (!statusChanged) return true;
-    const hasComment = formData.statusComment && formData.statusComment.trim();
-    if (!hasComment) {
-      toast.error('Please provide a comment for the status change');
-      return false;
-    }
-    return true;
+  return {
+    loading, setLoading, loadingRequest,
+    domains, requestTypes, statuses, originalRequest,
+    jiraBoards, jiraUsers
   };
+}
 
-  const buildUserUpdateData = () => ({
+// --- Validation and data-building helpers (pure functions, outside hooks) ---
+
+function validateFormData(formData) {
+  if (!formData.dataDomain) {
+    toast.error('Please select a domain');
+    return false;
+  }
+  if (!formData.name.trim()) {
+    toast.error('Please enter a scenario name');
+    return false;
+  }
+  if (!stripHtml(formData.description).trim()) {
+    toast.error('Please enter a description');
+    return false;
+  }
+  return true;
+}
+
+function validateStatusComment(formData, isEditMode, isEditorFn, originalRequest) {
+  if (!isEditMode || !isEditorFn() || !originalRequest) return true;
+  const statusChanged = formData.status && formData.status !== originalRequest.status;
+  if (!statusChanged) return true;
+  if (!formData.statusComment || !formData.statusComment.trim()) {
+    toast.error('Please provide a comment for the status change');
+    return false;
+  }
+  return true;
+}
+
+function buildUserUpdatePayload(formData) {
+  return {
     name: formData.name.trim(),
     description: formData.description,
     has_suggestion: formData.has_suggestion,
@@ -586,29 +613,36 @@ function AskScenarioPage() {
     team: formData.team || null,
     assignee: formData.assignee || null,
     assignee_name: formData.assignee_name || null
-  });
-
-  const buildAdminUpdateData = () => buildAdminUpdate(formData, originalRequest, isEditor);
-
-  const uploadFiles = async (targetRequestId) => {
-    for (const file of uploadedFiles) {
-      try {
-        await scenarioRequestAPI.uploadFile(targetRequestId, file);
-      } catch (fileError) {
-        toast.error(`Failed to upload: ${file.name}`);
-      }
-    }
   };
+}
 
+async function uploadFilesToRequest(files, targetRequestId) {
+  for (const file of files) {
+    try {
+      await scenarioRequestAPI.uploadFile(targetRequestId, file);
+    } catch (fileError) {
+      toast.error(`Failed to upload: ${file.name}`);
+    }
+  }
+}
+
+function extractSubmitError(error) {
+  const errorMsg = error.response?.data?.detail || error.response?.data?.error || 'Failed to submit request';
+  return typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg);
+}
+
+// --- Custom hook: submission logic ---
+
+function useAskScenarioSubmit({ isEditMode, isEditor, requestId, formData, uploadedFiles, originalRequest, navigate, setLoading }) {
   const handleEditSubmit = async () => {
-    await scenarioRequestAPI.update(requestId, buildUserUpdateData());
+    await scenarioRequestAPI.update(requestId, buildUserUpdatePayload(formData));
 
-    const adminUpdateData = buildAdminUpdateData();
+    const adminUpdateData = buildAdminUpdate(formData, originalRequest, isEditor);
     if (Object.keys(adminUpdateData).length > 0) {
       await scenarioRequestAPI.adminUpdate(requestId, adminUpdateData);
     }
 
-    await uploadFiles(requestId);
+    await uploadFilesToRequest(uploadedFiles, requestId);
     toast.success('Scenario request updated successfully!');
     navigate(`/my-requests/${requestId}`);
   };
@@ -617,19 +651,18 @@ function AskScenarioPage() {
     const submitData = {
       requestType: formData.requestType,
       dataDomain: formData.dataDomain,
-      ...buildUserUpdateData()
+      ...buildUserUpdatePayload(formData)
     };
     const response = await scenarioRequestAPI.create(submitData);
-    const newRequestId = response.data.requestId;
-    await uploadFiles(newRequestId);
+    await uploadFilesToRequest(uploadedFiles, response.data.requestId);
     toast.success('Scenario request submitted successfully!');
     navigate('/my-requests');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
-    if (!validateStatusChangeComment()) return;
+    if (!validateFormData(formData)) return;
+    if (!validateStatusComment(formData, isEditMode, isEditor, originalRequest)) return;
 
     setLoading(true);
     try {
@@ -639,14 +672,308 @@ function AskScenarioPage() {
         await handleCreateSubmit();
       }
     } catch (error) {
-      const errorMsg = error.response?.data?.detail || error.response?.data?.error || 'Failed to submit request';
-      toast.error(typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg));
+      toast.error(extractSubmitError(error));
     } finally {
       setLoading(false);
     }
   };
 
-  if (isEditMode && loadingRequest) {
+  return { handleSubmit };
+}
+
+// --- Extracted JSX sub-components for form sections ---
+
+function PageHeader({ isEditMode, requestId, navigate }) {
+  return (
+    <div className="mb-6">
+      {isEditMode && (
+        <button type="button" onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-content-secondary hover:text-content mb-4">
+          <ArrowLeft size={18} />
+          Back
+        </button>
+      )}
+      <h1 className="text-2xl font-bold text-content">
+        {isEditMode ? 'Edit Scenario Request' : 'Ask for a New Scenario'}
+      </h1>
+      <p className="text-content-secondary mt-1">
+        {isEditMode
+          ? `Editing request ${requestId}`
+          : 'Submit a request for a new scenario or feature. Our team will review and respond.'}
+      </p>
+    </div>
+  );
+}
+
+function RequestTypeSelect({ formData, requestTypes, handleChange }) {
+  return (
+    <div className="w-full">
+      <label className="block text-sm font-medium text-content-secondary mb-2">
+        Request Type <span className="text-red-500">*</span>
+      </label>
+      <select name="requestType" value={formData.requestType} onChange={handleChange}
+        className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content">
+        {requestTypes.length === 0 && (
+          <option value="scenario">New Scenario Request</option>
+        )}
+        {requestTypes.map(type => (
+          <option key={type.value} value={type.value}>{type.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function DomainSelect({ formData, domains, handleChange }) {
+  return (
+    <div className="w-full">
+      <label className="block text-sm font-medium text-content-secondary mb-2">
+        Domain <span className="text-red-500">*</span>
+      </label>
+      <select name="dataDomain" value={formData.dataDomain} onChange={handleChange}
+        className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content" required>
+        <option value="">Select a domain...</option>
+        {domains.map(domain => (
+          <option key={domain.key || domain.value} value={domain.key || domain.value}>
+            {domain.name || domain.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function TeamAssigneeSection({ formData, jiraBoards, jiraUsers, handleChange, handleAssigneeChange }) {
+  const teamNotInBoards = formData.team && !jiraBoards.find(b => b.name === formData.team);
+  const assigneeNotInUsers = formData.assignee && !jiraUsers.find(u => u.accountId === formData.assignee);
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-3 border-t border-edge">
+      <div className="w-full">
+        <label className="block text-sm font-medium text-content-secondary mb-2">Team</label>
+        <select name="team" value={formData.team} onChange={handleChange}
+          className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content">
+          <option value="">Select a team...</option>
+          {jiraBoards.map(board => (
+            <option key={board.id} value={board.name}>{board.name}</option>
+          ))}
+          {teamNotInBoards && (
+            <option value={formData.team}>{formData.team}</option>
+          )}
+        </select>
+      </div>
+
+      <div className="w-full">
+        <label className="block text-sm font-medium text-content-secondary mb-2">Assignee</label>
+        <select name="assignee" value={formData.assignee} onChange={handleAssigneeChange}
+          className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content">
+          <option value="">Select an assignee...</option>
+          {jiraUsers.map(jUser => (
+            <option key={jUser.accountId} value={jUser.accountId}>
+              {jUser.displayName}{jUser.emailAddress ? ` (${jUser.emailAddress})` : ''}
+            </option>
+          ))}
+          {assigneeNotInUsers && (
+            <option value={formData.assignee}>{formData.assignee_name || formData.assignee}</option>
+          )}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+function BasicInfoSection({ formData, requestTypes, domains, jiraBoards, jiraUsers, handleChange, handleRichTextChange, handleAssigneeChange }) {
+  return (
+    <div className="card">
+      <div className="card-header">
+        <h2 className="text-lg font-semibold text-content">Basic Information</h2>
+      </div>
+      <div className="space-y-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <RequestTypeSelect formData={formData} requestTypes={requestTypes} handleChange={handleChange} />
+          <DomainSelect formData={formData} domains={domains} handleChange={handleChange} />
+        </div>
+
+        <div className="w-full">
+          <label className="block text-sm font-medium text-content-secondary mb-2">
+            Scenario Name <span className="text-red-500">*</span>
+          </label>
+          <input type="text" name="name" value={formData.name} onChange={handleChange}
+            className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
+            placeholder="Enter a descriptive name for your scenario" required />
+        </div>
+
+        <div className="w-full">
+          <label className="block text-sm font-medium text-content-secondary mb-2">
+            Description <span className="text-red-500">*</span>
+          </label>
+          <RichTextEditor value={formData.description}
+            onChange={(val) => handleRichTextChange('description', val)}
+            placeholder="Describe what you need this scenario to do. Include data requirements, expected output format, and any specific conditions..."
+            rows={8} />
+        </div>
+
+        <div className="w-full">
+          <label className="block text-sm font-medium text-content-secondary mb-2">
+            Reason / Business Justification
+          </label>
+          <RichTextEditor value={formData.reason}
+            onChange={(val) => handleRichTextChange('reason', val)}
+            placeholder="Why do you need this scenario? What business problem does it solve? (optional)"
+            rows={4} />
+        </div>
+
+        <TeamAssigneeSection
+          formData={formData} jiraBoards={jiraBoards} jiraUsers={jiraUsers}
+          handleChange={handleChange} handleAssigneeChange={handleAssigneeChange}
+        />
+      </div>
+    </div>
+  );
+}
+
+function StepItem({ step, index, onRemove }) {
+  return (
+    <div className="flex items-start gap-3 p-4 bg-surface-secondary rounded-lg border border-edge">
+      <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center text-sm font-semibold">
+        {index + 1}
+      </span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-content font-medium">{step.description}</p>
+        {step.database && (
+          <p className="text-xs text-content-muted mt-1">
+            <span className="font-medium">Database:</span> {step.database}
+          </p>
+        )}
+        {step.query && step.query.length > 0 && (
+          <pre className="text-xs text-content-secondary mt-2 bg-surface-hover p-2 rounded overflow-x-auto font-mono">
+            {step.query.join('\n')}
+          </pre>
+        )}
+      </div>
+      <button type="button" onClick={() => onRemove(index)}
+        className="flex-shrink-0 text-content-muted hover:text-red-600 p-1">
+        <Trash2 size={18} />
+      </button>
+    </div>
+  );
+}
+
+function NewStepForm({ newStep, setNewStep, onAddStep }) {
+  return (
+    <div className="bg-surface-secondary rounded-lg p-5 border border-edge space-y-4">
+      <div className="w-full">
+        <label className="block text-xs font-medium text-content-secondary mb-1">Step Description</label>
+        <input type="text" value={newStep.description}
+          onChange={(e) => setNewStep(prev => ({ ...prev, description: e.target.value }))}
+          className="w-full px-4 py-2.5 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
+          placeholder="What should this step do?" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="w-full">
+          <label className="block text-xs font-medium text-content-secondary mb-1">Database / Schema</label>
+          <input type="text" value={newStep.database}
+            onChange={(e) => setNewStep(prev => ({ ...prev, database: e.target.value }))}
+            className="w-full px-4 py-2.5 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
+            placeholder="e.g., sales_db.reporting" />
+        </div>
+        <div className="w-full">
+          <label className="block text-xs font-medium text-content-secondary mb-1">SQL Query Hint</label>
+          <input type="text" value={newStep.query}
+            onChange={(e) => setNewStep(prev => ({ ...prev, query: e.target.value }))}
+            className="w-full px-4 py-2.5 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
+            placeholder="SELECT ... FROM ... WHERE ..." />
+        </div>
+      </div>
+      <button type="button" onClick={onAddStep} disabled={!newStep.description.trim()}
+        className="btn-secondary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+        <Plus size={16} />
+        Add Step
+      </button>
+    </div>
+  );
+}
+
+function ImplementationDetailsSection({ formData, newStep, setNewStep, handleChange, handleAddStep, handleRemoveStep }) {
+  const showSteps = formData.has_suggestion || formData.knows_steps;
+
+  return (
+    <div className="card">
+      <div className="card-header flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-content">Implementation Details</h2>
+        <div className="flex items-center gap-2 text-sm text-content-secondary">
+          <HelpCircle size={16} />
+          <span>Optional but helpful</span>
+        </div>
+      </div>
+      <div className="space-y-5">
+        <div className="flex flex-wrap items-center gap-6">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="has_suggestion" checked={formData.has_suggestion} onChange={handleChange}
+              className="w-4 h-4 rounded border-edge text-primary-600 focus:ring-primary-500" />
+            <span className="text-sm text-content-secondary">I have suggestions for implementation</span>
+          </label>
+
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="knows_steps" checked={formData.knows_steps} onChange={handleChange}
+              className="w-4 h-4 rounded border-edge text-primary-600 focus:ring-primary-500" />
+            <span className="text-sm text-content-secondary">I know the required steps</span>
+          </label>
+        </div>
+
+        {showSteps && (
+          <div className="border-t border-edge pt-5">
+            <h3 className="text-sm font-medium text-content-secondary mb-4">Suggested Steps</h3>
+
+            {formData.steps.length > 0 && (
+              <div className="space-y-3 mb-5">
+                {formData.steps.map((step, index) => (
+                  <StepItem key={index} step={step} index={index} onRemove={handleRemoveStep} />
+                ))}
+              </div>
+            )}
+
+            <NewStepForm newStep={newStep} setNewStep={setNewStep} onAddStep={handleAddStep} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FormActions({ isEditMode, loading, navigate }) {
+  return (
+    <div className="flex justify-end gap-4 pb-6">
+      <button type="button" onClick={() => isEditMode ? navigate(-1) : navigate('/dashboard')}
+        className="btn-secondary px-6">
+        Cancel
+      </button>
+      <button type="submit" disabled={loading} className="btn-primary flex items-center gap-2 px-6">
+        <SubmitButtonIcon loading={loading} isEditMode={isEditMode} />
+        {isEditMode ? 'Save Changes' : 'Submit Request'}
+      </button>
+    </div>
+  );
+}
+
+// --- Main Component ---
+
+function AskScenarioPage() {
+  const navigate = useNavigate();
+  const { requestId } = useParams();
+  const { user, isEditor } = useAuth();
+  const isEditMode = !!requestId;
+
+  const form = useAskScenarioForm();
+  const data = useAskScenarioData({ isEditMode, isEditor, requestId, user, navigate, form });
+  const handleAssigneeChange = form.makeAssigneeChangeHandler(data.jiraUsers);
+  const { handleSubmit } = useAskScenarioSubmit({
+    isEditMode, isEditor, requestId,
+    formData: form.formData, uploadedFiles: form.uploadedFiles,
+    originalRequest: data.originalRequest, navigate, setLoading: data.setLoading
+  });
+
+  if (isEditMode && data.loadingRequest) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="animate-spin text-primary-600" size={32} />
@@ -658,249 +985,36 @@ function AskScenarioPage() {
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4">
-      <div className="mb-6">
-        {isEditMode && (
-          <button type="button" onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-content-secondary hover:text-content mb-4">
-            <ArrowLeft size={18} />
-            Back
-          </button>
-        )}
-        <h1 className="text-2xl font-bold text-content">
-          {isEditMode ? 'Edit Scenario Request' : 'Ask for a New Scenario'}
-        </h1>
-        <p className="text-content-secondary mt-1">
-          {isEditMode
-            ? `Editing request ${requestId}`
-            : 'Submit a request for a new scenario or feature. Our team will review and respond.'}
-        </p>
-      </div>
+      <PageHeader isEditMode={isEditMode} requestId={requestId} navigate={navigate} />
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Request Type & Domain */}
-        <div className="card">
-          <div className="card-header">
-            <h2 className="text-lg font-semibold text-content">Basic Information</h2>
-          </div>
-          <div className="space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="w-full">
-                <label className="block text-sm font-medium text-content-secondary mb-2">
-                  Request Type <span className="text-red-500">*</span>
-                </label>
-                <select name="requestType" value={formData.requestType} onChange={handleChange}
-                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content">
-                  {requestTypes.length === 0 && (
-                    <option value="scenario">New Scenario Request</option>
-                  )}
-                  {requestTypes.map(type => (
-                    <option key={type.value} value={type.value}>{type.label}</option>
-                  ))}
-                </select>
-              </div>
+        <BasicInfoSection
+          formData={form.formData} requestTypes={data.requestTypes} domains={data.domains}
+          jiraBoards={data.jiraBoards} jiraUsers={data.jiraUsers}
+          handleChange={form.handleChange} handleRichTextChange={form.handleRichTextChange}
+          handleAssigneeChange={handleAssigneeChange}
+        />
 
-              <div className="w-full">
-                <label className="block text-sm font-medium text-content-secondary mb-2">
-                  Domain <span className="text-red-500">*</span>
-                </label>
-                <select name="dataDomain" value={formData.dataDomain} onChange={handleChange}
-                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content" required>
-                  <option value="">Select a domain...</option>
-                  {domains.map(domain => (
-                    <option key={domain.key || domain.value} value={domain.key || domain.value}>
-                      {domain.name || domain.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+        <ImplementationDetailsSection
+          formData={form.formData} newStep={form.newStep} setNewStep={form.setNewStep}
+          handleChange={form.handleChange} handleAddStep={form.handleAddStep}
+          handleRemoveStep={form.handleRemoveStep}
+        />
 
-            <div className="w-full">
-              <label className="block text-sm font-medium text-content-secondary mb-2">
-                Scenario Name <span className="text-red-500">*</span>
-              </label>
-              <input type="text" name="name" value={formData.name} onChange={handleChange}
-                className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
-                placeholder="Enter a descriptive name for your scenario" required />
-            </div>
-
-            <div className="w-full">
-              <label className="block text-sm font-medium text-content-secondary mb-2">
-                Description <span className="text-red-500">*</span>
-              </label>
-              <RichTextEditor value={formData.description}
-                onChange={(val) => handleRichTextChange('description', val)}
-                placeholder="Describe what you need this scenario to do. Include data requirements, expected output format, and any specific conditions..."
-                rows={8} />
-            </div>
-
-            <div className="w-full">
-              <label className="block text-sm font-medium text-content-secondary mb-2">
-                Reason / Business Justification
-              </label>
-              <RichTextEditor value={formData.reason}
-                onChange={(val) => handleRichTextChange('reason', val)}
-                placeholder="Why do you need this scenario? What business problem does it solve? (optional)"
-                rows={4} />
-            </div>
-
-            {/* Team and Assignee */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-3 border-t border-edge">
-              <div className="w-full">
-                <label className="block text-sm font-medium text-content-secondary mb-2">Team</label>
-                <select name="team" value={formData.team} onChange={handleChange}
-                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content">
-                  <option value="">Select a team...</option>
-                  {jiraBoards.map(board => (
-                    <option key={board.id} value={board.name}>{board.name}</option>
-                  ))}
-                  {formData.team && !jiraBoards.find(b => b.name === formData.team) && (
-                    <option value={formData.team}>{formData.team}</option>
-                  )}
-                </select>
-              </div>
-
-              <div className="w-full">
-                <label className="block text-sm font-medium text-content-secondary mb-2">Assignee</label>
-                <select name="assignee" value={formData.assignee} onChange={handleAssigneeChange}
-                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content">
-                  <option value="">Select an assignee...</option>
-                  {jiraUsers.map(jUser => (
-                    <option key={jUser.accountId} value={jUser.accountId}>
-                      {jUser.displayName}{jUser.emailAddress ? ` (${jUser.emailAddress})` : ''}
-                    </option>
-                  ))}
-                  {formData.assignee && !jiraUsers.find(u => u.accountId === formData.assignee) && (
-                    <option value={formData.assignee}>{formData.assignee_name || formData.assignee}</option>
-                  )}
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Steps Section */}
-        <div className="card">
-          <div className="card-header flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-content">Implementation Details</h2>
-            <div className="flex items-center gap-2 text-sm text-content-secondary">
-              <HelpCircle size={16} />
-              <span>Optional but helpful</span>
-            </div>
-          </div>
-          <div className="space-y-5">
-            <div className="flex flex-wrap items-center gap-6">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" name="has_suggestion" checked={formData.has_suggestion} onChange={handleChange}
-                  className="w-4 h-4 rounded border-edge text-primary-600 focus:ring-primary-500" />
-                <span className="text-sm text-content-secondary">I have suggestions for implementation</span>
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" name="knows_steps" checked={formData.knows_steps} onChange={handleChange}
-                  className="w-4 h-4 rounded border-edge text-primary-600 focus:ring-primary-500" />
-                <span className="text-sm text-content-secondary">I know the required steps</span>
-              </label>
-            </div>
-
-            {(formData.has_suggestion || formData.knows_steps) && (
-              <div className="border-t border-edge pt-5">
-                <h3 className="text-sm font-medium text-content-secondary mb-4">Suggested Steps</h3>
-
-                {formData.steps.length > 0 && (
-                  <div className="space-y-3 mb-5">
-                    {formData.steps.map((step, index) => (
-                      <div key={index} className="flex items-start gap-3 p-4 bg-surface-secondary rounded-lg border border-edge">
-                        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center text-sm font-semibold">
-                          {index + 1}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-content font-medium">{step.description}</p>
-                          {step.database && (
-                            <p className="text-xs text-content-muted mt-1">
-                              <span className="font-medium">Database:</span> {step.database}
-                            </p>
-                          )}
-                          {step.query && step.query.length > 0 && (
-                            <pre className="text-xs text-content-secondary mt-2 bg-surface-hover p-2 rounded overflow-x-auto font-mono">
-                              {step.query.join('\n')}
-                            </pre>
-                          )}
-                        </div>
-                        <button type="button" onClick={() => handleRemoveStep(index)}
-                          className="flex-shrink-0 text-content-muted hover:text-red-600 p-1">
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="bg-surface-secondary rounded-lg p-5 border border-edge space-y-4">
-                  <div className="w-full">
-                    <label className="block text-xs font-medium text-content-secondary mb-1">Step Description</label>
-                    <input type="text" value={newStep.description}
-                      onChange={(e) => setNewStep(prev => ({ ...prev, description: e.target.value }))}
-                      className="w-full px-4 py-2.5 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
-                      placeholder="What should this step do?" />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="w-full">
-                      <label className="block text-xs font-medium text-content-secondary mb-1">Database / Schema</label>
-                      <input type="text" value={newStep.database}
-                        onChange={(e) => setNewStep(prev => ({ ...prev, database: e.target.value }))}
-                        className="w-full px-4 py-2.5 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
-                        placeholder="e.g., sales_db.reporting" />
-                    </div>
-                    <div className="w-full">
-                      <label className="block text-xs font-medium text-content-secondary mb-1">SQL Query Hint</label>
-                      <input type="text" value={newStep.query}
-                        onChange={(e) => setNewStep(prev => ({ ...prev, query: e.target.value }))}
-                        className="w-full px-4 py-2.5 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
-                        placeholder="SELECT ... FROM ... WHERE ..." />
-                    </div>
-                  </div>
-                  <button type="button" onClick={handleAddStep} disabled={!newStep.description.trim()}
-                    className="btn-secondary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <Plus size={16} />
-                    Add Step
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Admin Fields - Only for editors in edit mode */}
         {showAdminSettings && (
           <AdminSettingsSection
-            formData={formData}
-            handleChange={handleChange}
-            statuses={statuses}
-            originalRequest={originalRequest}
+            formData={form.formData} handleChange={form.handleChange}
+            statuses={data.statuses} originalRequest={data.originalRequest}
           />
         )}
 
-        {/* File Upload */}
         <FileUploadSection
-          isEditMode={isEditMode}
-          existingFiles={existingFiles}
-          uploadedFiles={uploadedFiles}
-          handleFileUpload={handleFileUpload}
-          handleRemoveFile={handleRemoveFile}
+          isEditMode={isEditMode} existingFiles={form.existingFiles}
+          uploadedFiles={form.uploadedFiles} handleFileUpload={form.handleFileUpload}
+          handleRemoveFile={form.handleRemoveFile}
         />
 
-        {/* Submit Button */}
-        <div className="flex justify-end gap-4 pb-6">
-          <button type="button" onClick={() => isEditMode ? navigate(-1) : navigate('/dashboard')}
-            className="btn-secondary px-6">
-            Cancel
-          </button>
-          <button type="submit" disabled={loading} className="btn-primary flex items-center gap-2 px-6">
-            <SubmitButtonIcon loading={loading} isEditMode={isEditMode} />
-            {isEditMode ? 'Save Changes' : 'Submit Request'}
-          </button>
-        </div>
+        <FormActions isEditMode={isEditMode} loading={data.loading} navigate={navigate} />
       </form>
     </div>
   );

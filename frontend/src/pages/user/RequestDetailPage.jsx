@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import DOMPurify from 'dompurify';
-import toast from 'react-hot-toast';
 import {
   ArrowLeft,
   Clock,
@@ -26,9 +25,12 @@ import {
   Trash2,
   Link
 } from 'lucide-react';
-import { scenarioRequestAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { Modal } from '../../components/shared';
+import useRequestData from '../../hooks/useRequestData';
+import useRequestComments from '../../hooks/useRequestComments';
+import useRequestFiles from '../../hooks/useRequestFiles';
+import useRequestJira from '../../hooks/useRequestJira';
 
 // Status config matching backend ScenarioRequestStatusTypes enum values
 const STATUS_CONFIG = {
@@ -780,187 +782,27 @@ function JiraLinkModalContent({ newJiraLink, setNewJiraLink, onSubmit, onCancel,
   );
 }
 
-const DEFAULT_JIRA_LINK = { ticket_key: '', ticket_url: '', title: '', link_type: 'dependency' };
-
-function extractErrorMessage(error, fallback) {
-  const errorMsg = error.response?.data?.detail || error.response?.data?.error || fallback;
-  return typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg);
-}
-
-function triggerFileDownload(blob, fileName) {
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
-  a.click();
-  window.URL.revokeObjectURL(url);
-}
-
-function buildJiraLinkPayload(newJiraLink) {
-  return {
-    ticket_key: newJiraLink.ticket_key.trim().toUpperCase(),
-    ticket_url: newJiraLink.ticket_url.trim() || null,
-    title: newJiraLink.title.trim() || null,
-    link_type: newJiraLink.link_type
-  };
-}
-
 function RequestDetailPage() {
   const { requestId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isEditor } = useAuth();
 
-  const [request, setRequest] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [newComment, setNewComment] = useState('');
-  const [submittingComment, setSubmittingComment] = useState(false);
-  const [previewData, setPreviewData] = useState(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
-
-  // Data Delivery upload states
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploadFile, setUploadFile] = useState(null);
-  const [uploadComment, setUploadComment] = useState('');
-  const [uploading, setUploading] = useState(false);
-
-  // Pagination for preview
-  const [previewPage, setPreviewPage] = useState(0);
-
-  // Jira link states
-  const [showAddJiraLinkModal, setShowAddJiraLinkModal] = useState(false);
-  const [newJiraLink, setNewJiraLink] = useState({ ...DEFAULT_JIRA_LINK });
-  const [addingJiraLink, setAddingJiraLink] = useState(false);
-  const [removingJiraLinkIndex, setRemovingJiraLinkIndex] = useState(null);
-
-  useEffect(() => {
-    loadRequest();
-  }, [requestId]);
-
-  const loadRequest = async () => {
-    setLoading(true);
-    try {
-      const response = await scenarioRequestAPI.get(requestId);
-      setRequest(response.data);
-    } catch {
-      toast.error('Failed to load request');
-      navigate('/my-requests');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddComment = async () => {
-    if (!newComment.trim()) return;
-
-    setSubmittingComment(true);
-    try {
-      await scenarioRequestAPI.addComment(requestId, newComment);
-      setNewComment('');
-      loadRequest();
-      toast.success('Comment added');
-    } catch {
-      toast.error('Failed to add comment');
-    } finally {
-      setSubmittingComment(false);
-    }
-  };
-
-  const handlePreviewFile = async (filePath) => {
-    setPreviewLoading(true);
-    setPreviewPage(0);
-    try {
-      const response = await scenarioRequestAPI.previewFile(requestId, filePath);
-      setPreviewData({ ...response.data, fileName: filePath.split('/').pop() });
-    } catch {
-      toast.error('Failed to load preview');
-    } finally {
-      setPreviewLoading(false);
-    }
-  };
-
-  const handleDownloadFile = async (filePath) => {
-    try {
-      const response = await scenarioRequestAPI.downloadFile(requestId, filePath);
-      triggerFileDownload(new Blob([response.data]), filePath.split('/').pop());
-    } catch {
-      toast.error('Failed to download file');
-    }
-  };
-
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('File size must be less than 10MB');
-      return;
-    }
-    setUploadFile(file);
-  };
-
-  const handleUploadBucketFile = async () => {
-    if (!uploadFile) return;
-
-    setUploading(true);
-    try {
-      await scenarioRequestAPI.uploadBucketFile(requestId, uploadFile, uploadComment);
-      toast.success('Data snapshot uploaded successfully');
-      setShowUploadModal(false);
-      setUploadFile(null);
-      setUploadComment('');
-      loadRequest();
-    } catch (error) {
-      toast.error(extractErrorMessage(error, 'Failed to upload file'));
-    } finally {
-      setUploading(false);
-    }
-  };
+  const { request, loading, loadRequest } = useRequestData(requestId);
+  const { newComment, setNewComment, submittingComment, handleAddComment } = useRequestComments(requestId, loadRequest);
+  const {
+    previewData, previewLoading, previewPage, setPreviewPage,
+    showUploadModal, setShowUploadModal, uploadFile, uploadComment, setUploadComment, uploading,
+    handlePreviewFile, handleDownloadFile, handleFileSelect, handleUploadBucketFile,
+    closeUploadModal, closePreviewModal
+  } = useRequestFiles(requestId, loadRequest);
+  const {
+    showAddJiraLinkModal, setShowAddJiraLinkModal, newJiraLink, setNewJiraLink,
+    addingJiraLink, removingJiraLinkIndex,
+    handleAddJiraLink, handleRemoveJiraLink, closeJiraLinkModal
+  } = useRequestJira(requestId, loadRequest);
 
   const canUploadBucketFiles = () => isEditor() && UPLOAD_ALLOWED_STATUSES.includes(request?.status);
-
-  const handleAddJiraLink = async () => {
-    if (!newJiraLink.ticket_key.trim()) {
-      toast.error('Jira ticket key is required');
-      return;
-    }
-
-    setAddingJiraLink(true);
-    try {
-      await scenarioRequestAPI.addJiraLink(requestId, buildJiraLinkPayload(newJiraLink));
-      toast.success('Jira link added');
-      setShowAddJiraLinkModal(false);
-      setNewJiraLink({ ...DEFAULT_JIRA_LINK });
-      loadRequest();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to add Jira link');
-    } finally {
-      setAddingJiraLink(false);
-    }
-  };
-
-  const handleRemoveJiraLink = async (index) => {
-    setRemovingJiraLinkIndex(index);
-    try {
-      await scenarioRequestAPI.removeJiraLink(requestId, index);
-      toast.success('Jira link removed');
-      loadRequest();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to remove Jira link');
-    } finally {
-      setRemovingJiraLinkIndex(null);
-    }
-  };
-
-  const closeUploadModal = () => {
-    setShowUploadModal(false);
-    setUploadFile(null);
-    setUploadComment('');
-  };
-
-  const closeJiraLinkModal = () => {
-    setShowAddJiraLinkModal(false);
-    setNewJiraLink({ ...DEFAULT_JIRA_LINK });
-  };
 
   if (loading) {
     return (
@@ -1063,7 +905,7 @@ function RequestDetailPage() {
       {/* Preview Modal */}
       <Modal
         isOpen={!!previewData}
-        onClose={() => { setPreviewData(null); setPreviewPage(0); }}
+        onClose={closePreviewModal}
         title={previewData?.fileName || 'Preview'}
         size="full"
       >

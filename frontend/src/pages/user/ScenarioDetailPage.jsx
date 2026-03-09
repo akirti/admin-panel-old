@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { scenariosAPI, playboardsAPI, domainsAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, Button, Input, Modal, Badge, Select, Toggle, FileUpload } from '../../components/shared';
 import {
@@ -17,7 +16,13 @@ import {
   Upload,
   X
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import useScenarioData from '../../hooks/useScenarioData';
+import usePlayboardModal from '../../hooks/usePlayboardModal';
+import usePlayboardUpload from '../../hooks/usePlayboardUpload';
+import useFilterBuilder from '../../hooks/useFilterBuilder';
+import useRowActionBuilder from '../../hooks/useRowActionBuilder';
+import useDescriptionBuilder from '../../hooks/useDescriptionBuilder';
+import useAddonManager from '../../hooks/useAddonManager';
 
 function getSubmitLabel(saving, editing) {
   if (saving) return 'Saving...';
@@ -26,85 +31,6 @@ function getSubmitLabel(saving, editing) {
 
 function isStatusActive(status) {
   return status === 'active' || status === 'A';
-}
-
-function parseWidgetsFromData(data) {
-  const defaultWidgets = {
-    filters: [],
-    grid: {
-      actions: {
-        rowActions: { renderAs: 'button', attributes: [], events: [] },
-        headerActions: {}
-      },
-      layout: { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 }
-    },
-    pagination: []
-  };
-
-  if (!data.widgets) return defaultWidgets;
-
-  const w = data.widgets;
-  return {
-    filters: w.filters || [],
-    grid: {
-      actions: {
-        rowActions: {
-          renderAs: w.grid?.actions?.rowActions?.renderAs || 'button',
-          attributes: w.grid?.actions?.rowActions?.attributes || [],
-          events: w.grid?.actions?.rowActions?.events || []
-        },
-        headerActions: w.grid?.actions?.headerActions || {}
-      },
-      layout: {
-        colums: w.grid?.layout?.colums || [],
-        headers: w.grid?.layout?.headers || [],
-        footer: w.grid?.layout?.footer || [],
-        ispaginated: w.grid?.layout?.ispaginated !== undefined ? w.grid.layout.ispaginated : true,
-        defaultSize: w.grid?.layout?.defaultSize || 25
-      }
-    },
-    pagination: w.pagination || []
-  };
-}
-
-function buildFormDataFromItem(item, scenarioKey) {
-  const data = item.data || {};
-  return {
-    key: data.key || item.name || '',
-    name: item.name || '',
-    description: item.description || '',
-    scenarioKey: item.scenarioKey || data.scenarioKey || scenarioKey,
-    dataDomain: data.dataDomain || '',
-    status: data.status || (item.status === 'active' ? 'A' : 'I'),
-    order: data.order || 0,
-    program_key: data.program_key || '',
-    config_type: data.config_type || 'db',
-    addon_configurations: data.addon_configurations || [],
-    widgets: parseWidgetsFromData(data),
-    scenarioDescription: data.scenarioDescription || []
-  };
-}
-
-function buildPayload(formData, scenarioKey) {
-  return {
-    name: formData.name,
-    description: formData.description,
-    scenarioKey: formData.scenarioKey || scenarioKey,
-    status: formData.status === 'A' ? 'active' : 'inactive',
-    data: {
-      key: formData.key,
-      dataDomain: formData.dataDomain,
-      scenarioKey: formData.scenarioKey || scenarioKey,
-      scenerioKey: formData.scenarioKey || scenarioKey,
-      order: formData.order,
-      status: formData.status,
-      program_key: formData.program_key,
-      config_type: formData.config_type,
-      addon_configurations: formData.addon_configurations,
-      widgets: formData.widgets,
-      scenarioDescription: formData.scenarioDescription
-    }
-  };
 }
 
 const FORM_TABS = [
@@ -116,537 +42,73 @@ const FORM_TABS = [
   { id: 'json', label: 'JSON Preview' }
 ];
 
-const INITIAL_FILTER = {
-  name: '', dataKey: '', displayName: '', index: 0, visible: true,
-  status: 'Y', inputHint: '', title: '', type: 'input', defaultValue: '', regex: '', options: []
-};
-
-const INITIAL_ROW_ACTION = { key: '', name: '', path: '', dataDomain: '', status: 'A', order: 0, filters: [] };
-
-const INITIAL_DESCRIPTION = { index: 0, type: 'h3', text: '', nodes: [] };
-
-function buildNewFilter(currentFilter, existingFiltersCount) {
-  const newFilter = {
-    name: currentFilter.name,
-    dataKey: currentFilter.dataKey || currentFilter.name,
-    displayName: currentFilter.displayName,
-    index: existingFiltersCount,
-    visible: currentFilter.visible,
-    status: currentFilter.status,
-    inputHint: currentFilter.inputHint,
-    title: currentFilter.title,
-    attributes: [
-      { key: 'type', value: currentFilter.type },
-      { key: 'defaultValue', value: currentFilter.defaultValue },
-      { key: 'regex', value: currentFilter.regex }
-    ],
-    description: [],
-    validators: []
-  };
-
-  if (currentFilter.type === 'select' && currentFilter.options.length > 0) {
-    newFilter.attributes.push({ key: 'options', value: currentFilter.options });
-  }
-
-  return newFilter;
-}
-
-function addFilterToFormData(formData, newFilter) {
-  return {
-    ...formData,
-    widgets: {
-      ...formData.widgets,
-      filters: [...formData.widgets.filters, newFilter]
-    }
-  };
-}
-
-function removeFilterFromFormData(formData, index) {
-  const newFilters = formData.widgets.filters.filter((_, i) => i !== index);
-  return {
-    ...formData,
-    widgets: {
-      ...formData.widgets,
-      filters: newFilters.map((f, i) => ({ ...f, index: i }))
-    }
-  };
-}
-
-function addRowActionToFormData(formData, currentRowAction) {
-  const newAction = {
-    key: currentRowAction.key,
-    name: currentRowAction.name,
-    path: currentRowAction.path,
-    dataDomain: currentRowAction.dataDomain,
-    status: currentRowAction.status,
-    order: formData.widgets.grid.actions.rowActions.events.length,
-    filters: currentRowAction.filters
-  };
-
-  return {
-    ...formData,
-    widgets: {
-      ...formData.widgets,
-      grid: {
-        ...formData.widgets.grid,
-        actions: {
-          ...formData.widgets.grid.actions,
-          rowActions: {
-            ...formData.widgets.grid.actions.rowActions,
-            events: [...formData.widgets.grid.actions.rowActions.events, newAction]
-          }
-        }
-      }
-    }
-  };
-}
-
-function removeRowActionFromFormData(formData, index) {
-  const newEvents = formData.widgets.grid.actions.rowActions.events.filter((_, i) => i !== index);
-  return {
-    ...formData,
-    widgets: {
-      ...formData.widgets,
-      grid: {
-        ...formData.widgets.grid,
-        actions: {
-          ...formData.widgets.grid.actions,
-          rowActions: {
-            ...formData.widgets.grid.actions.rowActions,
-            events: newEvents.map((e, i) => ({ ...e, order: i }))
-          }
-        }
-      }
-    }
-  };
-}
-
-function triggerPlayboardDownload(playboard, responseData) {
-  const blob = new Blob([JSON.stringify(responseData, null, 2)], { type: 'application/json' });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${playboard.data?.key || playboard.key || playboard.name}.json`;
-  document.body.appendChild(a);
-  a.click();
-  window.URL.revokeObjectURL(url);
-  document.body.removeChild(a);
-}
-
 function ScenarioDetailPage() {
   const { scenarioKey, domainKey } = useParams();
   const { isSuperAdmin, isEditor, hasPermission } = useAuth();
 
-  const [scenario, setScenario] = useState(null);
-  const [playboards, setPlayboards] = useState([]);
-  const [domains, setDomains] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('playboards');
-
-  // Modal states
-  const [modalOpen, setModalOpen] = useState(false);
-  const [uploadModalOpen, setUploadModalOpen] = useState(false);
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [selectedPlayboard, setSelectedPlayboard] = useState(null);
-  const [formActiveTab, setFormActiveTab] = useState('basic');
-  const [saving, setSaving] = useState(false);
-
-  // Upload state
-  const [uploadFile, setUploadFile] = useState(null);
-  const [uploadName, setUploadName] = useState('');
-  const [uploadDescription, setUploadDescription] = useState('');
-  const [jsonPreview, setJsonPreview] = useState(null);
-
-  // Form state
-  const [formData, setFormData] = useState({
-    key: '',
-    name: '',
-    description: '',
-    scenarioKey: '',
-    dataDomain: '',
-    status: 'A',
-    order: 0,
-    program_key: '',
-    config_type: 'db',
-    addon_configurations: [],
-    widgets: {
-      filters: [],
-      grid: {
-        actions: {
-          rowActions: {
-            renderAs: 'button',
-            attributes: [],
-            events: []
-          },
-          headerActions: {}
-        },
-        layout: {
-          colums: [],
-          headers: [],
-          footer: [],
-          ispaginated: true,
-          defaultSize: 25
-        }
-      },
-      pagination: []
-    },
-    scenarioDescription: []
-  });
-
-  // Filter builder state
-  const [currentFilter, setCurrentFilter] = useState({ ...INITIAL_FILTER });
-
-  // Row action builder state
-  const [currentRowAction, setCurrentRowAction] = useState({ ...INITIAL_ROW_ACTION });
-
-  // Row action filter input state
-  const [actionFilterInput, setActionFilterInput] = useState({ inputKey: '', dataKey: '' });
-
-  // Description builder state
-  const [currentDescription, setCurrentDescription] = useState({ ...INITIAL_DESCRIPTION });
-
-  // Options management for select filters
-  const [optionInput, setOptionInput] = useState({ value: '', name: '' });
-
-  // Addon configurations management
-  const [addonInput, setAddonInput] = useState('');
+  const [activeTab, setActiveTab] = React.useState('playboards');
 
   // Permission checks
   const canEdit = isSuperAdmin() || isEditor() || hasPermission('scenarios.edit');
   const canAdd = isSuperAdmin() || hasPermission('playboards.create');
   const canDelete = isSuperAdmin() || hasPermission('playboards.delete');
 
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [scenarioRes, playboardsRes, domainsRes] = await Promise.all([
-        scenariosAPI.get(scenarioKey),
-        scenariosAPI.getPlayboards(scenarioKey),
-        domainsAPI.list({ limit: 100 })
-      ]);
-      setScenario(scenarioRes.data);
-      setPlayboards(playboardsRes.data || []);
-      setDomains(domainsRes.data.data || domainsRes.data || []);
-    } catch {
-      toast.error('Failed to load scenario details');
-    } finally {
-      setLoading(false);
-    }
-  }, [scenarioKey]);
+  // Custom hooks
+  const { scenario, playboards, domains, loading, fetchData } = useScenarioData(scenarioKey);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const {
+    modalOpen, setModalOpen, editingItem,
+    formData, setFormData, saving,
+    formActiveTab, setFormActiveTab,
+    selectedPlayboard, detailModalOpen, setDetailModalOpen,
+    resetForm,
+    handleAddPlayboard, openEditModal,
+    handleCreate, handleUpdate,
+    handleDeletePlayboard, handleDownloadPlayboard,
+    handleViewDetails,
+    updateRowActionsRenderAs, updateGridLayout
+  } = usePlayboardModal(scenarioKey, fetchData);
 
-  const resetForm = () => {
-    setFormData({
-      key: '',
-      name: '',
-      description: '',
-      scenarioKey: scenarioKey,
-      dataDomain: '',
-      status: 'A',
-      order: 0,
-      program_key: '',
-      config_type: 'db',
-      addon_configurations: [],
-      widgets: {
-        filters: [],
-        grid: {
-          actions: {
-            rowActions: {
-              renderAs: 'button',
-              attributes: [],
-              events: []
-            },
-            headerActions: {}
-          },
-          layout: {
-            colums: [],
-            headers: [],
-            footer: [],
-            ispaginated: true,
-            defaultSize: 25
-          }
-        },
-        pagination: [
-          {
-            name: 'limit',
-            dataKey: 'limit',
-            displayName: 'Result Size',
-            index: 0,
-            visible: true,
-            attributes: [
-              { key: 'type', value: 'dropdown' },
-              { key: 'options', value: '25,50,75,100' },
-              { key: 'defaultValue', value: '25' },
-              { key: 'width', value: '10em' }
-            ]
-          }
-        ]
-      },
-      scenarioDescription: []
-    });
-    setEditingItem(null);
-    setFormActiveTab('basic');
-    setCurrentFilter({ ...INITIAL_FILTER });
-    setCurrentRowAction({ ...INITIAL_ROW_ACTION });
-    setCurrentDescription({ ...INITIAL_DESCRIPTION });
-  };
+  const {
+    uploadModalOpen, setUploadModalOpen,
+    uploadFile, uploadName, setUploadName,
+    uploadDescription, setUploadDescription,
+    jsonPreview,
+    handleFileSelect, handleFileUpload, resetUploadForm
+  } = usePlayboardUpload(scenarioKey, fetchData);
 
-  const handleAddPlayboard = () => {
-    resetForm();
-    setFormData(prev => ({ ...prev, scenarioKey: scenarioKey }));
-    setModalOpen(true);
-  };
+  const {
+    currentFilter, setCurrentFilter,
+    optionInput, setOptionInput,
+    addFilter, removeFilter,
+    addOption, removeOption,
+    resetFilter
+  } = useFilterBuilder(formData, setFormData);
 
-  const openEditModal = (item) => {
-    setEditingItem(item);
-    setFormData(buildFormDataFromItem(item, scenarioKey));
-    setModalOpen(true);
-  };
+  const {
+    currentRowAction, setCurrentRowAction,
+    actionFilterInput, setActionFilterInput,
+    addRowAction, removeRowAction,
+    addActionFilter, removeActionFilter,
+    resetRowAction
+  } = useRowActionBuilder(formData, setFormData);
 
-  const handleSavePlayboard = async (apiCall, successMsg, errorMsg) => {
-    setSaving(true);
-    try {
-      const payload = buildPayload(formData, scenarioKey);
-      await apiCall(payload);
-      toast.success(successMsg);
-      setModalOpen(false);
-      resetForm();
-      fetchData();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || errorMsg);
-    } finally {
-      setSaving(false);
-    }
-  };
+  const {
+    currentDescription, setCurrentDescription,
+    addDescription, removeDescription,
+    resetDescription
+  } = useDescriptionBuilder(formData, setFormData);
 
-  const handleCreate = (e) => {
-    e.preventDefault();
-    handleSavePlayboard(
-      (payload) => playboardsAPI.create(payload),
-      'Playboard created successfully',
-      'Failed to create playboard'
-    );
-  };
-
-  const handleUpdate = (e) => {
-    e.preventDefault();
-    handleSavePlayboard(
-      (payload) => playboardsAPI.update(editingItem.id || editingItem._id, payload),
-      'Playboard updated successfully',
-      'Failed to update playboard'
-    );
-  };
-
-  const handleDeletePlayboard = async (playboard) => {
-    if (!window.confirm(`Are you sure you want to delete "${playboard.name}"?`)) {
-      return;
-    }
-    try {
-      await playboardsAPI.delete(playboard._id || playboard.id);
-      toast.success('Playboard deleted successfully');
-      fetchData();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to delete playboard');
-    }
-  };
-
-  const handleDownloadPlayboard = async (playboard) => {
-    try {
-      const response = await playboardsAPI.download(playboard._id || playboard.id);
-      triggerPlayboardDownload(playboard, response.data);
-      toast.success('Playboard downloaded');
-    } catch {
-      toast.error('Failed to download playboard');
-    }
-  };
-
-  const handleViewDetails = (item) => {
-    setSelectedPlayboard(item);
-    setDetailModalOpen(true);
-  };
-
-  // File upload handlers
-  const handleFileSelect = async (file) => {
-    setUploadFile(file);
-    if (file && file.name.endsWith('.json')) {
-      try {
-        const text = await file.text();
-        const json = JSON.parse(text);
-        setJsonPreview(json);
-        if (json.key) setUploadName(json.key);
-      } catch {
-        toast.error('Invalid JSON file');
-        setJsonPreview(null);
-      }
-    }
-  };
-
-  const handleFileUpload = async (e) => {
-    e.preventDefault();
-    if (!uploadFile) {
-      toast.error('Please select a file');
-      return;
-    }
-
-    const formDataUpload = new FormData();
-    formDataUpload.append('file', uploadFile);
-
-    try {
-      await playboardsAPI.upload(formDataUpload, {
-        scenario_key: scenarioKey,
-        name: uploadName || undefined,
-        description: uploadDescription || undefined
-      });
-      toast.success('Playboard uploaded successfully');
-      setUploadModalOpen(false);
-      resetUploadForm();
-      fetchData();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Upload failed');
-    }
-  };
-
-  const resetUploadForm = () => {
-    setUploadFile(null);
-    setUploadName('');
-    setUploadDescription('');
-    setJsonPreview(null);
-  };
-
-  // Filter management
-  const addFilter = () => {
-    const newFilter = buildNewFilter(currentFilter, formData.widgets.filters.length);
-    setFormData(addFilterToFormData(formData, newFilter));
-    setCurrentFilter({ ...INITIAL_FILTER });
-  };
-
-  const removeFilter = (index) => {
-    setFormData(removeFilterFromFormData(formData, index));
-  };
-
-  // Row action management
-  const addRowAction = () => {
-    setFormData(addRowActionToFormData(formData, currentRowAction));
-    setCurrentRowAction({ ...INITIAL_ROW_ACTION });
-  };
-
-  const removeRowAction = (index) => {
-    setFormData(removeRowActionFromFormData(formData, index));
-  };
-
-  // Action filter management
-  const addActionFilter = () => {
-    if (actionFilterInput.inputKey && actionFilterInput.dataKey) {
-      setCurrentRowAction({
-        ...currentRowAction,
-        filters: [...currentRowAction.filters, { inputKey: actionFilterInput.inputKey, dataKey: actionFilterInput.dataKey }]
-      });
-      setActionFilterInput({ inputKey: '', dataKey: '' });
-    }
-  };
-
-  const removeActionFilter = (index) => {
-    setCurrentRowAction({
-      ...currentRowAction,
-      filters: currentRowAction.filters.filter((_, i) => i !== index)
-    });
-  };
-
-  // Description management
-  const addDescription = () => {
-    const newDesc = {
-      index: formData.scenarioDescription.length,
-      type: currentDescription.type,
-      text: currentDescription.text,
-      nodes: currentDescription.nodes
-    };
-
-    setFormData({
-      ...formData,
-      scenarioDescription: [...formData.scenarioDescription, newDesc]
-    });
-
-    setCurrentDescription({ ...INITIAL_DESCRIPTION });
-  };
-
-  const removeDescription = (index) => {
-    const newDescs = formData.scenarioDescription.filter((_, i) => i !== index);
-    setFormData({
-      ...formData,
-      scenarioDescription: newDescs.map((d, i) => ({ ...d, index: i }))
-    });
-  };
-
-  // Options management for select filters
-  const addOption = () => {
-    if (optionInput.value && optionInput.name) {
-      setCurrentFilter({
-        ...currentFilter,
-        options: [...currentFilter.options, { value: optionInput.value, name: optionInput.name }]
-      });
-      setOptionInput({ value: '', name: '' });
-    }
-  };
-
-  const removeOption = (index) => {
-    setCurrentFilter({
-      ...currentFilter,
-      options: currentFilter.options.filter((_, i) => i !== index)
-    });
-  };
-
-  // Addon configurations management
-  const addAddon = () => {
-    if (addonInput && !formData.addon_configurations.includes(addonInput)) {
-      setFormData({
-        ...formData,
-        addon_configurations: [...formData.addon_configurations, addonInput]
-      });
-      setAddonInput('');
-    }
-  };
-
-  const removeAddon = (index) => {
-    setFormData({
-      ...formData,
-      addon_configurations: formData.addon_configurations.filter((_, i) => i !== index)
-    });
-  };
+  const { addonInput, setAddonInput, addAddon, removeAddon } = useAddonManager(formData, setFormData);
 
   const formTabs = FORM_TABS;
 
-  // Grid settings helpers to reduce nesting depth
-  const updateRowActionsRenderAs = (value) => {
-    setFormData({
-      ...formData,
-      widgets: {
-        ...formData.widgets,
-        grid: {
-          ...formData.widgets.grid,
-          actions: {
-            ...formData.widgets.grid.actions,
-            rowActions: { ...formData.widgets.grid.actions.rowActions, renderAs: value }
-          }
-        }
-      }
-    });
-  };
-
-  const updateGridLayout = (key, value) => {
-    setFormData({
-      ...formData,
-      widgets: {
-        ...formData.widgets,
-        grid: {
-          ...formData.widgets.grid,
-          layout: { ...formData.widgets.grid.layout, [key]: value }
-        }
-      }
-    });
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    resetForm();
+    resetFilter();
+    resetRowAction();
+    resetDescription();
   };
 
   if (loading) {
@@ -705,7 +167,7 @@ function ScenarioDetailPage() {
       {/* Create/Edit Modal */}
       <Modal
         isOpen={modalOpen}
-        onClose={() => { setModalOpen(false); resetForm(); }}
+        onClose={handleCloseModal}
         title={editingItem ? 'Edit Playboard' : 'Create Playboard'}
         size="xl"
       >
@@ -779,7 +241,7 @@ function ScenarioDetailPage() {
 
           {/* Form Actions */}
           <div className="flex justify-end space-x-3 pt-6 border-t mt-6">
-            <Button type="button" variant="secondary" onClick={() => { setModalOpen(false); resetForm(); }}>
+            <Button type="button" variant="secondary" onClick={handleCloseModal}>
               Cancel
             </Button>
             <Button type="submit" disabled={saving}>
