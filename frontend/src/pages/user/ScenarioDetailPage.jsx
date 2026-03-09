@@ -42,16 +42,87 @@ const FORM_TABS = [
   { id: 'json', label: 'JSON Preview' }
 ];
 
+function getScenarioPermissions(isSuperAdmin, isEditor, hasPermission) {
+  return {
+    canEdit: isSuperAdmin() || isEditor() || hasPermission('scenarios.edit'),
+    canAdd: isSuperAdmin() || hasPermission('playboards.create'),
+    canDelete: isSuperAdmin() || hasPermission('playboards.delete'),
+  };
+}
+
+function PlayboardFormContent({
+  formActiveTab, formData, setFormData, scenarioKey, domains,
+  currentFilter, setCurrentFilter, optionInput, setOptionInput,
+  addFilter, removeFilter, addOption, removeOption,
+  currentRowAction, setCurrentRowAction, actionFilterInput, setActionFilterInput,
+  addRowAction, removeRowAction, addActionFilter, removeActionFilter,
+  updateRowActionsRenderAs, updateGridLayout,
+  currentDescription, setCurrentDescription, addDescription, removeDescription,
+  addonInput, setAddonInput, addAddon, removeAddon
+}) {
+  if (formActiveTab === 'basic') {
+    return (
+      <BasicInfoTab
+        formData={formData} setFormData={setFormData} scenarioKey={scenarioKey}
+        domains={domains} addonInput={addonInput} setAddonInput={setAddonInput}
+        addAddon={addAddon} removeAddon={removeAddon}
+      />
+    );
+  }
+  if (formActiveTab === 'filters') {
+    return (
+      <FiltersTab
+        filters={formData.widgets.filters} currentFilter={currentFilter}
+        setCurrentFilter={setCurrentFilter} addFilter={addFilter} removeFilter={removeFilter}
+        optionInput={optionInput} setOptionInput={setOptionInput}
+        addOption={addOption} removeOption={removeOption}
+      />
+    );
+  }
+  if (formActiveTab === 'actions') {
+    return (
+      <RowActionsTab
+        events={formData.widgets.grid.actions.rowActions.events}
+        currentRowAction={currentRowAction} setCurrentRowAction={setCurrentRowAction}
+        addRowAction={addRowAction} removeRowAction={removeRowAction}
+        actionFilterInput={actionFilterInput} setActionFilterInput={setActionFilterInput}
+        addActionFilter={addActionFilter} removeActionFilter={removeActionFilter}
+        domains={domains}
+      />
+    );
+  }
+  if (formActiveTab === 'grid') {
+    return (
+      <GridSettingsTab
+        formData={formData}
+        onRenderAsChange={(e) => updateRowActionsRenderAs(e.target.value)}
+        onDefaultSizeChange={(e) => updateGridLayout('defaultSize', parseInt(e.target.value) || 25)}
+        onPaginatedChange={(val) => updateGridLayout('ispaginated', val)}
+      />
+    );
+  }
+  if (formActiveTab === 'description') {
+    return (
+      <DescriptionTab
+        descriptions={formData.scenarioDescription} currentDescription={currentDescription}
+        setCurrentDescription={setCurrentDescription} addDescription={addDescription}
+        removeDescription={removeDescription}
+      />
+    );
+  }
+  if (formActiveTab === 'json') {
+    return <JsonPreviewTab formData={formData} scenarioKey={scenarioKey} />;
+  }
+  return null;
+}
+
 function ScenarioDetailPage() {
   const { scenarioKey, domainKey } = useParams();
   const { isSuperAdmin, isEditor, hasPermission } = useAuth();
 
   const [activeTab, setActiveTab] = React.useState('playboards');
 
-  // Permission checks
-  const canEdit = isSuperAdmin() || isEditor() || hasPermission('scenarios.edit');
-  const canAdd = isSuperAdmin() || hasPermission('playboards.create');
-  const canDelete = isSuperAdmin() || hasPermission('playboards.delete');
+  const { canEdit, canAdd, canDelete } = getScenarioPermissions(isSuperAdmin, isEditor, hasPermission);
 
   // Custom hooks
   const { scenario, playboards, domains, loading, fetchData } = useScenarioData(scenarioKey);
@@ -101,8 +172,6 @@ function ScenarioDetailPage() {
 
   const { addonInput, setAddonInput, addAddon, removeAddon } = useAddonManager(formData, setFormData);
 
-  const formTabs = FORM_TABS;
-
   const handleCloseModal = () => {
     setModalOpen(false);
     resetForm();
@@ -123,7 +192,7 @@ function ScenarioDetailPage() {
     return (
       <div className="text-center py-12">
         <h2 className="text-xl font-semibold text-content mb-2">Scenario Not Found</h2>
-        <p className="text-content-muted mb-4">The scenario you're looking for doesn't exist.</p>
+        <p className="text-content-muted mb-4">The scenario you&apos;re looking for doesn&apos;t exist.</p>
         <Link to="/domains" className="btn-primary">
           Back to Domains
         </Link>
@@ -132,19 +201,15 @@ function ScenarioDetailPage() {
   }
 
   const effectiveDomainKey = domainKey || scenario.domainKey;
+  const modalTitle = editingItem ? 'Edit Playboard' : 'Create Playboard';
+  const formSubmitHandler = editingItem ? handleUpdate : handleCreate;
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
       <ScenarioBreadcrumb domainKey={effectiveDomainKey} scenarioName={scenario.name} />
-
-      {/* Scenario Header */}
       <ScenarioHeader scenario={scenario} canEdit={canEdit} isSuperAdmin={isSuperAdmin} />
-
-      {/* Tabs */}
       <ScenarioTabs activeTab={activeTab} setActiveTab={setActiveTab} playboardCount={playboards.length} />
 
-      {/* Tab Content */}
       {activeTab === 'playboards' && (
         <PlayboardsTabContent
           playboards={playboards}
@@ -164,82 +229,28 @@ function ScenarioDetailPage() {
         <ScenarioDetailsTab scenario={scenario} />
       )}
 
-      {/* Create/Edit Modal */}
-      <Modal
-        isOpen={modalOpen}
-        onClose={handleCloseModal}
-        title={editingItem ? 'Edit Playboard' : 'Create Playboard'}
-        size="xl"
-      >
-        <form onSubmit={editingItem ? handleUpdate : handleCreate}>
-          <FormTabNav tabs={formTabs} activeTab={formActiveTab} onTabChange={setFormActiveTab} />
+      <Modal isOpen={modalOpen} onClose={handleCloseModal} title={modalTitle} size="xl">
+        <form onSubmit={formSubmitHandler}>
+          <FormTabNav tabs={FORM_TABS} activeTab={formActiveTab} onTabChange={setFormActiveTab} />
 
-          {formActiveTab === 'basic' && (
-            <BasicInfoTab
-              formData={formData}
-              setFormData={setFormData}
-              scenarioKey={scenarioKey}
-              domains={domains}
-              addonInput={addonInput}
-              setAddonInput={setAddonInput}
-              addAddon={addAddon}
-              removeAddon={removeAddon}
-            />
-          )}
+          <PlayboardFormContent
+            formActiveTab={formActiveTab} formData={formData} setFormData={setFormData}
+            scenarioKey={scenarioKey} domains={domains}
+            currentFilter={currentFilter} setCurrentFilter={setCurrentFilter}
+            optionInput={optionInput} setOptionInput={setOptionInput}
+            addFilter={addFilter} removeFilter={removeFilter}
+            addOption={addOption} removeOption={removeOption}
+            currentRowAction={currentRowAction} setCurrentRowAction={setCurrentRowAction}
+            actionFilterInput={actionFilterInput} setActionFilterInput={setActionFilterInput}
+            addRowAction={addRowAction} removeRowAction={removeRowAction}
+            addActionFilter={addActionFilter} removeActionFilter={removeActionFilter}
+            updateRowActionsRenderAs={updateRowActionsRenderAs} updateGridLayout={updateGridLayout}
+            currentDescription={currentDescription} setCurrentDescription={setCurrentDescription}
+            addDescription={addDescription} removeDescription={removeDescription}
+            addonInput={addonInput} setAddonInput={setAddonInput}
+            addAddon={addAddon} removeAddon={removeAddon}
+          />
 
-          {formActiveTab === 'filters' && (
-            <FiltersTab
-              filters={formData.widgets.filters}
-              currentFilter={currentFilter}
-              setCurrentFilter={setCurrentFilter}
-              addFilter={addFilter}
-              removeFilter={removeFilter}
-              optionInput={optionInput}
-              setOptionInput={setOptionInput}
-              addOption={addOption}
-              removeOption={removeOption}
-            />
-          )}
-
-          {formActiveTab === 'actions' && (
-            <RowActionsTab
-              events={formData.widgets.grid.actions.rowActions.events}
-              currentRowAction={currentRowAction}
-              setCurrentRowAction={setCurrentRowAction}
-              addRowAction={addRowAction}
-              removeRowAction={removeRowAction}
-              actionFilterInput={actionFilterInput}
-              setActionFilterInput={setActionFilterInput}
-              addActionFilter={addActionFilter}
-              removeActionFilter={removeActionFilter}
-              domains={domains}
-            />
-          )}
-
-          {formActiveTab === 'grid' && (
-            <GridSettingsTab
-              formData={formData}
-              onRenderAsChange={(e) => updateRowActionsRenderAs(e.target.value)}
-              onDefaultSizeChange={(e) => updateGridLayout('defaultSize', parseInt(e.target.value) || 25)}
-              onPaginatedChange={(val) => updateGridLayout('ispaginated', val)}
-            />
-          )}
-
-          {formActiveTab === 'description' && (
-            <DescriptionTab
-              descriptions={formData.scenarioDescription}
-              currentDescription={currentDescription}
-              setCurrentDescription={setCurrentDescription}
-              addDescription={addDescription}
-              removeDescription={removeDescription}
-            />
-          )}
-
-          {formActiveTab === 'json' && (
-            <JsonPreviewTab formData={formData} scenarioKey={scenarioKey} />
-          )}
-
-          {/* Form Actions */}
           <div className="flex justify-end space-x-3 pt-6 border-t mt-6">
             <Button type="button" variant="secondary" onClick={handleCloseModal}>
               Cancel
@@ -251,7 +262,6 @@ function ScenarioDetailPage() {
         </form>
       </Modal>
 
-      {/* Upload JSON Modal */}
       <UploadJsonModal
         isOpen={uploadModalOpen}
         onClose={() => { setUploadModalOpen(false); resetUploadForm(); }}
@@ -266,30 +276,11 @@ function ScenarioDetailPage() {
         jsonPreview={jsonPreview}
       />
 
-      {/* Detail View Modal */}
-      <Modal
+      <PlayboardDetailModal
         isOpen={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
-        title="Playboard Details"
-        size="xl"
-      >
-        {selectedPlayboard && (
-          <div>
-            <div className="mb-4">
-              <h3 className="font-medium text-content">{selectedPlayboard.name}</h3>
-              <p className="text-content-muted text-sm">{selectedPlayboard.description}</p>
-            </div>
-            <pre className="bg-neutral-900 text-green-400 p-4 rounded-lg overflow-auto max-h-[60vh] text-xs">
-              {JSON.stringify(selectedPlayboard.data || selectedPlayboard, null, 2)}
-            </pre>
-            <div className="flex justify-end mt-4">
-              <Button variant="secondary" onClick={() => setDetailModalOpen(false)}>
-                Close
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
+        playboard={selectedPlayboard}
+      />
     </div>
   );
 }
@@ -870,6 +861,29 @@ function JsonPreviewSummary({ jsonPreview }) {
         </details>
       </div>
     </div>
+  );
+}
+
+function PlayboardDetailModal({ isOpen, onClose, playboard }) {
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Playboard Details" size="xl">
+      {playboard && (
+        <div>
+          <div className="mb-4">
+            <h3 className="font-medium text-content">{playboard.name}</h3>
+            <p className="text-content-muted text-sm">{playboard.description}</p>
+          </div>
+          <pre className="bg-neutral-900 text-green-400 p-4 rounded-lg overflow-auto max-h-[60vh] text-xs">
+            {JSON.stringify(playboard.data || playboard, null, 2)}
+          </pre>
+          <div className="flex justify-end mt-4">
+            <Button variant="secondary" onClick={onClose}>
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
+    </Modal>
   );
 }
 

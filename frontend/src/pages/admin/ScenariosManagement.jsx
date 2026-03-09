@@ -193,41 +193,21 @@ const ScenariosFilterBar = ({ searchTerm, onSearchChange, filterDomain, onFilter
   </div>
 );
 
-// --- Main Component ---
+// --- Custom hook for CRUD operations ---
 
-function ScenariosManagement() {
-  const { isSuperAdmin } = useAuth();
-  const [scenarios, setScenarios] = useState([]);
-  const [domains, setDomains] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterDomain, setFilterDomain] = useState('');
+function useScenarioCrud(fetchData) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingScenario, setEditingScenario] = useState(null);
   const [formData, setFormData] = useState({ ...EMPTY_SCENARIO_FORM });
   const [saving, setSaving] = useState(false);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [scenariosRes, domainsRes] = await Promise.all([scenarioAPI.getAll(), domainAPI.getAll()]);
-      setScenarios(scenariosRes.data);
-      setDomains(domainsRes.data);
-    } catch (error) {
-      toast.error('Failed to fetch data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { fetchData(); }, []);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: name === 'order' ? parseInt(value) || 0 : value }));
+    const parsedValue = name === 'order' ? parseInt(value) || 0 : value;
+    setFormData(prev => ({ ...prev, [name]: parsedValue }));
   };
 
-  const openCreateModal = () => {
+  const openCreateModal = (domains) => {
     setEditingScenario(null);
     setFormData({ ...EMPTY_SCENARIO_FORM, dataDomain: domains[0]?.key || '' });
     setModalOpen(true);
@@ -272,17 +252,56 @@ function ScenariosManagement() {
     }
   };
 
+  return {
+    modalOpen, editingScenario, formData, saving,
+    handleChange, openCreateModal, openEditModal, closeModal,
+    handleSubmit, handleDelete
+  };
+}
+
+// --- Main Component ---
+
+function ScenariosManagement() {
+  const { isSuperAdmin } = useAuth();
+  const [scenarios, setScenarios] = useState([]);
+  const [domains, setDomains] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterDomain, setFilterDomain] = useState('');
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [scenariosRes, domainsRes] = await Promise.all([scenarioAPI.getAll(), domainAPI.getAll()]);
+      setScenarios(scenariosRes.data);
+      setDomains(domainsRes.data);
+    } catch {
+      toast.error('Failed to fetch data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  const {
+    modalOpen, editingScenario, formData, saving,
+    handleChange, openCreateModal, openEditModal, closeModal,
+    handleSubmit, handleDelete
+  } = useScenarioCrud(fetchData);
+
   if (!isSuperAdmin()) {
     return <ScenariosAccessDenied />;
   }
 
   const filteredScenarios = filterScenariosList(scenarios, searchTerm, filterDomain);
+  const modalTitle = editingScenario ? 'Edit Scenario' : 'Create Scenario';
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-content">Scenarios Management</h1>
-        <button onClick={openCreateModal} className="btn-primary flex items-center gap-2">
+        <button onClick={() => openCreateModal(domains)} className="btn-primary flex items-center gap-2">
           <Plus size={18} /> Add Scenario
         </button>
       </div>
@@ -297,7 +316,7 @@ function ScenariosManagement() {
         <ScenariosTable scenarios={filteredScenarios} loading={loading} onEdit={openEditModal} onDelete={handleDelete} />
       </div>
 
-      <Modal isOpen={modalOpen} onClose={closeModal} title={editingScenario ? 'Edit Scenario' : 'Create Scenario'} size="md">
+      <Modal isOpen={modalOpen} onClose={closeModal} title={modalTitle} size="md">
         <ScenarioForm
           formData={formData} editingScenario={editingScenario} domains={domains}
           saving={saving} handleChange={handleChange} handleSubmit={handleSubmit} closeModal={closeModal}
