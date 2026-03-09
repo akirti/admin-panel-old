@@ -15,7 +15,7 @@ module.exports = {
   transformIgnorePatterns: ['/node_modules/'],
   collectCoverageFrom: [
     'src/**/*.{js,jsx}',
-    '!src/main.jsx',
+    '!src/index.js',
     '!src/config/env.js',
     '!src/envConfig/**',
   ],
