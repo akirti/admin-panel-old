@@ -4,6 +4,8 @@ module.exports = {
   testTimeout: 30000,
   setupFiles: ['./jest/jest-globals.js'],
   setupFilesAfterEnv: ['./jest/setup.js'],
+  roots: ['<rootDir>/src/__test__'],
+  testMatch: ['**/*.test.{js,jsx}'],
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     '\\.(jpg|jpeg|png|gif|svg|webp|ico|woff|woff2|eot|ttf|otf)$':
@@ -15,6 +17,7 @@ module.exports = {
   transformIgnorePatterns: ['/node_modules/'],
   collectCoverageFrom: [
     'src/**/*.{js,jsx}',
+    '!src/__test__/**',
     '!src/index.js',
     '!src/config/env.js',
     '!src/envConfig/**',
