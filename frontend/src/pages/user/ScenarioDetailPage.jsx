@@ -24,6 +24,89 @@ function getSubmitLabel(saving, editing) {
   return editing ? 'Update Playboard' : 'Create Playboard';
 }
 
+function isStatusActive(status) {
+  return status === 'active' || status === 'A';
+}
+
+function parseWidgetsFromData(data) {
+  const defaultWidgets = {
+    filters: [],
+    grid: {
+      actions: {
+        rowActions: { renderAs: 'button', attributes: [], events: [] },
+        headerActions: {}
+      },
+      layout: { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 }
+    },
+    pagination: []
+  };
+
+  if (!data.widgets) return defaultWidgets;
+
+  const w = data.widgets;
+  return {
+    filters: w.filters || [],
+    grid: {
+      actions: {
+        rowActions: {
+          renderAs: w.grid?.actions?.rowActions?.renderAs || 'button',
+          attributes: w.grid?.actions?.rowActions?.attributes || [],
+          events: w.grid?.actions?.rowActions?.events || []
+        },
+        headerActions: w.grid?.actions?.headerActions || {}
+      },
+      layout: {
+        colums: w.grid?.layout?.colums || [],
+        headers: w.grid?.layout?.headers || [],
+        footer: w.grid?.layout?.footer || [],
+        ispaginated: w.grid?.layout?.ispaginated !== undefined ? w.grid.layout.ispaginated : true,
+        defaultSize: w.grid?.layout?.defaultSize || 25
+      }
+    },
+    pagination: w.pagination || []
+  };
+}
+
+function buildFormDataFromItem(item, scenarioKey) {
+  const data = item.data || {};
+  return {
+    key: data.key || item.name || '',
+    name: item.name || '',
+    description: item.description || '',
+    scenarioKey: item.scenarioKey || data.scenarioKey || scenarioKey,
+    dataDomain: data.dataDomain || '',
+    status: data.status || (item.status === 'active' ? 'A' : 'I'),
+    order: data.order || 0,
+    program_key: data.program_key || '',
+    config_type: data.config_type || 'db',
+    addon_configurations: data.addon_configurations || [],
+    widgets: parseWidgetsFromData(data),
+    scenarioDescription: data.scenarioDescription || []
+  };
+}
+
+function buildPayload(formData, scenarioKey) {
+  return {
+    name: formData.name,
+    description: formData.description,
+    scenarioKey: formData.scenarioKey || scenarioKey,
+    status: formData.status === 'A' ? 'active' : 'inactive',
+    data: {
+      key: formData.key,
+      dataDomain: formData.dataDomain,
+      scenarioKey: formData.scenarioKey || scenarioKey,
+      scenerioKey: formData.scenarioKey || scenarioKey,
+      order: formData.order,
+      status: formData.status,
+      program_key: formData.program_key,
+      config_type: formData.config_type,
+      addon_configurations: formData.addon_configurations,
+      widgets: formData.widgets,
+      scenarioDescription: formData.scenarioDescription
+    }
+  };
+}
+
 function ScenarioDetailPage() {
   const { scenarioKey, domainKey } = useParams();
   const navigate = useNavigate();
@@ -224,56 +307,7 @@ function ScenarioDetailPage() {
 
   const openEditModal = (item) => {
     setEditingItem(item);
-    const data = item.data || {};
-
-    const defaultWidgets = {
-      filters: [],
-      grid: {
-        actions: {
-          rowActions: { renderAs: 'button', attributes: [], events: [] },
-          headerActions: {}
-        },
-        layout: { colums: [], headers: [], footer: [], ispaginated: true, defaultSize: 25 }
-      },
-      pagination: []
-    };
-
-    const widgets = data.widgets ? {
-      filters: data.widgets.filters || [],
-      grid: {
-        actions: {
-          rowActions: {
-            renderAs: data.widgets.grid?.actions?.rowActions?.renderAs || 'button',
-            attributes: data.widgets.grid?.actions?.rowActions?.attributes || [],
-            events: data.widgets.grid?.actions?.rowActions?.events || []
-          },
-          headerActions: data.widgets.grid?.actions?.headerActions || {}
-        },
-        layout: {
-          colums: data.widgets.grid?.layout?.colums || [],
-          headers: data.widgets.grid?.layout?.headers || [],
-          footer: data.widgets.grid?.layout?.footer || [],
-          ispaginated: data.widgets.grid?.layout?.ispaginated !== undefined ? data.widgets.grid.layout.ispaginated : true,
-          defaultSize: data.widgets.grid?.layout?.defaultSize || 25
-        }
-      },
-      pagination: data.widgets.pagination || []
-    } : defaultWidgets;
-
-    setFormData({
-      key: data.key || item.name || '',
-      name: item.name || '',
-      description: item.description || '',
-      scenarioKey: item.scenarioKey || data.scenarioKey || scenarioKey,
-      dataDomain: data.dataDomain || '',
-      status: data.status || (item.status === 'active' ? 'A' : 'I'),
-      order: data.order || 0,
-      program_key: data.program_key || '',
-      config_type: data.config_type || 'db',
-      addon_configurations: data.addon_configurations || [],
-      widgets: widgets,
-      scenarioDescription: data.scenarioDescription || []
-    });
+    setFormData(buildFormDataFromItem(item, scenarioKey));
     setModalOpen(true);
   };
 
@@ -281,25 +315,7 @@ function ScenarioDetailPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const payload = {
-        name: formData.name,
-        description: formData.description,
-        scenarioKey: formData.scenarioKey || scenarioKey,
-        status: formData.status === 'A' ? 'active' : 'inactive',
-        data: {
-          key: formData.key,
-          dataDomain: formData.dataDomain,
-          scenarioKey: formData.scenarioKey || scenarioKey,
-          scenerioKey: formData.scenarioKey || scenarioKey,
-          order: formData.order,
-          status: formData.status,
-          program_key: formData.program_key,
-          config_type: formData.config_type,
-          addon_configurations: formData.addon_configurations,
-          widgets: formData.widgets,
-          scenarioDescription: formData.scenarioDescription
-        }
-      };
+      const payload = buildPayload(formData, scenarioKey);
       await playboardsAPI.create(payload);
       toast.success('Playboard created successfully');
       setModalOpen(false);
@@ -316,25 +332,7 @@ function ScenarioDetailPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const payload = {
-        name: formData.name,
-        description: formData.description,
-        scenarioKey: formData.scenarioKey || scenarioKey,
-        status: formData.status === 'A' ? 'active' : 'inactive',
-        data: {
-          key: formData.key,
-          dataDomain: formData.dataDomain,
-          scenarioKey: formData.scenarioKey || scenarioKey,
-          scenerioKey: formData.scenarioKey || scenarioKey,
-          order: formData.order,
-          status: formData.status,
-          program_key: formData.program_key,
-          config_type: formData.config_type,
-          addon_configurations: formData.addon_configurations,
-          widgets: formData.widgets,
-          scenarioDescription: formData.scenarioDescription
-        }
-      };
+      const payload = buildPayload(formData, scenarioKey);
       await playboardsAPI.update(editingItem.id || editingItem._id, payload);
       toast.success('Playboard updated successfully');
       setModalOpen(false);
@@ -684,8 +682,8 @@ function ScenarioDetailPage() {
                 <p className="text-content-secondary mt-2">{scenario.description}</p>
               )}
               <div className="flex items-center gap-4 mt-3">
-                <Badge variant={scenario.status === 'active' || scenario.status === 'A' ? 'success' : 'default'}>
-                  {scenario.status === 'active' || scenario.status === 'A' ? 'Active' : 'Inactive'}
+                <Badge variant={isStatusActive(scenario.status) ? 'success' : 'default'}>
+                  {isStatusActive(scenario.status) ? 'Active' : 'Inactive'}
                 </Badge>
                 {scenario.domainKey && (
                   <span className="text-sm text-content-muted">
@@ -855,8 +853,8 @@ function ScenarioDetailPage() {
             <div>
               <dt className="text-sm text-content-muted">Status</dt>
               <dd>
-                <Badge variant={scenario.status === 'active' || scenario.status === 'A' ? 'success' : 'default'}>
-                  {scenario.status === 'active' || scenario.status === 'A' ? 'Active' : 'Inactive'}
+                <Badge variant={isStatusActive(scenario.status) ? 'success' : 'default'}>
+                  {isStatusActive(scenario.status) ? 'Active' : 'Inactive'}
                 </Badge>
               </dd>
             </div>

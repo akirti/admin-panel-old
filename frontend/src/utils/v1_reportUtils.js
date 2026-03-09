@@ -102,31 +102,48 @@ export const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 export const getAttrValue = (attrs, key) =>
   attrs?.find((a) => a.key === key)?.value;
 
+// Type-specific default value resolvers
+const getDateRangeDefault = (attrs) => {
+  const startRaw = getAttrValue(attrs, 'defaultValue_start');
+  const endRaw = getAttrValue(attrs, 'defaultValue_end');
+  const start = parseCurrentDateString(startRaw);
+  const end = parseCurrentDateString(endRaw);
+  return (start || end) ? { start, end } : undefined;
+};
+
+const getDatePickerDefault = (attrs) => {
+  const defaultVal = getAttrValue(attrs, 'defaultValue');
+  const parsed = parseCurrentDateString(defaultVal);
+  return (parsed !== undefined && parsed !== null && parsed !== '') ? parsed : undefined;
+};
+
+const getMultiSelectDefault = (attrs) => {
+  const defaultVal = getAttrValue(attrs, 'defaultValue');
+  if (typeof defaultVal === 'string' && defaultVal.trim() !== '') {
+    return defaultVal.split(',').map((v) => v.trim());
+  }
+  if (Array.isArray(defaultVal)) return defaultVal;
+  return undefined;
+};
+
+const getGenericDefault = (attrs) => {
+  const defaultVal = getAttrValue(attrs, 'defaultValue');
+  return (defaultVal !== undefined && defaultVal !== null && defaultVal !== '') ? defaultVal : undefined;
+};
+
+const defaultValueResolvers = {
+  'date-range': getDateRangeDefault,
+  'date-picker': getDatePickerDefault,
+  'date': getDatePickerDefault,
+  'multiselect': getMultiSelectDefault,
+  'multi-select': getMultiSelectDefault,
+};
+
 // Fill default value for a filter based on its type
 export const getDefaultValue = (filter) => {
   const type = getAttrValue(filter.attributes, 'type');
-  if (type === 'date-range') {
-    const startRaw = getAttrValue(filter.attributes, 'defaultValue_start');
-    const endRaw = getAttrValue(filter.attributes, 'defaultValue_end');
-    const start = parseCurrentDateString(startRaw);
-    const end = parseCurrentDateString(endRaw);
-    if (start || end) return { start, end };
-  } else if (type === 'date-picker' || type === 'date') {
-    const defaultVal = getAttrValue(filter.attributes, 'defaultValue');
-    const parsed = parseCurrentDateString(defaultVal);
-    if (parsed !== undefined && parsed !== null && parsed !== '') return parsed;
-  } else if (type === 'multiselect' || type === 'multi-select') {
-    const defaultVal = getAttrValue(filter.attributes, 'defaultValue');
-    if (typeof defaultVal === 'string' && defaultVal.trim() !== '') {
-      return defaultVal.split(',').map((v) => v.trim());
-    } else if (Array.isArray(defaultVal)) {
-      return defaultVal;
-    }
-  } else {
-    const defaultVal = getAttrValue(filter.attributes, 'defaultValue');
-    if (defaultVal !== undefined && defaultVal !== null && defaultVal !== '') return defaultVal;
-  }
-  return undefined;
+  const resolver = defaultValueResolvers[type] || getGenericDefault;
+  return resolver(filter.attributes);
 };
 
 // Column extraction from data
@@ -221,21 +238,15 @@ export const handleArray = (vals, filter, onChange) => {
 
 // Deep equality check for plain objects/arrays
 
-export const deepEqual = (a, b) => {
-  if (a === b) return true;
-  if (typeof a !== typeof b) return false;
-  if (a === null || a === undefined || b === null || b === undefined) return false;
-  if (typeof a !== 'object') return false;
-  if (Array.isArray(a) !== Array.isArray(b)) return false;
-
-  if (Array.isArray(a)) {
-    if (a.length !== b.length) return false;
-    for (let i = 0; i < a.length; i++) {
-      if (!deepEqual(a[i], b[i])) return false;
-    }
-    return true;
+const deepEqualArrays = (a, b) => {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (!deepEqual(a[i], b[i])) return false;
   }
+  return true;
+};
 
+const deepEqualObjects = (a, b) => {
   const aKeys = Object.keys(a);
   const bKeys = Object.keys(b);
   if (aKeys.length !== bKeys.length) return false;
@@ -244,4 +255,13 @@ export const deepEqual = (a, b) => {
     if (!deepEqual(a[key], b[key])) return false;
   }
   return true;
+};
+
+export const deepEqual = (a, b) => {
+  if (a === b) return true;
+  if (typeof a !== typeof b) return false;
+  if (a == null || b == null) return false;
+  if (typeof a !== 'object') return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  return Array.isArray(a) ? deepEqualArrays(a, b) : deepEqualObjects(a, b);
 };

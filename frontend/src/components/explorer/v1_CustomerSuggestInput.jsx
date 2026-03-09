@@ -106,6 +106,118 @@ const TagFilterBar = ({ tags, selectedTag, tagBtnRef, onToggle, onClear }) => {
   );
 };
 
+// --- Extracted sub-components for reduced cognitive complexity ---
+
+const TagFilterItem = ({ tag, isSelected, onSelect }) => (
+  <li
+    className={`px-3 py-1.5 cursor-pointer text-sm transition-colors ${
+      isSelected ? 'bg-primary-50 text-primary-700 font-medium' : 'hover:bg-surface-hover text-content-secondary'
+    }`}
+    onClick={() => onSelect(tag)}
+  >
+    {tag}
+  </li>
+);
+
+const SuggestionPortal = ({ menuRef, style, tags, selectedTag, tagBtnRef, onToggleTagFilter, onClearTag, loading, customers, inputValue, onSelect }) => (
+  <div ref={menuRef} style={style} className="bg-surface border border-edge rounded-md shadow-lg overflow-hidden">
+    <TagFilterBar tags={tags} selectedTag={selectedTag} tagBtnRef={tagBtnRef} onToggle={onToggleTagFilter} onClear={onClearTag} />
+    <ul className="max-h-52 overflow-auto">
+      <CustomerList loading={loading} customers={customers} inputValue={inputValue} onSelect={onSelect} />
+    </ul>
+  </div>
+);
+
+const TagFilterPortal = ({ tagMenuRef, style, tags, selectedTag, onTagSelect }) => (
+  <div
+    ref={tagMenuRef}
+    style={style}
+    className="bg-surface border border-edge rounded-md shadow-lg overflow-hidden"
+  >
+    <ul className="max-h-40 overflow-auto">
+      {tags.map((t) => (
+        <TagFilterItem key={t} tag={t} isSelected={selectedTag === t} onSelect={onTagSelect} />
+      ))}
+    </ul>
+  </div>
+);
+
+const InputField = ({ inputRef, placeholder, inputValue, onChange, onFocus, onClear }) => (
+  <div className="relative">
+    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-content-muted pointer-events-none" />
+    <input
+      ref={inputRef}
+      type="text"
+      className="w-full pl-8 pr-8 h-10 text-sm border border-edge rounded-md bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors hover:border-neutral-400"
+      placeholder={placeholder}
+      value={inputValue}
+      onChange={onChange}
+      onFocus={onFocus}
+      autoComplete="off"
+    />
+    {inputValue && (
+      <button
+        type="button"
+        onClick={onClear}
+        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-content-muted hover:text-content-secondary"
+      >
+        <X size={16} />
+      </button>
+    )}
+  </div>
+);
+
+// --- Position helpers ---
+
+const computeSuggestPosition = (el, spaceThreshold = 280) => {
+  if (!el) return null;
+  const rect = el.getBoundingClientRect();
+  const openUp = window.innerHeight - rect.bottom < spaceThreshold;
+  return {
+    position: 'fixed',
+    zIndex: 9999,
+    width: rect.width,
+    left: rect.left,
+    ...(openUp
+      ? { bottom: window.innerHeight - rect.top + 4 }
+      : { top: rect.bottom + 4 }),
+  };
+};
+
+const computeTagMenuPosition = (el) => {
+  if (!el) return null;
+  const rect = el.getBoundingClientRect();
+  return { position: 'fixed', zIndex: 10000, width: 200, left: rect.left, top: rect.bottom + 4 };
+};
+
+// --- Lifecycle hooks ---
+
+const useOutsideClickClose = (setIsOpen, setShowTagFilter, refs) => {
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!isClickInside(event, ...refs)) {
+        setIsOpen(false);
+        setShowTagFilter(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [setIsOpen, setShowTagFilter, refs]);
+};
+
+const useRepositionOnScroll = (isOpen, computePosition, menuRef) => {
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+    const reposition = () => applyPositionStyle(menuRef.current, computePosition());
+    window.addEventListener('scroll', reposition, true);
+    window.addEventListener('resize', reposition);
+    return () => {
+      window.removeEventListener('scroll', reposition, true);
+      window.removeEventListener('resize', reposition);
+    };
+  }, [isOpen, computePosition, menuRef]);
+};
+
 // --- Main component ---
 
 const V1CustomerSuggestInput = ({
@@ -129,175 +241,104 @@ const V1CustomerSuggestInput = ({
   const tagMenuRef = useRef(null);
   const tagBtnRef = useRef(null);
   const tagMenuStyleRef = useRef(null);
+  const outsideClickRefs = useRef([inputRef, menuRef, tagMenuRef, tagBtnRef]);
 
-  // Sync external value changes
-  useEffect(() => {
-    setInputValue(value || '');
-  }, [value]);
+  useEffect(() => { setInputValue(value || ''); }, [value]);
 
-  // Compute dropdown position from input rect
-  const computePosition = useCallback(() => {
-    if (!inputRef.current) return null;
-    const rect = inputRef.current.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const openUp = spaceBelow < 280;
-    return {
-      position: 'fixed',
-      zIndex: 9999,
-      width: rect.width,
-      left: rect.left,
-      ...(openUp
-        ? { bottom: window.innerHeight - rect.top + 4 }
-        : { top: rect.bottom + 4 }),
-    };
-  }, []);
+  const computePosition = useCallback(
+    () => computeSuggestPosition(inputRef.current),
+    []
+  );
 
-  // Open the suggestion dropdown
   const openDropdown = useCallback(() => {
     menuStyleRef.current = computePosition();
     setIsOpen(true);
   }, [computePosition]);
 
-  // Handle input change
   const handleInputChange = (e) => {
     const val = e.target.value;
     setInputValue(val);
     onChange?.(val);
-    if (onSearch) onSearch(val);
+    onSearch?.(val);
     if (!isOpen) openDropdown();
   };
 
-  // Handle selecting a customer from suggestions
   const handleSelect = (customer) => {
     setInputValue(customer.customerId);
     onChange?.(customer.customerId);
     setIsOpen(false);
   };
 
-  // Handle clearing input
   const handleClear = () => {
     setInputValue('');
     onChange?.('');
-    if (onSearch) onSearch('');
+    onSearch?.('');
     inputRef.current?.focus();
   };
 
-  // Handle tag filter selection
   const handleTagSelect = (tag) => {
     setSelectedTag(tag);
     setShowTagFilter(false);
-    if (onFilterByTag) onFilterByTag(tag);
+    onFilterByTag?.(tag);
     if (!isOpen) openDropdown();
   };
 
-  // Close on outside click
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!isClickInside(event, inputRef, menuRef, tagMenuRef, tagBtnRef)) {
-        setIsOpen(false);
-        setShowTagFilter(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Reposition on scroll/resize
-  useLayoutEffect(() => {
-    if (!isOpen) return;
-    const reposition = () => applyPositionStyle(menuRef.current, computePosition());
-    window.addEventListener('scroll', reposition, true);
-    window.addEventListener('resize', reposition);
-    return () => {
-      window.removeEventListener('scroll', reposition, true);
-      window.removeEventListener('resize', reposition);
-    };
-  }, [isOpen, computePosition]);
-
-  // Tag filter button position
-  const computeTagPosition = useCallback(() => {
-    if (!tagBtnRef.current) return null;
-    const rect = tagBtnRef.current.getBoundingClientRect();
-    return {
-      position: 'fixed',
-      zIndex: 10000,
-      width: 200,
-      left: rect.left,
-      top: rect.bottom + 4,
-    };
-  }, []);
+  useOutsideClickClose(setIsOpen, setShowTagFilter, outsideClickRefs.current);
+  useRepositionOnScroll(isOpen, computePosition, menuRef);
 
   const handleToggleTagFilter = () => {
-    if (!showTagFilter) {
-      tagMenuStyleRef.current = computeTagPosition();
-    }
+    if (!showTagFilter) tagMenuStyleRef.current = computeTagMenuPosition(tagBtnRef.current);
     setShowTagFilter((prev) => !prev);
   };
 
+  const handleFocus = () => {
+    if (customers.length > 0) openDropdown();
+  };
+
+  const handleClearTag = () => handleTagSelect('');
+
   const suggestionMenu = isOpen && menuStyleRef.current
     ? createPortal(
-        <div ref={menuRef} style={menuStyleRef.current} className="bg-surface border border-edge rounded-md shadow-lg overflow-hidden">
-          <TagFilterBar tags={tags} selectedTag={selectedTag} tagBtnRef={tagBtnRef} onToggle={handleToggleTagFilter} onClear={() => handleTagSelect('')} />
-          <ul className="max-h-52 overflow-auto">
-            <CustomerList loading={loading} customers={customers} inputValue={inputValue} onSelect={handleSelect} />
-          </ul>
-        </div>,
+        <SuggestionPortal
+          menuRef={menuRef}
+          style={menuStyleRef.current}
+          tags={tags}
+          selectedTag={selectedTag}
+          tagBtnRef={tagBtnRef}
+          onToggleTagFilter={handleToggleTagFilter}
+          onClearTag={handleClearTag}
+          loading={loading}
+          customers={customers}
+          inputValue={inputValue}
+          onSelect={handleSelect}
+        />,
         document.body
       )
     : null;
 
-  // Tag filter dropdown portal
   const tagFilterMenu = showTagFilter && tagMenuStyleRef.current
     ? createPortal(
-        <div
-          ref={tagMenuRef}
+        <TagFilterPortal
+          tagMenuRef={tagMenuRef}
           style={tagMenuStyleRef.current}
-          className="bg-surface border border-edge rounded-md shadow-lg overflow-hidden"
-        >
-          <ul className="max-h-40 overflow-auto">
-            {tags.map((t) => (
-              <li
-                key={t}
-                className={`px-3 py-1.5 cursor-pointer text-sm transition-colors ${
-                  selectedTag === t ? 'bg-primary-50 text-primary-700 font-medium' : 'hover:bg-surface-hover text-content-secondary'
-                }`}
-                onClick={() => handleTagSelect(t)}
-              >
-                {t}
-              </li>
-            ))}
-          </ul>
-        </div>,
+          tags={tags}
+          selectedTag={selectedTag}
+          onTagSelect={handleTagSelect}
+        />,
         document.body
       )
     : null;
 
   return (
     <div className="relative w-full">
-      <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-content-muted pointer-events-none" />
-        <input
-          ref={inputRef}
-          type="text"
-          className="w-full pl-8 pr-8 h-10 text-sm border border-edge rounded-md bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors hover:border-neutral-400"
-          placeholder={placeholder}
-          value={inputValue}
-          onChange={handleInputChange}
-          onFocus={() => {
-            if (customers.length > 0) openDropdown();
-          }}
-          autoComplete="off"
-        />
-        {inputValue && (
-          <button
-            type="button"
-            onClick={handleClear}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-content-muted hover:text-content-secondary"
-          >
-            <X size={16} />
-          </button>
-        )}
-      </div>
+      <InputField
+        inputRef={inputRef}
+        placeholder={placeholder}
+        inputValue={inputValue}
+        onChange={handleInputChange}
+        onFocus={handleFocus}
+        onClear={handleClear}
+      />
       {suggestionMenu}
       {tagFilterMenu}
     </div>

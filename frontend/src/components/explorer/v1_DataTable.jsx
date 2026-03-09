@@ -166,6 +166,121 @@ const ActionMenuPortal = ({ menuRef, menuPosition, actionGrid, row, onActionClic
     document.body
   );
 
+// Action cell with menu toggle button and portal menu
+const ActionCell = ({ idx, row, actionGrid, buttonRefs, openMenuIdx, menuPosition, menuRef, onToggle, onActionClick }) => (
+  <td className="px-3 py-2 whitespace-nowrap">
+    <button
+      ref={(el) => (buttonRefs.current[idx] = el)}
+      type="button"
+      className="p-1 rounded hover:bg-neutral-200 focus:outline-none"
+      onClick={() => onToggle(idx)}
+      aria-label="Show actions"
+    >
+      <MoreVertical size={16} className="text-content-muted" />
+    </button>
+    {openMenuIdx === idx && menuPosition && (
+      <ActionMenuPortal
+        menuRef={menuRef}
+        menuPosition={menuPosition}
+        actionGrid={actionGrid}
+        row={row}
+        onActionClick={onActionClick}
+      />
+    )}
+  </td>
+);
+
+// Single data row with optional action cell
+const DataRow = ({ row, idx, columns, actionGrid, buttonRefs, openMenuIdx, menuPosition, menuRef, onToggle, onActionClick }) => (
+  <tr
+    key={row.id ?? idx}
+    className={`${
+      idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary/50"
+    } hover:bg-blue-50/40 transition-colors`}
+  >
+    {actionGrid.length > 0 && (
+      <ActionCell
+        idx={idx}
+        row={row}
+        actionGrid={actionGrid}
+        buttonRefs={buttonRefs}
+        openMenuIdx={openMenuIdx}
+        menuPosition={menuPosition}
+        menuRef={menuRef}
+        onToggle={onToggle}
+        onActionClick={onActionClick}
+      />
+    )}
+    {columns.map((col) => (
+      <td
+        key={col.key}
+        className="px-3 py-2 whitespace-nowrap text-content-secondary"
+      >
+        {trimCellValue(row[col.key])}
+      </td>
+    ))}
+  </tr>
+);
+
+// Standalone toggle logic for the action menu
+const createToggleActionMenu = (openMenuIdx, setOpenMenuIdx, setMenuPosition, buttonRefs, actionGrid) => (idx) => {
+  if (openMenuIdx === idx) {
+    setOpenMenuIdx(null);
+    setMenuPosition(null);
+  } else {
+    const btn = buttonRefs.current[idx];
+    if (btn) {
+      setMenuPosition(computeMenuPosition(btn, actionGrid.length));
+    }
+    setOpenMenuIdx(idx);
+  }
+};
+
+// --- Helpers for data filtering and unique values ---
+
+const toBoolString = (val) => (typeof val === "boolean" ? (val ? "True" : "False") : val);
+
+const applyColumnFilters = (data, columnFilters) => {
+  let result = Array.isArray(data) ? data : [];
+  for (const [colKey, selected] of Object.entries(columnFilters)) {
+    if (!Array.isArray(selected) || selected.length === 0) continue;
+    result = result.filter((row) => selected.includes(toBoolString(row[colKey])));
+  }
+  return result;
+};
+
+const buildColumnUniqueValues = (columns, data) => {
+  const map = {};
+  columns.forEach((col) => {
+    const seen = new Set();
+    const values = [];
+    data.forEach((row) => {
+      const val = toBoolString(row[col.key]);
+      if (val != null && val !== "" && !seen.has(val)) {
+        seen.add(val);
+        values.push(val);
+      }
+    });
+    map[col.key] = values;
+  });
+  return map;
+};
+
+// --- Hook: close action menu on outside click ---
+
+const useCloseMenuOnOutsideClick = (menuRef, openMenuIdx, setOpenMenuIdx) => {
+  useEffect(() => {
+    if (openMenuIdx === null) return;
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setOpenMenuIdx(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuRef, openMenuIdx, setOpenMenuIdx]);
+};
+
 // Empty state placeholder
 const EmptyState = () => (
   <div className="flex flex-col items-center justify-center py-16 text-content-muted">
@@ -238,50 +353,17 @@ const V1DataTable = ({
 
   const totalPages = useMemo(() => Math.max(1, pages), [pages]);
 
-  // Close action menu on outside click
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setOpenMenuIdx(null);
-      }
-    };
-    if (openMenuIdx !== null) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [openMenuIdx]);
+  useCloseMenuOnOutsideClick(menuRef, openMenuIdx, setOpenMenuIdx);
 
-  // Apply column filters to data
-  const filteredData = useMemo(() => {
-    let result = Array.isArray(data) ? data : [];
-    for (const [colKey, selected] of Object.entries(columnFilters)) {
-      if (Array.isArray(selected) && selected.length > 0) {
-        result = result.filter((row) => {
-          let val = row[colKey];
-          if (typeof val === "boolean") val = val ? "True" : "False";
-          return selected.includes(val);
-        });
-      }
-    }
-    return result;
-  }, [data, columnFilters]);
+  const filteredData = useMemo(
+    () => applyColumnFilters(data, columnFilters),
+    [data, columnFilters]
+  );
 
-  // Compute unique values per column from full data
-  const columnUniqueValues = useMemo(() => {
-    const map = {};
-    columns.forEach((col) => {
-      const values = [];
-      data.forEach((row) => {
-        let val = row[col.key];
-        if (typeof val === "boolean") val = val ? "True" : "False";
-        if (val !== undefined && val !== null && val !== "" && !values.includes(val)) {
-          values.push(val);
-        }
-      });
-      map[col.key] = values;
-    });
-    return map;
-  }, [columns, data]);
+  const columnUniqueValues = useMemo(
+    () => buildColumnUniqueValues(columns, data),
+    [columns, data]
+  );
 
   const handleFilterChange = (colKey, selected) => {
     setColumnFilters((prev) => ({ ...prev, [colKey]: selected }));
@@ -291,18 +373,7 @@ const V1DataTable = ({
     columnFilters[colKey] && columnFilters[colKey].length > 0;
 
   // Action menu toggle with portal positioning
-  const toggleActionMenu = (idx) => {
-    if (openMenuIdx === idx) {
-      setOpenMenuIdx(null);
-      setMenuPosition(null);
-    } else {
-      const btn = buttonRefs.current[idx];
-      if (btn) {
-        setMenuPosition(computeMenuPosition(btn, actionGrid.length));
-      }
-      setOpenMenuIdx(idx);
-    }
-  };
+  const toggleActionMenu = createToggleActionMenu(openMenuIdx, setOpenMenuIdx, setMenuPosition, buttonRefs, actionGrid);
 
   // Handle drill-down action click
   const handleActionClick = useCallback(
@@ -345,43 +416,19 @@ const V1DataTable = ({
             </thead>
             <tbody className="divide-y divide-edge-light">
               {filteredData.map((row, idx) => (
-                <tr
+                <DataRow
                   key={row.id ?? idx}
-                  className={`${
-                    idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary/50"
-                  } hover:bg-blue-50/40 transition-colors`}
-                >
-                  {actionGrid.length > 0 && (
-                    <td className="px-3 py-2 whitespace-nowrap">
-                      <button
-                        ref={(el) => (buttonRefs.current[idx] = el)}
-                        type="button"
-                        className="p-1 rounded hover:bg-neutral-200 focus:outline-none"
-                        onClick={() => toggleActionMenu(idx)}
-                        aria-label="Show actions"
-                      >
-                        <MoreVertical size={16} className="text-content-muted" />
-                      </button>
-                      {openMenuIdx === idx && menuPosition && (
-                        <ActionMenuPortal
-                          menuRef={menuRef}
-                          menuPosition={menuPosition}
-                          actionGrid={actionGrid}
-                          row={row}
-                          onActionClick={handleActionClick}
-                        />
-                      )}
-                    </td>
-                  )}
-                  {columns.map((col) => (
-                    <td
-                      key={col.key}
-                      className="px-3 py-2 whitespace-nowrap text-content-secondary"
-                    >
-                      {trimCellValue(row[col.key])}
-                    </td>
-                  ))}
-                </tr>
+                  row={row}
+                  idx={idx}
+                  columns={columns}
+                  actionGrid={actionGrid}
+                  buttonRefs={buttonRefs}
+                  openMenuIdx={openMenuIdx}
+                  menuPosition={menuPosition}
+                  menuRef={menuRef}
+                  onToggle={toggleActionMenu}
+                  onActionClick={handleActionClick}
+                />
               ))}
             </tbody>
           </table>

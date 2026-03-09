@@ -43,6 +43,109 @@ const POPULAR_ICONS = [
   'Play', 'Pause', 'Square', 'Circle', 'Triangle', 'Hexagon', 'Octagon',
 ];
 
+const COLOR_PRESETS = [
+  { name: 'Blue', value: '#3b82f6' },
+  { name: 'Green', value: '#22c55e' },
+  { name: 'Red', value: '#ef4444' },
+  { name: 'Orange', value: '#f97316' },
+  { name: 'Purple', value: '#a855f7' },
+  { name: 'Pink', value: '#ec4899' },
+  { name: 'Gray', value: '#6b7280' },
+  { name: 'Black', value: '#000000' },
+];
+
+const renderIcon = (iconName) => {
+  const IconComponent = LucideIcons[iconName];
+  const isValid = IconComponent && (typeof IconComponent === 'function' || typeof IconComponent === 'object');
+  return isValid ? <IconComponent size={24} /> : null;
+};
+
+function IconGrid({ filteredIcons, searchTerm, selectedColor, onSelectIcon }) {
+  if (filteredIcons.length === 0) {
+    return (
+      <div className="text-center py-8 text-neutral-500">
+        <p>No icons found for "{searchTerm}"</p>
+        <p className="text-sm mt-2">Try searching for: home, user, settings, mail, star, etc.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
+      {filteredIcons.map((iconName) => {
+        const icon = renderIcon(iconName);
+        if (!icon) return null;
+
+        return (
+          <button
+            key={iconName}
+            type="button"
+            data-icon-name={iconName}
+            onClick={() => onSelectIcon(iconName)}
+            className="flex flex-col items-center p-2 rounded-lg hover:bg-neutral-100 transition-colors group border border-transparent hover:border-neutral-200"
+            title={`Select ${iconName}`}
+          >
+            <div
+              className="w-8 h-8 flex items-center justify-center"
+              style={{ color: selectedColor }}
+            >
+              {icon}
+            </div>
+            <span className="text-[10px] text-neutral-500 mt-1 truncate w-full text-center group-hover:text-neutral-700">
+              {iconName.length > 10 ? iconName.slice(0, 9) + '\u2026' : iconName}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ColorPicker({ selectedColor, onColorChange }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-neutral-600">Color:</span>
+      <div className="flex gap-1">
+        {COLOR_PRESETS.map((color) => (
+          <button
+            key={color.value}
+            type="button"
+            onClick={() => onColorChange(color.value)}
+            className={`w-6 h-6 rounded-full border-2 transition-all ${
+              selectedColor === color.value
+                ? 'border-neutral-800 ring-2 ring-offset-1 ring-neutral-400'
+                : 'border-neutral-200 hover:border-neutral-400'
+            }`}
+            style={{ backgroundColor: color.value }}
+            title={color.name}
+          />
+        ))}
+      </div>
+      <input
+        type="color"
+        value={selectedColor}
+        onChange={(e) => onColorChange(e.target.value)}
+        className="w-6 h-6 cursor-pointer border rounded"
+        title="Custom color"
+      />
+    </div>
+  );
+}
+
+function PickerFooter({ searchTerm, filteredCount }) {
+  return (
+    <div className="p-3 border-t bg-neutral-50 text-sm text-neutral-500 flex justify-between items-center">
+      <span>
+        {searchTerm
+          ? `${filteredCount} icons matching "${searchTerm}"`
+          : `Showing ${filteredCount} popular icons`
+        }
+      </span>
+      <span className="text-xs">Click an icon to select</span>
+    </div>
+  );
+}
+
 function LucideIconPicker({ onChange, onClose }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedColor, setSelectedColor] = useState('#3b82f6');
@@ -94,23 +197,6 @@ function LucideIconPicker({ onChange, onClose }) {
     }
   }, [selectedColor, onChange, onClose]);
 
-  const colorPresets = [
-    { name: 'Blue', value: '#3b82f6' },
-    { name: 'Green', value: '#22c55e' },
-    { name: 'Red', value: '#ef4444' },
-    { name: 'Orange', value: '#f97316' },
-    { name: 'Purple', value: '#a855f7' },
-    { name: 'Pink', value: '#ec4899' },
-    { name: 'Gray', value: '#6b7280' },
-    { name: 'Black', value: '#000000' },
-  ];
-
-  const renderIcon = (iconName) => {
-    const IconComponent = LucideIcons[iconName];
-    const isValid = IconComponent && (typeof IconComponent === 'function' || typeof IconComponent === 'object');
-    return isValid ? <IconComponent size={24} /> : null;
-  };
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
@@ -140,82 +226,21 @@ function LucideIconPicker({ onChange, onClose }) {
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-neutral-600">Color:</span>
-            <div className="flex gap-1">
-              {colorPresets.map((color) => (
-                <button
-                  key={color.value}
-                  type="button"
-                  onClick={() => setSelectedColor(color.value)}
-                  className={`w-6 h-6 rounded-full border-2 transition-all ${
-                    selectedColor === color.value
-                      ? 'border-neutral-800 ring-2 ring-offset-1 ring-neutral-400'
-                      : 'border-neutral-200 hover:border-neutral-400'
-                  }`}
-                  style={{ backgroundColor: color.value }}
-                  title={color.name}
-                />
-              ))}
-            </div>
-            <input
-              type="color"
-              value={selectedColor}
-              onChange={(e) => setSelectedColor(e.target.value)}
-              className="w-6 h-6 cursor-pointer border rounded"
-              title="Custom color"
-            />
-          </div>
+          <ColorPicker selectedColor={selectedColor} onColorChange={setSelectedColor} />
         </div>
 
         {/* Icons Grid */}
         <div className="flex-1 overflow-y-auto p-4">
-          {filteredIcons.length === 0 ? (
-            <div className="text-center py-8 text-neutral-500">
-              <p>No icons found for "{searchTerm}"</p>
-              <p className="text-sm mt-2">Try searching for: home, user, settings, mail, star, etc.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
-              {filteredIcons.map((iconName) => {
-                const icon = renderIcon(iconName);
-                if (!icon) return null;
-
-                return (
-                  <button
-                    key={iconName}
-                    type="button"
-                    data-icon-name={iconName}
-                    onClick={() => handleSelectIcon(iconName)}
-                    className="flex flex-col items-center p-2 rounded-lg hover:bg-neutral-100 transition-colors group border border-transparent hover:border-neutral-200"
-                    title={`Select ${iconName}`}
-                  >
-                    <div
-                      className="w-8 h-8 flex items-center justify-center"
-                      style={{ color: selectedColor }}
-                    >
-                      {icon}
-                    </div>
-                    <span className="text-[10px] text-neutral-500 mt-1 truncate w-full text-center group-hover:text-neutral-700">
-                      {iconName.length > 10 ? iconName.slice(0, 9) + '…' : iconName}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          <IconGrid
+            filteredIcons={filteredIcons}
+            searchTerm={searchTerm}
+            selectedColor={selectedColor}
+            onSelectIcon={handleSelectIcon}
+          />
         </div>
 
         {/* Footer */}
-        <div className="p-3 border-t bg-neutral-50 text-sm text-neutral-500 flex justify-between items-center">
-          <span>
-            {searchTerm
-              ? `${filteredIcons.length} icons matching "${searchTerm}"`
-              : `Showing ${filteredIcons.length} popular icons`
-            }
-          </span>
-          <span className="text-xs">Click an icon to select</span>
-        </div>
+        <PickerFooter searchTerm={searchTerm} filteredCount={filteredIcons.length} />
       </div>
     </div>
   );

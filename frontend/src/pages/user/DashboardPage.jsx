@@ -5,6 +5,38 @@ import { domainAPI, scenarioRequestAPI } from '../../services/api';
 import { Layers, FileText, Settings, ArrowRight, TrendingUp, Users, Activity, MessageSquarePlus, ClipboardList, Clock, CheckCircle } from 'lucide-react';
 import { Badge } from '../../components/shared';
 
+const STATUS_VARIANT_MAP = {
+  'submitted': 'info',
+  'in-progress': 'warning',
+  'development': 'warning',
+  'review': 'warning',
+  'testing': 'warning',
+  'deployed': 'success',
+  'active': 'success',
+  'snapshot': 'success',
+  'rejected': 'danger'
+};
+
+const STATUS_LABEL_MAP = {
+  'submitted': 'Submitted',
+  'in-progress': 'In Progress',
+  'development': 'Development',
+  'review': 'Review',
+  'testing': 'Testing',
+  'deployed': 'Deployed',
+  'active': 'Active',
+  'rejected': 'Rejected',
+  'accepted': 'Accepted'
+};
+
+function getStatusVariant(status) {
+  return STATUS_VARIANT_MAP[status] || 'default';
+}
+
+function getStatusLabel(request) {
+  return STATUS_LABEL_MAP[request.status] || request.statusDescription || request.status;
+}
+
 function DashboardPage() {
   const { user, isSuperAdmin, canManageUsers } = useAuth();
   const [domains, setDomains] = useState([]);
@@ -164,23 +196,8 @@ function DashboardPage() {
                   <span className="font-mono text-sm text-primary-600">{request.requestId}</span>
                   <span className="text-content">{request.name}</span>
                 </div>
-                <Badge variant={
-                  request.status === 'submitted' ? 'info' :
-                  ['in-progress', 'development', 'review', 'testing'].includes(request.status) ? 'warning' :
-                  ['deployed', 'active', 'snapshot'].includes(request.status) ? 'success' :
-                  request.status === 'rejected' ? 'danger' :
-                  'default'
-                }>
-                  {request.status === 'submitted' ? 'Submitted' :
-                    request.status === 'in-progress' ? 'In Progress' :
-                    request.status === 'development' ? 'Development' :
-                    request.status === 'review' ? 'Review' :
-                    request.status === 'testing' ? 'Testing' :
-                    request.status === 'deployed' ? 'Deployed' :
-                    request.status === 'active' ? 'Active' :
-                    request.status === 'rejected' ? 'Rejected' :
-                    request.status === 'accepted' ? 'Accepted' :
-                    request.statusDescription || request.status}
+                <Badge variant={getStatusVariant(request.status)}>
+                  {getStatusLabel(request)}
                 </Badge>
               </Link>
             ))}

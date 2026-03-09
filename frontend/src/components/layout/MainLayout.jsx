@@ -101,6 +101,91 @@ function getHeaderTitle(isAdmin, isGroupAdmin) {
   return 'Welcome';
 }
 
+function NavItem({ item, isActive, sidebarOpen, iconSize }) {
+  const Icon = item.icon;
+  const active = item.path ? isActive(item.path, item.exact) : false;
+
+  const linkContent = (
+    <>
+      <Icon size={iconSize} className="shrink-0" />
+      {sidebarOpen && <span>{item.label}</span>}
+    </>
+  );
+
+  return (
+    <li key={item.path || item.label}>
+      {item.external ? (
+        <a
+          href={item.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`sidebar-link ${!sidebarOpen ? 'justify-center' : ''}`}
+        >
+          {linkContent}
+        </a>
+      ) : (
+        <Link
+          to={item.path}
+          className={`sidebar-link ${active ? 'active' : ''} ${!sidebarOpen ? 'justify-center' : ''}`}
+        >
+          {linkContent}
+        </Link>
+      )}
+      {item.dividerAfter && (
+        <div className="my-3 border-t border-edge"></div>
+      )}
+    </li>
+  );
+}
+
+function SidebarUserMenu({ user, sidebarOpen, iconSize, userMenuOpen, setUserMenuOpen, onLogout }) {
+  return (
+    <div className="p-4 border-t border-edge">
+      <div className="relative">
+        <button
+          onClick={() => setUserMenuOpen(!userMenuOpen)}
+          className={`w-full flex items-center gap-3 p-2 rounded-lg hover:bg-surface-hover min-w-0 ${!sidebarOpen ? 'justify-center' : ''}`}
+        >
+          <div className="avatar shrink-0">
+            <User size={iconSize} />
+          </div>
+          {sidebarOpen && (
+            <>
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-sm font-medium text-content truncate">
+                  {user?.full_name || user?.username || 'User'}
+                </p>
+                <p className="text-xs text-content-muted truncate">{user?.email}</p>
+              </div>
+              <ChevronDown size={16} className={`shrink-0 text-content-muted transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+            </>
+          )}
+        </button>
+
+        {userMenuOpen && (
+          <div className="absolute bottom-full left-0 w-full mb-2 bg-surface rounded-lg shadow-lg border border-edge py-2">
+            <Link
+              to="/profile"
+              className="flex items-center gap-2 px-4 py-2 hover:bg-surface-hover text-content-secondary"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              <User size={16} />
+              <span>Profile</span>
+            </Link>
+            <button
+              onClick={onLogout}
+              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600"
+            >
+              <LogOut size={16} />
+              <span>Logout</span>
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
   const { user, logout, isSuperAdmin, canManageUsers, isEditor } = useAuth();
   const location = useLocation();
@@ -117,9 +202,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
   const iconSize = sidebarOpen ? 20 : 24;
 
   const isActive = (path, exact = false) => {
-    if (exact) {
-      return location.pathname === path;
-    }
+    if (exact) return location.pathname === path;
     return location.pathname.startsWith(path);
   };
 
@@ -149,37 +232,15 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
         {/* Navigation */}
         <nav className="flex-1 py-4 px-3 overflow-y-auto">
           <ul className="space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const active = item.path ? isActive(item.path, item.exact) : false;
-
-              return (
-                <li key={item.path || item.label}>
-                  {item.external ? (
-                    <a
-                      href={item.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`sidebar-link ${!sidebarOpen ? 'justify-center' : ''}`}
-                    >
-                      <Icon size={iconSize} className="shrink-0" />
-                      {sidebarOpen && <span>{item.label}</span>}
-                    </a>
-                  ) : (
-                    <Link
-                      to={item.path}
-                      className={`sidebar-link ${active ? 'active' : ''} ${!sidebarOpen ? 'justify-center' : ''}`}
-                    >
-                      <Icon size={iconSize} className="shrink-0" />
-                      {sidebarOpen && <span>{item.label}</span>}
-                    </Link>
-                  )}
-                  {item.dividerAfter && (
-                    <div className="my-3 border-t border-edge"></div>
-                  )}
-                </li>
-              );
-            })}
+            {navItems.map((item) => (
+              <NavItem
+                key={item.path || item.label}
+                item={item}
+                isActive={isActive}
+                sidebarOpen={sidebarOpen}
+                iconSize={iconSize}
+              />
+            ))}
           </ul>
         </nav>
 
@@ -189,49 +250,14 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
         </div>
 
         {/* User Info */}
-        <div className="p-4 border-t border-edge">
-          <div className="relative">
-            <button
-              onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className={`w-full flex items-center gap-3 p-2 rounded-lg hover:bg-surface-hover min-w-0 ${!sidebarOpen ? 'justify-center' : ''}`}
-            >
-              <div className="avatar shrink-0">
-                <User size={iconSize} />
-              </div>
-              {sidebarOpen && (
-                <>
-                  <div className="flex-1 min-w-0 text-left">
-                    <p className="text-sm font-medium text-content truncate">
-                      {user?.full_name || user?.username || 'User'}
-                    </p>
-                    <p className="text-xs text-content-muted truncate">{user?.email}</p>
-                  </div>
-                  <ChevronDown size={16} className={`shrink-0 text-content-muted transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
-                </>
-              )}
-            </button>
-
-            {userMenuOpen && (
-              <div className="absolute bottom-full left-0 w-full mb-2 bg-surface rounded-lg shadow-lg border border-edge py-2">
-                <Link
-                  to="/profile"
-                  className="flex items-center gap-2 px-4 py-2 hover:bg-surface-hover text-content-secondary"
-                  onClick={() => setUserMenuOpen(false)}
-                >
-                  <User size={16} />
-                  <span>Profile</span>
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600"
-                >
-                  <LogOut size={16} />
-                  <span>Logout</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+        <SidebarUserMenu
+          user={user}
+          sidebarOpen={sidebarOpen}
+          iconSize={iconSize}
+          userMenuOpen={userMenuOpen}
+          setUserMenuOpen={setUserMenuOpen}
+          onLogout={handleLogout}
+        />
       </aside>
 
       {/* Main Content */}

@@ -1,14 +1,150 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { scenarioAPI, domainAPI } from '../../services/api';
 import toast from 'react-hot-toast';
-import { FileText, Plus, Edit2, Trash2, X, Search, Filter } from 'lucide-react';
+import { FileText, Plus, Edit2, Trash2, Search, Filter } from 'lucide-react';
 import { Modal } from '../../components/shared';
 
 function getSubmitLabel(saving, editing) {
   if (saving) return 'Saving...';
   return editing ? 'Update' : 'Create';
 }
+
+// --- Sub-components extracted to reduce cognitive complexity ---
+
+const ScenarioRow = ({ scenario, onEdit, onDelete }) => {
+  const statusClass = scenario.status === 'A'
+    ? 'bg-green-100 text-green-800'
+    : 'bg-surface-hover text-content';
+  const statusLabel = scenario.status === 'A' ? 'Active' : 'Inactive';
+
+  return (
+    <tr className="border-b hover:bg-surface-hover">
+      <td className="py-3 px-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+            <FileText className="text-purple-600" size={20} />
+          </div>
+          <div>
+            <p className="font-medium text-content">{scenario.name}</p>
+            {scenario.description && (
+              <p className="text-sm text-content-muted line-clamp-1">{scenario.description}</p>
+            )}
+          </div>
+        </div>
+      </td>
+      <td className="py-3 px-4">
+        <code className="text-sm bg-surface-hover px-2 py-1 rounded">{scenario.key}</code>
+      </td>
+      <td className="py-3 px-4">
+        <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">{scenario.dataDomain}</span>
+      </td>
+      <td className="py-3 px-4 text-sm text-content-muted">{scenario.order || 0}</td>
+      <td className="py-3 px-4">
+        <span className={`px-2 py-1 text-xs rounded-full ${statusClass}`}>{statusLabel}</span>
+      </td>
+      <td className="py-3 px-4">
+        <div className="flex items-center gap-1">
+          <button onClick={() => onEdit(scenario)} className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+            <Edit2 size={18} />
+          </button>
+          <button onClick={() => onDelete(scenario)} className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+            <Trash2 size={18} />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+};
+
+const ScenariosTable = ({ scenarios, loading, onEdit, onDelete }) => {
+  if (loading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (scenarios.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <FileText className="mx-auto text-content-muted mb-4" size={48} />
+        <p className="text-content-muted">No scenarios found</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          <tr className="table-header">
+            <th className="text-left py-3 px-4">Scenario</th>
+            <th className="text-left py-3 px-4">Key</th>
+            <th className="text-left py-3 px-4">Domain</th>
+            <th className="text-left py-3 px-4">Order</th>
+            <th className="text-left py-3 px-4">Status</th>
+            <th className="text-left py-3 px-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {scenarios.map((scenario) => (
+            <ScenarioRow key={scenario.key} scenario={scenario} onEdit={onEdit} onDelete={onDelete} />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+const ScenarioForm = ({ formData, editingScenario, domains, saving, handleChange, handleSubmit, closeModal }) => (
+  <form onSubmit={handleSubmit} className="p-6 space-y-4">
+    <div>
+      <label className="block text-sm font-medium text-content-secondary mb-1">Key *</label>
+      <input type="text" name="key" value={formData.key} onChange={handleChange} className="input-field" placeholder="scenario-key" required disabled={!!editingScenario} />
+    </div>
+    <div>
+      <label className="block text-sm font-medium text-content-secondary mb-1">Name *</label>
+      <input type="text" name="name" value={formData.name} onChange={handleChange} className="input-field" placeholder="Scenario Name" required />
+    </div>
+    <div>
+      <label className="block text-sm font-medium text-content-secondary mb-1">Domain *</label>
+      <select name="dataDomain" value={formData.dataDomain} onChange={handleChange} className="input-field" required>
+        <option value="">Select a domain</option>
+        {domains.map((domain) => (
+          <option key={domain.key} value={domain.key}>{domain.name}</option>
+        ))}
+      </select>
+    </div>
+    <div>
+      <label className="block text-sm font-medium text-content-secondary mb-1">Description</label>
+      <textarea name="description" value={formData.description} onChange={handleChange} className="input-field" rows={2} placeholder="Short description..." />
+    </div>
+    <div>
+      <label className="block text-sm font-medium text-content-secondary mb-1">Full Description</label>
+      <textarea name="fullDescription" value={formData.fullDescription} onChange={handleChange} className="input-field" rows={4} placeholder="Detailed description..." />
+    </div>
+    <div className="grid grid-cols-2 gap-4">
+      <div>
+        <label className="block text-sm font-medium text-content-secondary mb-1">Path</label>
+        <input type="text" name="path" value={formData.path} onChange={handleChange} className="input-field" placeholder="/path" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-content-secondary mb-1">Order</label>
+        <input type="number" name="order" value={formData.order} onChange={handleChange} className="input-field" min={0} />
+      </div>
+    </div>
+    <div className="flex justify-end gap-3 pt-4">
+      <button type="button" onClick={closeModal} className="btn-secondary">Cancel</button>
+      <button type="submit" disabled={saving} className="btn-primary">
+        {getSubmitLabel(saving, editingScenario)}
+      </button>
+    </div>
+  </form>
+);
+
+// --- Main Component ---
 
 function ScenariosManagement() {
   const { isSuperAdmin } = useAuth();
@@ -20,23 +156,14 @@ function ScenariosManagement() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingScenario, setEditingScenario] = useState(null);
   const [formData, setFormData] = useState({
-    key: '',
-    name: '',
-    dataDomain: '',
-    description: '',
-    fullDescription: '',
-    path: '',
-    order: 0,
+    key: '', name: '', dataDomain: '', description: '', fullDescription: '', path: '', order: 0,
   });
   const [saving, setSaving] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [scenariosRes, domainsRes] = await Promise.all([
-        scenarioAPI.getAll(),
-        domainAPI.getAll(),
-      ]);
+      const [scenariosRes, domainsRes] = await Promise.all([scenarioAPI.getAll(), domainAPI.getAll()]);
       setScenarios(scenariosRes.data);
       setDomains(domainsRes.data);
     } catch (error) {
@@ -46,61 +173,37 @@ function ScenariosManagement() {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'order' ? parseInt(value) || 0 : value,
-    }));
+    setFormData(prev => ({ ...prev, [name]: name === 'order' ? parseInt(value) || 0 : value }));
   };
 
   const openCreateModal = () => {
     setEditingScenario(null);
-    setFormData({
-      key: '',
-      name: '',
-      dataDomain: domains[0]?.key || '',
-      description: '',
-      fullDescription: '',
-      path: '',
-      order: 0,
-    });
+    setFormData({ key: '', name: '', dataDomain: domains[0]?.key || '', description: '', fullDescription: '', path: '', order: 0 });
     setModalOpen(true);
   };
 
   const openEditModal = (scenario) => {
     setEditingScenario(scenario);
     setFormData({
-      key: scenario.key,
-      name: scenario.name,
-      dataDomain: scenario.dataDomain,
-      description: scenario.description || '',
-      fullDescription: scenario.fullDescription || '',
-      path: scenario.path || '',
-      order: scenario.order || 0,
+      key: scenario.key, name: scenario.name, dataDomain: scenario.dataDomain,
+      description: scenario.description || '', fullDescription: scenario.fullDescription || '',
+      path: scenario.path || '', order: scenario.order || 0,
     });
     setModalOpen(true);
   };
 
-  const closeModal = () => {
-    setModalOpen(false);
-    setEditingScenario(null);
-  };
+  const closeModal = () => { setModalOpen(false); setEditingScenario(null); };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
-
     try {
       if (editingScenario) {
-        await scenarioAPI.update(editingScenario._id, {
-          _id: editingScenario._id,
-          ...formData,
-        });
+        await scenarioAPI.update(editingScenario._id, { _id: editingScenario._id, ...formData });
         toast.success('Scenario updated successfully');
       } else {
         await scenarioAPI.create(formData);
@@ -116,10 +219,7 @@ function ScenariosManagement() {
   };
 
   const handleDelete = async (scenario) => {
-    if (!confirm(`Are you sure you want to delete "${scenario.name}"?`)) {
-      return;
-    }
-
+    if (!confirm(`Are you sure you want to delete "${scenario.name}"?`)) return;
     try {
       await scenarioAPI.delete(scenario._id || scenario.key);
       toast.success('Scenario deleted successfully');
@@ -130,9 +230,7 @@ function ScenariosManagement() {
   };
 
   const filteredScenarios = scenarios.filter(scenario => {
-    const matchesSearch =
-      scenario.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      scenario.key.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = scenario.name.toLowerCase().includes(searchTerm.toLowerCase()) || scenario.key.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDomain = !filterDomain || scenario.dataDomain === filterDomain;
     return matchesSearch && matchesDomain;
   });
@@ -152,8 +250,7 @@ function ScenariosManagement() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-content">Scenarios Management</h1>
         <button onClick={openCreateModal} className="btn-primary flex items-center gap-2">
-          <Plus size={18} />
-          Add Scenario
+          <Plus size={18} /> Add Scenario
         </button>
       </div>
 
@@ -161,26 +258,14 @@ function ScenariosManagement() {
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
-          <input
-            type="text"
-            placeholder="Search scenarios..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input-field pl-10"
-          />
+          <input type="text" placeholder="Search scenarios..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="input-field pl-10" />
         </div>
         <div className="relative">
           <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
-          <select
-            value={filterDomain}
-            onChange={(e) => setFilterDomain(e.target.value)}
-            className="input-field pl-10 pr-8"
-          >
+          <select value={filterDomain} onChange={(e) => setFilterDomain(e.target.value)} className="input-field pl-10 pr-8">
             <option value="">All Domains</option>
             {domains.map((domain) => (
-              <option key={domain.key} value={domain.key}>
-                {domain.name}
-              </option>
+              <option key={domain.key} value={domain.key}>{domain.name}</option>
             ))}
           </select>
         </div>
@@ -188,216 +273,20 @@ function ScenariosManagement() {
 
       {/* Scenarios Table */}
       <div className="card overflow-hidden">
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        ) : filteredScenarios.length === 0 ? (
-          <div className="text-center py-12">
-            <FileText className="mx-auto text-content-muted mb-4" size={48} />
-            <p className="text-content-muted">No scenarios found</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="table-header">
-                  <th className="text-left py-3 px-4">Scenario</th>
-                  <th className="text-left py-3 px-4">Key</th>
-                  <th className="text-left py-3 px-4">Domain</th>
-                  <th className="text-left py-3 px-4">Order</th>
-                  <th className="text-left py-3 px-4">Status</th>
-                  <th className="text-left py-3 px-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredScenarios.map((scenario) => (
-                  <tr key={scenario.key} className="border-b hover:bg-surface-hover">
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                          <FileText className="text-purple-600" size={20} />
-                        </div>
-                        <div>
-                          <p className="font-medium text-content">{scenario.name}</p>
-                          {scenario.description && (
-                            <p className="text-sm text-content-muted line-clamp-1">
-                              {scenario.description}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <code className="text-sm bg-surface-hover px-2 py-1 rounded">
-                        {scenario.key}
-                      </code>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                        {scenario.dataDomain}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-content-muted">
-                      {scenario.order || 0}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          scenario.status === 'A'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-surface-hover text-content'
-                        }`}
-                      >
-                        {scenario.status === 'A' ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => openEditModal(scenario)}
-                          className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(scenario)}
-                          className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <ScenariosTable scenarios={filteredScenarios} loading={loading} onEdit={openEditModal} onDelete={handleDelete} />
       </div>
 
       {/* Create/Edit Modal */}
       <Modal isOpen={modalOpen} onClose={closeModal} title={editingScenario ? 'Edit Scenario' : 'Create Scenario'} size="md">
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-content-secondary mb-1">
-                  Key *
-                </label>
-                <input
-                  type="text"
-                  name="key"
-                  value={formData.key}
-                  onChange={handleChange}
-                  className="input-field"
-                  placeholder="scenario-key"
-                  required
-                  disabled={!!editingScenario}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-content-secondary mb-1">
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="input-field"
-                  placeholder="Scenario Name"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-content-secondary mb-1">
-                  Domain *
-                </label>
-                <select
-                  name="dataDomain"
-                  value={formData.dataDomain}
-                  onChange={handleChange}
-                  className="input-field"
-                  required
-                >
-                  <option value="">Select a domain</option>
-                  {domains.map((domain) => (
-                    <option key={domain.key} value={domain.key}>
-                      {domain.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-content-secondary mb-1">
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  className="input-field"
-                  rows={2}
-                  placeholder="Short description..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-content-secondary mb-1">
-                  Full Description
-                </label>
-                <textarea
-                  name="fullDescription"
-                  value={formData.fullDescription}
-                  onChange={handleChange}
-                  className="input-field"
-                  rows={4}
-                  placeholder="Detailed description..."
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-content-secondary mb-1">
-                    Path
-                  </label>
-                  <input
-                    type="text"
-                    name="path"
-                    value={formData.path}
-                    onChange={handleChange}
-                    className="input-field"
-                    placeholder="/path"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-content-secondary mb-1">
-                    Order
-                  </label>
-                  <input
-                    type="number"
-                    name="order"
-                    value={formData.order}
-                    onChange={handleChange}
-                    className="input-field"
-                    min={0}
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4">
-                <button type="button" onClick={closeModal} className="btn-secondary">
-                  Cancel
-                </button>
-                <button type="submit" disabled={saving} className="btn-primary">
-                  {getSubmitLabel(saving, editingScenario)}
-                </button>
-              </div>
-            </form>
+        <ScenarioForm
+          formData={formData}
+          editingScenario={editingScenario}
+          domains={domains}
+          saving={saving}
+          handleChange={handleChange}
+          handleSubmit={handleSubmit}
+          closeModal={closeModal}
+        />
       </Modal>
     </div>
   );

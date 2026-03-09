@@ -395,120 +395,114 @@ function AskScenarioPage() {
     return tmp.textContent || tmp.innerText || '';
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const validateForm = () => {
     if (!formData.dataDomain) {
       toast.error('Please select a domain');
-      return;
+      return false;
     }
     if (!formData.name.trim()) {
       toast.error('Please enter a scenario name');
-      return;
+      return false;
     }
     if (!stripHtml(formData.description).trim()) {
       toast.error('Please enter a description');
-      return;
+      return false;
     }
+    return true;
+  };
 
-    // Validate status change comment for editors
-    if (isEditMode && isEditor() && originalRequest) {
-      if (formData.status && formData.status !== originalRequest.status) {
-        if (!formData.statusComment || !formData.statusComment.trim()) {
-          toast.error('Please provide a comment for the status change');
-          return;
-        }
+  const validateStatusChangeComment = () => {
+    if (!isEditMode || !isEditor() || !originalRequest) return true;
+    const statusChanged = formData.status && formData.status !== originalRequest.status;
+    if (!statusChanged) return true;
+    if (!formData.statusComment || !formData.statusComment.trim()) {
+      toast.error('Please provide a comment for the status change');
+      return false;
+    }
+    return true;
+  };
+
+  const buildUserUpdateData = () => ({
+    name: formData.name.trim(),
+    description: formData.description,
+    has_suggestion: formData.has_suggestion,
+    knows_steps: formData.knows_steps,
+    steps: formData.steps.length > 0 ? formData.steps : [],
+    reason: formData.reason || null,
+    team: formData.team || null,
+    assignee: formData.assignee || null,
+    assignee_name: formData.assignee_name || null
+  });
+
+  const buildAdminUpdateData = () => {
+    if (!isEditor() || !originalRequest) return {};
+    const adminUpdateData = {};
+    if (formData.status && formData.status !== originalRequest.status) {
+      adminUpdateData.status = formData.status;
+      adminUpdateData.status_comment = formData.statusComment.trim();
+    }
+    if (formData.dataDomain !== originalRequest.dataDomain) {
+      adminUpdateData.dataDomain = formData.dataDomain;
+    }
+    if (formData.scenarioKey !== (originalRequest.scenarioKey || '')) {
+      adminUpdateData.scenarioKey = formData.scenarioKey || null;
+    }
+    if (formData.configName !== (originalRequest.configName || '')) {
+      adminUpdateData.configName = formData.configName || null;
+    }
+    if (formData.fulfilmentDate !== (originalRequest.fulfilmentDate?.split('T')[0] || '')) {
+      adminUpdateData.fulfilmentDate = formData.fulfilmentDate || null;
+    }
+    return adminUpdateData;
+  };
+
+  const uploadFiles = async (targetRequestId) => {
+    for (const file of uploadedFiles) {
+      try {
+        await scenarioRequestAPI.uploadFile(targetRequestId, file);
+      } catch (fileError) {
+        toast.error(`Failed to upload: ${file.name}`);
       }
     }
+  };
+
+  const handleEditSubmit = async () => {
+    await scenarioRequestAPI.update(requestId, buildUserUpdateData());
+
+    const adminUpdateData = buildAdminUpdateData();
+    if (Object.keys(adminUpdateData).length > 0) {
+      await scenarioRequestAPI.adminUpdate(requestId, adminUpdateData);
+    }
+
+    await uploadFiles(requestId);
+    toast.success('Scenario request updated successfully!');
+    navigate(`/my-requests/${requestId}`);
+  };
+
+  const handleCreateSubmit = async () => {
+    const submitData = {
+      requestType: formData.requestType,
+      dataDomain: formData.dataDomain,
+      ...buildUserUpdateData()
+    };
+    const response = await scenarioRequestAPI.create(submitData);
+    const newRequestId = response.data.requestId;
+    await uploadFiles(newRequestId);
+    toast.success('Scenario request submitted successfully!');
+    navigate('/my-requests');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+    if (!validateStatusChangeComment()) return;
 
     setLoading(true);
     try {
       if (isEditMode) {
-        // Update existing request
-        const userUpdateData = {
-          name: formData.name.trim(),
-          description: formData.description,
-          has_suggestion: formData.has_suggestion,
-          knows_steps: formData.knows_steps,
-          steps: formData.steps.length > 0 ? formData.steps : [],
-          reason: formData.reason || null,
-          team: formData.team || null,
-          assignee: formData.assignee || null,
-          assignee_name: formData.assignee_name || null
-        };
-
-        // Use user update endpoint for basic fields
-        await scenarioRequestAPI.update(requestId, userUpdateData);
-
-        // If editor, also update admin fields
-        if (isEditor() && originalRequest) {
-          const adminUpdateData = {};
-
-          // Only include fields that changed
-          if (formData.status && formData.status !== originalRequest.status) {
-            adminUpdateData.status = formData.status;
-            // Include status comment for workflow tracking
-            adminUpdateData.status_comment = formData.statusComment.trim();
-          }
-          if (formData.dataDomain !== originalRequest.dataDomain) {
-            adminUpdateData.dataDomain = formData.dataDomain;
-          }
-          if (formData.scenarioKey !== (originalRequest.scenarioKey || '')) {
-            adminUpdateData.scenarioKey = formData.scenarioKey || null;
-          }
-          if (formData.configName !== (originalRequest.configName || '')) {
-            adminUpdateData.configName = formData.configName || null;
-          }
-          if (formData.fulfilmentDate !== (originalRequest.fulfilmentDate?.split('T')[0] || '')) {
-            adminUpdateData.fulfilmentDate = formData.fulfilmentDate || null;
-          }
-
-          if (Object.keys(adminUpdateData).length > 0) {
-            await scenarioRequestAPI.adminUpdate(requestId, adminUpdateData);
-          }
-        }
-
-        // Upload new files if any
-        for (const file of uploadedFiles) {
-          try {
-            await scenarioRequestAPI.uploadFile(requestId, file);
-          } catch (fileError) {
-            toast.error(`Failed to upload: ${file.name}`);
-          }
-        }
-
-        toast.success('Scenario request updated successfully!');
-        navigate(`/my-requests/${requestId}`);
+        await handleEditSubmit();
       } else {
-        // Create new request
-        const submitData = {
-          requestType: formData.requestType,
-          dataDomain: formData.dataDomain,
-          name: formData.name.trim(),
-          description: formData.description,
-          has_suggestion: formData.has_suggestion,
-          knows_steps: formData.knows_steps,
-          steps: formData.steps.length > 0 ? formData.steps : [],
-          reason: formData.reason || null,
-          team: formData.team || null,
-          assignee: formData.assignee || null,
-          assignee_name: formData.assignee_name || null
-        };
-
-        const response = await scenarioRequestAPI.create(submitData);
-        const newRequestId = response.data.requestId;
-
-        // Upload files if any
-        for (const file of uploadedFiles) {
-          try {
-            await scenarioRequestAPI.uploadFile(newRequestId, file);
-          } catch (fileError) {
-            toast.error(`Failed to upload: ${file.name}`);
-          }
-        }
-
-        toast.success('Scenario request submitted successfully!');
-        navigate('/my-requests');
+        await handleCreateSubmit();
       }
     } catch (error) {
       const errorMsg = error.response?.data?.detail || error.response?.data?.error || 'Failed to submit request';

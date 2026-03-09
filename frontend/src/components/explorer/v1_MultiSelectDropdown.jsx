@@ -57,6 +57,27 @@ const MultiSelectOption = ({ option, idx, isChecked, onClick }) => (
   </li>
 );
 
+// Trigger button for the multi-select dropdown
+const MultiSelectButton = ({ btnRef, isOpen, onClick, selectedOptions, options, placeholder }) => (
+  <button
+    ref={btnRef}
+    type="button"
+    className="border border-edge rounded-md h-10 px-3 py-2 text-left bg-surface flex items-center justify-between w-full hover:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors"
+    onClick={onClick}
+  >
+    <span className="flex-1 text-left text-sm text-content truncate">
+      {trimLabel(getSelectedLabel(selectedOptions, options, placeholder))}
+    </span>
+    <span className="ml-2 flex-shrink-0">
+      {isOpen ? (
+        <ChevronUp className="w-4 h-4 text-content-muted" />
+      ) : (
+        <ChevronDown className="w-4 h-4 text-content-muted" />
+      )}
+    </span>
+  </button>
+);
+
 const SelectAllFooter = ({ allSelected, onToggle }) => (
   <div className="border-t border-edge px-3 py-2 bg-surface-secondary flex items-center">
     <button
@@ -72,6 +93,135 @@ const SelectAllFooter = ({ allSelected, onToggle }) => (
     </button>
   </div>
 );
+
+// Portal-rendered dropdown panel with search, options list, and optional footer
+const MultiSelectPortal = ({
+  menuRef,
+  menuStyle,
+  options,
+  searchInputRef,
+  searchTerm,
+  onSearchChange,
+  filteredOptions,
+  selectedOptions,
+  onOptionClick,
+  multiSelectFooter,
+  handleToggleSelectAll,
+  allSelected,
+}) => createPortal(
+  <div
+    ref={menuRef}
+    style={menuStyle}
+    className="bg-surface border border-edge rounded-md shadow-lg overflow-hidden"
+  >
+    {options.length > 5 && (
+      <div className="p-2 border-b border-edge-light">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-content-muted" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            className="w-full pl-8 pr-3 py-1.5 text-sm border border-edge rounded focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+          />
+        </div>
+      </div>
+    )}
+    <ul className="max-h-48 overflow-auto">
+      {filteredOptions.length === 0 ? (
+        <li className="px-3 py-2 text-sm text-content-muted select-none">
+          No results found
+        </li>
+      ) : (
+        filteredOptions.map((option, idx) => (
+          <MultiSelectOption
+            key={option.value || option.id || idx}
+            option={option}
+            idx={idx}
+            isChecked={selectedOptions.includes(option.value)}
+            onClick={onOptionClick}
+          />
+        ))
+      )}
+    </ul>
+    {multiSelectFooter && handleToggleSelectAll && (
+      <SelectAllFooter allSelected={allSelected} onToggle={handleToggleSelectAll} />
+    )}
+  </div>,
+  document.body
+);
+
+// --- Helpers for position and filtering ---
+
+const computeMultiSelectPosition = (el, spaceThreshold = 260) => {
+  if (!el) return null;
+  const rect = el.getBoundingClientRect();
+  const openUp = window.innerHeight - rect.bottom < spaceThreshold;
+  return {
+    position: 'fixed',
+    zIndex: 9999,
+    width: rect.width,
+    left: rect.left,
+    ...(openUp
+      ? { bottom: window.innerHeight - rect.top + 4 }
+      : { top: rect.bottom + 4 }),
+  };
+};
+
+const filterOptionsByTerm = (options, searchTerm) => {
+  if (!searchTerm.trim()) return options;
+  const term = searchTerm.toLowerCase();
+  return options.filter(
+    (opt) =>
+      (opt.name || '').toLowerCase().includes(term) ||
+      (opt.value || '').toLowerCase().includes(term)
+  );
+};
+
+const toggleOptionInList = (selectedOptions, optionValue) => {
+  if (selectedOptions.includes(optionValue)) {
+    return selectedOptions.filter((item) => item !== optionValue);
+  }
+  return [...selectedOptions, optionValue];
+};
+
+// --- Lifecycle hooks ---
+
+const useOutsideClickClose = (setIsOpen, setSearchTerm, btnRef, menuRef) => {
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!isClickInside(event, btnRef, menuRef)) {
+        setIsOpen(false);
+        setSearchTerm('');
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [setIsOpen, setSearchTerm, btnRef, menuRef]);
+};
+
+const useRepositionOnScroll = (isOpen, computePosition, menuRef) => {
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+    const reposition = () => applyPositionStyle(menuRef.current, computePosition());
+    window.addEventListener('scroll', reposition, true);
+    window.addEventListener('resize', reposition);
+    return () => {
+      window.removeEventListener('scroll', reposition, true);
+      window.removeEventListener('resize', reposition);
+    };
+  }, [isOpen, computePosition, menuRef]);
+};
+
+const useFocusOnOpen = (isOpen, searchInputRef) => {
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      searchInputRef.current.focus({ preventScroll: true });
+    }
+  }, [isOpen, searchInputRef]);
+};
 
 // --- Main component ---
 
@@ -92,127 +242,46 @@ const V1MultiSelectDropdown = ({
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Compute position from button rect — returns style object
-  const computePosition = useCallback(() => {
-    if (!btnRef.current) return null;
-    const rect = btnRef.current.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const openUp = spaceBelow < 260;
-    return {
-      position: 'fixed',
-      zIndex: 9999,
-      width: rect.width,
-      left: rect.left,
-      ...(openUp
-        ? { bottom: window.innerHeight - rect.top + 4 }
-        : { top: rect.bottom + 4 }),
-    };
-  }, []);
+  const computePosition = useCallback(
+    () => computeMultiSelectPosition(btnRef.current),
+    []
+  );
 
-  // Toggle handler — compute position before opening so first paint is correct
   const handleToggle = useCallback(() => {
     setIsOpen((prev) => {
-      if (!prev) {
-        menuStyleRef.current = computePosition();
-      }
+      if (!prev) menuStyleRef.current = computePosition();
       return !prev;
     });
   }, [computePosition]);
 
-  // Close on outside click
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!isClickInside(event, btnRef, menuRef)) {
-        setIsOpen(false);
-        setSearchTerm('');
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Reposition on scroll / resize while open (useLayoutEffect to avoid flash)
-  useLayoutEffect(() => {
-    if (!isOpen) return;
-    const reposition = () => applyPositionStyle(menuRef.current, computePosition());
-    window.addEventListener('scroll', reposition, true);
-    window.addEventListener('resize', reposition);
-    return () => {
-      window.removeEventListener('scroll', reposition, true);
-      window.removeEventListener('resize', reposition);
-    };
-  }, [isOpen, computePosition]);
-
-  // Focus search input after menu is painted (preventScroll avoids container jump)
-  useEffect(() => {
-    if (isOpen && searchInputRef.current) {
-      searchInputRef.current.focus({ preventScroll: true });
-    }
-  }, [isOpen]);
+  useOutsideClickClose(setIsOpen, setSearchTerm, btnRef, menuRef);
+  useRepositionOnScroll(isOpen, computePosition, menuRef);
+  useFocusOnOpen(isOpen, searchInputRef);
 
   const handleOptionClick = (option) => {
-    if (selectedOptions.includes(option.value)) {
-      onChange(selectedOptions.filter((item) => item !== option.value));
-    } else {
-      onChange([...selectedOptions, option.value]);
-    }
+    onChange(toggleOptionInList(selectedOptions, option.value));
   };
 
-  const filteredOptions = useMemo(() => {
-    if (!searchTerm.trim()) return options;
-    const term = searchTerm.toLowerCase();
-    return options.filter(
-      (opt) =>
-        (opt.name || '').toLowerCase().includes(term) ||
-        (opt.value || '').toLowerCase().includes(term)
-    );
-  }, [options, searchTerm]);
+  const filteredOptions = useMemo(
+    () => filterOptionsByTerm(options, searchTerm),
+    [options, searchTerm]
+  );
 
   const dropdownMenu = isOpen && menuStyleRef.current
-    ? createPortal(
-        <div
-          ref={menuRef}
-          style={menuStyleRef.current}
-          className="bg-surface border border-edge rounded-md shadow-lg overflow-hidden"
-        >
-          {options.length > 5 && (
-            <div className="p-2 border-b border-edge-light">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-content-muted" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  className="w-full pl-8 pr-3 py-1.5 text-sm border border-edge rounded focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Search..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-          <ul className="max-h-48 overflow-auto">
-            {filteredOptions.length === 0 ? (
-              <li className="px-3 py-2 text-sm text-content-muted select-none">
-                No results found
-              </li>
-            ) : (
-              filteredOptions.map((option, idx) => (
-                <MultiSelectOption
-                  key={option.value || option.id || idx}
-                  option={option}
-                  idx={idx}
-                  isChecked={selectedOptions.includes(option.value)}
-                  onClick={handleOptionClick}
-                />
-              ))
-            )}
-          </ul>
-          {multiSelectFooter && handleToggleSelectAll && (
-            <SelectAllFooter allSelected={allSelected} onToggle={handleToggleSelectAll} />
-          )}
-        </div>,
-        document.body
-      )
+    ? <MultiSelectPortal
+        menuRef={menuRef}
+        menuStyle={menuStyleRef.current}
+        options={options}
+        searchInputRef={searchInputRef}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        filteredOptions={filteredOptions}
+        selectedOptions={selectedOptions}
+        onOptionClick={handleOptionClick}
+        multiSelectFooter={multiSelectFooter}
+        handleToggleSelectAll={handleToggleSelectAll}
+        allSelected={allSelected}
+      />
     : null;
 
   return (
@@ -222,23 +291,14 @@ const V1MultiSelectDropdown = ({
           {label}
         </label>
       )}
-      <button
-        ref={btnRef}
-        type="button"
-        className="border border-edge rounded-md h-10 px-3 py-2 text-left bg-surface flex items-center justify-between w-full hover:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors"
+      <MultiSelectButton
+        btnRef={btnRef}
+        isOpen={isOpen}
         onClick={handleToggle}
-      >
-        <span className="flex-1 text-left text-sm text-content truncate">
-          {trimLabel(getSelectedLabel(selectedOptions, options, placeholder))}
-        </span>
-        <span className="ml-2 flex-shrink-0">
-          {isOpen ? (
-            <ChevronUp className="w-4 h-4 text-content-muted" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-content-muted" />
-          )}
-        </span>
-      </button>
+        selectedOptions={selectedOptions}
+        options={options}
+        placeholder={placeholder}
+      />
       {dropdownMenu}
     </div>
   );

@@ -245,6 +245,82 @@ const buildSubmitForm = (form, filterConfig) => {
   return filledForm;
 };
 
+// Customer preference toggle button (shown when customer filters exist)
+const CustomerToggleButton = ({ useCustomerSuggest, onToggle }) => (
+  <button
+    type="button"
+    onClick={(e) => {
+      e.stopPropagation();
+      onToggle();
+    }}
+    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
+      useCustomerSuggest
+        ? 'bg-primary-50 border-primary-300 text-primary-700'
+        : 'bg-surface-secondary border-edge text-content-muted'
+    }`}
+  >
+    <Users className="w-3.5 h-3.5" />
+    {useCustomerSuggest ? 'Assigned Customers' : 'No Preference'}
+  </button>
+);
+
+// Accordion header with filter icon, title, optional customer toggle, and chevron
+const AccordionHeader = ({ show, onToggle, hasCustomerFilter, customerHasAssigned, useCustomerSuggest, onCustomerToggle }) => (
+  <div
+    className="flex items-center justify-between px-5 py-3.5 cursor-pointer select-none hover:bg-surface-hover transition-colors border-b border-edge-light"
+    onClick={onToggle}
+  >
+    <div className="flex items-center gap-2">
+      <Filter className="w-4 h-4 text-content-muted" />
+      <h5 className="text-sm font-semibold text-content m-0">
+        Filters
+      </h5>
+    </div>
+    <div className="flex items-center gap-3">
+      {hasCustomerFilter && customerHasAssigned && (
+        <CustomerToggleButton
+          useCustomerSuggest={useCustomerSuggest}
+          onToggle={onCustomerToggle}
+        />
+      )}
+      <div className="text-content-muted">
+        {show ? (
+          <ChevronUp size={20} />
+        ) : (
+          <ChevronDown size={20} />
+        )}
+      </div>
+    </div>
+  </div>
+);
+
+// --- Helpers to reduce cognitive complexity in V1FilterSection ---
+
+const isFilterRenderable = (filter) =>
+  (filter.visible === undefined || filter.visible === true) &&
+  (filter.status === 'Y' || filter.status === undefined);
+
+const buildInitialForm = (filterConfig, initialFilterValues) => {
+  const initialForm = {};
+  filterConfig.forEach((filter) => {
+    const val = getFilterDefaultValue(filter, initialFilterValues);
+    if (val !== undefined) {
+      initialForm[filter.dataKey] = val;
+    }
+  });
+  return initialForm;
+};
+
+const buildResetForm = (filterConfig) => buildInitialForm(filterConfig, null);
+
+const chunkArray = (arr, size) => {
+  const result = [];
+  for (let i = 0; i < arr.length; i += size) {
+    result.push(arr.slice(i, i + size));
+  }
+  return result;
+};
+
 const FilterAccordionBody = ({
   externalLoading,
   filterError,
@@ -362,21 +438,12 @@ const V1FilterSection = ({
     }
   }, [autoSubmit, form, autoSubmitted]);
 
-  // Keep window.__activeFilters in sync with the latest form state
-  useEffect(() => {
-    window.__activeFilters = form;
-  }, [form]);
+  useEffect(() => { window.__activeFilters = form; }, [form]);
 
   // Initialize form from filterConfig and initialFilterValues
   useEffect(() => {
-    if (!filterConfig || filterConfig.length === 0) return;
-    const initialForm = {};
-    filterConfig.forEach((filter) => {
-      const val = getFilterDefaultValue(filter, initialFilterValues);
-      if (val !== undefined) {
-        initialForm[filter.dataKey] = val;
-      }
-    });
+    if (!filterConfig?.length) return;
+    const initialForm = buildInitialForm(filterConfig, initialFilterValues);
     setForm((prev) => ({ ...initialForm, ...prev }));
   }, [filterConfig, initialFilterValues]);
 
@@ -386,14 +453,7 @@ const V1FilterSection = ({
   }, []);
 
   const handleReset = useCallback(() => {
-    const resetForm = {};
-    filterConfig.forEach((filter) => {
-      const val = getFilterDefaultValue(filter, null);
-      if (val !== undefined) {
-        resetForm[filter.dataKey] = val;
-      }
-    });
-    setForm(resetForm);
+    setForm(buildResetForm(filterConfig));
     setErrorMsg('');
   }, [filterConfig]);
 
@@ -402,76 +462,36 @@ const V1FilterSection = ({
     const filledForm = buildSubmitForm(form, filterConfig);
     const errorMessages = runValidation(filterConfig, filledForm);
 
-    if (errorMessages.length === 0) {
-      setErrorMsg('');
-      onSubmit(filledForm);
-      setShow(false);
-    } else {
+    if (errorMessages.length > 0) {
       setErrorMsg(formatErrorMessages(errorMessages));
+      return;
     }
+    setErrorMsg('');
+    onSubmit(filledForm);
+    setShow(false);
   }, [onSubmit, form, externalLoading, filterConfig]);
 
-  // Only render filters with visible !== false and status="Y"
-  const renderableFilters = useMemo(() => {
-    return filterConfig.filter(
-      (filter) =>
-        (filter.visible === undefined || filter.visible === true) &&
-        (filter.status === 'Y' || filter.status === undefined)
-    );
-  }, [filterConfig]);
+  const renderableFilters = useMemo(
+    () => filterConfig.filter(isFilterRenderable),
+    [filterConfig]
+  );
 
-  // Split renderable filters into rows of 3
-  const rows = useMemo(() => {
-    const perRow = 3;
-    const result = [];
-    for (let i = 0; i < renderableFilters.length; i += perRow) {
-      result.push(renderableFilters.slice(i, i + perRow));
-    }
-    return result;
-  }, [renderableFilters]);
+  const rows = useMemo(
+    () => chunkArray(renderableFilters, 3),
+    [renderableFilters]
+  );
 
   return (
     <div className="w-full mt-4">
       <div className="card p-0">
-        {/* Accordion Header */}
-        <div
-          className="flex items-center justify-between px-5 py-3.5 cursor-pointer select-none hover:bg-surface-hover transition-colors border-b border-edge-light"
-          onClick={() => setShow((s) => !s)}
-        >
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-content-muted" />
-            <h5 className="text-sm font-semibold text-content m-0">
-              Filters
-            </h5>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Customer preference toggle */}
-            {hasCustomerFilter && customerData.hasAssigned && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setUseCustomerSuggest((prev) => !prev);
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
-                  useCustomerSuggest
-                    ? 'bg-primary-50 border-primary-300 text-primary-700'
-                    : 'bg-surface-secondary border-edge text-content-muted'
-                }`}
-              >
-                <Users className="w-3.5 h-3.5" />
-                {useCustomerSuggest ? 'Assigned Customers' : 'No Preference'}
-              </button>
-            )}
-            <div className="text-content-muted">
-              {show ? (
-                <ChevronUp size={20} />
-              ) : (
-                <ChevronDown size={20} />
-              )}
-            </div>
-          </div>
-        </div>
+        <AccordionHeader
+          show={show}
+          onToggle={() => setShow((s) => !s)}
+          hasCustomerFilter={hasCustomerFilter}
+          customerHasAssigned={customerData.hasAssigned}
+          useCustomerSuggest={useCustomerSuggest}
+          onCustomerToggle={() => setUseCustomerSuggest((prev) => !prev)}
+        />
 
         {/* Accordion Body */}
         {show && (

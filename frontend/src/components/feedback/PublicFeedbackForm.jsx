@@ -2,13 +2,81 @@ import React, { useState } from 'react';
 import { Star, Send, CheckCircle } from 'lucide-react';
 import { feedbackAPI } from '../../services/api';
 
+const RATING_LABELS = {
+  1: 'Poor',
+  2: 'Fair',
+  3: 'Good',
+  4: 'Very Good',
+  5: 'Excellent',
+};
+
+const INITIAL_FORM_DATA = { email: '', rating: 0, improvements: '', suggestions: '' };
+
+function validateForm(formData) {
+  if (!formData.email) {
+    return 'Email is required';
+  }
+  if (!formData.rating) {
+    return 'Please select a rating';
+  }
+  return null;
+}
+
+function SuccessView({ onReset }) {
+  return (
+    <div className="text-center py-8">
+      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <CheckCircle className="w-8 h-8 text-green-600" />
+      </div>
+      <h3 className="text-xl font-semibold text-neutral-800 mb-2">Thank You!</h3>
+      <p className="text-neutral-600">Your feedback has been submitted successfully.</p>
+      <button
+        onClick={onReset}
+        className="mt-4 text-red-600 hover:text-red-700 font-medium"
+      >
+        Submit another feedback
+      </button>
+    </div>
+  );
+}
+
+function RatingInput({ rating, hoveredRating, onRatingClick, onHover, onLeave }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-neutral-700 mb-2">
+        Rating <span className="text-red-500">*</span>
+      </label>
+      <div className="flex gap-2">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onRatingClick(star)}
+            onMouseEnter={() => onHover(star)}
+            onMouseLeave={onLeave}
+            className="p-1 transition-transform hover:scale-110"
+          >
+            <Star
+              className={`w-8 h-8 ${
+                star <= (hoveredRating || rating)
+                  ? 'fill-amber-400 text-amber-400'
+                  : 'text-neutral-300'
+              }`}
+            />
+          </button>
+        ))}
+      </div>
+      {rating > 0 && (
+        <p className="text-sm text-neutral-500 mt-1">
+          {RATING_LABELS[rating]}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function PublicFeedbackForm({ onSuccess }) {
-  const [formData, setFormData] = useState({
-    email: '',
-    rating: 0,
-    improvements: '',
-    suggestions: '',
-  });
+  const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -28,13 +96,9 @@ function PublicFeedbackForm({ onSuccess }) {
     e.preventDefault();
     setError('');
 
-    if (!formData.email) {
-      setError('Email is required');
-      return;
-    }
-
-    if (!formData.rating) {
-      setError('Please select a rating');
+    const validationError = validateForm(formData);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -50,25 +114,13 @@ function PublicFeedbackForm({ onSuccess }) {
     }
   };
 
+  const handleReset = () => {
+    setSuccess(false);
+    setFormData(INITIAL_FORM_DATA);
+  };
+
   if (success) {
-    return (
-      <div className="text-center py-8">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <CheckCircle className="w-8 h-8 text-green-600" />
-        </div>
-        <h3 className="text-xl font-semibold text-neutral-800 mb-2">Thank You!</h3>
-        <p className="text-neutral-600">Your feedback has been submitted successfully.</p>
-        <button
-          onClick={() => {
-            setSuccess(false);
-            setFormData({ email: '', rating: 0, improvements: '', suggestions: '' });
-          }}
-          className="mt-4 text-red-600 hover:text-red-700 font-medium"
-        >
-          Submit another feedback
-        </button>
-      </div>
-    );
+    return <SuccessView onReset={handleReset} />;
   }
 
   return (
@@ -97,40 +149,13 @@ function PublicFeedbackForm({ onSuccess }) {
       </div>
 
       {/* Rating */}
-      <div>
-        <label className="block text-sm font-medium text-neutral-700 mb-2">
-          Rating <span className="text-red-500">*</span>
-        </label>
-        <div className="flex gap-2">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <button
-              key={star}
-              type="button"
-              onClick={() => handleRatingClick(star)}
-              onMouseEnter={() => setHoveredRating(star)}
-              onMouseLeave={() => setHoveredRating(0)}
-              className="p-1 transition-transform hover:scale-110"
-            >
-              <Star
-                className={`w-8 h-8 ${
-                  star <= (hoveredRating || formData.rating)
-                    ? 'fill-amber-400 text-amber-400'
-                    : 'text-neutral-300'
-                }`}
-              />
-            </button>
-          ))}
-        </div>
-        {formData.rating > 0 && (
-          <p className="text-sm text-neutral-500 mt-1">
-            {formData.rating === 1 && 'Poor'}
-            {formData.rating === 2 && 'Fair'}
-            {formData.rating === 3 && 'Good'}
-            {formData.rating === 4 && 'Very Good'}
-            {formData.rating === 5 && 'Excellent'}
-          </p>
-        )}
-      </div>
+      <RatingInput
+        rating={formData.rating}
+        hoveredRating={hoveredRating}
+        onRatingClick={handleRatingClick}
+        onHover={setHoveredRating}
+        onLeave={() => setHoveredRating(0)}
+      />
 
       {/* Improvements */}
       <div>

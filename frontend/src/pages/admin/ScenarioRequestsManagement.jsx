@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
@@ -15,7 +15,6 @@ import {
   TrendingUp,
   FileText,
   Edit,
-  X,
   ExternalLink
 } from 'lucide-react';
 import { scenarioRequestAPI } from '../../services/api';
@@ -36,13 +35,227 @@ const STATUS_CONFIG = {
   'inactive': { label: 'Inactive', color: 'bg-surface-hover text-content-secondary', icon: XCircle }
 };
 
+const DEFAULT_STATUS_CONFIG = { label: 'Unknown', color: 'bg-surface-hover text-content-secondary', icon: Clock };
+
 // Categorize statuses for stats
 const PENDING_STATUSES = ['submitted', 'review', 'accepted', 'in-progress', 'development', 'testing'];
 const COMPLETED_STATUSES = ['deployed', 'snapshot', 'active'];
 const REJECTED_STATUSES = ['rejected', 'inactive'];
 
-function ScenarioRequestsManagement() {
+// --- Helper functions extracted outside component ---
+
+const getStatusBadge = (status) => {
+  const config = STATUS_CONFIG[status] || { ...DEFAULT_STATUS_CONFIG, label: status || 'Unknown' };
+  const Icon = config.icon;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.color}`}>
+      <Icon size={12} />
+      {config.label}
+    </span>
+  );
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return '-';
+  return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+const stripHtml = (html) => {
+  if (!html) return '';
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+};
+
+// --- Sub-components extracted to reduce cognitive complexity ---
+
+const StatsCards = ({ stats }) => (
+  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+    <StatCard icon={FileText} iconClass="bg-surface-hover" textClass="text-content-muted" valueClass="text-content" label="Total" value={stats.total} />
+    <StatCard icon={Clock} iconClass="bg-blue-100" textClass="text-blue-600" valueClass="text-blue-600" label="Submitted" value={stats.submitted} />
+    <StatCard icon={TrendingUp} iconClass="bg-yellow-100" textClass="text-yellow-600" valueClass="text-yellow-600" label="In Progress" value={stats.inProgress} />
+    <StatCard icon={CheckCircle} iconClass="bg-green-100" textClass="text-green-600" valueClass="text-green-600" label="Deployed" value={stats.deployed} />
+    <StatCard icon={XCircle} iconClass="bg-red-100" textClass="text-red-600" valueClass="text-red-600" label="Rejected" value={stats.rejected} />
+  </div>
+);
+
+const StatCard = ({ icon: Icon, iconClass, textClass, valueClass, label, value }) => (
+  <div className="card flex items-center gap-4">
+    <div className={`w-12 h-12 rounded-lg ${iconClass} flex items-center justify-center`}>
+      <Icon className={textClass} size={24} />
+    </div>
+    <div>
+      <p className="text-sm text-content-muted">{label}</p>
+      <p className={`text-2xl font-bold ${valueClass}`}>{value}</p>
+    </div>
+  </div>
+);
+
+const JiraCell = ({ request }) => {
+  const ticketKey = request.jira?.ticket_key || request.jira_integration?.ticket_key;
+  const ticketUrl = request.jira?.ticket_url || request.jira_integration?.ticket_url || '#';
+
+  if (ticketKey) {
+    return (
+      <a href={ticketUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm" onClick={(e) => e.stopPropagation()}>
+        {ticketKey}
+        <ExternalLink size={12} />
+      </a>
+    );
+  }
+
+  if (request.jira_links?.length > 0) {
+    return (
+      <div className="flex flex-col gap-1">
+        {request.jira_links.slice(0, 2).map((link, idx) => (
+          <a key={idx} href={link.ticket_url || '#'} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs" onClick={(e) => e.stopPropagation()}>
+            {link.ticket_key}
+            <ExternalLink size={10} />
+          </a>
+        ))}
+        {request.jira_links.length > 2 && (
+          <span className="text-xs text-content-muted">+{request.jira_links.length - 2} more</span>
+        )}
+      </div>
+    );
+  }
+
+  return <span className="text-content-muted text-sm">-</span>;
+};
+
+const RequestRow = ({ request, basePath, onUpdateStatus }) => (
+  <tr className="hover:bg-surface-hover transition-colors">
+    <td className="px-5 py-4">
+      <span className="font-mono text-sm font-medium text-primary-600">{request.requestId}</span>
+    </td>
+    <td className="px-5 py-4">
+      <p className="font-medium text-content truncate max-w-xs">{request.name}</p>
+      <p className="text-xs text-content-muted truncate max-w-xs mt-0.5">
+        {stripHtml(request.description).slice(0, 50)}...
+      </p>
+    </td>
+    <td className="px-5 py-4">
+      <p className="text-sm text-content">{request.email}</p>
+    </td>
+    <td className="px-5 py-4">
+      <span className="inline-flex px-2.5 py-1 bg-surface-hover text-content-secondary rounded-full text-xs font-medium">
+        {request.dataDomain}
+      </span>
+    </td>
+    <td className="px-5 py-4">{getStatusBadge(request.status)}</td>
+    <td className="px-5 py-4">
+      <span className="text-sm text-content-secondary">{request.team || '-'}</span>
+    </td>
+    <td className="px-5 py-4">
+      <span className="text-sm text-content-secondary">{request.assignee_name || '-'}</span>
+    </td>
+    <td className="px-5 py-4">
+      <JiraCell request={request} />
+    </td>
+    <td className="px-5 py-4 text-sm text-content-muted">{formatDate(request.row_add_stp)}</td>
+    <td className="px-5 py-4">
+      <RequestActions request={request} basePath={basePath} onUpdateStatus={onUpdateStatus} />
+    </td>
+  </tr>
+);
+
+const RequestActions = ({ request, basePath, onUpdateStatus }) => {
   const navigate = useNavigate();
+  return (
+    <div className="flex items-center justify-center gap-2">
+      <button onClick={() => navigate(`${basePath}/scenario-requests/${request.requestId}`)} className="p-2 rounded-lg hover:bg-surface-hover text-content-muted transition-colors" title="View">
+        <Eye size={16} />
+      </button>
+      <button onClick={() => onUpdateStatus(request)} className="p-2 rounded-lg hover:bg-primary-100 text-primary-600 transition-colors" title="Update Status">
+        <Edit size={16} />
+      </button>
+    </div>
+  );
+};
+
+const RequestsTable = ({ requests, loading, basePath, onUpdateStatus }) => {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="animate-spin text-primary-600" size={32} />
+      </div>
+    );
+  }
+
+  if (requests.length === 0) {
+    return (
+      <div className="text-center py-16">
+        <div className="w-16 h-16 mx-auto mb-4 bg-surface-hover rounded-full flex items-center justify-center">
+          <FileText className="text-content-muted" size={32} />
+        </div>
+        <p className="text-content-muted">No requests found</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          <tr className="table-header">
+            <th className="text-left px-5 py-4">Request ID</th>
+            <th className="text-left px-5 py-4">Name</th>
+            <th className="text-left px-5 py-4">Requester</th>
+            <th className="text-left px-5 py-4">Domain</th>
+            <th className="text-left px-5 py-4">Status</th>
+            <th className="text-left px-5 py-4">Team</th>
+            <th className="text-left px-5 py-4">Assignee</th>
+            <th className="text-left px-5 py-4">Jira</th>
+            <th className="text-left px-5 py-4">Created</th>
+            <th className="text-center px-5 py-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-edge-light">
+          {requests.map((request) => (
+            <RequestRow key={request.requestId} request={request} basePath={basePath} onUpdateStatus={onUpdateStatus} />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+const StatusUpdateModal = ({ isOpen, selectedRequest, statuses, newStatus, setNewStatus, statusComment, setStatusComment, updatingStatus, onClose, onSubmit }) => {
+  if (!isOpen || !selectedRequest) return null;
+  return (
+    <Modal isOpen={true} onClose={onClose} title="Update Status" size="sm">
+      <div className="p-5 space-y-4">
+        <div>
+          <p className="text-sm text-content-muted mb-1">Request</p>
+          <p className="font-medium text-content">{selectedRequest.requestId} - {selectedRequest.name}</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-content-secondary mb-2">New Status</label>
+          <select value={newStatus} onChange={(e) => setNewStatus(e.target.value)} className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content">
+            {statuses.map(status => (
+              <option key={status.value} value={status.value}>{status.label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-content-secondary mb-2">Comment (optional)</label>
+          <textarea value={statusComment} onChange={(e) => setStatusComment(e.target.value)} rows={3} className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content resize-none" placeholder="Add a comment about this status change..." />
+        </div>
+      </div>
+      <div className="flex justify-end gap-3 px-5 py-4 border-t bg-surface-secondary rounded-b-xl">
+        <button onClick={onClose} className="btn-secondary">Cancel</button>
+        <button onClick={onSubmit} disabled={updatingStatus} className="btn-primary flex items-center gap-2">
+          {updatingStatus && <Loader2 className="animate-spin" size={16} />}
+          Update Status
+        </button>
+      </div>
+    </Modal>
+  );
+};
+
+// --- Main Component ---
+
+function ScenarioRequestsManagement() {
   const location = useLocation();
   const basePath = location.pathname.startsWith('/management') ? '/management' : '/admin';
   const [requests, setRequests] = useState([]);
@@ -52,19 +265,9 @@ function ScenarioRequestsManagement() {
   const [domainFilter, setDomainFilter] = useState('');
   const [domains, setDomains] = useState([]);
   const [statuses, setStatuses] = useState([]);
-  const [pagination, setPagination] = useState({
-    page: 0,
-    limit: 15,
-    total: 0
-  });
-  const [stats, setStats] = useState({
-    total: 0,
-    submitted: 0,
-    inProgress: 0,
-    deployed: 0,
-    rejected: 0
-  });
-  
+  const [pagination, setPagination] = useState({ page: 0, limit: 15, total: 0 });
+  const [stats, setStats] = useState({ total: 0, submitted: 0, inProgress: 0, deployed: 0, rejected: 0 });
+
   // Modal states
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -72,15 +275,7 @@ function ScenarioRequestsManagement() {
   const [statusComment, setStatusComment] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  useEffect(() => {
-    loadLookups();
-  }, []);
-
-  useEffect(() => {
-    loadRequests();
-  }, [pagination.page, statusFilter, domainFilter]);
-
-  const loadLookups = async () => {
+  const loadLookups = useCallback(async () => {
     try {
       const [domainsRes, statusesRes] = await Promise.all([
         scenarioRequestAPI.getDomains(),
@@ -91,23 +286,15 @@ function ScenarioRequestsManagement() {
     } catch (error) {
       // error handled silently
     }
-  };
+  }, []);
 
-  const loadRequests = async () => {
+  const loadRequests = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await scenarioRequestAPI.getAll({
-        page: pagination.page,
-        limit: pagination.limit
-      });
+      const response = await scenarioRequestAPI.getAll({ page: pagination.page, limit: pagination.limit });
       const data = response.data?.data || [];
       setRequests(data);
-      setPagination(prev => ({
-        ...prev,
-        total: response.data?.pagination?.total || response.data?.paginiation?.total || data.length
-      }));
-      
-      // Calculate stats using correct status values
+      setPagination(prev => ({ ...prev, total: response.data?.pagination?.total || response.data?.paginiation?.total || data.length }));
       setStats({
         total: response.data?.pagination?.total || response.data?.paginiation?.total || data.length,
         submitted: data.filter(r => r.status === 'submitted').length,
@@ -120,11 +307,13 @@ function ScenarioRequestsManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.page, pagination.limit]);
+
+  useEffect(() => { loadLookups(); }, [loadLookups]);
+  useEffect(() => { loadRequests(); }, [loadRequests, statusFilter, domainFilter]);
 
   const handleStatusUpdate = async () => {
     if (!selectedRequest || !newStatus) return;
-    
     setUpdatingStatus(true);
     try {
       await scenarioRequestAPI.updateStatus(selectedRequest.requestId, newStatus, statusComment);
@@ -141,45 +330,21 @@ function ScenarioRequestsManagement() {
     }
   };
 
+  const openStatusModal = (request) => {
+    setSelectedRequest(request);
+    setNewStatus(request.status);
+    setShowStatusModal(true);
+  };
+
   const filteredRequests = requests.filter(request => {
-    const matchesSearch = !searchTerm || 
+    const matchesSearch = !searchTerm ||
       request.requestId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    
     const matchesStatus = !statusFilter || request.status === statusFilter;
     const matchesDomain = !domainFilter || request.dataDomain === domainFilter;
-    
     return matchesSearch && matchesStatus && matchesDomain;
   });
-
-  const getStatusBadge = (status) => {
-    const config = STATUS_CONFIG[status] || { label: status || 'Unknown', color: 'bg-surface-hover text-content-secondary', icon: Clock };
-    const Icon = config.icon;
-    return (
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.color}`}>
-        <Icon size={12} />
-        {config.label}
-      </span>
-    );
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  // Strip HTML for display
-  const stripHtml = (html) => {
-    if (!html) return '';
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
-  };
 
   const totalPages = Math.ceil(pagination.total / pagination.limit);
 
@@ -191,95 +356,29 @@ function ScenarioRequestsManagement() {
         <p className="text-content-muted mt-1">Manage and process scenario requests</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-        <div className="card flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-surface-hover flex items-center justify-center">
-            <FileText className="text-content-muted" size={24} />
-          </div>
-          <div>
-            <p className="text-sm text-content-muted">Total</p>
-            <p className="text-2xl font-bold text-content">{stats.total}</p>
-          </div>
-        </div>
-        <div className="card flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-            <Clock className="text-blue-600" size={24} />
-          </div>
-          <div>
-            <p className="text-sm text-content-muted">Submitted</p>
-            <p className="text-2xl font-bold text-blue-600">{stats.submitted}</p>
-          </div>
-        </div>
-        <div className="card flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-yellow-100 flex items-center justify-center">
-            <TrendingUp className="text-yellow-600" size={24} />
-          </div>
-          <div>
-            <p className="text-sm text-content-muted">In Progress</p>
-            <p className="text-2xl font-bold text-yellow-600">{stats.inProgress}</p>
-          </div>
-        </div>
-        <div className="card flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
-            <CheckCircle className="text-green-600" size={24} />
-          </div>
-          <div>
-            <p className="text-sm text-content-muted">Deployed</p>
-            <p className="text-2xl font-bold text-green-600">{stats.deployed}</p>
-          </div>
-        </div>
-        <div className="card flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center">
-            <XCircle className="text-red-600" size={24} />
-          </div>
-          <div>
-            <p className="text-sm text-content-muted">Rejected</p>
-            <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
-          </div>
-        </div>
-      </div>
+      <StatsCards stats={stats} />
 
       {/* Filters */}
       <div className="card mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={18} />
-            <input
-              type="text"
-              placeholder="Search by ID, name or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
-            />
+            <input type="text" placeholder="Search by ID, name or email..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content" />
           </div>
           <div className="flex gap-3">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full md:w-40 px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
-            >
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full md:w-40 px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content">
               <option value="">All Status</option>
               {statuses.map(status => (
                 <option key={status.value} value={status.value}>{status.label}</option>
               ))}
             </select>
-            <select
-              value={domainFilter}
-              onChange={(e) => setDomainFilter(e.target.value)}
-              className="w-full md:w-40 px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
-            >
+            <select value={domainFilter} onChange={(e) => setDomainFilter(e.target.value)} className="w-full md:w-40 px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content">
               <option value="">All Domains</option>
               {domains.map(domain => (
-                <option key={domain.key || domain.value} value={domain.key || domain.value}>
-                  {domain.name || domain.label}
-                </option>
+                <option key={domain.key || domain.value} value={domain.key || domain.value}>{domain.name || domain.label}</option>
               ))}
             </select>
-            <button
-              onClick={loadRequests}
-              className="btn-secondary flex items-center gap-2"
-            >
+            <button onClick={loadRequests} className="btn-secondary flex items-center gap-2">
               <RefreshCw size={16} />
             </button>
           </div>
@@ -288,210 +387,45 @@ function ScenarioRequestsManagement() {
 
       {/* Table */}
       <div className="card p-0 overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="animate-spin text-primary-600" size={32} />
-          </div>
-        ) : filteredRequests.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 mx-auto mb-4 bg-surface-hover rounded-full flex items-center justify-center">
-              <FileText className="text-content-muted" size={32} />
-            </div>
-            <p className="text-content-muted">No requests found</p>
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="table-header">
-                    <th className="text-left px-5 py-4">Request ID</th>
-                    <th className="text-left px-5 py-4">Name</th>
-                    <th className="text-left px-5 py-4">Requester</th>
-                    <th className="text-left px-5 py-4">Domain</th>
-                    <th className="text-left px-5 py-4">Status</th>
-                    <th className="text-left px-5 py-4">Team</th>
-                    <th className="text-left px-5 py-4">Assignee</th>
-                    <th className="text-left px-5 py-4">Jira</th>
-                    <th className="text-left px-5 py-4">Created</th>
-                    <th className="text-center px-5 py-4">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-edge-light">
-                  {filteredRequests.map((request) => (
-                    <tr key={request.requestId} className="hover:bg-surface-hover transition-colors">
-                      <td className="px-5 py-4">
-                        <span className="font-mono text-sm font-medium text-primary-600">{request.requestId}</span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <p className="font-medium text-content truncate max-w-xs">{request.name}</p>
-                        <p className="text-xs text-content-muted truncate max-w-xs mt-0.5">
-                          {stripHtml(request.description).slice(0, 50)}...
-                        </p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <p className="text-sm text-content">{request.email}</p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className="inline-flex px-2.5 py-1 bg-surface-hover text-content-secondary rounded-full text-xs font-medium">
-                          {request.dataDomain}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        {getStatusBadge(request.status)}
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className="text-sm text-content-secondary">{request.team || '-'}</span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className="text-sm text-content-secondary">{request.assignee_name || '-'}</span>
-                      </td>
-                      <td className="px-5 py-4">
-                        {(request.jira?.ticket_key || request.jira_integration?.ticket_key) ? (
-                          <a
-                            href={request.jira?.ticket_url || request.jira_integration?.ticket_url || '#'}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {request.jira?.ticket_key || request.jira_integration?.ticket_key}
-                            <ExternalLink size={12} />
-                          </a>
-                        ) : request.jira_links?.length > 0 ? (
-                          <div className="flex flex-col gap-1">
-                            {request.jira_links.slice(0, 2).map((link, idx) => (
-                              <a
-                                key={idx}
-                                href={link.ticket_url || '#'}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {link.ticket_key}
-                                <ExternalLink size={10} />
-                              </a>
-                            ))}
-                            {request.jira_links.length > 2 && (
-                              <span className="text-xs text-content-muted">+{request.jira_links.length - 2} more</span>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-content-muted text-sm">-</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-4 text-sm text-content-muted">
-                        {formatDate(request.row_add_stp)}
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => navigate(`${basePath}/scenario-requests/${request.requestId}`)}
-                            className="p-2 rounded-lg hover:bg-surface-hover text-content-muted transition-colors"
-                            title="View"
-                          >
-                            <Eye size={16} />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedRequest(request);
-                              setNewStatus(request.status);
-                              setShowStatusModal(true);
-                            }}
-                            className="p-2 rounded-lg hover:bg-primary-100 text-primary-600 transition-colors"
-                            title="Update Status"
-                          >
-                            <Edit size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        <RequestsTable
+          requests={filteredRequests}
+          loading={loading}
+          basePath={basePath}
+          onUpdateStatus={openStatusModal}
+        />
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 border-t border-edge bg-surface-secondary">
-                <p className="text-sm text-content-muted">
-                  Showing {pagination.page * pagination.limit + 1} to {Math.min((pagination.page + 1) * pagination.limit, pagination.total)} of {pagination.total}
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                    disabled={pagination.page === 0}
-                    className="p-2 rounded-lg border border-edge hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <ChevronLeft size={18} />
-                  </button>
-                  <span className="px-4 py-2 text-sm text-content-muted">
-                    Page {pagination.page + 1} of {totalPages}
-                  </span>
-                  <button
-                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                    disabled={pagination.page >= totalPages - 1}
-                    className="p-2 rounded-lg border border-edge hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <ChevronRight size={18} />
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
+        {/* Pagination */}
+        {!loading && filteredRequests.length > 0 && totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 border-t border-edge bg-surface-secondary">
+            <p className="text-sm text-content-muted">
+              Showing {pagination.page * pagination.limit + 1} to {Math.min((pagination.page + 1) * pagination.limit, pagination.total)} of {pagination.total}
+            </p>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))} disabled={pagination.page === 0} className="p-2 rounded-lg border border-edge hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                <ChevronLeft size={18} />
+              </button>
+              <span className="px-4 py-2 text-sm text-content-muted">Page {pagination.page + 1} of {totalPages}</span>
+              <button onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))} disabled={pagination.page >= totalPages - 1} className="p-2 rounded-lg border border-edge hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
       {/* Status Update Modal */}
-      {showStatusModal && selectedRequest && (
-      <Modal isOpen={true} onClose={() => setShowStatusModal(false)} title="Update Status" size="sm">
-            <div className="p-5 space-y-4">
-              <div>
-                <p className="text-sm text-content-muted mb-1">Request</p>
-                <p className="font-medium text-content">{selectedRequest.requestId} - {selectedRequest.name}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-content-secondary mb-2">New Status</label>
-                <select
-                  value={newStatus}
-                  onChange={(e) => setNewStatus(e.target.value)}
-                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content"
-                >
-                  {statuses.map(status => (
-                    <option key={status.value} value={status.value}>{status.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-content-secondary mb-2">Comment (optional)</label>
-                <textarea
-                  value={statusComment}
-                  onChange={(e) => setStatusComment(e.target.value)}
-                  rows={3}
-                  className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content resize-none"
-                  placeholder="Add a comment about this status change..."
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 px-5 py-4 border-t bg-surface-secondary rounded-b-xl">
-              <button
-                onClick={() => setShowStatusModal(false)}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleStatusUpdate}
-                disabled={updatingStatus}
-                className="btn-primary flex items-center gap-2"
-              >
-                {updatingStatus && <Loader2 className="animate-spin" size={16} />}
-                Update Status
-              </button>
-            </div>
-      </Modal>
-      )}
+      <StatusUpdateModal
+        isOpen={showStatusModal}
+        selectedRequest={selectedRequest}
+        statuses={statuses}
+        newStatus={newStatus}
+        setNewStatus={setNewStatus}
+        statusComment={statusComment}
+        setStatusComment={setStatusComment}
+        updatingStatus={updatingStatus}
+        onClose={() => setShowStatusModal(false)}
+        onSubmit={handleStatusUpdate}
+      />
     </div>
   );
 }

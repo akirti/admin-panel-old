@@ -46,21 +46,68 @@ const STATUS_CONFIG = {
   'inactive': { label: 'Inactive', color: 'bg-surface-hover text-content-secondary', icon: XCircle }
 };
 
+const UPLOAD_ALLOWED_STATUSES = ['ACC', 'accepted', 'in-progress', 'development', 'testing', 'deployed', 'snapshot', 'active'];
+
+function getStatusBadge(status) {
+  const config = STATUS_CONFIG[status] || { label: status, color: 'bg-surface-hover text-content-secondary', icon: Clock };
+  const Icon = config.icon;
+  return (
+    <span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium ${config.color}`}>
+      <Icon size={16} />
+      {config.label}
+    </span>
+  );
+}
+
+function formatDate(dateString) {
+  if (!dateString) return '-';
+  return new Date(dateString).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function getEditPath(location, requestId) {
+  if (location.pathname.startsWith('/admin/')) {
+    return `/admin/scenario-requests/${requestId}/edit`;
+  }
+  if (location.pathname.startsWith('/management/')) {
+    return `/management/scenario-requests/${requestId}/edit`;
+  }
+  return `/my-requests/${requestId}/edit`;
+}
+
+function canUserEdit(request, userId, isEditorFn) {
+  const isOwnerWithEditableStatus = request.user_id === userId && ['submitted', 'in-progress'].includes(request.status);
+  const isEditorWithEditableStatus = isEditorFn() && !['rejected', 'inactive'].includes(request.status);
+  return isOwnerWithEditableStatus || isEditorWithEditableStatus;
+}
+
+function hasJiraContent(request, isEditorFn) {
+  return (request.jira && request.jira.ticket_key) ||
+    (request.jira_integration && request.jira_integration.ticket_key) ||
+    (request.jira_links && request.jira_links.length > 0) ||
+    isEditorFn();
+}
+
+function hasMainJiraTicket(request) {
+  return request.jira?.ticket_key || request.jira_integration?.ticket_key;
+}
+
+function hasNoJiraLinks(request) {
+  return !request.jira?.ticket_key &&
+    !request.jira_integration?.ticket_key &&
+    (!request.jira_links || request.jira_links.length === 0);
+}
+
 function RequestDetailPage() {
   const { requestId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isEditor } = useAuth();
-
-  // Determine the base path based on current location (admin, management, or user)
-  const getEditPath = () => {
-    if (location.pathname.startsWith('/admin/')) {
-      return `/admin/scenario-requests/${requestId}/edit`;
-    } else if (location.pathname.startsWith('/management/')) {
-      return `/management/scenario-requests/${requestId}/edit`;
-    }
-    return `/my-requests/${requestId}/edit`;
-  };
 
   const [request, setRequest] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -178,12 +225,8 @@ function RequestDetailPage() {
   };
 
   const canUploadBucketFiles = () => {
-    // Check if user is an editor (super-admin, admin, group-admin, group-editor, editor)
     if (!isEditor()) return false;
-
-    // Check if status is accepted or beyond
-    const allowedStatuses = ['ACC', 'accepted', 'in-progress', 'development', 'testing', 'deployed', 'snapshot', 'active'];
-    return allowedStatuses.includes(request?.status);
+    return UPLOAD_ALLOWED_STATUSES.includes(request?.status);
   };
 
   const handleAddJiraLink = async () => {
@@ -224,28 +267,6 @@ function RequestDetailPage() {
     }
   };
 
-  const getStatusBadge = (status) => {
-    const config = STATUS_CONFIG[status] || { label: status, color: 'bg-surface-hover text-content-secondary', icon: Clock };
-    const Icon = config.icon;
-    return (
-      <span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium ${config.color}`}>
-        <Icon size={16} />
-        {config.label}
-      </span>
-    );
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -283,14 +304,9 @@ function RequestDetailPage() {
             <h1 className="text-2xl font-bold text-content">{request.name}</h1>
           </div>
           
-          {/* Show Edit button for:
-              - Request owner (only for S/P status)
-              - Editors/Admins (for any editable status)
-          */}
-          {((request.user_id === user?.user_id && ['submitted', 'in-progress'].includes(request.status)) ||
-            (isEditor() && !['rejected', 'inactive'].includes(request.status))) && (
+          {canUserEdit(request, user?.user_id, isEditor) && (
             <button
-              onClick={() => navigate(getEditPath())}
+              onClick={() => navigate(getEditPath(location, requestId))}
               className="btn btn-secondary flex items-center gap-2"
             >
               <Edit size={16} />
@@ -632,10 +648,7 @@ function RequestDetailPage() {
           )}
 
           {/* Jira Links Section */}
-          {((request.jira && request.jira.ticket_key) ||
-            (request.jira_integration && request.jira_integration.ticket_key) ||
-            (request.jira_links && request.jira_links.length > 0) ||
-            isEditor()) && (
+          {hasJiraContent(request, isEditor) && (
             <div className="card">
               <div className="card-header flex items-center justify-between">
                 <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -655,7 +668,7 @@ function RequestDetailPage() {
               </div>
               <div className="card-body space-y-3">
                 {/* Main Jira Ticket */}
-                {(request.jira?.ticket_key || request.jira_integration?.ticket_key) && (
+                {hasMainJiraTicket(request) && (
                   <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
                     <p className="text-xs text-blue-600 font-medium mb-1">Main Ticket</p>
                     <a
@@ -716,9 +729,7 @@ function RequestDetailPage() {
                 )}
 
                 {/* Empty state */}
-                {!request.jira?.ticket_key &&
-                 !request.jira_integration?.ticket_key &&
-                 (!request.jira_links || request.jira_links.length === 0) && (
+                {hasNoJiraLinks(request) && (
                   <p className="text-sm text-content-muted text-center py-2">
                     No Jira tickets linked yet
                   </p>

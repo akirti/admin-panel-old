@@ -5,12 +5,31 @@ import toast from 'react-hot-toast';
 import { User, Mail, Shield, Save, Lock, Eye, EyeOff } from 'lucide-react';
 import { Badge } from '../../components/shared';
 
+function validatePasswordChange(passwordData) {
+  if (passwordData.new_password !== passwordData.confirm_password) {
+    return 'New passwords do not match';
+  }
+  if (passwordData.new_password.length < 8) {
+    return 'Password must be at least 8 characters';
+  }
+  return null;
+}
+
+function isAdminRole(roles) {
+  return roles?.some(r => ['super-administrator', 'administrator'].includes(r));
+}
+
+function getDomainAccessLabel(user) {
+  if (user?.domains?.length > 0) return null;
+  return isAdminRole(user?.roles) ? 'All Domains' : 'No Domains Assigned';
+}
+
 function ProfilePage() {
   const { user, updateProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
-  
+
   const [profileData, setProfileData] = useState({
     full_name: user?.full_name || '',
     username: user?.username || '',
@@ -47,13 +66,9 @@ function ProfilePage() {
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
 
-    if (passwordData.new_password !== passwordData.confirm_password) {
-      toast.error('New passwords do not match');
-      return;
-    }
-
-    if (passwordData.new_password.length < 8) {
-      toast.error('Password must be at least 8 characters');
+    const validationError = validatePasswordChange(passwordData);
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
 
@@ -69,6 +84,8 @@ function ProfilePage() {
       setPasswordLoading(false);
     }
   };
+
+  const domainAccessLabel = getDomainAccessLabel(user);
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -189,7 +206,7 @@ function ProfilePage() {
                 </Badge>
               )) : (
                 <Badge variant="default">
-                  {user?.roles?.some(r => ['super-administrator', 'administrator'].includes(r)) ? 'All Domains' : 'No Domains Assigned'}
+                  {domainAccessLabel}
                 </Badge>
               )}
             </div>

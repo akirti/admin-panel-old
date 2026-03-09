@@ -34,20 +34,124 @@ const applyOperator = (operator, value, expressionValue) => {
   }
 };
 
+// Individual range check helpers
+const checkGreaterThan = (val, expressionValue) =>
+  Number(val) > Number(expressionValue);
+
+const checkLessThan = (val, expressionValue) =>
+  Number(val) < Number(expressionValue);
+
+const checkRange = (val, expressionValue) => {
+  const [min, max] = String(expressionValue).split(',').map(Number);
+  return Number(val) >= min && Number(val) <= max;
+};
+
 // Range validator helper
 const rangeValidator = (val, filter) => {
   if (!filter.validators) return true;
   for (const v of filter.validators) {
     const type = (v.type || v.validatior || '').toLowerCase();
-    if (type.includes('greaterthan')) {
-      if (Number(val) <= Number(v.expressionValue)) return false;
-    } else if (type.includes('lessthan')) {
-      if (Number(val) >= Number(v.expressionValue)) return false;
-    } else if (type.includes('range')) {
-      const [min, max] = String(v.expressionValue).split(',').map(Number);
-      if (Number(val) < min || Number(val) > max) return false;
+    if (type.includes('greaterthan') && !checkGreaterThan(val, v.expressionValue)) return false;
+    if (type.includes('lessthan') && !checkLessThan(val, v.expressionValue)) return false;
+    if (type.includes('range') && !checkRange(val, v.expressionValue)) return false;
+  }
+  return true;
+};
+
+// --- Individual validator type handlers ---
+// Each returns true if valid, false if invalid
+
+const validateString = (val) =>
+  typeof val === 'string' && /^([a-zA-Z0-9._\-@]+)(,[a-zA-Z0-9._\-@]+)*$/.test(val);
+
+const validateUserIdOrEmail = (val) => {
+  if (typeof val !== 'string') return false;
+  const userIdRegex = /^[a-zA-Z0-9._\-@]+$/;
+  const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+  return userIdRegex.test(val) || emailRegex.test(val);
+};
+
+const validateMultiSelect = (val) =>
+  !(
+    (Array.isArray(val) && val.length === 0) ||
+    val === undefined ||
+    val === null ||
+    val === ''
+  );
+
+const validateToggleButton = (val) => {
+  if (Array.isArray(val)) return val.length > 0;
+  if (val && typeof val === 'object' && !Array.isArray(val)) {
+    return Object.values(val).some(
+      (v) => v === true || v === 'on' || v === 1 || v === '1'
+    );
+  }
+  return typeof val === 'boolean' || val === true || val === false;
+};
+
+const getFilterDefaultValue = (filter) => {
+  if (!filter.attributes || !Array.isArray(filter.attributes)) return undefined;
+  const attr = filter.attributes.find((a) => a.key === 'defaultValue');
+  return attr ? attr.value : undefined;
+};
+
+const validateNumberType = (type, val, filter) => {
+  const defaultVal = getFilterDefaultValue(filter);
+  if (val === defaultVal || val === '-1' || val === -1) return true;
+  if (type.includes('numberofdigits')) return /^\d{10}$/.test(val);
+  if (type === 'number') {
+    return /^-?\d{1,11}$/.test(val) && Number(val) >= -1 && Number(val) <= 99999999999;
+  }
+  if (type.includes('customernumber')) {
+    return /^\d{10}$/.test(val) && Number(val) >= 2000000000 && Number(val) <= 9999999999;
+  }
+  return true;
+};
+
+const validateRegexFormat = (v, val) => {
+  if (!v.expressionValue) return true;
+  try {
+    return new RegExp(v.expressionValue).test(val);
+  } catch {
+    return false;
+  }
+};
+
+const validateExpression = (v, val) => {
+  const expressions = v.expression
+    .split(/[|,]/)
+    .map((e) => e.trim())
+    .filter(Boolean);
+  for (const expr of expressions) {
+    if (expr.startsWith('$') && !applyOperator(expr, val, v.expressionValue)) {
+      return false;
     }
   }
+  return true;
+};
+
+// Build an invalid result with display name context
+const buildInvalidResult = (filter, msg) => {
+  const displayName = filter.displayName || filter.label || filter.dataKey || 'Field';
+  const message = msg.includes(displayName) ? msg : `${msg} (${displayName})`;
+  return { valid: false, message };
+};
+
+// Resolve the validator check for a single validator entry
+const resolveValidator = (type, v, val, filter) => {
+  if (type === 'stringvalidator' || type === 'text') return validateString(val);
+  if (type === 'useridoremail') return validateUserIdOrEmail(val);
+  if (type.includes('multi-select')) return validateMultiSelect(val);
+  if (type === 'togglebutton') return validateToggleButton(val);
+  if (type.includes('numberofdigits') || type === 'number' || type.includes('customernumber')) {
+    return validateNumberType(type, val, filter);
+  }
+  if (type.includes('greaterthan') || type.includes('lessthan') || type.includes('range')) {
+    return rangeValidator(val, filter);
+  }
+  if (type.includes('format') || type.includes('regex')) return validateRegexFormat(v, val);
+  if (v.expression) return validateExpression(v, val);
+  if (type.startsWith('$')) return applyOperator(type, val, v.expressionValue);
   return true;
 };
 
@@ -58,125 +162,12 @@ export const validateFilter = (filter, val) => {
   }
 
   for (const v of filter.validators) {
-    let valid = true;
     const type = (v.type || v.validatior || '').toLowerCase();
-    let msg = v.message || v.messgae || 'Invalid value';
-
-    if (type === 'stringvalidator' || type === 'text') {
-      if (
-        typeof val !== 'string' ||
-        !/^([a-zA-Z0-9._\-@]+)(,[a-zA-Z0-9._\-@]+)*$/.test(val)
-      ) {
-        const displayName = filter.displayName || filter.label || filter.dataKey || 'Field';
-        if (!msg.includes(displayName)) msg += ` (${displayName})`;
-        return { valid: false, message: msg };
-      }
-      valid = true;
-    } else if (type === 'useridoremail') {
-      const userIdRegex = /^[a-zA-Z0-9._\-@]+$/;
-      const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-      if (
-        typeof val !== 'string' ||
-        !(userIdRegex.test(val) || emailRegex.test(val))
-      ) {
-        const displayName = filter.displayName || filter.label || filter.dataKey || 'Field';
-        if (!msg.includes(displayName)) msg += ` (${displayName})`;
-        return { valid: false, message: msg };
-      }
-      valid = true;
-    } else if (type.includes('multi-select')) {
-      if (
-        (Array.isArray(val) && val.length === 0) ||
-        val === undefined ||
-        val === null ||
-        val === ''
-      ) {
-        const displayName = filter.displayName || filter.label || filter.dataKey || 'Field';
-        if (!msg.includes(displayName)) msg += ` (${displayName})`;
-        return { valid: false, message: msg };
-      }
-      valid = true;
-    } else if (type === 'togglebutton') {
-      let isValidToggle = false;
-      if (Array.isArray(val)) {
-        isValidToggle = val.length > 0;
-      } else if (val && typeof val === 'object' && !Array.isArray(val)) {
-        isValidToggle = Object.values(val).some(
-          (v) => v === true || v === 'on' || v === 1 || v === '1'
-        );
-      } else {
-        isValidToggle = typeof val === 'boolean' || val === true || val === false;
-      }
-      if (!isValidToggle) {
-        const displayName = filter.displayName || filter.label || filter.dataKey || 'Field';
-        if (!msg.includes(displayName)) msg += ` (${displayName})`;
-        return { valid: false, message: msg };
-      }
-      valid = true;
-    } else if (
-      type.includes('numberofdigits') ||
-      type === 'number' ||
-      type.includes('customernumber')
-    ) {
-      let defaultVal;
-      if (filter.attributes && Array.isArray(filter.attributes)) {
-        const attr = filter.attributes.find((a) => a.key === 'defaultValue');
-        defaultVal = attr ? attr.value : undefined;
-      }
-      if (val === defaultVal || val === '-1' || val === -1) {
-        valid = true;
-      } else {
-        if (type.includes('numberofdigits')) {
-          valid = /^\d{10}$/.test(val);
-        } else if (type === 'number') {
-          valid =
-            /^-?\d{1,11}$/.test(val) &&
-            Number(val) >= -1 &&
-            Number(val) <= 99999999999;
-        } else if (type.includes('customernumber')) {
-          valid =
-            /^\d{10}$/.test(val) &&
-            Number(val) >= 2000000000 &&
-            Number(val) <= 9999999999;
-        }
-      }
-    } else if (
-      type.includes('greaterthan') ||
-      type.includes('lessthan') ||
-      type.includes('range')
-    ) {
-      valid = rangeValidator(val, filter);
-    } else if (type.includes('format') || type.includes('regex')) {
-      if (v.expressionValue) {
-        try {
-          valid = new RegExp(v.expressionValue).test(val);
-        } catch {
-          valid = false;
-        }
-      } else {
-        valid = true;
-      }
-    } else if (v.expression) {
-      const expressions = v.expression
-        .split(/[|,]/)
-        .map((e) => e.trim())
-        .filter(Boolean);
-      for (const expr of expressions) {
-        if (expr.startsWith('$')) {
-          valid = applyOperator(expr, val, v.expressionValue);
-          if (!valid) break;
-        }
-      }
-    } else if (type.startsWith('$')) {
-      valid = applyOperator(type, val, v.expressionValue);
-    } else {
-      valid = true;
-    }
+    const msg = v.message || v.messgae || 'Invalid value';
+    const valid = resolveValidator(type, v, val, filter);
 
     if (!valid) {
-      const displayName = filter.displayName || filter.label || filter.dataKey || 'Field';
-      if (!msg.includes(displayName)) msg += ` (${displayName})`;
-      return { valid: false, message: msg };
+      return buildInvalidResult(filter, msg);
     }
   }
   return { valid: true };

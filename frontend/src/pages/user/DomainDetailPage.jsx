@@ -4,6 +4,115 @@ import { domainAPI, scenarioAPI } from '../../services/api';
 import { ArrowLeft, Layers, FileText, ChevronRight } from 'lucide-react';
 import { Badge } from '../../components/shared';
 
+function isDomainActive(status) {
+  return status === 'active' || status === 'A';
+}
+
+function DomainHeader({ domain }) {
+  return (
+    <div className="card">
+      <div className="flex items-start gap-4">
+        <div className="w-16 h-16 bg-primary-50 rounded-lg flex items-center justify-center overflow-hidden">
+          {domain.icon ? (
+            <img
+              src={domain.icon}
+              alt={domain.name}
+              className="w-9 h-9 object-contain"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'block';
+              }}
+            />
+          ) : null}
+          <Layers
+            className="text-primary-600"
+            size={32}
+            style={{ display: domain.icon ? 'none' : 'block' }}
+          />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-content">{domain.name}</h1>
+          <p className="text-content-muted">{domain.key}</p>
+          {domain.description && (
+            <p className="text-content-secondary mt-2">{domain.description}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScenariosList({ scenarios, domainKey }) {
+  if (scenarios.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <FileText className="mx-auto text-content-muted mb-4" size={48} />
+        <p className="text-content-muted">No scenarios available for this domain.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {scenarios.map((scenario) => (
+        <Link
+          key={scenario.key}
+          to={`/domains/${domainKey}/scenarios/${scenario.key}`}
+          className="flex items-center gap-4 p-4 border rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors cursor-pointer"
+        >
+          <div className="w-10 h-10 bg-surface-hover rounded-lg flex items-center justify-center">
+            <FileText className="text-content-secondary" size={20} />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-medium text-content">{scenario.name}</h3>
+            <p className="text-sm text-content-muted">{scenario.key}</p>
+            {scenario.description && (
+              <p className="text-sm text-content-secondary mt-1 line-clamp-1">
+                {scenario.description}
+              </p>
+            )}
+          </div>
+          <ChevronRight className="text-content-muted" size={20} />
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function DomainInfoCard({ domain }) {
+  return (
+    <div className="card">
+      <h2 className="text-lg font-semibold text-content mb-4">Domain Information</h2>
+      <dl className="grid grid-cols-2 gap-4">
+        <div>
+          <dt className="text-sm text-content-muted">Key</dt>
+          <dd className="text-content">{domain.key}</dd>
+        </div>
+        <div>
+          <dt className="text-sm text-content-muted">Status</dt>
+          <dd>
+            <Badge variant={isDomainActive(domain.status) ? 'success' : 'default'}>
+              {isDomainActive(domain.status) ? 'Active' : 'Inactive'}
+            </Badge>
+          </dd>
+        </div>
+        {domain.path && (
+          <div>
+            <dt className="text-sm text-content-muted">Path</dt>
+            <dd className="text-content">{domain.path}</dd>
+          </div>
+        )}
+        {domain.order !== undefined && (
+          <div>
+            <dt className="text-sm text-content-muted">Order</dt>
+            <dd className="text-content">{domain.order}</dd>
+          </div>
+        )}
+      </dl>
+    </div>
+  );
+}
+
 function DomainDetailPage() {
   const { domainKey } = useParams();
   const [domain, setDomain] = useState(null);
@@ -61,105 +170,17 @@ function DomainDetailPage() {
         <span className="text-content">{domain.name}</span>
       </div>
 
-      {/* Domain Header */}
-      <div className="card">
-        <div className="flex items-start gap-4">
-          <div className="w-16 h-16 bg-primary-50 rounded-lg flex items-center justify-center overflow-hidden">
-            {domain.icon ? (
-              <img
-                src={domain.icon}
-                alt={domain.name}
-                className="w-9 h-9 object-contain"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'block';
-                }}
-              />
-            ) : null}
-            <Layers
-              className="text-primary-600"
-              size={32}
-              style={{ display: domain.icon ? 'none' : 'block' }}
-            />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-content">{domain.name}</h1>
-            <p className="text-content-muted">{domain.key}</p>
-            {domain.description && (
-              <p className="text-content-secondary mt-2">{domain.description}</p>
-            )}
-          </div>
-        </div>
-      </div>
+      <DomainHeader domain={domain} />
 
       {/* Scenarios */}
       <div className="card">
         <h2 className="text-lg font-semibold text-content mb-4">
           Scenarios ({scenarios.length})
         </h2>
-
-        {scenarios.length === 0 ? (
-          <div className="text-center py-8">
-            <FileText className="mx-auto text-content-muted mb-4" size={48} />
-            <p className="text-content-muted">No scenarios available for this domain.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {scenarios.map((scenario) => (
-              <Link
-                key={scenario.key}
-                to={`/domains/${domainKey}/scenarios/${scenario.key}`}
-                className="flex items-center gap-4 p-4 border rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors cursor-pointer"
-              >
-                <div className="w-10 h-10 bg-surface-hover rounded-lg flex items-center justify-center">
-                  <FileText className="text-content-secondary" size={20} />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-content">{scenario.name}</h3>
-                  <p className="text-sm text-content-muted">{scenario.key}</p>
-                  {scenario.description && (
-                    <p className="text-sm text-content-secondary mt-1 line-clamp-1">
-                      {scenario.description}
-                    </p>
-                  )}
-                </div>
-                <ChevronRight className="text-content-muted" size={20} />
-              </Link>
-            ))}
-          </div>
-        )}
+        <ScenariosList scenarios={scenarios} domainKey={domainKey} />
       </div>
 
-      {/* Domain Info */}
-      <div className="card">
-        <h2 className="text-lg font-semibold text-content mb-4">Domain Information</h2>
-        <dl className="grid grid-cols-2 gap-4">
-          <div>
-            <dt className="text-sm text-content-muted">Key</dt>
-            <dd className="text-content">{domain.key}</dd>
-          </div>
-          <div>
-            <dt className="text-sm text-content-muted">Status</dt>
-            <dd>
-              <Badge variant={domain.status === 'active' || domain.status === 'A' ? 'success' : 'default'}>
-                {domain.status === 'active' || domain.status === 'A' ? 'Active' : 'Inactive'}
-              </Badge>
-            </dd>
-          </div>
-          {domain.path && (
-            <div>
-              <dt className="text-sm text-content-muted">Path</dt>
-              <dd className="text-content">{domain.path}</dd>
-            </div>
-          )}
-          {domain.order !== undefined && (
-            <div>
-              <dt className="text-sm text-content-muted">Order</dt>
-              <dd className="text-content">{domain.order}</dd>
-            </div>
-          )}
-        </dl>
-      </div>
+      <DomainInfoCard domain={domain} />
     </div>
   );
 }

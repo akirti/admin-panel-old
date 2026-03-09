@@ -15,6 +15,130 @@ import V1DescriptionRenderer from '../../components/explorer/v1_DescriptionRende
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
+ * Converts a filter value for the API request.
+ * Strips dashes from date values, splits multi-select strings into arrays.
+ */
+function convertFilterValue(value, filterType) {
+  if (typeof value === 'string' && dateRegex.test(value)) {
+    return value.replace(/-/g, '');
+  }
+  if (filterType === 'multi-select' && typeof value === 'string') {
+    return value.split(',').map((v) => v.trim());
+  }
+  return value;
+}
+
+/**
+ * Converts a generic param value for step 0 (not mapped to a specific filter).
+ */
+function convertGenericParamValue(value) {
+  if (typeof value === 'string' && dateRegex.test(value)) {
+    return value.replace(/-/g, '');
+  }
+  if (typeof value === 'string' && value.includes(',')) {
+    return value.split(',').map((v) => v.trim());
+  }
+  return value;
+}
+
+/**
+ * Builds logic_args from filter config and user-supplied filter values.
+ */
+function buildLogicArgs(filterConfig, filterValues) {
+  const logic_args = {};
+
+  if (Array.isArray(filterConfig) && filterConfig.length > 0) {
+    filterConfig.forEach((filter) => {
+      const step = filter.index != null ? filter.index.toString() : '0';
+      if (!logic_args[step]) logic_args[step] = { query_params: {} };
+      if (filter.dataKey in filterValues) {
+        logic_args[step].query_params[filter.dataKey] = convertFilterValue(filterValues[filter.dataKey], filter.type);
+      }
+    });
+  }
+
+  // Map remaining params not in filterConfig to step 0
+  Object.keys(filterValues).forEach((key) => {
+    const alreadyMapped = filterConfig?.some((f) => f.dataKey === key);
+    if (!alreadyMapped) {
+      if (!logic_args['0']) logic_args['0'] = { query_params: {} };
+      logic_args['0'].query_params[key] = convertGenericParamValue(filterValues[key]);
+    }
+  });
+
+  if (!logic_args['0']) logic_args['0'] = { query_params: {} };
+  return logic_args;
+}
+
+/**
+ * Merges user-built logic_args into the playboard's base logic_args.
+ */
+function mergeLogicArgs(playboardLogicArgs, userLogicArgs) {
+  if (!playboardLogicArgs || typeof playboardLogicArgs !== 'object') {
+    return userLogicArgs;
+  }
+  const merged = { ...playboardLogicArgs };
+  Object.keys(userLogicArgs).forEach((step) => {
+    if (!merged[step]) {
+      merged[step] = userLogicArgs[step];
+    } else {
+      merged[step] = {
+        ...merged[step],
+        query_params: {
+          ...(merged[step].query_params || {}),
+          ...(userLogicArgs[step].query_params || {}),
+        },
+      };
+    }
+  });
+  return merged;
+}
+
+/**
+ * Resolves the pagination widget from playboard config (may be array or object).
+ */
+function resolvePaginationWidget(paginationRaw) {
+  if (Array.isArray(paginationRaw)) return paginationRaw[0] || null;
+  if (paginationRaw && typeof paginationRaw === 'object' && paginationRaw.attributes) {
+    return paginationRaw;
+  }
+  return null;
+}
+
+/**
+ * Builds the pagination config for the API request.
+ */
+function buildPaginationConfig(pagWidget, effectivePageSize, effectivePage) {
+  const config = { limit: 0, size: 0, skip: 0, page: 0 };
+  if (!pagWidget) return config;
+
+  const pagAttrs = pagWidget.attributes || [];
+  const defaultLimitAttr = pagAttrs.find((attr) => attr.key === 'defaultValue');
+  const defaultLimit = defaultLimitAttr ? parseInt(defaultLimitAttr.value, 10) : 0;
+
+  const actualPageSize = effectivePageSize || defaultLimit;
+  const actualPage = effectivePage || 1;
+
+  config.limit = actualPageSize;
+  config.size = actualPageSize;
+  config.skip = (actualPage - 1) * actualPageSize;
+  config.page = actualPage - 1;
+  return config;
+}
+
+/**
+ * Calculates total pages from the API response.
+ */
+function calculateTotalPages(response, limit, currentPage) {
+  if (!limit || limit === 0) return 1;
+  const total = response?.pagination?.total_count || response?.total_count || 0;
+  if (total > 0) return Math.ceil(total / limit);
+  const dataLen = response?.data?.length || 0;
+  if (dataLen < limit) return currentPage;
+  return currentPage + 1;
+}
+
+/**
  * Button that opens a documentation panel showing the scenario description.
  * The description can contain HTML and renders via V1DescriptionRenderer.
  */
@@ -139,98 +263,79 @@ function V1ExplorerReportPage() {
 
   // --- Fetch playboard config on mount ---
   useEffect(() => {
+    const extractPlayboardData = (resData) => {
+      if (Array.isArray(resData?.data) && resData.data.length > 0) return resData.data[0];
+      if (Array.isArray(resData) && resData.length > 0) return resData[0];
+      if (resData && typeof resData === 'object' && resData.widgets) return resData;
+      return null;
+    };
+
+    const extractFilters = (playboardData, searchParams) => {
+      const filtersArr = Array.isArray(playboardData.widgets?.filters)
+        ? playboardData.widgets.filters
+            .filter((f) => f.visible !== false && f.status !== 'N')
+            .map((f) => ({ ...f, status: f.status === 'active' ? 'Y' : f.status }))
+        : [];
+
+      filtersArr.forEach((filter) => {
+        if (!searchParams.has(filter.dataKey)) return;
+        if (!Array.isArray(filter.attributes)) return;
+        const defaultAttr = filter.attributes.find((attr) => attr.key === 'defaultValue');
+        if (defaultAttr) {
+          defaultAttr.value = searchParams.get(filter.dataKey);
+        } else {
+          filter.attributes.push({ key: 'defaultValue', value: searchParams.get(filter.dataKey) });
+        }
+      });
+
+      return filtersArr;
+    };
+
+    const parsePaginationOptions = (opts) => {
+      if (typeof opts === 'string') return opts.split(',').map((v) => parseInt(v.trim(), 10)).filter(Boolean);
+      if (Array.isArray(opts)) return opts.map((v) => parseInt(v, 10)).filter(Boolean);
+      return [10, 20, 30, 40, 50];
+    };
+
+    const applyPaginationConfig = (playboardData) => {
+      const pagWidget = resolvePaginationWidget(playboardData.widgets?.pagination);
+      if (!pagWidget) return;
+
+      const opts = pagWidget.attributes?.find((a) => a.key === 'options')?.value;
+      if (opts) setPaginationOptions(parsePaginationOptions(opts));
+
+      const defaultVal = pagWidget.attributes?.find((a) => a.key === 'defaultValue')?.value;
+      if (defaultVal) setPageSize(parseInt(defaultVal, 10));
+    };
+
     const fetchPlayboard = async () => {
       setPlayboardLoading(true);
       setPlayboardError('');
       try {
         const response = await playboardAPI.get(scenarioKey);
-        let playboardData = null;
+        const playboardData = extractPlayboardData(response.data);
 
-        // Handle response shapes: { data: [item] } or { data: { widgets } } or direct object
-        const resData = response.data;
-        if (Array.isArray(resData?.data) && resData.data.length > 0) {
-          playboardData = resData.data[0];
-        } else if (Array.isArray(resData) && resData.length > 0) {
-          playboardData = resData[0];
-        } else if (resData && typeof resData === 'object' && resData.widgets) {
-          playboardData = resData;
-        }
-
-        if (playboardData) {
-          setPlayboard(playboardData);
-
-          // Extract filter config - only visible filters with active status
-          // Normalize status: backend may default undefined to "active",
-          // but FilterSection expects 'Y' or undefined for rendering
-          const filtersArr = Array.isArray(playboardData.widgets?.filters)
-            ? playboardData.widgets.filters
-                .filter((f) => f.visible !== false && f.status !== 'N')
-                .map((f) => ({
-                  ...f,
-                  status: f.status === 'active' ? 'Y' : f.status,
-                }))
-            : [];
-
-          // Set default values from URL query params if present
-          const params = new URLSearchParams(location.search);
-          filtersArr.forEach((filter) => {
-            if (params.has(filter.dataKey)) {
-              if (Array.isArray(filter.attributes)) {
-                const defaultAttr = filter.attributes.find(
-                  (attr) => attr.key === 'defaultValue'
-                );
-                if (defaultAttr) {
-                  defaultAttr.value = params.get(filter.dataKey);
-                } else {
-                  filter.attributes.push({
-                    key: 'defaultValue',
-                    value: params.get(filter.dataKey),
-                  });
-                }
-              }
-            }
-          });
-
-          setFilterConfig(filtersArr);
-
-          // Extract pagination config — pagination can be an array or a single object
-          const paginationRaw = playboardData.widgets?.pagination;
-          const pagWidget = Array.isArray(paginationRaw)
-            ? paginationRaw[0]
-            : paginationRaw && typeof paginationRaw === 'object' && paginationRaw.attributes
-              ? paginationRaw
-              : null;
-          if (pagWidget) {
-            const opts = pagWidget.attributes?.find(
-              (a) => a.key === 'options'
-            )?.value;
-            if (opts) {
-              const parsedOpts =
-                typeof opts === 'string'
-                  ? opts.split(',').map((v) => parseInt(v.trim(), 10)).filter(Boolean)
-                  : Array.isArray(opts)
-                  ? opts.map((v) => parseInt(v, 10)).filter(Boolean)
-                  : [10, 20, 30, 40, 50];
-              setPaginationOptions(parsedOpts);
-            }
-            const defaultVal = pagWidget.attributes?.find(
-              (a) => a.key === 'defaultValue'
-            )?.value;
-            if (defaultVal) setPageSize(parseInt(defaultVal, 10));
-          }
-
-          // Check if grid is paginated
-          if (playboardData.widgets?.grid?.layout?.ispaginated !== undefined) {
-            setIsPaginated(!!playboardData.widgets.grid.layout.ispaginated);
-          }
-
-          if (!filtersArr || filtersArr.length === 0) {
-            setPlayboardError('No filters available for this scenario.');
-          }
-        } else {
+        if (!playboardData) {
           setPlayboard(null);
           setFilterConfig([]);
           setPlayboardError('No playboard configuration found for this scenario.');
+          return;
+        }
+
+        setPlayboard(playboardData);
+
+        const params = new URLSearchParams(location.search);
+        const filtersArr = extractFilters(playboardData, params);
+        setFilterConfig(filtersArr);
+
+        applyPaginationConfig(playboardData);
+
+        if (playboardData.widgets?.grid?.layout?.ispaginated !== undefined) {
+          setIsPaginated(!!playboardData.widgets.grid.layout.ispaginated);
+        }
+
+        if (!filtersArr || filtersArr.length === 0) {
+          setPlayboardError('No filters available for this scenario.');
         }
       } catch (err) {
         setPlayboard(null);
@@ -278,104 +383,18 @@ function V1ExplorerReportPage() {
       try {
         const { page: reqPage, pageSize: reqPageSize, autosubmit: _autosubmit, ...filterValues } = params;
 
-        // Build logic_args from filter values, keyed by filter.index
-        const logic_args = {};
-        if (Array.isArray(filterConfig) && filterConfig.length > 0) {
-          filterConfig.forEach((filter) => {
-            const step = filter.index !== null && filter.index !== undefined ? filter.index.toString() : '0';
-            if (!logic_args[step]) logic_args[step] = { query_params: {} };
-            if (filter.dataKey in filterValues) {
-              let value = filterValues[filter.dataKey];
-              // Strip dashes from date values
-              if (typeof value === 'string' && dateRegex.test(value)) {
-                logic_args[step].query_params[filter.dataKey] = value.replace(/-/g, '');
-              } else if (filter.type === 'multi-select' && typeof value === 'string') {
-                logic_args[step].query_params[filter.dataKey] = value
-                  .split(',')
-                  .map((v) => v.trim());
-              } else {
-                logic_args[step].query_params[filter.dataKey] = value;
-              }
-            }
-          });
-        }
+        const logicArgs = buildLogicArgs(filterConfig, filterValues);
+        const mergedLogicArgs = mergeLogicArgs(playboard.logic_args, logicArgs);
 
-        // Map any remaining params not in filterConfig to step 0
-        Object.keys(filterValues).forEach((key) => {
-          const alreadyMapped = filterConfig?.some((f) => f.dataKey === key);
-          if (!alreadyMapped) {
-            if (!logic_args['0']) logic_args['0'] = { query_params: {} };
-            let value = filterValues[key];
-            if (typeof value === 'string' && dateRegex.test(value)) {
-              logic_args['0'].query_params[key] = value.replace(/-/g, '');
-            } else if (typeof value === 'string' && value.includes(',')) {
-              logic_args['0'].query_params[key] = value.split(',').map((v) => v.trim());
-            } else {
-              logic_args['0'].query_params[key] = value;
-            }
-          }
-        });
-
-        if (!logic_args['0']) logic_args['0'] = { query_params: {} };
-
-        // Merge user filter values into playboard's logic_args structure
-        // FIX: Original code used `playboard.logic_args || logic_args` which ignores user filters
-        // when playboard.logic_args exists. Instead, merge user values into playboard's base.
-        let mergedLogicArgs = logic_args;
-        if (playboard.logic_args && typeof playboard.logic_args === 'object') {
-          mergedLogicArgs = { ...playboard.logic_args };
-          Object.keys(logic_args).forEach((step) => {
-            if (!mergedLogicArgs[step]) {
-              mergedLogicArgs[step] = logic_args[step];
-            } else {
-              mergedLogicArgs[step] = {
-                ...mergedLogicArgs[step],
-                query_params: {
-                  ...(mergedLogicArgs[step].query_params || {}),
-                  ...(logic_args[step].query_params || {}),
-                },
-              };
-            }
-          });
-        }
-
-        // Build pagination config
         const effectivePageSize = typeof reqPageSize === 'number' ? reqPageSize : pageSize;
         const effectivePage = typeof reqPage === 'number' ? reqPage : page;
 
-        let paginatedFlag = false;
-        if (playboard.widgets?.grid?.layout?.ispaginated !== undefined) {
-          paginatedFlag = !!playboard.widgets.grid.layout.ispaginated;
-        }
+        const paginatedFlag = playboard.widgets?.grid?.layout?.ispaginated !== undefined
+          ? !!playboard.widgets.grid.layout.ispaginated
+          : false;
 
-        let paginationConfig = {
-          limit: 0,
-          size: 0,
-          skip: 0,
-          page: 0,
-        };
-
-        const fetchPagRaw = playboard.widgets?.pagination;
-        const fetchPagWidget = Array.isArray(fetchPagRaw)
-          ? fetchPagRaw[0]
-          : fetchPagRaw && typeof fetchPagRaw === 'object' && fetchPagRaw.attributes
-            ? fetchPagRaw
-            : null;
-        if (fetchPagWidget) {
-          const pagAttrs = fetchPagWidget.attributes || [];
-          const defaultLimitAttr = pagAttrs.find((attr) => attr.key === 'defaultValue');
-          const defaultLimit = defaultLimitAttr
-            ? parseInt(defaultLimitAttr.value, 10)
-            : 0;
-
-          const actualPageSize = effectivePageSize || defaultLimit;
-          const actualPage = effectivePage || 1;
-
-          paginationConfig.limit = actualPageSize;
-          paginationConfig.size = actualPageSize;
-          paginationConfig.skip = (actualPage - 1) * actualPageSize;
-          paginationConfig.page = actualPage - 1;
-        }
+        const pagWidget = resolvePaginationWidget(playboard.widgets?.pagination);
+        const paginationConfig = buildPaginationConfig(pagWidget, effectivePageSize, effectivePage);
 
         // Pagination flags
         let sendCountEvaluated = countEvaluated;
@@ -395,9 +414,7 @@ function V1ExplorerReportPage() {
         paginationConfig.total_count = totalCount;
         paginationConfig.pages = pages;
 
-        // Determine environment
-        const appEnv = ENV;
-        const prevailEnv = appEnv === 'stg' ? 'stage' : appEnv;
+        const prevailEnv = ENV === 'stg' ? 'stage' : ENV;
 
         const apiPayload = {
           program_key: playboard.program_key,
@@ -414,10 +431,7 @@ function V1ExplorerReportPage() {
 
         if (resData?.data) {
           setData(resData.data);
-
-          // Update pagination tracking from response
-          const totalPages = getTotalPages(resData, paginationConfig.limit);
-          setPages(totalPages);
+          setPages(calculateTotalPages(resData, paginationConfig.limit, effectivePage));
 
           if (resData.pagination) {
             setCountEvaluated(resData.pagination.count_evaluated ?? false);
@@ -434,16 +448,6 @@ function V1ExplorerReportPage() {
     },
     [playboard, page, pageSize, filterConfig, countEvaluated, end, currentCount, totalCount, pages]
   );
-
-  // --- Helpers ---
-  function getTotalPages(response, limit) {
-    if (!limit || limit === 0) return 1;
-    const total = response?.pagination?.total_count || response?.total_count || 0;
-    if (total > 0) return Math.ceil(total / limit);
-    const dataLen = response?.data?.length || 0;
-    if (dataLen < limit) return page; // current page is the last
-    return page + 1; // at least one more page
-  }
 
   // Update columns when data changes — uses getColumnsObj from v1_reportUtils
   // which returns [{key, label}] objects as V1DataTable expects.

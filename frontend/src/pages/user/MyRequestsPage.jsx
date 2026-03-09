@@ -37,6 +37,48 @@ const PENDING_STATUSES = ['submitted', 'review', 'accepted', 'in-progress', 'dev
 const COMPLETED_STATUSES = ['deployed', 'snapshot', 'active'];
 const REJECTED_STATUSES = ['rejected', 'inactive'];
 
+function getStatusBadge(status) {
+  const config = STATUS_CONFIG[status] || { label: status || 'Unknown', color: 'bg-surface-hover text-content-secondary', icon: Clock };
+  const Icon = config.icon;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.color}`}>
+      <Icon size={12} />
+      {config.label}
+    </span>
+  );
+}
+
+function formatDate(dateString) {
+  if (!dateString) return '-';
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+}
+
+function stripHtml(html) {
+  if (!html) return '';
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+}
+
+function filterRequests(requests, searchTerm, statusFilter) {
+  return requests.filter(request => {
+    const matchesSearch = !searchTerm ||
+      request.requestId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = !statusFilter || request.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+}
+
+function countByStatuses(requests, statuses) {
+  return requests.filter(r => statuses.includes(r.status)).length;
+}
+
 function MyRequestsPage() {
   const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
@@ -72,51 +114,14 @@ function MyRequestsPage() {
     }
   };
 
-  const filteredRequests = requests.filter(request => {
-    const matchesSearch = !searchTerm || 
-      request.requestId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = !statusFilter || request.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  const getStatusBadge = (status) => {
-    const config = STATUS_CONFIG[status] || { label: status || 'Unknown', color: 'bg-surface-hover text-content-secondary', icon: Clock };
-    const Icon = config.icon;
-    return (
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.color}`}>
-        <Icon size={12} />
-        {config.label}
-      </span>
-    );
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  // Strip HTML tags for display
-  const stripHtml = (html) => {
-    if (!html) return '';
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
-  };
+  const filteredRequests = filterRequests(requests, searchTerm, statusFilter);
 
   const totalPages = Math.ceil(pagination.total / pagination.limit);
 
   // Calculate stats
-  const pendingCount = requests.filter(r => PENDING_STATUSES.includes(r.status)).length;
-  const completedCount = requests.filter(r => COMPLETED_STATUSES.includes(r.status)).length;
-  const rejectedCount = requests.filter(r => REJECTED_STATUSES.includes(r.status)).length;
+  const pendingCount = countByStatuses(requests, PENDING_STATUSES);
+  const completedCount = countByStatuses(requests, COMPLETED_STATUSES);
+  const rejectedCount = countByStatuses(requests, REJECTED_STATUSES);
 
   return (
     <div className="w-full">

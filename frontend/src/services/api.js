@@ -76,64 +76,78 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Helper: check if the error was from a canceled/aborted request
+const isCanceledRequest = (error) =>
+  error.code === 'ERR_CANCELED' || error.name === 'CanceledError';
+
+// Helper: attempt to refresh the JWT token and retry the original request
+const handleUnauthorized = async (originalRequest) => {
+  originalRequest._retry = true;
+  try {
+    await axios.post(`${API_BASE_URL}/auth/refresh`, {}, {
+      withCredentials: true,
+      timeout: 10000
+    });
+    return api(originalRequest);
+  } catch (refreshError) {
+    redirectToLoginIfNeeded();
+    return Promise.reject(refreshError);
+  }
+};
+
+// Helper: redirect to login unless already on a public auth page
+const redirectToLoginIfNeeded = () => {
+  const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password'];
+  const isPublicPage = publicPaths.some(p => window.location.pathname.startsWith(p));
+  if (!isPublicPage) {
+    window.location.href = '/login';
+  }
+};
+
+// Helper: check if the error is a CSRF-related 403
+const isCSRFError = (error) => {
+  const errorDetail = error.response?.data?.detail || error.response?.data?.error || '';
+  return error.response?.status === 403 &&
+    (errorDetail.includes('CSRF') || errorDetail.includes('csrf'));
+};
+
+// Helper: refresh the CSRF token and retry the original request
+const handleCSRFError = async (originalRequest) => {
+  originalRequest._csrfRetry = true;
+  csrfToken = null;
+
+  try {
+    await axios.get(`${API_BASE_URL}/auth/csrf-token`, { withCredentials: true });
+  } catch {
+    // Ignore errors, the cookie might still be set
+  }
+
+  await fetchCSRFToken();
+
+  if (csrfToken) {
+    originalRequest.headers['X-CSRF-Token'] = csrfToken;
+    return api(originalRequest);
+  }
+  return null;
+};
+
 // Response interceptor for token refresh and CSRF errors
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // Don't retry if the request was aborted (e.g., by AbortController timeout)
-    if (error.code === 'ERR_CANCELED' || error.name === 'CanceledError') {
+    if (isCanceledRequest(error)) {
       return Promise.reject(error);
     }
 
-    // Handle 401 Unauthorized - refresh JWT token via httpOnly cookie
     if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        // Refresh token is sent automatically via httpOnly cookie
-        await axios.post(`${API_BASE_URL}/auth/refresh`, {}, {
-          withCredentials: true,
-          timeout: 10000
-        });
-
-        // New tokens are set as httpOnly cookies by the backend
-        return api(originalRequest);
-      } catch (refreshError) {
-        // Only redirect if not on a public auth page
-        const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password']; const isPublicPage = publicPaths.some(p => window.location.pathname.startsWith(p)); if (!isPublicPage) {
-          window.location.href = '/login';
-        }
-        return Promise.reject(refreshError);
-      }
+      return handleUnauthorized(originalRequest);
     }
 
-    // Handle 403 CSRF errors - refresh CSRF token and retry
-    const errorDetail = error.response?.data?.detail || error.response?.data?.error || '';
-    if (error.response?.status === 403 &&
-        (errorDetail.includes('CSRF') || errorDetail.includes('csrf')) &&
-        !originalRequest._csrfRetry) {
-      originalRequest._csrfRetry = true;
-
-      // Clear existing token to force refresh
-      csrfToken = null;
-
-      // Make a GET request to force backend to issue a new cookie
-      try {
-        await axios.get(`${API_BASE_URL}/auth/csrf-token`, { withCredentials: true });
-      } catch {
-        // Ignore errors, the cookie might still be set
-      }
-
-      // Fetch the new CSRF token from cookie
-      await fetchCSRFToken();
-
-      // Retry with new token
-      if (csrfToken) {
-        originalRequest.headers['X-CSRF-Token'] = csrfToken;
-        return api(originalRequest);
-      }
+    if (isCSRFError(error) && !originalRequest._csrfRetry) {
+      const retryResult = await handleCSRFError(originalRequest);
+      if (retryResult) return retryResult;
     }
 
     return Promise.reject(error);
