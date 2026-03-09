@@ -27,10 +27,10 @@ FROM nginx:mainline-alpine AS production
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy built files from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/build/public /usr/share/nginx/html
 
 # Copy environment-specific config files
-COPY config/ /etc/nginx/env-config/
+COPY envConfig/ /etc/nginx/env-config/
 
 # Copy and set up entrypoint script
 COPY docker-entrypoint.sh /docker-entrypoint.sh
