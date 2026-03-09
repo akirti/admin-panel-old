@@ -391,9 +391,10 @@ function useFeedbackData() {
         }),
         feedbackAPI.getStats(),
       ]);
-      setFeedbackList(listRes.data.data || []);
-      setPagination((prev) => ({ ...prev, ...(listRes.data.pagination || {}) }));
-      setStats(statsRes.data);
+      const listData = listRes?.data || {};
+      setFeedbackList(listData.data || []);
+      setPagination((prev) => ({ ...prev, ...(listData.pagination || {}) }));
+      setStats(statsRes?.data || null);
     } catch (error) {
       toast.error('Failed to load feedback');
     } finally {

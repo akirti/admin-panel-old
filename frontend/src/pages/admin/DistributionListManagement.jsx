@@ -304,9 +304,10 @@ const DistributionListManagement = () => {
         distributionListsAPI.list({ search: debouncedSearch || undefined, type: typeFilter || undefined, page: pagination.page, limit: pagination.limit, include_inactive: true }),
         distributionListsAPI.getTypes()
       ]);
-      setLists(listsRes.data.data || []);
-      setPagination(prev => ({ ...prev, ...(listsRes.data.pagination || {}) }));
-      setListTypes(typesRes.data.types || []);
+      const listsData = listsRes?.data || {};
+      setLists(listsData.data || []);
+      setPagination(prev => ({ ...prev, ...(listsData.pagination || {}) }));
+      setListTypes(typesRes?.data?.types || []);
     } catch (error) {
       toast.error('Failed to load distribution lists');
     } finally {

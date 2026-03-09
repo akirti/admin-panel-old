@@ -317,7 +317,7 @@ function DomainsManagement() {
     setLoading(true);
     try {
       const response = await domainAPI.getAll();
-      setDomains(response.data);
+      setDomains(response?.data || []);
     } catch (error) { toast.error('Failed to fetch domains'); }
     finally { setLoading(false); }
   };
@@ -325,7 +325,7 @@ function DomainsManagement() {
   const fetchDomainTypes = async () => {
     try {
       const response = await domainAPI.getTypes();
-      setDomainTypes(response.data || []);
+      setDomainTypes(response?.data || []);
     } catch (error) { /* silent */ }
   };
 

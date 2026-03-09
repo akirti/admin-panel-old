@@ -357,10 +357,11 @@ const RolesManagement = () => {
       if (filterDomain) params.domain = filterDomain;
       if (filterPermission) params.permission = filterPermission;
       const response = await rolesAPI.list(params);
-      setRoles(response.data.data || []);
-      if (response.data.pagination) {
-        setTotalPages(response.data.pagination.pages || 0);
-        setTotal(response.data.pagination.total || 0);
+      const responseData = response?.data || {};
+      setRoles(responseData.data || []);
+      if (responseData.pagination) {
+        setTotalPages(responseData.pagination.pages || 0);
+        setTotal(responseData.pagination.total || 0);
       }
     } catch (err) {
       setError('Failed to fetch roles');
@@ -376,8 +377,8 @@ const RolesManagement = () => {
         permissionsAPI.list({ limit: 1000 }),
         domainsAPI.list({ limit: 1000 }),
       ]);
-      setPermissions(permRes.data.data || []);
-      setDomains(domRes.data.data || []);
+      setPermissions(permRes?.data?.data || []);
+      setDomains(domRes?.data?.data || []);
     } catch (err) {
       // error handled silently
     }
@@ -516,7 +517,7 @@ const RolesManagement = () => {
     setLoadingUsers(true);
     try {
       const response = await rolesAPI.getUsers(role._id || role.roleId);
-      setRoleUsers(response.data || []);
+      setRoleUsers(response?.data || []);
     } catch (err) {
       setRoleUsers([]);
     } finally {

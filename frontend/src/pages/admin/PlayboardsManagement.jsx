@@ -1191,7 +1191,7 @@ const PlayboardsManagement = () => {
                     }}
                     label="Enable Pagination"
                   />
-                  <GridColumnsSection formData={formData} columnInput={columnInput} setColumnInput={setColumnInput} addColumn={addColumn} removeColumn={removeColumn} moveColumn={moveColumn} />
+                  <GridColumnsSection formData={formData} columnInput={gridColumns.columnInput} setColumnInput={gridColumns.setColumnInput} addColumn={gridColumns.addColumn} removeColumn={gridColumns.removeColumn} moveColumn={gridColumns.moveColumn} />
                   <PaginationWidgetSection formData={formData} setFormData={setFormData} />
                 </div>
               </div>
@@ -1208,7 +1208,7 @@ const PlayboardsManagement = () => {
         </form>
       </Modal>
 
-      <UploadModal isOpen={uploadModalOpen} onClose={() => { setUploadModalOpen(false); resetUploadForm(); }} scenarios={scenarios} uploadFile={uploadFile} uploadScenarioKey={uploadScenarioKey} setUploadScenarioKey={setUploadScenarioKey} uploadName={uploadName} setUploadName={setUploadName} uploadDescription={uploadDescription} setUploadDescription={setUploadDescription} jsonPreview={jsonPreview} handleFileSelect={handleFileSelect} handleFileUpload={handleFileUpload} />
+      <UploadModal isOpen={uploadModalOpen} onClose={() => { setUploadModalOpen(false); resetUploadForm(); }} scenarios={pbData.scenarios} uploadFile={uploadFile} uploadScenarioKey={uploadScenarioKey} setUploadScenarioKey={setUploadScenarioKey} uploadName={uploadName} setUploadName={setUploadName} uploadDescription={uploadDescription} setUploadDescription={setUploadDescription} jsonPreview={jsonPreview} handleFileSelect={handleFileSelect} handleFileUpload={handleFileUpload} />
       <DetailViewModal isOpen={detailModalOpen} onClose={() => setDetailModalOpen(false)} selectedPlayboard={selectedPlayboard} />
     </div>
   );

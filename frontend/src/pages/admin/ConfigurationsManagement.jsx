@@ -369,9 +369,10 @@ const ConfigurationsManagement = () => {
         configurationsAPI.list({ search: search || undefined, type: filterType || undefined, page: pagination.page, limit: pagination.limit }),
         configurationsAPI.getTypes(),
       ]);
-      setConfigurations(configsRes.data.data || configsRes.data);
-      setPagination(prev => ({ ...prev, ...(configsRes.data.pagination || {}) }));
-      setConfigTypes(typesRes.data.types || []);
+      const configsData = configsRes?.data || {};
+      setConfigurations(configsData.data || (Array.isArray(configsData) ? configsData : []));
+      setPagination(prev => ({ ...prev, ...(configsData.pagination || {}) }));
+      setConfigTypes(typesRes?.data?.types || []);
     } catch (error) {
       toast.error('Failed to load configurations');
     } finally {
@@ -429,7 +430,7 @@ const ConfigurationsManagement = () => {
     if (uploadType) formDataUpload.append('config_type', uploadType);
     try {
       const response = await configurationsAPI.upload(formDataUpload, uploadKey, uploadType);
-      toast.success(response.data.message || 'File uploaded successfully');
+      toast.success(response?.data?.message || 'File uploaded successfully');
       setUploadModalOpen(false); setUploadFile(null); setUploadKey(''); setUploadType(''); fetchData();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Upload failed');
@@ -447,7 +448,7 @@ const ConfigurationsManagement = () => {
   const handleViewVersions = async (item) => {
     try {
       const response = await configurationsAPI.getVersions(item.config_id);
-      setVersions(response.data.versions || []);
+      setVersions(response?.data?.versions || []);
       setSelectedConfig(item);
       setVersionsModalOpen(true);
     } catch (error) { toast.error('Failed to load versions'); }

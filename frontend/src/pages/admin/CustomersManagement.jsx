@@ -487,9 +487,10 @@ const CustomersManagement = () => {
       if (filterLocation) params.location = filterLocation;
       if (filterUnit) params.unit = filterUnit;
       const response = await customersAPI.list(params);
-      setCustomers(response.data.data || []);
-      setTotalPages(response.data.pagination?.pages || 0);
-      setTotal(response.data.pagination?.total || 0);
+      const responseData = response?.data || {};
+      setCustomers(responseData.data || []);
+      setTotalPages(responseData.pagination?.pages || 0);
+      setTotal(responseData.pagination?.total || 0);
     } catch (err) { setError('Failed to fetch customers'); }
     finally { setLoading(false); }
   }, [page, limit, debouncedSearch, filterTag, filterLocation, filterUnit]);
@@ -497,16 +498,17 @@ const CustomersManagement = () => {
   const fetchFilterOptions = useCallback(async () => {
     try {
       const response = await customersAPI.getFilters();
-      setAvailableTags(response.data.tags || []);
-      setAvailableLocations(response.data.locations || []);
-      setAvailableUnits(response.data.units || []);
+      const filterData = response?.data || {};
+      setAvailableTags(filterData.tags || []);
+      setAvailableLocations(filterData.locations || []);
+      setAvailableUnits(filterData.units || []);
     } catch (err) { /* silent */ }
   }, []);
 
   const fetchAllUsers = useCallback(async () => {
     try {
       const response = await usersAPI.list({ limit: 1000 });
-      setAllUsers(response.data.data || []);
+      setAllUsers(response?.data?.data || []);
     } catch (err) { /* silent */ }
   }, []);
 
@@ -587,7 +589,7 @@ const CustomersManagement = () => {
 
   const refreshCustomerUsers = async () => {
     const response = await customersAPI.getUsers(getCustomerId(selectedCustomer));
-    setCustomerUsers(response.data || []);
+    setCustomerUsers(response?.data || []);
   };
 
   const showUsers = async (customer) => {
@@ -597,7 +599,7 @@ const CustomersManagement = () => {
     setUserSearch('');
     try {
       const response = await customersAPI.getUsers(getCustomerId(customer));
-      setCustomerUsers(response.data || []);
+      setCustomerUsers(response?.data || []);
     } catch (err) { setCustomerUsers([]); }
     finally { setLoadingUsers(false); }
   };

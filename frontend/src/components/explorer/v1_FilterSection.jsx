@@ -23,29 +23,34 @@ const CUSTOMER_DATAKEY_PATTERN = /^(query_)?customer[s_]?/i;
 const CUSTOMER_DISPLAY_PATTERN = /customer\s*[#\d]/i;
 
 const isCustomerFilter = (filter) => {
-  if (CUSTOMER_DATAKEY_PATTERN.test(filter.dataKey)) return true;
+  if (!filter) return false;
+  if (CUSTOMER_DATAKEY_PATTERN.test(filter.dataKey || '')) return true;
   const display = filter.displayName || '';
   return CUSTOMER_DISPLAY_PATTERN.test(display);
 };
 
 const hasNonEmptyValue = (val) => val !== undefined && val !== null && val !== '';
 
+const getFilterAttrs = (filter) =>
+  Array.isArray(filter?.attributes) ? filter.attributes : [];
+
 const DATE_RANGE_DEFAULT = (filter) => {
-  const startRaw = getAttrValue(filter.attributes, 'defaultValue_start');
-  const endRaw = getAttrValue(filter.attributes, 'defaultValue_end');
+  const attrs = getFilterAttrs(filter);
+  const startRaw = getAttrValue(attrs, 'defaultValue_start');
+  const endRaw = getAttrValue(attrs, 'defaultValue_end');
   const start = parseCurrentDateString(startRaw);
   const end = parseCurrentDateString(endRaw);
   return (start || end) ? { start, end } : undefined;
 };
 
 const DATE_DEFAULT = (filter) => {
-  const raw = getAttrValue(filter.attributes, 'defaultValue');
+  const raw = getAttrValue(getFilterAttrs(filter), 'defaultValue');
   const val = parseCurrentDateString(raw);
   return hasNonEmptyValue(val) ? val : undefined;
 };
 
 const MULTISELECT_DEFAULT = (filter) => {
-  const defaultVal = getAttrValue(filter.attributes, 'defaultValue');
+  const defaultVal = getAttrValue(getFilterAttrs(filter), 'defaultValue');
   if (typeof defaultVal === 'string' && defaultVal.trim() !== '') {
     return defaultVal.split(',').map((v) => v.trim());
   }
@@ -53,17 +58,17 @@ const MULTISELECT_DEFAULT = (filter) => {
 };
 
 const RADIO_DEFAULT = (filter) => {
-  const val = getAttrValue(filter.attributes, 'defaultValue');
+  const val = getAttrValue(getFilterAttrs(filter), 'defaultValue');
   return hasNonEmptyValue(val) ? val : undefined;
 };
 
 const TOGGLE_DEFAULT = (filter) => {
-  const val = getAttrValue(filter.attributes, 'defaultValue');
+  const val = getAttrValue(getFilterAttrs(filter), 'defaultValue');
   return (val === true || val === false) ? val : undefined;
 };
 
 const GENERIC_DEFAULT = (filter) => {
-  const val = getAttrValue(filter.attributes, 'defaultValue');
+  const val = getAttrValue(getFilterAttrs(filter), 'defaultValue');
   return hasNonEmptyValue(val) ? val : undefined;
 };
 
@@ -86,10 +91,11 @@ const DEFAULT_RESOLVERS = {
  * Returns `undefined` when no default value should be set.
  */
 const getFilterDefaultValue = (filter, initialValues) => {
+  if (!filter) return undefined;
   if (initialValues && initialValues[filter.dataKey] !== undefined) {
     return initialValues[filter.dataKey];
   }
-  const type = getAttrValue(filter.attributes, 'type');
+  const type = getAttrValue(getFilterAttrs(filter), 'type');
   const resolver = DEFAULT_RESOLVERS[type] || GENERIC_DEFAULT;
   return resolver(filter);
 };
@@ -143,12 +149,10 @@ const formatErrorMessages = (errorMessages) => {
  * all other filter types return `undefined`.
  */
 const getFilterPlaceholder = (filter) => {
-  const type = filter.attributes?.find(
-    (attr) => attr.key === 'type'
-  )?.value;
-  const defaultValue = filter.attributes?.find(
-    (attr) => attr.key === 'defaultValue'
-  )?.value;
+  if (!filter) return undefined;
+  const attrs = getFilterAttrs(filter);
+  const type = attrs.find((attr) => attr.key === 'type')?.value;
+  const defaultValue = attrs.find((attr) => attr.key === 'defaultValue')?.value;
   if (type === 'input' && (!defaultValue || defaultValue === '')) {
     return filter.inputHint || 'Enter value';
   }
@@ -221,7 +225,9 @@ const FilterLabel = ({ filter }) => {
 
 const runValidation = (filterConfig, filledForm) => {
   const errorMessages = [];
+  if (!Array.isArray(filterConfig)) return errorMessages;
   for (const filter of filterConfig) {
+    if (!filter) continue;
     const val = filledForm[filter.dataKey];
     const result = validateFilter(filter, val);
     if (!result.valid) {
@@ -235,7 +241,9 @@ const runValidation = (filterConfig, filledForm) => {
 
 const buildSubmitForm = (form, filterConfig) => {
   const filledForm = { ...form };
+  if (!Array.isArray(filterConfig)) return filledForm;
   filterConfig.forEach((filter) => {
+    if (!filter) return;
     const val = filledForm[filter.dataKey];
     if (val === undefined || val === null || val === '') {
       filledForm[filter.dataKey] = getDefaultValue(filter);
@@ -297,12 +305,15 @@ const AccordionHeader = ({ show, onToggle, hasCustomerFilter, customerHasAssigne
 // --- Helpers to reduce cognitive complexity in V1FilterSection ---
 
 const isFilterRenderable = (filter) =>
+  filter != null &&
   (filter.visible === undefined || filter.visible === true) &&
   (filter.status === 'Y' || filter.status === undefined);
 
 const buildInitialForm = (filterConfig, initialFilterValues) => {
   const initialForm = {};
+  if (!Array.isArray(filterConfig)) return initialForm;
   filterConfig.forEach((filter) => {
+    if (!filter) return;
     const val = getFilterDefaultValue(filter, initialFilterValues);
     if (val !== undefined) {
       initialForm[filter.dataKey] = val;

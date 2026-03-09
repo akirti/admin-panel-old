@@ -11,6 +11,7 @@ import V1ColumnFilterDropdown from "./v1_ColumnFilterDropdown";
 
 // Utility: trim long cell values for display
 const trimCellValue = (value, maxLength = 65) => {
+  if (value === undefined || value === null) return "";
   if (typeof value === "boolean") return value ? "True" : "False";
   if (
     typeof value === "string" &&
@@ -67,10 +68,12 @@ const computeMenuPosition = (buttonEl, itemCount) => {
 };
 
 // Helpers for building action URLs
-const toPrimitiveEntries = (obj) =>
-  Object.entries(obj).filter(
+const toPrimitiveEntries = (obj) => {
+  if (!obj || typeof obj !== "object") return [];
+  return Object.entries(obj).filter(
     ([, v]) => v != null && typeof v !== "object" && typeof v !== "function"
   );
+};
 
 const mergeParams = (activeFilters, rowParams) => {
   const paramMap = {};
@@ -95,6 +98,7 @@ const applyFilterMappings = (paramMap, filters) => {
 
 // Build the drill-down action URL from action config, row data, and active filters
 const buildActionUrl = (action, row) => {
+  if (!action || !row) return "#";
   const encode = encodeURIComponent;
   const activeFilters =
     window.__activeFilters && typeof window.__activeFilters === "object"
@@ -109,8 +113,8 @@ const buildActionUrl = (action, row) => {
     .map(([k, v]) => `${encode(k)}=${encode(v)}`)
     .join("&");
 
-  const targetDomain = action.dataDomain;
-  const targetScenarioKey = action.key || action.scenerioKey;
+  const targetDomain = action.dataDomain || "";
+  const targetScenarioKey = action.key || action.scenerioKey || "";
   return `/explorer/${targetDomain}/${targetScenarioKey}?${urlParams}`;
 };
 
@@ -238,19 +242,27 @@ const createToggleActionMenu = (openMenuIdx, setOpenMenuIdx, setMenuPosition, bu
 
 // --- Helpers for data filtering and unique values ---
 
-const toBoolString = (val) => (typeof val === "boolean" ? (val ? "True" : "False") : val);
+const toBoolString = (val) => {
+  if (val === undefined || val === null) return val;
+  return typeof val === "boolean" ? (val ? "True" : "False") : val;
+};
 
 const applyColumnFilters = (data, columnFilters) => {
   let result = Array.isArray(data) ? data : [];
+  if (!columnFilters || typeof columnFilters !== "object") return result;
   for (const [colKey, selected] of Object.entries(columnFilters)) {
     if (!Array.isArray(selected) || selected.length === 0) continue;
-    result = result.filter((row) => selected.includes(toBoolString(row[colKey])));
+    result = result.filter((row) => {
+      const val = toBoolString(row[colKey]);
+      return val != null && selected.includes(val);
+    });
   }
   return result;
 };
 
 const buildColumnUniqueValues = (columns, data) => {
   const map = {};
+  if (!Array.isArray(columns) || !Array.isArray(data)) return map;
   columns.forEach((col) => {
     const seen = new Set();
     const values = [];

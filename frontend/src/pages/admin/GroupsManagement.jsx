@@ -505,10 +505,11 @@ function useGroupsData(isSuperAdmin) {
       if (filterDomain) params.domain = filterDomain;
       if (filterPermission) params.permission = filterPermission;
       const response = await groupsAPI.list(params);
-      setGroups(response.data.data || []);
-      if (response.data.pagination) {
-        setTotalPages(response.data.pagination.pages || 0);
-        setTotal(response.data.pagination.total || 0);
+      const responseData = response?.data || {};
+      setGroups(responseData.data || []);
+      if (responseData.pagination) {
+        setTotalPages(responseData.pagination.pages || 0);
+        setTotal(responseData.pagination.total || 0);
       }
     } catch (err) {
       setError('Failed to fetch groups');
@@ -523,10 +524,10 @@ function useGroupsData(isSuperAdmin) {
         permissionsAPI.list({ limit: 1000 }), domainsAPI.list({ limit: 1000 }),
         groupsAPI.getTypes(), customersAPI.list({ limit: 1000 }),
       ]);
-      setPermissions(permRes.data.data || []);
-      setDomains(domRes.data.data || []);
-      setGroupTypes(typesRes.data || []);
-      setAllCustomers(custRes.data.data || []);
+      setPermissions(permRes?.data?.data || []);
+      setDomains(domRes?.data?.data || []);
+      setGroupTypes(typesRes?.data || []);
+      setAllCustomers(custRes?.data?.data || []);
     } catch (err) { /* error handled silently */ }
   }, []);
 
@@ -754,7 +755,7 @@ const GroupsManagement = () => {
     setLoadingUsers(true);
     try {
       const response = await groupsAPI.getUsers(group._id || group.groupId);
-      setGroupUsers(response.data || []);
+      setGroupUsers(response?.data || []);
     } catch (err) { setGroupUsers([]); }
     finally { setLoadingUsers(false); }
   };
