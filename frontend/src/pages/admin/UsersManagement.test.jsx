@@ -507,10 +507,10 @@ describe('UsersManagement', () => {
 
   it('shows loading spinner while fetching data', async () => {
     const { usersAPI, rolesAPI, groupsAPI, customersAPI } = await import('../../services/api');
-    usersAPI.list.mockReturnValue(new Promise(() => {}));
-    rolesAPI.list.mockReturnValue(new Promise(() => {}));
-    groupsAPI.list.mockReturnValue(new Promise(() => {}));
-    customersAPI.list.mockReturnValue(new Promise(() => {}));
+    usersAPI.list.mockReturnValue(new Promise(Function.prototype));
+    rolesAPI.list.mockReturnValue(new Promise(Function.prototype));
+    groupsAPI.list.mockReturnValue(new Promise(Function.prototype));
+    customersAPI.list.mockReturnValue(new Promise(Function.prototype));
 
     const { container } = renderUsersManagement();
 

@@ -556,7 +556,7 @@ describe('ErrorLogsPage', () => {
     errorLogsAPI.listArchives.mockResolvedValue({ data: { archives: mockArchives } });
     errorLogsAPI.getCurrentFile.mockResolvedValue({ data: { size: 1024, line_count: 50 } });
     errorLogsAPI.getArchiveDownloadUrl.mockResolvedValue({ data: { download_url: 'https://download.test/file' } });
-    jest.spyOn(window, 'open').mockImplementation(() => {});
+    jest.spyOn(window, 'open').mockImplementation(Function.prototype);
     const user = userEvent.setup();
 
     renderErrorLogsPage();

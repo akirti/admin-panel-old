@@ -1133,9 +1133,9 @@ describe('PlayboardsManagement', () => {
 
   it('shows loading state', async () => {
     const { playboardsAPI, scenariosAPI, domainsAPI } = await import('../../services/api');
-    playboardsAPI.list.mockReturnValue(new Promise(() => {}));
-    scenariosAPI.list.mockReturnValue(new Promise(() => {}));
-    domainsAPI.list.mockReturnValue(new Promise(() => {}));
+    playboardsAPI.list.mockReturnValue(new Promise(Function.prototype));
+    scenariosAPI.list.mockReturnValue(new Promise(Function.prototype));
+    domainsAPI.list.mockReturnValue(new Promise(Function.prototype));
 
     renderPlayboardsManagement();
 

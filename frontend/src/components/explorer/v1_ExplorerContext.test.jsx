@@ -38,8 +38,8 @@ describe('ExplorerContext', () => {
   });
 
   it('provides loading state initially', () => {
-    domainAPI.getAll.mockReturnValue(new Promise(() => {})); // never resolves
-    scenarioAPI.getAll.mockReturnValue(new Promise(() => {}));
+    domainAPI.getAll.mockReturnValue(new Promise(Function.prototype)); // never resolves
+    scenarioAPI.getAll.mockReturnValue(new Promise(Function.prototype));
 
     render(
       <ExplorerProvider>

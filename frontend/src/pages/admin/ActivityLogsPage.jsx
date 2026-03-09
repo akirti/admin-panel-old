@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Clock, Filter, User, Activity, TrendingUp, Download } from 'lucide-react';
+import { Clock, Filter, User, Activity, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { activityLogsAPI, exportAPI } from '../../services/api';
 import { ExportButton } from '../../components/shared';

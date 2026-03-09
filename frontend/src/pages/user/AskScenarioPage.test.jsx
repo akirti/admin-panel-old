@@ -169,7 +169,7 @@ describe('AskScenarioPage', () => {
   it('shows loading spinner in edit mode while request is loading', async () => {
     const { scenarioRequestAPI, jiraAPI } = await setupLookupMocks();
     // Make the get call hang to observe loading state
-    scenarioRequestAPI.get.mockReturnValue(new Promise(() => {}));
+    scenarioRequestAPI.get.mockReturnValue(new Promise(Function.prototype));
 
     const { container } = renderEdit();
 

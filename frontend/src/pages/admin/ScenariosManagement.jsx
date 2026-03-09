@@ -5,6 +5,11 @@ import toast from 'react-hot-toast';
 import { FileText, Plus, Edit2, Trash2, X, Search, Filter } from 'lucide-react';
 import { Modal } from '../../components/shared';
 
+function getSubmitLabel(saving, editing) {
+  if (saving) return 'Saving...';
+  return editing ? 'Update' : 'Create';
+}
+
 function ScenariosManagement() {
   const { isSuperAdmin } = useAuth();
   const [scenarios, setScenarios] = useState([]);
@@ -389,7 +394,7 @@ function ScenariosManagement() {
                   Cancel
                 </button>
                 <button type="submit" disabled={saving} className="btn-primary">
-                  {saving ? 'Saving...' : editingScenario ? 'Update' : 'Create'}
+                  {getSubmitLabel(saving, editingScenario)}
                 </button>
               </div>
             </form>

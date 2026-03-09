@@ -214,7 +214,7 @@ const PlayboardsManagement = () => {
       setPagination(prev => ({ ...prev, ...(playboardsRes.data.pagination || {}) }));
       setScenarios(scenariosRes.data.data || scenariosRes.data);
       setDomains(domainsRes.data.data || domainsRes.data);
-    } catch (error) {
+    } catch {
       toast.error('Failed to load data');
     } finally {
       setLoading(false);
@@ -344,7 +344,7 @@ const PlayboardsManagement = () => {
       await playboardsAPI.delete(item.id || item._id);
       toast.success('Playboard deleted successfully');
       fetchData();
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete playboard');
     }
   };

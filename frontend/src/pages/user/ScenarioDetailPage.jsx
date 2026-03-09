@@ -19,6 +19,11 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+function getSubmitLabel(saving, editing) {
+  if (saving) return 'Saving...';
+  return editing ? 'Update Playboard' : 'Create Playboard';
+}
+
 function ScenarioDetailPage() {
   const { scenarioKey, domainKey } = useParams();
   const navigate = useNavigate();
@@ -1490,7 +1495,7 @@ function ScenarioDetailPage() {
               Cancel
             </Button>
             <Button type="submit" disabled={saving}>
-              {saving ? 'Saving...' : (editingItem ? 'Update Playboard' : 'Create Playboard')}
+              {getSubmitLabel(saving, editingItem)}
             </Button>
           </div>
         </form>

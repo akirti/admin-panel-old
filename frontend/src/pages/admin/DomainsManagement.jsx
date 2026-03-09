@@ -6,6 +6,11 @@ import toast from 'react-hot-toast';
 import { Layers, Plus, Edit2, Trash2, X, Search, Image } from 'lucide-react';
 import LucideIconPicker from '../../components/shared/LucideIconPicker';
 
+function getSubmitLabel(saving, editing) {
+  if (saving) return 'Saving...';
+  return editing ? 'Update' : 'Create';
+}
+
 function DomainsManagement() {
   const { isEditor } = useAuth();
   const [domains, setDomains] = useState([]);
@@ -591,7 +596,7 @@ function DomainsManagement() {
                   Cancel
                 </button>
                 <button type="submit" disabled={saving} className="btn-primary">
-                  {saving ? 'Saving...' : editingDomain ? 'Update' : 'Create'}
+                  {getSubmitLabel(saving, editingDomain)}
                 </button>
               </div>
             </form>

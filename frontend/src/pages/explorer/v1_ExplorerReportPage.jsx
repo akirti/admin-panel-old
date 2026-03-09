@@ -276,7 +276,7 @@ function V1ExplorerReportPage() {
       setLoading(true);
       setError('');
       try {
-        const { page: reqPage, pageSize: reqPageSize, autosubmit, ...filterValues } = params;
+        const { page: reqPage, pageSize: reqPageSize, autosubmit: _autosubmit, ...filterValues } = params;
 
         // Build logic_args from filter values, keyed by filter.index
         const logic_args = {};

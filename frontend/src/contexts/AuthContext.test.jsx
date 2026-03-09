@@ -547,7 +547,7 @@ describe('AuthContext', () => {
   describe('useAuth without provider', () => {
     it('throws an error when used outside AuthProvider', () => {
       // Suppress console.error for the expected error
-      const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const spy = jest.spyOn(console, 'error').mockImplementation(Function.prototype);
 
       expect(() => {
         renderHook(() => useAuth());

@@ -181,9 +181,9 @@ describe('CustomersManagement', () => {
 
   it('shows loading state', async () => {
     const { customersAPI, usersAPI } = await import('../../services/api');
-    customersAPI.list.mockReturnValue(new Promise(() => {}));
-    customersAPI.getFilters.mockReturnValue(new Promise(() => {}));
-    usersAPI.list.mockReturnValue(new Promise(() => {}));
+    customersAPI.list.mockReturnValue(new Promise(Function.prototype));
+    customersAPI.getFilters.mockReturnValue(new Promise(Function.prototype));
+    usersAPI.list.mockReturnValue(new Promise(Function.prototype));
 
     render(<CustomersManagement />);
     expect(screen.getByText(/loading customers/i)).toBeInTheDocument();
@@ -1803,7 +1803,7 @@ describe('CustomersManagement', () => {
   it('shows loading state in users modal', async () => {
     await setupMocks();
     const { customersAPI } = await import('../../services/api');
-    customersAPI.getUsers.mockReturnValue(new Promise(() => {})); // Never resolves
+    customersAPI.getUsers.mockReturnValue(new Promise(Function.prototype)); // Never resolves
     const user = userEvent.setup();
 
     render(<CustomersManagement />);

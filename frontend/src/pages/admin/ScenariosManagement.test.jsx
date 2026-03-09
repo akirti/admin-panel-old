@@ -429,8 +429,8 @@ describe('ScenariosManagement', () => {
 
   it('shows loading spinner while fetching data', async () => {
     const { scenarioAPI, domainAPI } = await import('../../services/api');
-    scenarioAPI.getAll.mockReturnValue(new Promise(() => {}));
-    domainAPI.getAll.mockReturnValue(new Promise(() => {}));
+    scenarioAPI.getAll.mockReturnValue(new Promise(Function.prototype));
+    domainAPI.getAll.mockReturnValue(new Promise(Function.prototype));
 
     const { container } = renderScenariosManagement();
 
@@ -560,7 +560,7 @@ describe('ScenariosManagement', () => {
     await setupMocks();
     const { scenarioAPI } = await import('../../services/api');
     // Make create hang to observe saving state
-    scenarioAPI.create.mockReturnValue(new Promise(() => {}));
+    scenarioAPI.create.mockReturnValue(new Promise(Function.prototype));
     const user = userEvent.setup();
 
     renderScenariosManagement();

@@ -255,7 +255,7 @@ describe('V1ExplorerReportPage', () => {
   // --- Loading state ---
 
   it('shows loading spinner while playboard is loading', () => {
-    mockPlayboardGet.mockReturnValue(new Promise(() => {})); // never resolves
+    mockPlayboardGet.mockReturnValue(new Promise(Function.prototype)); // never resolves
     renderWithRoute();
 
     expect(screen.getByText('Loading filters...')).toBeInTheDocument();
@@ -263,7 +263,7 @@ describe('V1ExplorerReportPage', () => {
 
   it('shows loading spinner while report data is loading', async () => {
     mockPlayboardGet.mockResolvedValue(makePlayboardResponse());
-    mockPrevailExecute.mockReturnValue(new Promise(() => {})); // never resolves
+    mockPrevailExecute.mockReturnValue(new Promise(Function.prototype)); // never resolves
 
     renderWithRoute();
 

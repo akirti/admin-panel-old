@@ -37,7 +37,7 @@ function RegisterPage() {
     setLoading(true);
 
     try {
-      const { confirmPassword, ...registerData } = formData;
+      const { confirmPassword: _confirmPassword, ...registerData } = formData;
       await register(registerData);
       toast.success('Account created successfully!');
       navigate('/dashboard');

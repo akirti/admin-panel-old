@@ -69,7 +69,7 @@ const UsersManagement = () => {
     e.preventDefault();
     try {
       if (editingUser) {
-        const { password, send_password_email, ...updateData } = formData;
+        const { password: _password, send_password_email: _send_password_email, ...updateData } = formData;
         await usersAPI.update(editingUser.email, updateData);
         toast.success('User updated successfully');
       } else {

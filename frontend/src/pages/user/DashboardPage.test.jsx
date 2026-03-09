@@ -310,7 +310,7 @@ describe('DashboardPage', () => {
     const { domainAPI, scenarioRequestAPI } = await import('../../services/api');
     let resolveApi;
     domainAPI.getAll.mockReturnValue(new Promise(r => { resolveApi = r; }));
-    scenarioRequestAPI.getStats.mockReturnValue(new Promise(() => {}));
+    scenarioRequestAPI.getStats.mockReturnValue(new Promise(Function.prototype));
 
     const { container } = renderDashboardPage();
     expect(container.querySelector('.animate-spin')).toBeInTheDocument();

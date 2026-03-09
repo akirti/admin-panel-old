@@ -505,7 +505,7 @@ describe('V1MultiSelectDropdown', () => {
       right: 300,
       x: 100,
       y: 700,
-      toJSON: () => {},
+      toJSON: Function.prototype,
     };
 
     render(<V1MultiSelectDropdown {...defaultProps} />);

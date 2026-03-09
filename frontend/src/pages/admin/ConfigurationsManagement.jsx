@@ -235,7 +235,7 @@ const ConfigurationsManagement = () => {
       } else if (formData.type === 'snapshot-data') {
         setFormData({ ...formData, data: parsed });
       }
-    } catch (e) {
+    } catch {
       // Invalid JSON, don't update formData
     }
   };

@@ -5,6 +5,12 @@ import { PlayCircle, Eye, Pencil, ShieldCheck, ToggleLeft, Trash2, Plus, Check, 
 import toast from 'react-hot-toast';
 import { getAuthConfigTemplate, AUTH_CONFIG_HINTS, PLACEHOLDER_URLS, AUTH_FIELDS } from '../../constants/apiConfigDefaults';
 
+function getMethodVariant(method) {
+  if (method === 'GET') return 'success';
+  if (method === 'POST') return 'primary';
+  return 'warning';
+}
+
 const AUTH_TYPES = [
   { value: 'none', label: 'None' },
   { value: 'basic', label: 'Basic Auth' },
@@ -102,7 +108,7 @@ const ApiConfigsManagement = () => {
       setConfigs(configsRes.data.data || []);
       setPagination(prev => ({ ...prev, ...(configsRes.data.pagination || {}) }));
       setTags(tagsRes.data.tags || []);
-    } catch (error) {
+    } catch {
       toast.error('Failed to load API configurations');
     } finally {
       setLoading(false);
@@ -244,7 +250,7 @@ const ApiConfigsManagement = () => {
       await apiConfigsAPI.delete(item._id);
       toast.success('API configuration deleted successfully');
       fetchData();
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete configuration');
     }
   };
@@ -346,7 +352,7 @@ const ApiConfigsManagement = () => {
       key: 'method',
       title: 'Method',
       render: (val) => (
-        <Badge variant={val === 'GET' ? 'success' : val === 'POST' ? 'primary' : 'warning'}>
+        <Badge variant={getMethodVariant(val)}>
           {val}
         </Badge>
       ),

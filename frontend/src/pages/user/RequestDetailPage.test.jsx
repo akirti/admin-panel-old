@@ -140,7 +140,7 @@ describe('RequestDetailPage', () => {
 
   it('shows loading spinner while request is loading', async () => {
     const { scenarioRequestAPI } = await import('../../services/api');
-    scenarioRequestAPI.get.mockReturnValue(new Promise(() => {}));
+    scenarioRequestAPI.get.mockReturnValue(new Promise(Function.prototype));
 
     const { container } = renderPage();
 

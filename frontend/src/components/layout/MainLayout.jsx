@@ -83,6 +83,24 @@ const getUserNav = (isSuperAdmin, canManageUsers) => {
   return items;
 };
 
+function getNavItems(isAdmin, isGroupAdmin, isSuperAdmin, canManageUsers) {
+  if (isAdmin) return ADMIN_NAV;
+  if (isGroupAdmin) return GROUP_ADMIN_NAV;
+  return getUserNav(isSuperAdmin, canManageUsers);
+}
+
+function getPanelTitle(isAdmin, isGroupAdmin) {
+  if (isAdmin) return 'Admin Panel';
+  if (isGroupAdmin) return 'Management';
+  return 'EasyLife';
+}
+
+function getHeaderTitle(isAdmin, isGroupAdmin) {
+  if (isAdmin) return 'Administration';
+  if (isGroupAdmin) return 'Management';
+  return 'Welcome';
+}
+
 function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
   const { user, logout, isSuperAdmin, canManageUsers, isEditor } = useAuth();
   const location = useLocation();
@@ -95,11 +113,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
     navigate('/login');
   };
 
-  const navItems = isAdmin
-    ? ADMIN_NAV
-    : isGroupAdmin
-      ? GROUP_ADMIN_NAV
-      : getUserNav(isSuperAdmin, canManageUsers);
+  const navItems = getNavItems(isAdmin, isGroupAdmin, isSuperAdmin, canManageUsers);
   const iconSize = sidebarOpen ? 20 : 24;
 
   const isActive = (path, exact = false) => {
@@ -121,7 +135,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
         <div className="h-16 flex items-center justify-between px-4 border-b border-edge">
           {sidebarOpen && (
             <span className="text-xl font-bold text-primary-600">
-              {isAdmin ? 'Admin Panel' : isGroupAdmin ? 'Management' : 'EasyLife'}
+              {getPanelTitle(isAdmin, isGroupAdmin)}
             </span>
           )}
           <button
@@ -225,7 +239,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
         {/* Header */}
         <header className="h-16 bg-header-bg shadow-sm border-b border-edge flex items-center justify-between px-6">
           <h1 className="text-xl font-semibold text-content">
-            {isAdmin ? 'Administration' : isGroupAdmin ? 'Management' : 'Welcome'}
+            {getHeaderTitle(isAdmin, isGroupAdmin)}
           </h1>
 
           <div className="flex items-center gap-4">

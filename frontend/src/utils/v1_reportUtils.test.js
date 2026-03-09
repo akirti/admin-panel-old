@@ -487,8 +487,8 @@ describe('downloadData', () => {
       download: '',
       click: clickSpy,
     });
-    appendChildSpy = jest.spyOn(document.body, 'appendChild').mockImplementation(() => {});
-    removeChildSpy = jest.spyOn(document.body, 'removeChild').mockImplementation(() => {});
+    appendChildSpy = jest.spyOn(document.body, 'appendChild').mockImplementation(Function.prototype);
+    removeChildSpy = jest.spyOn(document.body, 'removeChild').mockImplementation(Function.prototype);
     createObjectURLSpy = jest.fn(() => 'blob:mock-url');
     revokeObjectURLSpy = jest.fn();
     URL.createObjectURL = createObjectURLSpy;

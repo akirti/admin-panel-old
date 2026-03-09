@@ -152,8 +152,8 @@ describe('PermissionsManagement', () => {
 
   it('shows loading state', async () => {
     const { permissionsAPI } = await import('../../services/api');
-    permissionsAPI.list.mockReturnValue(new Promise(() => {}));
-    permissionsAPI.getModules.mockReturnValue(new Promise(() => {}));
+    permissionsAPI.list.mockReturnValue(new Promise(Function.prototype));
+    permissionsAPI.getModules.mockReturnValue(new Promise(Function.prototype));
 
     render(<PermissionsManagement />);
     expect(screen.getByText(/loading permissions/i)).toBeInTheDocument();

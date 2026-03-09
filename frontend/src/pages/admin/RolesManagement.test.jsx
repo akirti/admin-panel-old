@@ -160,9 +160,9 @@ describe('RolesManagement', () => {
 
   it('shows loading state', async () => {
     const { rolesAPI, permissionsAPI, domainsAPI } = await import('../../services/api');
-    rolesAPI.list.mockReturnValue(new Promise(() => {}));
-    permissionsAPI.list.mockReturnValue(new Promise(() => {}));
-    domainsAPI.list.mockReturnValue(new Promise(() => {}));
+    rolesAPI.list.mockReturnValue(new Promise(Function.prototype));
+    permissionsAPI.list.mockReturnValue(new Promise(Function.prototype));
+    domainsAPI.list.mockReturnValue(new Promise(Function.prototype));
 
     render(<RolesManagement />);
     expect(screen.getByText(/loading roles/i)).toBeInTheDocument();
@@ -1160,7 +1160,7 @@ describe('RolesManagement', () => {
     await setupMocks();
     const { rolesAPI } = await import('../../services/api');
     // Never resolve to keep loading
-    rolesAPI.getUsers.mockReturnValue(new Promise(() => {}));
+    rolesAPI.getUsers.mockReturnValue(new Promise(Function.prototype));
     const user = userEvent.setup();
 
     render(<RolesManagement />);

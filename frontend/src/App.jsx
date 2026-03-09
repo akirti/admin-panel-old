@@ -52,7 +52,7 @@ import FeedbackPage from './pages/FeedbackPage';
 
 // Protected Route Component
 function ProtectedRoute({ children, requireAdmin = false, requireGroupAdmin = false }) {
-  const { user, loading, isSuperAdmin, isAdmin, canManageUsers } = useAuth();
+  const { user, loading, isSuperAdmin, canManageUsers } = useAuth();
 
   if (loading) {
     return (

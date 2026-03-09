@@ -50,7 +50,7 @@ const fetchCSRFToken = async () => {
 
     csrfToken = response.data.csrf_token;
     return csrfToken;
-  } catch (error) {
+  } catch {
     return null;
   }
 };
@@ -122,7 +122,7 @@ api.interceptors.response.use(
       // Make a GET request to force backend to issue a new cookie
       try {
         await axios.get(`${API_BASE_URL}/auth/csrf-token`, { withCredentials: true });
-      } catch (e) {
+      } catch {
         // Ignore errors, the cookie might still be set
       }
 

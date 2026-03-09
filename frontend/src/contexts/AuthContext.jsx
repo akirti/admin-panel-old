@@ -45,7 +45,7 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const response = await authAPI.login(email, password);
-    const { access_token, refresh_token, ...userData } = response.data;
+    const { access_token: _access_token, refresh_token: _refresh_token, ...userData } = response.data;
 
     // Tokens are now set as httpOnly cookies by the backend
     setUser(userData);
@@ -54,7 +54,7 @@ export function AuthProvider({ children }) {
 
   const register = async (data) => {
     const response = await authAPI.register(data);
-    const { access_token, refresh_token, ...userData } = response.data;
+    const { access_token: _access_token2, refresh_token: _refresh_token2, ...userData } = response.data;
 
     // Tokens are now set as httpOnly cookies by the backend
     setUser(userData);

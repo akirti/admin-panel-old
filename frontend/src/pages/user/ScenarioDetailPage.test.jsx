@@ -150,9 +150,9 @@ describe('ScenarioDetailPage', () => {
 
   it('shows loading spinner initially', async () => {
     const { scenariosAPI, domainsAPI } = await import('../../services/api');
-    scenariosAPI.get.mockReturnValue(new Promise(() => {}));
-    scenariosAPI.getPlayboards.mockReturnValue(new Promise(() => {}));
-    domainsAPI.list.mockReturnValue(new Promise(() => {}));
+    scenariosAPI.get.mockReturnValue(new Promise(Function.prototype));
+    scenariosAPI.getPlayboards.mockReturnValue(new Promise(Function.prototype));
+    domainsAPI.list.mockReturnValue(new Promise(Function.prototype));
 
     const { container } = renderPage();
 

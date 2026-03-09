@@ -162,11 +162,11 @@ describe('GroupsManagement', () => {
 
   it('shows loading state', async () => {
     const { groupsAPI, permissionsAPI, domainsAPI, customersAPI } = await import('../../services/api');
-    groupsAPI.list.mockReturnValue(new Promise(() => {}));
-    groupsAPI.getTypes.mockReturnValue(new Promise(() => {}));
-    permissionsAPI.list.mockReturnValue(new Promise(() => {}));
-    domainsAPI.list.mockReturnValue(new Promise(() => {}));
-    customersAPI.list.mockReturnValue(new Promise(() => {}));
+    groupsAPI.list.mockReturnValue(new Promise(Function.prototype));
+    groupsAPI.getTypes.mockReturnValue(new Promise(Function.prototype));
+    permissionsAPI.list.mockReturnValue(new Promise(Function.prototype));
+    domainsAPI.list.mockReturnValue(new Promise(Function.prototype));
+    customersAPI.list.mockReturnValue(new Promise(Function.prototype));
 
     render(<GroupsManagement />);
     expect(screen.getByText(/loading groups/i)).toBeInTheDocument();
@@ -2866,7 +2866,7 @@ describe('GroupsManagement', () => {
     await setupMocks();
     const { groupsAPI } = await import('../../services/api');
     // Never-resolving promise to keep loading state
-    groupsAPI.getUsers.mockReturnValue(new Promise(() => {}));
+    groupsAPI.getUsers.mockReturnValue(new Promise(Function.prototype));
     const user = userEvent.setup();
 
     render(<GroupsManagement />);

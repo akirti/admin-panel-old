@@ -6,7 +6,7 @@ import { Layers, FileText, Settings, ArrowRight, TrendingUp, Users, Activity, Me
 import { Badge } from '../../components/shared';
 
 function DashboardPage() {
-  const { user, isSuperAdmin, canManageUsers, isEditor } = useAuth();
+  const { user, isSuperAdmin, canManageUsers } = useAuth();
   const [domains, setDomains] = useState([]);
   const [loading, setLoading] = useState(true);
   const [requestStats, setRequestStats] = useState({
