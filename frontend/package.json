@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "webpack serve --config config/webpack.dev.js",
+    "dev_local": "webpack serve --config config/webpack.local.js",
     "build": "node scripts/build.js",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "webpack serve --config config/webpack.prod.js",
