@@ -1253,6 +1253,16 @@
             <Response/>
             <Condition>(proxy.pathsuffix MatchesPath "/info")</Condition>
         </Flow>
+        <!-- Default catch-all for undefined resources -->
+        <Flow name="UnknownResource">
+            <Description>Catch-all for undefined resources</Description>
+            <Request>
+                <Step>
+                    <Name>RF-ResourceNotFound</Name>
+                </Step>
+            </Request>
+            <Response/>
+        </Flow>
     </Flows>
 
     <PostFlow name="PostFlow">
