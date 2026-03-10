@@ -154,5 +154,18 @@
   "MOCK_DB_SCHEME_DEFAULT": "mongodb",
   "MOCK_DB_SCHEME_SRV": "mongodb+srv",
   "MOCK_URL_HOST_1": "host1.example.com",
-  "MOCK_URL_HOST_2": "host2.example.com"
+  "MOCK_URL_HOST_2": "host2.example.com",
+
+  "STR_DOMAIN1": "domain1",
+  "STR_DOMAIN2": "domain2",
+  "STR_DOMAINKEY": "domainKey",
+  "STR_SCENARIO1": "scenario1",
+  "STR_TEST": "Test",
+  "STR_TEST_UPPER": "TEST",
+  "EXPECTED_NEW_NAME": "New Name",
+  "SUBPATH_TOGGLE_STATUS": "/toggle-status",
+  "STR_SCENARIOKEY": "scenarioKey",
+  "STR_SUBDOMAINS": "subDomains",
+  "STR_TEST_PERM": "test-perm",
+  "MOCK_KEY_TEST_SCENARIO": "test-scenario"
 }

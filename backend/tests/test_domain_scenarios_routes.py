@@ -14,28 +14,24 @@ from easylifeauth.api.domain_scenarios_routes import (
 )
 from easylifeauth.api.dependencies import get_db, get_user_service
 from easylifeauth.security.access_control import get_current_user, require_super_admin
-from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_USER_TEST
+from mock_data import (
+    MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_USER_TEST,
+    STR_DOMAIN1, STR_DOMAIN2, STR_DOMAINKEY, STR_SCENARIO1,
+    STR_TEST, EXPECTED_NEW_NAME, SUBPATH_TOGGLE_STATUS,
+    STR_SUBDOMAINS, MOCK_KEY_TEST_SCENARIO,
+)
 
 PATH_DOMAIN_SCENARIOS = "/domain-scenarios"
 
-EXPECTED_COMPLEX_ASYNC_MOCKING_KEY_LOOKUP = "Complex async mocking - key lookup tested via other tests"
-EXPECTED_NEW_NAME = "New Name"
 EXPECTED_NEW_SCENARIO = "New Scenario"
 EXPECTED_SUB = "Sub 1"
 EXPECTED_TEST_SCENARIO = "Test Scenario"
-STR_DOMAIN1 = "domain1"
-STR_DOMAIN2 = "domain2"
-STR_DOMAINKEY = "domainKey"
-STR_SCENARIO1 = "scenario1"
 STR_SUB1 = "sub1"
-STR_SUBDOMAINS = "subDomains"
-STR_TEST = "Test"
 SUBPATH_DOMAIN_SCENARIOS = "/domain-scenarios/"
 SUBPATH_PLAYBOARDS = "/playboards"
 SUBPATH_SCENARIOS_TEST = "/scenarios/test"
 SUBPATH_SUB1 = "/sub1"
 SUBPATH_SUBDOMAINS = "/subdomains"
-SUBPATH_TOGGLE_STATUS = "/toggle-status"
 
 
 
@@ -351,10 +347,27 @@ class TestDomainScenariosRoutes:
         response = client.put(f"/domain-scenarios/{scenario_id}", json={"name": EXPECTED_NEW_NAME})
         assert response.status_code == 200
 
-    @pytest.mark.skip(reason=EXPECTED_COMPLEX_ASYNC_MOCKING_KEY_LOOKUP)
     def test_update_scenario_by_key(self, client, mock_db):
         """Test update scenario by key when ObjectId fails"""
-        pass
+        existing = {
+            "_id": ObjectId(),
+            "key": MOCK_KEY_TEST_SCENARIO,
+            "name": "Old Name",
+            STR_DOMAINKEY: STR_DOMAIN1,
+            "status": "active",
+            STR_SUBDOMAINS: [],
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+
+        mock_db.domain_scenarios.find_one = AsyncMock(side_effect=[
+            existing.copy(),
+            {**existing.copy(), "name": EXPECTED_NEW_NAME}
+        ])
+        mock_db.domain_scenarios.update_one = AsyncMock()
+
+        response = client.put(f"/domain-scenarios/{MOCK_KEY_TEST_SCENARIO}", json={"name": EXPECTED_NEW_NAME})
+        assert response.status_code == 200
 
     def test_update_scenario_not_found(self, client, mock_db):
         """Test update scenario not found"""
@@ -445,10 +458,22 @@ class TestDomainScenariosRoutes:
         assert response.status_code == 200
         assert "deleted successfully" in response.json()["message"]
 
-    @pytest.mark.skip(reason=EXPECTED_COMPLEX_ASYNC_MOCKING_KEY_LOOKUP)
     def test_delete_scenario_by_key(self, client, mock_db):
         """Test delete scenario by key"""
-        pass
+        mock_scenario = {
+            "_id": ObjectId(),
+            "key": MOCK_KEY_TEST_SCENARIO,
+            "name": STR_TEST,
+            STR_DOMAINKEY: STR_DOMAIN1
+        }
+
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
+        mock_db.domain_scenarios.delete_one = AsyncMock()
+        mock_db.playboards.delete_many = AsyncMock()
+
+        response = client.delete(f"/domain-scenarios/{MOCK_KEY_TEST_SCENARIO}")
+        assert response.status_code == 200
+        assert "deleted successfully" in response.json()["message"]
 
     def test_delete_scenario_not_found(self, client, mock_db):
         """Test delete scenario not found"""
@@ -489,10 +514,20 @@ class TestDomainScenariosRoutes:
         assert response.status_code == 200
         assert response.json()["status"] == "active"
 
-    @pytest.mark.skip(reason=EXPECTED_COMPLEX_ASYNC_MOCKING_KEY_LOOKUP)
     def test_toggle_scenario_status_by_key(self, client, mock_db):
         """Test toggle scenario status by key"""
-        pass
+        mock_scenario = {
+            "_id": ObjectId(),
+            "key": MOCK_KEY_TEST_SCENARIO,
+            "status": "active"
+        }
+
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
+        mock_db.domain_scenarios.update_one = AsyncMock()
+
+        response = client.post(f"/domain-scenarios/{MOCK_KEY_TEST_SCENARIO}/toggle-status")
+        assert response.status_code == 200
+        assert response.json()["status"] == "inactive"
 
     def test_toggle_scenario_status_not_found(self, client, mock_db):
         """Test toggle scenario status not found"""
@@ -526,10 +561,29 @@ class TestDomainScenariosRoutes:
         response = client.post(f"/domain-scenarios/{scenario_id}/subdomains", json=subdomain_data)
         assert response.status_code == 200
 
-    @pytest.mark.skip(reason=EXPECTED_COMPLEX_ASYNC_MOCKING_KEY_LOOKUP)
     def test_add_subdomain_by_key(self, client, mock_db):
         """Test add subdomain by scenario key"""
-        pass
+        mock_scenario = {
+            "_id": ObjectId(),
+            "key": MOCK_KEY_TEST_SCENARIO,
+            "name": STR_TEST,
+            STR_DOMAINKEY: STR_DOMAIN1,
+            "path": SUBPATH_SCENARIOS_TEST,
+            "status": "active",
+            STR_SUBDOMAINS: [],
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+
+        mock_db.domain_scenarios.find_one = AsyncMock(side_effect=[
+            mock_scenario.copy(),
+            {**mock_scenario.copy(), STR_SUBDOMAINS: [{"key": STR_SUB1, "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "active"}]}
+        ])
+        mock_db.domain_scenarios.update_one = AsyncMock()
+
+        subdomain_data = {"key": STR_SUB1, "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "active"}
+        response = client.post(f"/domain-scenarios/{MOCK_KEY_TEST_SCENARIO}/subdomains", json=subdomain_data)
+        assert response.status_code == 200
 
     def test_add_subdomain_not_found(self, client, mock_db):
         """Test add subdomain to nonexistent scenario"""
@@ -570,10 +624,19 @@ class TestDomainScenariosRoutes:
         response = client.delete(f"/domain-scenarios/{scenario_id}/subdomains/sub1")
         assert response.status_code == 200
 
-    @pytest.mark.skip(reason=EXPECTED_COMPLEX_ASYNC_MOCKING_KEY_LOOKUP)
     def test_remove_subdomain_by_key(self, client, mock_db):
         """Test remove subdomain by scenario key"""
-        pass
+        mock_scenario = {
+            "_id": ObjectId(),
+            "key": MOCK_KEY_TEST_SCENARIO,
+            STR_SUBDOMAINS: [{"key": STR_SUB1, "name": EXPECTED_SUB}]
+        }
+
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
+        mock_db.domain_scenarios.update_one = AsyncMock()
+
+        response = client.delete(f"/domain-scenarios/{MOCK_KEY_TEST_SCENARIO}/subdomains/sub1")
+        assert response.status_code == 200
 
     def test_remove_subdomain_not_found(self, client, mock_db):
         """Test remove subdomain from nonexistent scenario"""
@@ -611,10 +674,33 @@ class TestDomainScenariosRoutes:
         data = response.json()
         assert isinstance(data, list)
 
-    @pytest.mark.skip(reason=EXPECTED_COMPLEX_ASYNC_MOCKING_KEY_LOOKUP)
     def test_get_scenario_playboards_by_key(self, client, mock_db, mock_user_service):
         """Test get playboards by scenario key"""
-        pass
+        mock_scenario = {
+            "_id": ObjectId(),
+            "key": MOCK_KEY_TEST_SCENARIO,
+            STR_DOMAINKEY: STR_DOMAIN1
+        }
+
+        mock_playboard = {
+            "_id": ObjectId(),
+            "name": "Playboard 1",
+            "scenarioKey": MOCK_KEY_TEST_SCENARIO,
+            "status": "active"
+        }
+
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
+        mock_db.users.find_one = AsyncMock(return_value={"email": MOCK_EMAIL_ADMIN_TEST})
+
+        mock_cursor = MagicMock()
+        mock_cursor.__aiter__ = lambda self: self
+        mock_cursor.__anext__ = AsyncMock(side_effect=[mock_playboard.copy(), StopAsyncIteration])
+        mock_db.playboards.find = MagicMock(return_value=mock_cursor)
+
+        response = client.get(f"/domain-scenarios/{MOCK_KEY_TEST_SCENARIO}/playboards")
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
 
     def test_get_scenario_playboards_not_found(self, client, mock_db):
         """Test get playboards for nonexistent scenario"""

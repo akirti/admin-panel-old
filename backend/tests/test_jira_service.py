@@ -1,5 +1,5 @@
-from mock_data import MOCK_EMAIL, MOCK_EMAIL_USER, MOCK_EMAIL_USER_TEST, MOCK_GCS_BUCKET_NAME_FILE, MOCK_URL_FILE_HTTP, MOCK_URL_FTP_INVALID, MOCK_URL_JIRA_BASE
 """Tests for Jira Service"""
+from mock_data import MOCK_EMAIL, MOCK_EMAIL_USER, MOCK_EMAIL_USER_TEST, MOCK_GCS_BUCKET_NAME_FILE, MOCK_URL_FILE_HTTP, MOCK_URL_FTP_INVALID, MOCK_URL_JIRA_BASE
 import pytest
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -45,10 +45,21 @@ class TestJiraServiceInit:
         assert service.base_url is None
         assert service.email is None
 
-    @pytest.mark.skip(reason="JIRA mock requires module reload - config properties tested in other tests")
-    def test_init_with_config(self):
+    @patch(PATCH_JIRA_SERVICE_JIRA)
+    def test_init_with_config(self, mock_jira):
         """Test initialization with full config"""
-        pass
+        from easylifeauth.services.jira_service import JiraService
+        config = {
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
+            "api_token": "test_token",
+            "project_key": STR_TEST
+        }
+        service = JiraService(config)
+        assert service.enabled is True
+        assert service.base_url == MOCK_URL_JIRA_BASE
+        assert service.email == MOCK_EMAIL
+        assert service.project_key == STR_TEST
 
     @patch(PATCH_JIRA_SERVICE_JIRA)
     def test_init_partial_config(self, mock_jira):
@@ -73,10 +84,26 @@ class TestJiraServiceInit:
         assert service.project_key == "SCEN"
         assert service.issue_type == EXPECTED_TASK
 
-    @pytest.mark.skip(reason="JIRA mock requires module reload - error handling tested in other tests")
-    def test_init_jira_error(self):
+    @patch(PATCH_JIRA_SERVICE_JIRA)
+    def test_init_jira_error(self, mock_jira):
         """Test initialization when JIRA raises error"""
-        pass
+        from jira.exceptions import JIRAError
+        from easylifeauth.services.jira_service import JiraService
+
+        mock_jira.side_effect = JIRAError("Authentication failed")
+
+        config = {
+            "base_url": MOCK_URL_JIRA_BASE,
+            "email": MOCK_EMAIL,
+            "api_token": "test_token"
+        }
+        service = JiraService(config)
+        assert service.enabled is True  # enabled set before client init
+
+        # Force client init — should catch the error
+        service._init_client()
+        assert service.enabled is False
+        assert service._client is None
 
 
 class TestJiraServiceHelpers:

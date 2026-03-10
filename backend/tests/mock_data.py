@@ -180,6 +180,20 @@ MOCK_DB_SCHEME_SRV = _test_data["MOCK_DB_SCHEME_SRV"]
 MOCK_URL_HOST_1 = _test_data["MOCK_URL_HOST_1"]
 MOCK_URL_HOST_2 = _test_data["MOCK_URL_HOST_2"]
 
+# ── Shared test string constants ────────────────────────────────────────────
+STR_DOMAIN1 = _test_data["STR_DOMAIN1"]
+STR_DOMAIN2 = _test_data["STR_DOMAIN2"]
+STR_DOMAINKEY = _test_data["STR_DOMAINKEY"]
+STR_SCENARIO1 = _test_data["STR_SCENARIO1"]
+STR_TEST = _test_data["STR_TEST"]
+STR_TEST_UPPER = _test_data["STR_TEST_UPPER"]
+EXPECTED_NEW_NAME = _test_data["EXPECTED_NEW_NAME"]
+SUBPATH_TOGGLE_STATUS = _test_data["SUBPATH_TOGGLE_STATUS"]
+STR_SCENARIOKEY = _test_data["STR_SCENARIOKEY"]
+STR_SUBDOMAINS = _test_data["STR_SUBDOMAINS"]
+STR_TEST_PERM = _test_data["STR_TEST_PERM"]
+MOCK_KEY_TEST_SCENARIO = _test_data["MOCK_KEY_TEST_SCENARIO"]
+
 
 async def empty_async_gen():
     """Async generator that yields nothing.

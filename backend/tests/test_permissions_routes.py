@@ -9,13 +9,15 @@ from datetime import datetime
 from easylifeauth.api.permissions_routes import router, create_pagination_meta
 from easylifeauth.api.dependencies import get_db
 from easylifeauth.security.access_control import require_super_admin
-from mock_data import MOCK_EMAIL_ADMIN_TEST, empty_async_gen
+from mock_data import (
+    MOCK_EMAIL_ADMIN_TEST, empty_async_gen,
+    STR_TEST_PERM,
+)
 
 PATH_PERMISSIONS = "/permissions"
 PATH_PERMISSIONS_NONEXISTENT = "/permissions/nonexistent"
 
 EXPECTED_TEST_PERMISSION = "Test Permission"
-STR_TEST_PERM = "test-perm"
 SUBPATH_PERMISSIONS = "/permissions/"
 
 
@@ -198,10 +200,24 @@ class TestPermissionsRoutes:
         data = response.json()
         assert data["key"] == STR_TEST_PERM
 
-    @pytest.mark.skip(reason="Side effect exception mocking requires complex setup")
     def test_get_permission_by_key(self, client, mock_db):
-        """Test get permission by key - skipped due to side_effect complexity"""
-        pass
+        """Test get permission by key when ObjectId lookup falls back to key"""
+        perm = {
+            "_id": ObjectId(),
+            "key": STR_TEST_PERM,
+            "name": EXPECTED_TEST_PERMISSION,
+            "module": "users",
+            "description": "Test description",
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+
+        mock_db.permissions.find_one = AsyncMock(return_value=perm.copy())
+
+        response = client.get(f"/permissions/{STR_TEST_PERM}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["key"] == STR_TEST_PERM
 
     def test_get_permission_not_found(self, client, mock_db):
         """Test get permission not found"""
@@ -262,10 +278,25 @@ class TestPermissionsRoutes:
         response = client.put(f"/permissions/{obj_id}", json={"name": "Updated Permission"})
         assert response.status_code == 200
 
-    @pytest.mark.skip(reason="Side effect exception mocking requires complex setup")
     def test_update_permission_by_key(self, client, mock_db):
-        """Test update permission by key - skipped due to side_effect complexity"""
-        pass
+        """Test update permission by key when ObjectId lookup falls back to key"""
+        existing = {
+            "_id": ObjectId(),
+            "key": STR_TEST_PERM,
+            "name": EXPECTED_TEST_PERMISSION,
+            "module": "users",
+            "description": "Test",
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        updated = existing.copy()
+        updated["name"] = "Updated Permission"
+
+        mock_db.permissions.find_one = AsyncMock(side_effect=[existing.copy(), updated.copy()])
+        mock_db.permissions.update_one = AsyncMock()
+
+        response = client.put(f"/permissions/{STR_TEST_PERM}", json={"name": "Updated Permission"})
+        assert response.status_code == 200
 
     def test_update_permission_not_found(self, client, mock_db):
         """Test update permission not found"""

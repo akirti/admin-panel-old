@@ -17,25 +17,22 @@ from easylifeauth.api.playboard_routes import (
 )
 from easylifeauth.api.dependencies import get_db, get_user_service
 from easylifeauth.security.access_control import get_current_user, require_super_admin
-from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_USER_TEST
+from mock_data import (
+    MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_USER_TEST,
+    STR_DOMAIN1, STR_DOMAIN2, STR_DOMAINKEY, STR_SCENARIO1,
+    STR_TEST, EXPECTED_NEW_NAME, SUBPATH_TOGGLE_STATUS,
+    STR_SCENARIOKEY,
+)
 
 EXPECTED_TEST_PLAYBOARD = "Test Playboard"
 PATH_PLAYBOARDS_INVALID_ID = "/playboards/invalid-id"
 
 EXPECTED_INVALID_OBJECTID = "Invalid ObjectId"
-EXPECTED_NEW_NAME = "New Name"
 FILE_TEST_JSON = "test.json"
 MIME_APPLICATION_JSON = "application/json"
-STR_DOMAIN1 = "domain1"
-STR_DOMAIN2 = "domain2"
-STR_DOMAINKEY = "domainKey"
-STR_SCENARIO1 = "scenario1"
-STR_SCENARIOKEY = "scenarioKey"
-STR_TEST = "Test"
 STR_TEST_PLAYBOARD = "test-playboard"
 SUBPATH_DOWNLOAD = "/download"
 SUBPATH_PLAYBOARDS = "/playboards/"
-SUBPATH_TOGGLE_STATUS = "/toggle-status"
 SUBPATH_UPLOAD = "/upload"
 
 
@@ -339,15 +336,35 @@ class TestPlayboardRoutes:
         response = client.get(f"/playboards/{playboard_id}")
         assert response.status_code == 404
 
-    @pytest.mark.skip(reason="Bug in source: PlayboardCreate uses 'scenerioKey' but route accesses 'scenarioKey'")
     def test_create_playboard_success(self, client, mock_db):
-        """Test create playboard - skipped due to model/route field mismatch"""
-        pass
+        """Test create playboard"""
+        mock_db.playboards.find_one = AsyncMock(return_value=None)  # No duplicate key
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value={"key": STR_SCENARIO1, STR_DOMAINKEY: STR_DOMAIN1})
+        mock_db.playboards.insert_one = AsyncMock(return_value=MagicMock(inserted_id=ObjectId()))
 
-    @pytest.mark.skip(reason="Bug in source: PlayboardCreate uses 'scenerioKey' but route accesses 'scenarioKey'")
+        playboard_data = {
+            "key": "new-playboard",
+            "name": EXPECTED_TEST_PLAYBOARD,
+            STR_SCENARIOKEY: STR_SCENARIO1
+        }
+
+        response = client.post("/playboards", json=playboard_data)
+        assert response.status_code == 201
+
     def test_create_playboard_scenario_not_found(self, client, mock_db):
-        """Test create playboard with invalid scenario - skipped due to model/route field mismatch"""
-        pass
+        """Test create playboard with invalid scenario"""
+        mock_db.playboards.find_one = AsyncMock(return_value=None)  # No duplicate key
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value=None)  # Scenario not found
+
+        playboard_data = {
+            "key": "new-playboard",
+            "name": EXPECTED_TEST_PLAYBOARD,
+            STR_SCENARIOKEY: "nonexistent"
+        }
+
+        response = client.post("/playboards", json=playboard_data)
+        assert response.status_code == 400
+        assert "not found" in response.json()["detail"]
 
     def test_upload_playboard_json_success(self, client, mock_db):
         """Test upload playboard JSON file"""
@@ -465,10 +482,25 @@ class TestPlayboardRoutes:
         response = client.put(f"/playboards/{playboard_id}", json={STR_SCENARIOKEY: "scenario2"})
         assert response.status_code == 200
 
-    @pytest.mark.skip(reason="Field mismatch between PlayboardUpdate model (scenerioKey) and route code (scenarioKey)")
     def test_update_playboard_invalid_scenario(self, client, mock_db):
-        """Test update playboard with invalid scenario - skipped due to model/route field mismatch"""
-        pass
+        """Test update playboard with invalid scenario"""
+        playboard_id = ObjectId()
+        existing = {
+            "_id": playboard_id,
+            "key": STR_TEST_PLAYBOARD,
+            "name": STR_TEST,
+            STR_SCENARIOKEY: STR_SCENARIO1,
+            "status": "active",
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
+            "data": {}
+        }
+
+        mock_db.playboards.find_one = AsyncMock(return_value=existing.copy())
+        mock_db.domain_scenarios.find_one = AsyncMock(return_value=None)  # Scenario not found
+
+        response = client.put(f"/playboards/{playboard_id}", json={STR_SCENARIOKEY: "nonexistent"})
+        assert response.status_code == 400
 
     def test_update_playboard_json_success(self, client, mock_db):
         """Test update playboard JSON data"""
