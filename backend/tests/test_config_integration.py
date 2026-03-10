@@ -28,6 +28,7 @@ CFG_DB_PORT = "db.port"
 CFG_SERVER_ENV = "server.env."
 EXT_JSON = ".json"
 FILE_CONFIG_JSON = "config.json"
+FILE_SIM_PRODUCTION = "server.env.production.json"
 FILE_SIM_JSON = "sim.json"
 JSON_DB_HOST = "{db.host}"
 NUM_5432 = "5432"
@@ -444,7 +445,7 @@ class TestRealConfigFiles:
     @pytest.fixture
     def config_path(self, tmp_path):
         return _create_config_dir(tmp_path, {
-            "server.env.production.json": SIMULATOR_DATA,
+            FILE_SIM_PRODUCTION: SIMULATOR_DATA,
             FILE_CONFIG_JSON: CONFIG_JSON,
             "production.json": {},
             "localenv-production.json": {},
@@ -453,7 +454,7 @@ class TestRealConfigFiles:
     def test_loads_production_environment(self, config_path):
         """Loading 'production' environment should produce valid resolved config."""
         loader = ConfigurationLoader(config_path=config_path, environment="production",
-                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
+                                     simulator_file=str(Path(config_path) / FILE_SIM_PRODUCTION))
         db = loader.get_config_by_path("databases.authentication.db_info")
         assert db is not None
         assert db["host"] == EXPECTED_DB_HOST
@@ -464,7 +465,7 @@ class TestRealConfigFiles:
     def test_get_DB_config_returns_db_info(self, config_path):
         """get_DB_config('authentication') should return the db_info dict."""
         loader = ConfigurationLoader(config_path=config_path, environment="production",
-                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
+                                     simulator_file=str(Path(config_path) / FILE_SIM_PRODUCTION))
         db_config = loader.get_DB_config("authentication")
         assert db_config is not None
         assert db_config["host"] == EXPECTED_DB_HOST
@@ -474,7 +475,7 @@ class TestRealConfigFiles:
 
     def test_token_secret_resolved(self, config_path):
         loader = ConfigurationLoader(config_path=config_path, environment="production",
-                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
+                                     simulator_file=str(Path(config_path) / FILE_SIM_PRODUCTION))
         secret = loader.get_config_by_path("environment.app_secrets.auth_secret_key")
         assert secret is not None
         assert isinstance(secret, str)
@@ -482,7 +483,7 @@ class TestRealConfigFiles:
 
     def test_smtp_config_resolved(self, config_path):
         loader = ConfigurationLoader(config_path=config_path, environment="production",
-                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
+                                     simulator_file=str(Path(config_path) / FILE_SIM_PRODUCTION))
         smtp = loader.get_config_by_path("environment.smtp")
         assert smtp is not None
         assert smtp["smtp_server"] == EXPECTED_SMTP_SERVER
@@ -490,14 +491,14 @@ class TestRealConfigFiles:
 
     def test_cors_origins_resolved(self, config_path):
         loader = ConfigurationLoader(config_path=config_path, environment="production",
-                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
+                                     simulator_file=str(Path(config_path) / FILE_SIM_PRODUCTION))
         origins = loader.get_config_by_path("environment.cors.origins")
         assert isinstance(origins, list)
         assert origins == EXPECTED_CORS_ORIGINS
 
     def test_globals_pool_settings_resolved(self, config_path):
         loader = ConfigurationLoader(config_path=config_path, environment="production",
-                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
+                                     simulator_file=str(Path(config_path) / FILE_SIM_PRODUCTION))
         pool = loader.get_config_by_path("globals.databases.default")
         assert pool is not None
         assert pool["max_pool_size"] == EXPECTED_MAX_POOL_SIZE
@@ -505,14 +506,14 @@ class TestRealConfigFiles:
 
     def test_storage_config_resolved(self, config_path):
         loader = ConfigurationLoader(config_path=config_path, environment="production",
-                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
+                                     simulator_file=str(Path(config_path) / FILE_SIM_PRODUCTION))
         storage = loader.get_config_by_path("environment.storage")
         assert storage is not None
         assert "type" in storage
 
     def test_jira_config_resolved(self, config_path):
         loader = ConfigurationLoader(config_path=config_path, environment="production",
-                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
+                                     simulator_file=str(Path(config_path) / FILE_SIM_PRODUCTION))
         jira = loader.get_config_by_path("environment.jira")
         assert jira is not None
         assert jira["base_url"] == EXPECTED_JIRA_BASE_URL
@@ -520,7 +521,7 @@ class TestRealConfigFiles:
     def test_full_main_py_wiring_simulation(self, config_path):
         """Simulate the full main.py extraction logic with test config."""
         loader = ConfigurationLoader(config_path=config_path, environment="production",
-                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
+                                     simulator_file=str(Path(config_path) / FILE_SIM_PRODUCTION))
 
         # DB
         db_config = loader.get_DB_config("authentication")
@@ -553,7 +554,7 @@ class TestRealConfigFiles:
     def test_collections_list_from_real_config(self, config_path):
         """The collections list should be fully resolved from simulator data."""
         loader = ConfigurationLoader(config_path=config_path, environment="production",
-                                     simulator_file=str(Path(config_path) / "server.env.production.json"))
+                                     simulator_file=str(Path(config_path) / FILE_SIM_PRODUCTION))
         db_config = loader.get_DB_config("authentication")
         assert db_config is not None
         collections = db_config["collections"]

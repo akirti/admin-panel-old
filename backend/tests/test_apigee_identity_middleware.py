@@ -8,6 +8,8 @@ from fastapi.testclient import TestClient
 
 from easylifeauth.middleware.apigee_identity import ApigeeIdentityMiddleware
 
+HEALTH_ENDPOINT = "/health"
+
 
 @pytest.fixture
 def app_default():
@@ -15,7 +17,7 @@ def app_default():
     app = FastAPI()
     app.add_middleware(ApigeeIdentityMiddleware)
 
-    @app.get("/health")
+    @app.get(HEALTH_ENDPOINT)
     async def health():
         return {"status": "ok"}
 
@@ -32,7 +34,7 @@ def app_custom_name():
     app = FastAPI()
     app.add_middleware(ApigeeIdentityMiddleware, app_name="my-custom-app")
 
-    @app.get("/health")
+    @app.get(HEALTH_ENDPOINT)
     async def health():
         return {"status": "ok"}
 
@@ -53,17 +55,17 @@ class TestApigeeIdentityMiddleware:
     """Tests for Apigee identity response headers."""
 
     def test_default_app_name_header(self, client_default):
-        response = client_default.get("/health")
+        response = client_default.get(HEALTH_ENDPOINT)
         assert response.status_code == 200
         assert response.headers["X-App-Name"] == "easylife-admin-panel"
 
     def test_custom_app_name_header(self, client_custom):
-        response = client_custom.get("/health")
+        response = client_custom.get(HEALTH_ENDPOINT)
         assert response.status_code == 200
         assert response.headers["X-App-Name"] == "my-custom-app"
 
     def test_hostname_header_present(self, client_default):
-        response = client_default.get("/health")
+        response = client_default.get(HEALTH_ENDPOINT)
         assert response.headers["X-Backend-Hostname"] == socket.gethostname()
 
     def test_headers_on_post_request(self, client_default):
