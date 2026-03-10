@@ -21,12 +21,12 @@
             <!-- Validate JWT Token for protected endpoints -->
             <Step>
                 <Name>JWT-VerifyAccessToken</Name>
-                <Condition>!(proxy.pathsuffix JavaRegex "/auth/(login|register|forgot_password|reset_password|refresh|logout|csrf-token)") and !(proxy.pathsuffix MatchesPath "/health") and !(proxy.pathsuffix MatchesPath "/health/**") and !(proxy.pathsuffix MatchesPath "/info") and !(proxy.pathsuffix MatchesPath "/feedback/public") and request.verb != "OPTIONS"</Condition>
+                <Condition>(proxy.pathsuffix != "" and proxy.pathsuffix != "/") and !(proxy.pathsuffix JavaRegex "/auth/(login|register|forgot_password|reset_password|refresh|logout|csrf-token)") and !(proxy.pathsuffix JavaRegex "/(health|health/.*|info|feedback/public|docs|redoc|openapi\\.json)") and request.verb != "OPTIONS"</Condition>
             </Step>
             <!-- Quota enforcement (by JWT user or client IP) -->
             <Step>
                 <Name>Q-EnforceQuota</Name>
-                <Condition>!(proxy.pathsuffix JavaRegex "/(health|health/.*|info|auth/.*|feedback/public)") and request.verb != "OPTIONS"</Condition>
+                <Condition>(proxy.pathsuffix != "" and proxy.pathsuffix != "/") and !(proxy.pathsuffix JavaRegex "/(health|health/.*|info|auth/.*|feedback/public|docs|redoc|openapi\\.json)") and request.verb != "OPTIONS"</Condition>
             </Step>
         </Request>
         <Response>
@@ -1252,6 +1252,13 @@
             <Request/>
             <Response/>
             <Condition>(proxy.pathsuffix MatchesPath "/info")</Condition>
+        </Flow>
+        <!-- API Documentation (no auth required) -->
+        <Flow name="APIDocs">
+            <Description>Swagger/OpenAPI documentation</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/docs") or (proxy.pathsuffix MatchesPath "/redoc") or (proxy.pathsuffix MatchesPath "/openapi.json")</Condition>
         </Flow>
         <!-- Default catch-all for undefined resources -->
         <Flow name="UnknownResource">
