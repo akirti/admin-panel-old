@@ -38,6 +38,8 @@ APP_TITLE = "EasyLife Admin Panel API"
 APP_DESCRIPTION = "Authentication, Authorization, and Administration API"
 UVICORN_APP_REF = "src.main:app"
 PATCH_MAIN_SETUP_SSL = "main.setup_jira_ssl_bundle"
+CFG_APP_NAME = "environment.app_name"
+DEFAULT_APP_NAME = "easylife-admin-panel"
 STR_USERNAME = "username"
 STR_PASSWORD = "password"
 UNRESOLVED_PLACEHOLDER = "{globals.databases.default.max_pool_size}"
@@ -553,6 +555,22 @@ class TestBootstrap:
 
     @patch(PATCH_MAIN_CREATE_APP)
     @patch(PATCH_MAIN_CONFIG_LOADER)
+    def test_app_name_passed_from_config(self, mock_cl_cls, mock_create_app):
+        mock_cl_cls.return_value = _make_config_loader({
+            CFG_APP_NAME: "custom-app",
+        })
+        bootstrap()
+        assert mock_create_app.call_args[1]["app_name"] == "custom-app"
+
+    @patch(PATCH_MAIN_CREATE_APP)
+    @patch(PATCH_MAIN_CONFIG_LOADER)
+    def test_app_name_defaults_when_not_in_config(self, mock_cl_cls, mock_create_app):
+        mock_cl_cls.return_value = _make_config_loader()
+        bootstrap()
+        assert mock_create_app.call_args[1]["app_name"] == DEFAULT_APP_NAME
+
+    @patch(PATCH_MAIN_CREATE_APP)
+    @patch(PATCH_MAIN_CONFIG_LOADER)
     def test_minimal_config_produces_defaults(self, mock_cl_cls, mock_create_app):
         mock_cl_cls.return_value = _make_config_loader()
         bootstrap()
@@ -618,22 +636,32 @@ _MAIN_PY = Path(__file__).resolve().parent.parent / "src" / "main.py"
 
 
 class TestMainBlock:
-    """Test the ``if __name__ == '__main__'`` block."""
+    """Test the ``if __name__ == '__main__'`` block using the actual source file."""
+
+    @staticmethod
+    def _extract_main_block():
+        """Read the real source and return (padded_code, line_number).
+
+        Pads with empty lines so ``compile()`` line numbers match the source
+        file, allowing coverage to attribute execution to the correct lines.
+        """
+        source = _MAIN_PY.read_text()
+        all_lines = source.splitlines()
+        start = None
+        for i, line in enumerate(all_lines):
+            if line.startswith("if __name__"):
+                start = i
+                break
+        assert start is not None, "Could not find __main__ block in main.py"
+        # Pad with blank lines so compiled line numbers match the source
+        padded = "\n" * start + "\n".join(all_lines[start:])
+        return padded
 
     def test_uvicorn_run_called_when_name_is_main(self):
+        """Exec the real source so coverage tracks line 198+."""
+        code = self._extract_main_block()
         mock_uvicorn = MagicMock()
-        # Only exec the __main__ guard — bootstrap() is already tested above
-        code = (
-            "if __name__ == '__main__':\n"
-            "    import uvicorn\n"
-            f'    uvicorn.run("{UVICORN_APP_REF}", host="0.0.0.0", port=8000, reload=True)\n'
-        )
-        ns = {
-            "__name__": "__main__",
-            "__builtins__": __builtins__,
-            "uvicorn": mock_uvicorn,
-        }
-        # Patch the import so it uses our mock
+
         import builtins
         _real_import = builtins.__import__
 
@@ -642,24 +670,25 @@ class TestMainBlock:
                 return mock_uvicorn
             return _real_import(name, *args, **kwargs)
 
+        ns = {
+            "__name__": "__main__",
+            "__builtins__": __builtins__,
+        }
         with patch("builtins.__import__", side_effect=_mock_import):
-            exec(compile(code, "main.py", "exec"), ns)
+            exec(compile(code, str(_MAIN_PY), "exec"), ns)
 
         mock_uvicorn.run.assert_called_once_with(
             UVICORN_APP_REF, host=MOCK_IP_BIND_ALL, port=8000, reload=True,
         )
 
     def test_uvicorn_not_called_when_imported(self):
-        code = (
-            "if __name__ == '__main__':\n"
-            "    import uvicorn\n"
-            f'    uvicorn.run("{UVICORN_APP_REF}", host="0.0.0.0", port=8000, reload=True)\n'
-        )
+        """When __name__ != '__main__', uvicorn block is skipped."""
+        code = self._extract_main_block()
         mock_uvicorn = MagicMock()
         ns = {
             "__name__": "src.main",
             "__builtins__": __builtins__,
             "uvicorn": mock_uvicorn,
         }
-        exec(compile(code, "main.py", "exec"), ns)
+        exec(compile(code, str(_MAIN_PY), "exec"), ns)
         mock_uvicorn.run.assert_not_called()
