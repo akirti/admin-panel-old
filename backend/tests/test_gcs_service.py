@@ -1,4 +1,5 @@
 """Tests for GCS Service"""
+import sys
 import pytest
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch, AsyncMock
@@ -11,6 +12,33 @@ MIME_TEXT_PLAIN = "text/plain"
 STR_PREFIX = "prefix/"
 STR_TEST_BUCKET = "test-bucket"
 
+# Check if google-cloud-storage is available
+_has_gcs = True
+try:
+    from google.cloud import storage as _gcs_storage  # noqa: F401
+except ImportError:
+    _has_gcs = False
+
+
+@pytest.fixture()
+def mock_google_imports():
+    """Mock google.cloud.storage and google.oauth2 when not installed."""
+    if _has_gcs:
+        yield
+        return
+    mock_storage = MagicMock()
+    mock_oauth2 = MagicMock()
+    mock_google = MagicMock()
+    mock_google.cloud.storage = mock_storage
+    mock_google.oauth2 = mock_oauth2
+    with patch.dict(sys.modules, {
+        "google": mock_google,
+        "google.cloud": mock_google.cloud,
+        "google.cloud.storage": mock_storage,
+        "google.oauth2": mock_oauth2,
+        "google.oauth2.service_account": mock_oauth2.service_account,
+    }):
+        yield
 
 
 class TestGCSServiceInit:
@@ -23,19 +51,19 @@ class TestGCSServiceInit:
         assert service.bucket_name is None
         assert service.credentials is None
 
-    def test_init_no_bucket_name(self):
+    def test_init_no_bucket_name(self, mock_google_imports):
         """Test init without bucket name"""
         service = GCSService({"credentials_json": "{}"})
         assert service.is_configured() is False
         assert "bucket_name" in service.get_init_error()
 
-    def test_init_no_credentials(self):
+    def test_init_no_credentials(self, mock_google_imports):
         """Test init without credentials"""
         service = GCSService({"bucket_name": STR_TEST_BUCKET})
         assert service.is_configured() is False
         assert "credentials_json" in service.get_init_error()
 
-    def test_init_invalid_json_credentials(self):
+    def test_init_invalid_json_credentials(self, mock_google_imports):
         """Test init with invalid JSON credentials"""
         service = GCSService({
             "bucket_name": STR_TEST_BUCKET,
@@ -44,7 +72,7 @@ class TestGCSServiceInit:
         assert service.is_configured() is False
         assert "Invalid JSON" in service.get_init_error()
 
-    def test_init_credentials_missing_type(self):
+    def test_init_credentials_missing_type(self, mock_google_imports):
         """Test init with credentials missing type field"""
         service = GCSService({
             "bucket_name": STR_TEST_BUCKET,

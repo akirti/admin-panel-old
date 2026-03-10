@@ -1,5 +1,6 @@
 from mock_data import MOCK_EMAIL, MOCK_GCS_PATH_FILE, MOCK_GCS_PATH_TO_FILE, MOCK_GCS_TEST_BUCKET_PREFIX, MOCK_PATH_STORAGE
 """Tests for File Storage Service"""
+import sys
 import pytest
 import os
 import tempfile
@@ -12,6 +13,34 @@ FILE_TEST_CSV = "test.csv"
 PATCH_GOOGLE_CLOUD_STORAGE = "google.cloud.storage"
 STR_REQ_001 = "REQ-001"
 STR_TEST_BUCKET = "test-bucket"
+
+# Check if google-cloud-storage is available
+_has_gcs = True
+try:
+    from google.cloud import storage as _gcs_storage  # noqa: F401
+except ImportError:
+    _has_gcs = False
+
+
+@pytest.fixture()
+def mock_google_imports():
+    """Mock google.cloud.storage and google.oauth2 when not installed."""
+    if _has_gcs:
+        yield
+        return
+    mock_storage = MagicMock()
+    mock_oauth2 = MagicMock()
+    mock_google = MagicMock()
+    mock_google.cloud.storage = mock_storage
+    mock_google.oauth2 = mock_oauth2
+    with patch.dict(sys.modules, {
+        "google": mock_google,
+        "google.cloud": mock_google.cloud,
+        "google.cloud.storage": mock_storage,
+        "google.oauth2": mock_oauth2,
+        "google.oauth2.service_account": mock_oauth2.service_account,
+    }):
+        yield
 
 
 
@@ -592,7 +621,7 @@ class TestFileStorageServiceGCSInit:
 
         # Result depends on whether google-cloud-storage is installed
 
-    def test_init_gcs_with_invalid_json(self):
+    def test_init_gcs_with_invalid_json(self, mock_google_imports):
         """Test GCS initialization with invalid JSON"""
         service = FileStorageService()
         service.bucket_name = STR_TEST_BUCKET
@@ -602,7 +631,7 @@ class TestFileStorageServiceGCSInit:
         assert result is False
         assert "Invalid JSON" in service._init_error
 
-    def test_init_gcs_credentials_missing_type(self):
+    def test_init_gcs_credentials_missing_type(self, mock_google_imports):
         """Test GCS initialization with credentials missing 'type' field"""
         service = FileStorageService()
         service.bucket_name = STR_TEST_BUCKET

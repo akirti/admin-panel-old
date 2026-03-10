@@ -431,7 +431,7 @@ class TestPasswordVerification:
 
     def test_verify_bcrypt_password_valid(self):
         """Test bcrypt password verification"""
-        import bcrypt as bcrypt_lib
+        bcrypt_lib = pytest.importorskip("bcrypt")
         from easylifeauth.services.user_service import verify_bcrypt_password
 
         hashed = bcrypt_lib.hashpw(MOCK_PASSWORD_ALT.encode(), bcrypt_lib.gensalt()).decode()
@@ -441,7 +441,7 @@ class TestPasswordVerification:
 
     def test_verify_bcrypt_password_invalid(self):
         """Test bcrypt password verification with wrong password"""
-        import bcrypt as bcrypt_lib
+        bcrypt_lib = pytest.importorskip("bcrypt")
         from easylifeauth.services.user_service import verify_bcrypt_password
 
         hashed = bcrypt_lib.hashpw(MOCK_PASSWORD_ALT.encode(), bcrypt_lib.gensalt()).decode()
@@ -501,7 +501,7 @@ class TestPasswordVerification:
 
     def test_verify_password_multi_bcrypt(self):
         """Test multi verify with bcrypt hash"""
-        import bcrypt as bcrypt_lib
+        bcrypt_lib = pytest.importorskip("bcrypt")
         from easylifeauth.services.user_service import verify_password_multi
 
         hashed = bcrypt_lib.hashpw(MOCK_PASSWORD_ALT.encode(), bcrypt_lib.gensalt()).decode()

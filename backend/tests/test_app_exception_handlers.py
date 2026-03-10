@@ -296,18 +296,27 @@ class TestGeneralExceptionHandler:
 class TestMainBlock:
     """Tests for lines 342-343: if __name__ == '__main__' block."""
 
-    @patch("uvicorn.run")
-    def test_main_block_runs_uvicorn(self, mock_uvicorn_run):
+    def test_main_block_runs_uvicorn(self):
         """The __main__ block should call uvicorn.run with expected args."""
-        # We cannot truly trigger __name__ == "__main__" from an import,
-        # so we exec the relevant lines with the right __name__.
-        import easylifeauth.app as app_module
-        import types
+        import sys
 
-        # Read and exec just the guarded block
-        code = 'import uvicorn\nuvicorn.run("easylifeauth.app:app", host="0.0.0.0", port=8000, reload=True)'
-        exec(code, {"__name__": "__main__", "uvicorn": __import__("uvicorn")})
+        mock_uvicorn = MagicMock()
+        # Inject mock uvicorn so import succeeds even if not installed
+        sys.modules.setdefault("uvicorn", mock_uvicorn)
+        try:
+            import uvicorn as uv
 
-        mock_uvicorn_run.assert_called_once_with(
-            "easylifeauth.app:app", host="0.0.0.0", port=8000, reload=True
-        )
+            with patch.object(uv, "run") as mock_run:
+                code = (
+                    'import uvicorn\n'
+                    'uvicorn.run("easylifeauth.app:app", host="0.0.0.0", port=8000, reload=True)'
+                )
+                exec(code, {"__name__": "__main__"})
+
+                mock_run.assert_called_once_with(
+                    "easylifeauth.app:app", host="0.0.0.0", port=8000, reload=True
+                )
+        finally:
+            # Clean up only if we injected the mock
+            if sys.modules.get("uvicorn") is mock_uvicorn:
+                del sys.modules["uvicorn"]
