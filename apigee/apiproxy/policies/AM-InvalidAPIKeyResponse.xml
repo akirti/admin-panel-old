@@ -19,6 +19,6 @@
         <StatusCode>401</StatusCode>
         <ReasonPhrase>Unauthorized</ReasonPhrase>
     </Set>
-    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
     <AssignTo createNew="false" transport="http" type="response"/>
 </AssignMessage>

@@ -21,12 +21,12 @@
             <!-- Validate JWT Token for protected endpoints -->
             <Step>
                 <Name>JWT-VerifyAccessToken</Name>
-                <Condition>!(proxy.pathsuffix MatchesPath "/auth/login") and !(proxy.pathsuffix MatchesPath "/auth/register") and !(proxy.pathsuffix MatchesPath "/auth/forgot_password") and !(proxy.pathsuffix MatchesPath "/auth/reset_password") and !(proxy.pathsuffix MatchesPath "/auth/refresh") and !(proxy.pathsuffix MatchesPath "/auth/logout") and !(proxy.pathsuffix MatchesPath "/auth/csrf-token") and !(proxy.pathsuffix MatchesPath "/health") and !(proxy.pathsuffix MatchesPath "/health/**") and !(proxy.pathsuffix MatchesPath "/info") and !(proxy.pathsuffix MatchesPath "/feedback/public") and request.verb != "OPTIONS"</Condition>
+                <Condition>!(proxy.pathsuffix JavaRegex "/auth/(login|register|forgot_password|reset_password|refresh|logout|csrf-token)") and !(proxy.pathsuffix MatchesPath "/health") and !(proxy.pathsuffix MatchesPath "/health/**") and !(proxy.pathsuffix MatchesPath "/info") and !(proxy.pathsuffix MatchesPath "/feedback/public") and request.verb != "OPTIONS"</Condition>
             </Step>
             <!-- Quota enforcement (by JWT user or client IP) -->
             <Step>
                 <Name>Q-EnforceQuota</Name>
-                <Condition>!(proxy.pathsuffix MatchesPath "/health") and !(proxy.pathsuffix MatchesPath "/health/**") and !(proxy.pathsuffix MatchesPath "/info") and !(proxy.pathsuffix MatchesPath "/auth/**") and !(proxy.pathsuffix MatchesPath "/feedback/public") and request.verb != "OPTIONS"</Condition>
+                <Condition>!(proxy.pathsuffix JavaRegex "/(health|health/.*|info|auth/.*|feedback/public)") and request.verb != "OPTIONS"</Condition>
             </Step>
         </Request>
         <Response>
@@ -725,7 +725,7 @@
             <Description>Get API configuration by ID</Description>
             <Request/>
             <Response/>
-            <Condition>(proxy.pathsuffix MatchesPath "/api-configs/*") and (request.verb = "GET") and !(proxy.pathsuffix MatchesPath "/api-configs/count") and !(proxy.pathsuffix MatchesPath "/api-configs/tags") and !(proxy.pathsuffix MatchesPath "/api-configs/test") and !(proxy.pathsuffix MatchesPath "/api-configs/gcs/*") and !(proxy.pathsuffix MatchesPath "/api-configs/key/*")</Condition>
+            <Condition>(proxy.pathsuffix JavaRegex "/api-configs/[^/]+") and (request.verb = "GET") and !(proxy.pathsuffix JavaRegex "/api-configs/(count|tags|test|gcs/.*|key/.*)")</Condition>
         </Flow>
 
         <Flow name="ApiConfigs-Update">
@@ -1300,10 +1300,10 @@
         <VirtualHost>default</VirtualHost>
     </HTTPProxyConnection>
 
-    <RouteRule name="default">
-        <TargetEndpoint>default</TargetEndpoint>
-    </RouteRule>
     <RouteRule name="noroute">
         <Condition>request.verb == "OPTIONS"</Condition>
+    </RouteRule>
+    <RouteRule name="default">
+        <TargetEndpoint>default</TargetEndpoint>
     </RouteRule>
 </ProxyEndpoint>
