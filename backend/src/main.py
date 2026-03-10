@@ -172,6 +172,7 @@ def bootstrap():
     cors_origins = build_cors_origins(config_loader)
     file_storage_config, gcs_config = build_storage_config(config_loader)
     jira_config = build_jira_config(config_loader)
+    app_name = config_loader.get_config_by_path("environment.app_name") or "easylife-admin-panel"
 
     # Create SSL PEM file if configured
     pem_path = setup_jira_ssl_bundle(jira_config, config_path)
@@ -186,6 +187,7 @@ def bootstrap():
         file_storage_config=file_storage_config,
         gcs_config=gcs_config,
         cors_origins=cors_origins,
+        app_name=app_name,
         title="EasyLife Admin Panel API",
         description="Authentication, Authorization, and Administration API",
     )

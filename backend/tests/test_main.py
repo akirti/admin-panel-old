@@ -512,7 +512,7 @@ class TestBootstrap:
         expected_keys = {
             "db_config", "token_secret", "smtp_config", "jira_config",
             "file_storage_config", "gcs_config", "cors_origins",
-            "title", "description",
+            "app_name", "title", "description",
         }
         assert set(kwargs.keys()) == expected_keys
 

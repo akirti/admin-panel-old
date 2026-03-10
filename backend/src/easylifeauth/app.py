@@ -46,6 +46,7 @@ from .middleware.csrf import CSRFProtectMiddleware
 from .middleware.rate_limit import RateLimitMiddleware
 from .middleware.security import SecurityHeadersMiddleware, RequestValidationMiddleware
 from .middleware.db_health import DatabaseHealthMiddleware
+from .middleware.apigee_identity import ApigeeIdentityMiddleware
 
 
 def create_app(
@@ -56,6 +57,7 @@ def create_app(
     file_storage_config: Optional[Dict[str, Any]] = None,
     gcs_config: Optional[Dict[str, Any]] = None,
     cors_origins: list = None,
+    app_name: str = "easylife-admin-panel",
     title: str = "EasyLife Auth API",
     description: str = "Authentication and Authorization API for EasyLife"
 ) -> FastAPI:
@@ -210,6 +212,9 @@ def create_app(
         check_interval=60,  # Check every 60 seconds of inactivity
         enabled=True
     )
+
+    # Apigee identity headers (app name + hostname for proxy verification)
+    app.add_middleware(ApigeeIdentityMiddleware, app_name=app_name)
 
     # Exception handlers
     @app.exception_handler(AuthError)
