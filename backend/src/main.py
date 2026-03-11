@@ -172,29 +172,38 @@ def bootstrap():
     cors_origins = build_cors_origins(config_loader)
     file_storage_config, gcs_config = build_storage_config(config_loader)
     jira_config = build_jira_config(config_loader)
-    app_name = config_loader.get_config_by_path("environment.app_name") or "easylife-admin-panel"
+    app_name = config_loader.get_config_by_path("environment.app_name")
+    if not app_name:
+        app_name = "easylife-admin-panel"
 
     # Create SSL PEM file if configured
     pem_path = setup_jira_ssl_bundle(jira_config, config_path)
     if pem_path and jira_config:
         jira_config["ssl"]["bundle_pem_path"] = pem_path
 
-    return create_app(
-        db_config=db_config,
-        token_secret=token_secret,
-        smtp_config=smtp_config,
-        jira_config=jira_config,
-        file_storage_config=file_storage_config,
-        gcs_config=gcs_config,
-        cors_origins=cors_origins,
-        app_name=app_name,
-        title="EasyLife Admin Panel API",
-        description="Authentication, Authorization, and Administration API",
-    )
+    app_kwargs = {
+        "db_config": db_config,
+        "token_secret": token_secret,
+        "smtp_config": smtp_config,
+        "jira_config": jira_config,
+        "file_storage_config": file_storage_config,
+        "gcs_config": gcs_config,
+        "cors_origins": cors_origins,
+        "app_name": app_name,
+        "title": "EasyLife Admin Panel API",
+        "description": "Authentication, Authorization, and Administration API",
+    }
+    return create_app(**app_kwargs)
 
 
 app = bootstrap()
 
-if __name__ == "__main__":
+
+def run_dev_server():
+    """Run development server with uvicorn."""
     import uvicorn
     uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)
+
+
+if __name__ == "__main__":
+    run_dev_server()
