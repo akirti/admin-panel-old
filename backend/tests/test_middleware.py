@@ -593,6 +593,59 @@ class TestSecurityHeadersMiddleware:
         csp = response.headers.get(STR_CONTENT_SECURITY_POLICY, "")
         assert "cdn.jsdelivr.net" not in csp
 
+    def test_hsts_header_on_https(self):
+        """Test HSTS header is set for HTTPS requests"""
+        app = FastAPI()
+        app.add_middleware(SecurityHeadersMiddleware, enable_hsts=True)
+
+        @app.get(PATH_ROOT)
+        async def root():
+            return {"message": "hello"}
+
+        client = TestClient(app, base_url="https://testserver")
+        response = client.get(PATH_ROOT)
+        assert "Strict-Transport-Security" in response.headers
+        assert "max-age=31536000" in response.headers["Strict-Transport-Security"]
+
+    def test_server_header_removed(self):
+        """Test Server header is removed if present"""
+        from starlette.middleware.base import BaseHTTPMiddleware
+
+        class AddServerHeaderMiddleware(BaseHTTPMiddleware):
+            async def dispatch(self, request, call_next):
+                response = await call_next(request)
+                response.headers["Server"] = "TestServer/1.0"
+                return response
+
+        app = FastAPI()
+        app.add_middleware(AddServerHeaderMiddleware)
+        app.add_middleware(SecurityHeadersMiddleware)
+
+        @app.get(PATH_ROOT)
+        async def root():
+            return {"message": "hello"}
+
+        client = TestClient(app)
+        response = client.get(PATH_ROOT)
+        assert "Server" not in response.headers
+
+    def test_request_validation_non_standard_content_type(self):
+        """Test request validation with non-standard content-type and non-zero body"""
+        app = FastAPI()
+        app.add_middleware(RequestValidationMiddleware)
+
+        @app.post(PATH_ROOT)
+        async def root():
+            return {"message": "ok"}
+
+        client = TestClient(app)
+        response = client.post(
+            PATH_ROOT,
+            content="test",
+            headers={"content-type": "text/plain", "content-length": "4"}
+        )
+        assert response.status_code == 200
+
 
 class TestRequestValidationMiddleware:
     """Tests for Request Validation Middleware"""
