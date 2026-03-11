@@ -19,7 +19,7 @@ from mock_data import (
 from main import (
     resolve_environment, resolve_config_path, build_db_config,
     build_cors_origins, build_storage_config, build_jira_config, bootstrap,
-    _safe_int, run_dev_server,
+    _safe_int,
 )
 
 ENV_PREFIX = f"{ENVIRONEMNT_VARIABLE_PREFIX}_"
@@ -630,60 +630,64 @@ class TestBootstrap:
 
 
 # ============================================================================
-# TestRunDevServer
+# TestMainBlock
 # ============================================================================
-class TestRunDevServer:
-    """Test the run_dev_server function and __main__ guard."""
+_MAIN_PY = Path(__file__).resolve().parent.parent / "src" / "main.py"
 
-    def test_uvicorn_run_called(self):
-        """run_dev_server invokes uvicorn.run with expected args."""
+
+class TestMainBlock:
+    """Test the ``if __name__ == '__main__'`` block using the actual source file."""
+
+    @staticmethod
+    def _extract_main_block():
+        """Read the real source and return padded code.
+
+        Pads with empty lines so ``compile()`` line numbers match the source
+        file, allowing coverage to attribute execution to the correct lines.
+        """
+        source = _MAIN_PY.read_text()
+        all_lines = source.splitlines()
+        start = None
+        for i, line in enumerate(all_lines):
+            if line.startswith("if __name__"):
+                start = i
+                break
+        assert start is not None, "Could not find __main__ block in main.py"
+        padded = "\n" * start + "\n".join(all_lines[start:])
+        return padded
+
+    def test_uvicorn_run_called_when_name_is_main(self):
+        """Exec the real source so coverage tracks the __main__ block."""
+        code = self._extract_main_block()
         mock_uvicorn = MagicMock()
-        with patch.dict("sys.modules", {"uvicorn": mock_uvicorn}):
-            run_dev_server()
+
+        import builtins
+        _real_import = builtins.__import__
+
+        def _mock_import(name, *args, **kwargs):
+            if name == "uvicorn":
+                return mock_uvicorn
+            return _real_import(name, *args, **kwargs)
+
+        ns = {
+            "__name__": "__main__",
+            "__builtins__": __builtins__,
+        }
+        with patch("builtins.__import__", side_effect=_mock_import):
+            exec(compile(code, str(_MAIN_PY), "exec"), ns)
+
         mock_uvicorn.run.assert_called_once_with(
             UVICORN_APP_REF, host=MOCK_IP_BIND_ALL, port=8000, reload=True,
         )
 
-    def test_main_guard_calls_run_dev_server(self):
-        """if __name__ == '__main__' calls run_dev_server."""
-        _MAIN_PY = Path(__file__).resolve().parent.parent / "src" / "main.py"
-        source = _MAIN_PY.read_text()
-        all_lines = source.splitlines()
-        start = None
-        for i, line in enumerate(all_lines):
-            if line.startswith("if __name__"):
-                start = i
-                break
-        assert start is not None
-        padded = "\n" * start + "\n".join(all_lines[start:])
-
-        mock_run = MagicMock()
-        ns = {
-            "__name__": "__main__",
-            "__builtins__": __builtins__,
-            "run_dev_server": mock_run,
-        }
-        exec(compile(padded, str(_MAIN_PY), "exec"), ns)
-        mock_run.assert_called_once()
-
-    def test_main_guard_skipped_when_imported(self):
-        """When __name__ != '__main__', run_dev_server is not called."""
-        _MAIN_PY = Path(__file__).resolve().parent.parent / "src" / "main.py"
-        source = _MAIN_PY.read_text()
-        all_lines = source.splitlines()
-        start = None
-        for i, line in enumerate(all_lines):
-            if line.startswith("if __name__"):
-                start = i
-                break
-        assert start is not None
-        padded = "\n" * start + "\n".join(all_lines[start:])
-
-        mock_run = MagicMock()
+    def test_uvicorn_not_called_when_imported(self):
+        """When __name__ != '__main__', uvicorn block is skipped."""
+        code = self._extract_main_block()
+        mock_uvicorn = MagicMock()
         ns = {
             "__name__": "src.main",
             "__builtins__": __builtins__,
-            "run_dev_server": mock_run,
+            "uvicorn": mock_uvicorn,
         }
-        exec(compile(padded, str(_MAIN_PY), "exec"), ns)
-        mock_run.assert_not_called()
+        exec(compile(code, str(_MAIN_PY), "exec"), ns)
+        mock_uvicorn.run.assert_not_called()
