@@ -34,7 +34,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.enabled = enabled
         self.exempt_paths = exempt_paths or {
             "/health", "/", "/docs", "/redoc", "/openapi.json",
-            "/api/v1/docs", "/api/v1/redoc", "/api/v1/openapi.json"
         }
 
         # Storage for request timestamps: {ip: [(timestamp, endpoint), ...]}

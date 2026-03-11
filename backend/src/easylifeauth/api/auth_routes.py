@@ -19,6 +19,7 @@ from ..services.activity_log_service import ActivityLogService
 from ..security.access_control import CurrentUser
 from ..errors.auth_error import AuthError
 from ..middleware.csrf import get_csrf_token
+from .. import API_BASE_ROUTE
 
 _is_dev = os.environ.get("ENV", "development").lower() in ("development", "dev")
 
@@ -44,14 +45,14 @@ def _set_auth_cookies(response: Response, access_token: str, refresh_token: str)
         secure=secure,
         samesite="lax",
         max_age=86400,  # 24 hours
-        path="/api/v1/auth/refresh",
+        path=f"{API_BASE_ROUTE}/auth/refresh",
     )
 
 
 def _clear_auth_cookies(response: Response) -> None:
     """Clear httpOnly auth cookies."""
     response.delete_cookie(key="access_token", path="/")
-    response.delete_cookie(key="refresh_token", path="/api/v1/auth/refresh")
+    response.delete_cookie(key="refresh_token", path=f"{API_BASE_ROUTE}/auth/refresh")
 
 
 @router.get("/csrf-token")

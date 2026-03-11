@@ -65,7 +65,7 @@ services:
     mem_swappiness: 60
     memswap_limit: 2G
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; r=urllib.request.urlopen('http://localhost:8000/api/v1/health/ready', timeout=10); exit(0 if b'ready' in r.read() else 1)"]
+      test: ["CMD", "python", "-c", "import urllib.request; r=urllib.request.urlopen('http://localhost:8000/health/ready', timeout=10); exit(0 if b'ready' in r.read() else 1)"]
       interval: 15s
       timeout: 15s
       retries: 3

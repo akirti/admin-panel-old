@@ -59,7 +59,8 @@ def create_app(
     cors_origins: list = None,
     app_name: str = "easylife-admin-panel",
     title: str = "EasyLife Auth API",
-    description: str = "Authentication and Authorization API for EasyLife"
+    description: str = "Authentication and Authorization API for EasyLife",
+    root_path: str = "",
 ) -> FastAPI:
     """Create and configure FastAPI application
 
@@ -136,9 +137,10 @@ def create_app(
         description=description,
         version=API_VERSION,
         lifespan=lifespan,
-        docs_url=f"{API_BASE_ROUTE}/docs",
-        redoc_url=f"{API_BASE_ROUTE}/redoc",
-        openapi_url=f"{API_BASE_ROUTE}/openapi.json"
+        root_path=root_path,
+        docs_url="/docs",
+        redoc_url="/redoc",
+        openapi_url="/openapi.json",
     )
     
     
@@ -174,12 +176,12 @@ def create_app(
             cookie_secure=not is_dev,  # False in dev, True in production
             cookie_samesite="lax",
             exempt_paths={
-                "/api/v1/auth/login",
-                "/api/v1/auth/register",
-                "/api/v1/auth/refresh",
-                "/api/v1/auth/csrf-token",
-                "/api/v1/auth/forgot_password",
-                "/api/v1/auth/reset_password",
+                f"{API_BASE_ROUTE}/auth/login",
+                f"{API_BASE_ROUTE}/auth/register",
+                f"{API_BASE_ROUTE}/auth/refresh",
+                f"{API_BASE_ROUTE}/auth/csrf-token",
+                f"{API_BASE_ROUTE}/auth/forgot_password",
+                f"{API_BASE_ROUTE}/auth/reset_password",
             }
         )
 
@@ -305,7 +307,10 @@ def create_app(
             content={"error": "Internal server error"}
         )
     
-    # Include routers with API base route prefix
+    # Infrastructure routers at root (no prefix) — not proxied via Apigee
+    app.include_router(health_router)
+
+    # Business API routers under API_BASE_ROUTE — proxied via Apigee
     app.include_router(auth_router, prefix=API_BASE_ROUTE)
     app.include_router(admin_router, prefix=API_BASE_ROUTE)
     app.include_router(domain_router, prefix=API_BASE_ROUTE)
@@ -314,7 +319,6 @@ def create_app(
     app.include_router(playboard_router, prefix=API_BASE_ROUTE)
     app.include_router(feedback_router, prefix=API_BASE_ROUTE)
     app.include_router(scenario_request_router, prefix=API_BASE_ROUTE)
-    app.include_router(health_router, prefix=API_BASE_ROUTE)
     app.include_router(bulk_upload_router, prefix=API_BASE_ROUTE)
     app.include_router(activity_log_router, prefix=API_BASE_ROUTE)
     app.include_router(export_router, prefix=API_BASE_ROUTE)
@@ -337,7 +341,7 @@ def create_app(
         return {
             "message": "EasyLife Auth API",
             "version": API_VERSION,
-            "docs": f"{API_BASE_ROUTE}/docs"
+            "docs": "/docs"
         }
     
     return app
@@ -345,4 +349,4 @@ def create_app(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("easylifeauth.app:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("easylifeauth.app:app", host="127.0.0.1", port=8000, reload=True)

@@ -178,6 +178,12 @@ def bootstrap():
     if pem_path and jira_config:
         jira_config["ssl"]["bundle_pem_path"] = pem_path
 
+    root_path = (
+        os.environ.get("ROOT_PATH")
+        or config_loader.get_config_by_path("environment.root_path")
+        or ""
+    )
+
     kw = {}
     kw["db_config"] = db_config
     kw["token_secret"] = token_secret
@@ -189,6 +195,7 @@ def bootstrap():
     kw["app_name"] = app_name
     kw["title"] = "EasyLife Admin Panel API"
     kw["description"] = "Authentication, Authorization, and Administration API"
+    kw["root_path"] = root_path
     return create_app(**kw)
 
 
@@ -196,4 +203,4 @@ app = bootstrap()
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("src.main:app", host="127.0.0.1", port=8000, reload=True)

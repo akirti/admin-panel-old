@@ -72,8 +72,8 @@ class TestAppRoutes:
         assert data["message"] == "EasyLife Auth API"
 
     def test_docs_endpoint_exists(self, client):
-        """Test docs endpoint exists"""
-        response = client.get("/api/v1/docs")
+        """Test docs endpoint exists at root level"""
+        response = client.get("/docs")
         # Should redirect or return docs page
         assert response.status_code in [200, 307]
 
@@ -82,8 +82,8 @@ class TestAppRoutes:
         reason="pydantic v2 OpenAPI schema generation requires Python 3.10+",
     )
     def test_openapi_endpoint_exists(self, client):
-        """Test openapi.json endpoint exists"""
-        response = client.get("/api/v1/openapi.json")
+        """Test openapi.json endpoint exists at root level"""
+        response = client.get("/openapi.json")
         assert response.status_code == 200
         data = response.json()
         assert "openapi" in data
@@ -261,8 +261,8 @@ class TestRouterInclusion:
         client = TestClient(app)
 
         # Test that various route prefixes exist
-        # Health check is always available
-        response = client.get("/api/v1/health")
+        # Health check is at root level (infrastructure tier)
+        response = client.get("/health")
         assert response.status_code == 200
 
     def test_auth_routes_included(self):
@@ -276,7 +276,7 @@ class TestRouterInclusion:
         assert response.status_code in [200, 401, 500]
 
     def test_api_version_in_routes(self):
-        """Test API version is in route prefix"""
+        """Test API version in route prefix and health at root"""
         app = create_app()
         client = TestClient(app)
 
@@ -284,6 +284,6 @@ class TestRouterInclusion:
         response = client.get(PATH_ROOT)
         assert response.status_code == 200
 
-        # Health check with version prefix
-        response = client.get("/api/v1/health")
+        # Health check at root (infrastructure tier)
+        response = client.get("/health")
         assert response.status_code == 200

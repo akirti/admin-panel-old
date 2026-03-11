@@ -6,6 +6,8 @@
         <Set>
             <Headers>
                 <Header name="Content-Type">application/json</Header>
+                <Header name="Access-Control-Allow-Origin">{request.header.origin}</Header>
+                <Header name="Access-Control-Allow-Credentials">true</Header>
             </Headers>
             <Payload contentType="application/json">
 {
