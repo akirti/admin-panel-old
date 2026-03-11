@@ -14,5 +14,6 @@
     <TargetServers/>
     <TargetEndpoints>
         <TargetEndpoint>default</TargetEndpoint>
+        <TargetEndpoint>infrastructure</TargetEndpoint>
     </TargetEndpoints>
 </APIProxy>

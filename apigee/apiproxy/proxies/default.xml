@@ -4,6 +4,10 @@
 
     <PreFlow name="PreFlow">
         <Request>
+            <!-- Validate CORS origin against allowed list (runs for ALL requests including OPTIONS) -->
+            <Step>
+                <Name>JS-ValidateCORSOrigin</Name>
+            </Step>
             <!-- CORS Preflight handling -->
             <Step>
                 <Name>RF-CORSPreflight</Name>
@@ -1320,6 +1324,12 @@
     <RouteRule name="noroute">
         <Condition>request.verb == "OPTIONS"</Condition>
     </RouteRule>
+    <!-- Infrastructure routes go to target WITHOUT /api/v1 prefix -->
+    <RouteRule name="infrastructure">
+        <Condition>(proxy.pathsuffix MatchesPath "/health") or (proxy.pathsuffix MatchesPath "/health/*") or (proxy.pathsuffix MatchesPath "/info") or (proxy.pathsuffix MatchesPath "/docs") or (proxy.pathsuffix MatchesPath "/redoc") or (proxy.pathsuffix MatchesPath "/openapi.json")</Condition>
+        <TargetEndpoint>infrastructure</TargetEndpoint>
+    </RouteRule>
+    <!-- Business API routes go to target WITH /api/v1 prefix -->
     <RouteRule name="default">
         <TargetEndpoint>default</TargetEndpoint>
     </RouteRule>
