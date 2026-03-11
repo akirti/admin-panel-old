@@ -35,7 +35,8 @@ def mock_db():
     """Mock database manager"""
     db = MagicMock()
     
-    # Mock collections
+    # Mock collections as AsyncMock so all auto-generated child methods
+    # (find_one, insert_one, delete_many, etc.) are also AsyncMock
     db.users = AsyncMock()
     db.tokens = AsyncMock()
     db.reset_tokens = AsyncMock()

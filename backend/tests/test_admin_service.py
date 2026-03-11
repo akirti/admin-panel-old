@@ -73,24 +73,24 @@ class TestAdminService:
     async def test_update_user_status_activate(self, admin_service, mock_db):
         """Test activating a user"""
         mock_db.users.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
-        
+
         result = await admin_service.update_user_status(
             OID_9011,
             True
         )
-        
+
         assert "activated" in result["message"]
 
     @pytest.mark.asyncio
     async def test_update_user_status_deactivate(self, admin_service, mock_db):
         """Test deactivating a user"""
         mock_db.users.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
-        
+
         result = await admin_service.update_user_status(
             OID_9011,
             False
         )
-        
+
         assert "deactivate" in result["message"]
 
     @pytest.mark.asyncio
@@ -109,12 +109,12 @@ class TestAdminService:
     async def test_update_user_role_success(self, admin_service, mock_db):
         """Test updating user roles"""
         mock_db.users.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
-        
+
         result = await admin_service.update_user_role(
             OID_9011,
             ["user", "editor"]
         )
-        
+
         assert result["message"] == EXPECTED_USER_ROLE_UPDATED_SUCCESSFULLY
 
     @pytest.mark.asyncio
@@ -143,12 +143,12 @@ class TestAdminService:
     async def test_update_user_groups_success(self, admin_service, mock_db):
         """Test updating user groups"""
         mock_db.users.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
-        
+
         result = await admin_service.update_user_groups(
             OID_9011,
             ["viewer", "editor"]
         )
-        
+
         assert result["message"] == "User groups updated successfully"
 
     @pytest.mark.asyncio
@@ -167,12 +167,12 @@ class TestAdminService:
     async def test_update_user_domains_success(self, admin_service, mock_db):
         """Test updating user domains"""
         mock_db.users.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
-        
+
         result = await admin_service.update_user_domains(
             OID_9011,
             [STR_DOMAIN1, "domain2"]
         )
-        
+
         assert result["message"] == EXPECTED_USER_DOMAINS_UPDATED_SUCCESSFULLY
 
     @pytest.mark.asyncio

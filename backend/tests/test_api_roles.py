@@ -108,8 +108,8 @@ class TestRolesRoutes:
         db.users.update_many = AsyncMock()
         db.permissions = MagicMock()
         db.permissions.find_one = AsyncMock(return_value=None)
-        db.domains = MagicMock()
-        db.domains.find_one = AsyncMock(return_value=None)
+        db.data_domains = MagicMock()
+        db.data_domains.find_one = AsyncMock(return_value=None)
         return db
 
     @pytest.fixture
