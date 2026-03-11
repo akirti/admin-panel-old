@@ -575,10 +575,17 @@ class TestSecurityHeadersMiddleware:
         app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
         app.add_middleware(SecurityHeadersMiddleware, enable_csp=True)
 
-        for path in ["/docs", "/redoc", "/openapi.json"]:
-            @app.get(path)
-            async def swagger_stub():
-                return {"ok": True}
+        @app.get("/docs")
+        async def docs_stub():
+            return {"ok": True}
+
+        @app.get("/redoc")
+        async def redoc_stub():
+            return {"ok": True}
+
+        @app.get("/openapi.json")
+        async def openapi_stub():
+            return {"ok": True}
 
         client = TestClient(app)
         for path in ["/docs", "/redoc", "/openapi.json"]:
