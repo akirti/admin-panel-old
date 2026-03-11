@@ -4,7 +4,7 @@ Bulk upload service for processing CSV/Excel files.
 import pandas as pd
 from io import BytesIO
 from typing import List, Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 import re
 
@@ -172,7 +172,7 @@ class BulkUploadService:
                     "groups": self._parse_list_field(row.get("groups")),
                     "customers": self._parse_list_field(row.get("customers")),
                     "is_active": self._parse_bool_field(row.get("is_active", True)),
-                    "updated_at": datetime.utcnow(),
+                    "updated_at": datetime.now(timezone.utc),
                 }
 
                 # Validate username doesn't contain special characters
@@ -195,7 +195,7 @@ class BulkUploadService:
                         import hashlib
                         user_data["password_hash"] = hashlib.sha256(temp_password.encode()).hexdigest()
 
-                    user_data["created_at"] = datetime.utcnow()
+                    user_data["created_at"] = datetime.now(timezone.utc)
                     user_data["is_super_admin"] = False
                     user_data["last_login"] = None
                     await self.db.users.insert_one(user_data)
@@ -242,7 +242,7 @@ class BulkUploadService:
                     "status": str(row.get("status", "active")).lower(),
                     "priority": self._parse_int_field(row.get("priority")),
                     "type": str(row.get("type", "custom")).lower(),
-                    "updated_at": datetime.utcnow(),
+                    "updated_at": datetime.now(timezone.utc),
                 }
 
                 if existing:
@@ -251,7 +251,7 @@ class BulkUploadService:
                         {"$set": role_data}
                     )
                 else:
-                    role_data["created_at"] = datetime.utcnow()
+                    role_data["created_at"] = datetime.now(timezone.utc)
                     await self.db.roles.insert_one(role_data)
 
                 result.successful += 1
@@ -283,7 +283,7 @@ class BulkUploadService:
                     "status": str(row.get("status", "active")).lower(),
                     "priority": self._parse_int_field(row.get("priority")),
                     "type": str(row.get("type", "custom")).lower(),
-                    "updated_at": datetime.utcnow(),
+                    "updated_at": datetime.now(timezone.utc),
                 }
 
                 if existing:
@@ -292,7 +292,7 @@ class BulkUploadService:
                         {"$set": group_data}
                     )
                 else:
-                    group_data["created_at"] = datetime.utcnow()
+                    group_data["created_at"] = datetime.now(timezone.utc)
                     await self.db.groups.insert_one(group_data)
 
                 result.successful += 1
@@ -327,7 +327,7 @@ class BulkUploadService:
                     "icon": str(row.get("icon", "")).strip() if pd.notna(row.get("icon")) else None,
                     "type": str(row.get("type", "custom")).lower(),
                     "subDomains": [],
-                    "updated_at": datetime.utcnow(),
+                    "updated_at": datetime.now(timezone.utc),
                 }
 
                 if existing:
@@ -336,7 +336,7 @@ class BulkUploadService:
                         {"$set": domain_data}
                     )
                 else:
-                    domain_data["created_at"] = datetime.utcnow()
+                    domain_data["created_at"] = datetime.now(timezone.utc)
                     await self.db.domains.insert_one(domain_data)
 
                 result.successful += 1
@@ -372,7 +372,7 @@ class BulkUploadService:
                     "type": str(row.get("type", "custom")).lower(),
                     "domainKey": str(row.get("domainKey", "")).strip(),
                     "subDomains": [],
-                    "updated_at": datetime.utcnow(),
+                    "updated_at": datetime.now(timezone.utc),
                 }
 
                 if existing:
@@ -381,7 +381,7 @@ class BulkUploadService:
                         {"$set": scenario_data}
                     )
                 else:
-                    scenario_data["created_at"] = datetime.utcnow()
+                    scenario_data["created_at"] = datetime.now(timezone.utc)
                     await self.db.domain_scenarios.insert_one(scenario_data)
 
                 result.successful += 1
@@ -419,7 +419,7 @@ class BulkUploadService:
                     "division": str(row.get("division", "")).strip() if pd.notna(row.get("division")) else None,
                     "channel": str(row.get("channel", "")).strip() if pd.notna(row.get("channel")) else None,
                     "location": str(row.get("location", "")).strip() if pd.notna(row.get("location")) else None,
-                    "updated_at": datetime.utcnow(),
+                    "updated_at": datetime.now(timezone.utc),
                 }
 
                 if existing:
@@ -428,7 +428,7 @@ class BulkUploadService:
                         {"$set": customer_data}
                     )
                 else:
-                    customer_data["created_at"] = datetime.utcnow()
+                    customer_data["created_at"] = datetime.now(timezone.utc)
                     await self.db.customers.insert_one(customer_data)
 
                 result.successful += 1
@@ -465,7 +465,7 @@ class BulkUploadService:
                     "description": str(row.get("description", "")).strip() if pd.notna(row.get("description")) else None,
                     "module": module,
                     "actions": self._parse_list_field(row.get("actions")),
-                    "updated_at": datetime.utcnow(),
+                    "updated_at": datetime.now(timezone.utc),
                 }
 
                 if existing:
@@ -474,7 +474,7 @@ class BulkUploadService:
                         {"$set": permission_data}
                     )
                 else:
-                    permission_data["created_at"] = datetime.utcnow()
+                    permission_data["created_at"] = datetime.now(timezone.utc)
                     await self.db.permissions.insert_one(permission_data)
 
                 result.successful += 1

@@ -44,6 +44,20 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "form-action 'self';"
         )
 
+    # Paths that need relaxed CSP for Swagger UI CDN resources
+    SWAGGER_PATHS = ("/docs", "/redoc", "/openapi.json")
+    SWAGGER_CSP = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "img-src 'self' data: https://cdn.jsdelivr.net; "
+        "font-src 'self' data: https://cdn.jsdelivr.net; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self';"
+    )
+
     async def dispatch(self, request: Request, call_next):
         """Add security headers to response."""
         response: Response = await call_next(request)
@@ -57,9 +71,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # Enable XSS filter in browsers
         response.headers["X-XSS-Protection"] = "1; mode=block"
 
-        # Content Security Policy
+        # Content Security Policy - relaxed for Swagger UI paths
         if self.enable_csp:
-            response.headers["Content-Security-Policy"] = self.csp_directives
+            if request.url.path in self.SWAGGER_PATHS:
+                response.headers["Content-Security-Policy"] = self.SWAGGER_CSP
+            else:
+                response.headers["Content-Security-Policy"] = self.csp_directives
 
         # HTTP Strict Transport Security (HSTS) - only for HTTPS
         if self.enable_hsts and request.url.scheme == "https":

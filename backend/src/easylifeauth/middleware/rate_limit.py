@@ -5,7 +5,7 @@ from fastapi import Request, HTTPException, status
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 import asyncio
 from typing import Dict, Set
 
@@ -71,7 +71,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         # Record this request
         async with self.lock:
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             # Guard against unbounded growth from many unique IPs
             if len(self.request_log) > 10000:
                 oldest_ip = next(iter(self.request_log))
@@ -85,7 +85,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         remaining = await self._get_remaining_requests(client_ip, path)
         response.headers["X-RateLimit-Limit"] = str(self.requests_per_minute)
         response.headers["X-RateLimit-Remaining"] = str(remaining)
-        response.headers["X-RateLimit-Reset"] = str(int((datetime.utcnow() + timedelta(minutes=1)).timestamp()))
+        response.headers["X-RateLimit-Reset"] = str(int((datetime.now(timezone.utc) + timedelta(minutes=1)).timestamp()))
 
         return response
 
@@ -109,7 +109,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def _check_rate_limit(self, client_ip: str, path: str) -> None:
         """Check if client has exceeded rate limits."""
         async with self.lock:
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             requests = self.request_log.get(client_ip, [])
 
             # Prune entries older than 1 hour (the max relevant window)
@@ -149,7 +149,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def _get_remaining_requests(self, client_ip: str, path: str) -> int:
         """Get remaining requests for client."""
         async with self.lock:
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             minute_ago = now - timedelta(minutes=1)
             requests = self.request_log.get(client_ip, [])
             recent = [r for r in requests if r[0] > minute_ago]
@@ -165,7 +165,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             await asyncio.sleep(300)  # Run every 5 minutes
 
             async with self.lock:
-                now = datetime.utcnow()
+                now = datetime.now(timezone.utc)
                 cutoff = now - timedelta(hours=2)
 
                 for ip in list(self.request_log.keys()):

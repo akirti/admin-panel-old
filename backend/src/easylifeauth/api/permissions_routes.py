@@ -4,7 +4,7 @@ Permission management API routes - Full CRUD from admin-panel-scratch-3.
 import re
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from bson import ObjectId
 import math
 
@@ -128,8 +128,8 @@ async def create_permission(
         )
 
     perm_dict = perm_data.model_dump()
-    perm_dict["created_at"] = datetime.utcnow()
-    perm_dict["updated_at"] = datetime.utcnow()
+    perm_dict["created_at"] = datetime.now(timezone.utc)
+    perm_dict["updated_at"] = datetime.now(timezone.utc)
 
     result = await db.permissions.insert_one(perm_dict)
     perm_dict["_id"] = str(result.inserted_id)
@@ -157,7 +157,7 @@ async def update_permission(
         )
 
     update_data = perm_data.model_dump(exclude_unset=True)
-    update_data["updated_at"] = datetime.utcnow()
+    update_data["updated_at"] = datetime.now(timezone.utc)
 
     await db.permissions.update_one(
         {"_id": existing["_id"]},

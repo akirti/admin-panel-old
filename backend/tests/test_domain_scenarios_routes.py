@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timezone
 
 from easylifeauth.api.domain_scenarios_routes import (
     router,
@@ -172,8 +172,8 @@ class TestDomainScenariosRoutes:
             STR_DOMAINKEY: STR_DOMAIN1,
             "status": "active",
             STR_SUBDOMAINS: [],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
 
         mock_db.domain_scenarios.count_documents = AsyncMock(return_value=1)
@@ -231,8 +231,8 @@ class TestDomainScenariosRoutes:
             STR_DOMAINKEY: STR_DOMAIN1,
             "status": "active",
             STR_SUBDOMAINS: [],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario.copy())
@@ -252,8 +252,8 @@ class TestDomainScenariosRoutes:
             "path": SUBPATH_SCENARIOS_TEST,
             "status": "active",
             STR_SUBDOMAINS: [],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
 
         # First call with ObjectId returns None (not found), then lookup by key succeeds
@@ -334,8 +334,8 @@ class TestDomainScenariosRoutes:
             STR_DOMAINKEY: STR_DOMAIN1,
             "status": "active",
             STR_SUBDOMAINS: [],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(side_effect=[
@@ -356,8 +356,8 @@ class TestDomainScenariosRoutes:
             STR_DOMAINKEY: STR_DOMAIN1,
             "status": "active",
             STR_SUBDOMAINS: [],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(side_effect=[
@@ -386,8 +386,8 @@ class TestDomainScenariosRoutes:
             STR_DOMAINKEY: STR_DOMAIN1,
             "status": "active",
             STR_SUBDOMAINS: [],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(side_effect=[existing.copy(), existing.copy()])
@@ -407,8 +407,8 @@ class TestDomainScenariosRoutes:
             STR_DOMAINKEY: STR_DOMAIN1,
             "status": "active",
             STR_SUBDOMAINS: [],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=existing)
@@ -428,8 +428,8 @@ class TestDomainScenariosRoutes:
             "path": SUBPATH_SCENARIOS_TEST,
             "status": "active",
             STR_SUBDOMAINS: [],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(side_effect=[existing.copy(), existing.copy()])
@@ -547,8 +547,8 @@ class TestDomainScenariosRoutes:
             "path": SUBPATH_SCENARIOS_TEST,
             "status": "active",
             STR_SUBDOMAINS: [],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(side_effect=[
@@ -571,8 +571,8 @@ class TestDomainScenariosRoutes:
             "path": SUBPATH_SCENARIOS_TEST,
             "status": "active",
             STR_SUBDOMAINS: [],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(side_effect=[
@@ -797,8 +797,8 @@ class TestDomainScenariosRoutesRegularUser:
             STR_DOMAINKEY: STR_DOMAIN2,  # Different domain
             "status": "active",
             STR_SUBDOMAINS: [],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)

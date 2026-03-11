@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timezone
 
 from easylifeauth.api.export_routes import (
     router,
@@ -38,7 +38,7 @@ class TestHelperFunctions:
 
     def test_serialize_document_datetime(self):
         """Test serialize_document with datetime"""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         doc = {"timestamp": now}
         result = serialize_document(doc)
         assert result["timestamp"] == now.isoformat()

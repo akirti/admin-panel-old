@@ -1,6 +1,6 @@
 """Tests for Users API Routes"""
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -206,8 +206,8 @@ class TestUsersRoutes:
             "roles": ["user"],
             "groups": [],
             "domains": [],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
         mock_db.users.find_one.return_value = user_data
 
@@ -318,8 +318,8 @@ class TestUsersRoutes:
             "roles": ["user"],
             "groups": [],
             "domains": [],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
         mock_db.users.find_one.return_value = existing_user
 
@@ -1150,8 +1150,8 @@ class TestUpdateUserPrivilegeEscalation:
             "roles": ["user"],
             "groups": [],
             "customers": [],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
         mock_db.users.find_one = AsyncMock(return_value=existing_user)
 
@@ -1176,8 +1176,8 @@ class TestUpdateUserPrivilegeEscalation:
             "roles": ["user"],
             "groups": [],
             "customers": [],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
         mock_db.users.find_one = AsyncMock(return_value=existing_user)
 
@@ -1201,8 +1201,8 @@ class TestUpdateUserPrivilegeEscalation:
             "roles": ["user"],
             "groups": [],
             "customers": [],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
         # First call returns existing, second call (after update) returns updated
         updated_user = {**existing_user, "roles": ["administrator"]}
@@ -1229,8 +1229,8 @@ class TestUpdateUserPrivilegeEscalation:
             "roles": ["user"],
             "groups": [],
             "customers": [],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
         updated_user = {**existing_user, "groups": [STR_TEAM_A]}
         mock_db.users.find_one = AsyncMock(side_effect=[existing_user, updated_user])
@@ -1329,7 +1329,7 @@ class TestListUsersExtended:
 
     def test_list_users_returns_users_data(self, client, mock_db):
         """Test list users iterates cursor and strips password_hash (lines 148-150)."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         users = [
             {
                 "_id": ObjectId(OID_9011),

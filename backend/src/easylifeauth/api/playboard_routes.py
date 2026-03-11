@@ -4,7 +4,7 @@ Playboard management API routes - Full CRUD with JSON file upload from admin-pan
 import re
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from bson import ObjectId
 import json
 import math
@@ -308,8 +308,8 @@ async def create_playboard(
         "scenarioDescription": playboard_data.scenarioDescription or data_obj.get("scenarioDescription"),
         "data": data_obj,  # Store the full data object
         "status": playboard_data.status if playboard_data.status != "active" else data_obj.get("status", "active"),
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow(),
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
         "created_by": current_user.email,
         "updated_by": current_user.email,
     }
@@ -407,8 +407,8 @@ async def upload_playboard_json(
         "scenarioDescription": json_data.get("scenarioDescription"),
         "data": json_data,  # Store the full JSON data
         "status": "active",
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow(),
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
         "created_by": current_user.email,
         "updated_by": current_user.email,
     }
@@ -468,7 +468,7 @@ async def update_playboard(
                 detail="Parent scenario not found"
             )
 
-    update_data["updated_at"] = datetime.utcnow()
+    update_data["updated_at"] = datetime.now(timezone.utc)
     update_data["updated_by"] = current_user.email
 
     await db.playboards.update_one(
@@ -530,7 +530,7 @@ async def update_playboard_json(
 
     update_fields = {
         "data": json_data,
-        "updated_at": datetime.utcnow(),
+        "updated_at": datetime.now(timezone.utc),
         "updated_by": current_user.email,
     }
 
@@ -609,7 +609,7 @@ async def toggle_playboard_status(
     new_status = "inactive" if playboard.get("status") == "active" else "active"
     await db.playboards.update_one(
         {"_id": playboard["_id"]},
-        {"$set": {"status": new_status, "updated_at": datetime.utcnow()}}
+        {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}}
     )
 
     return {"message": f"Playboard status changed to {new_status}", "status": new_status}

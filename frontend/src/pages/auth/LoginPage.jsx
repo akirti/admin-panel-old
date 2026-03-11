@@ -38,12 +38,12 @@ function LoginPage() {
             Email
           </label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted pointer-events-none" size={20} />
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="input-field pl-10"
+              className="input-field !pl-10"
               placeholder="Enter your email"
               required
             />
@@ -55,12 +55,12 @@ function LoginPage() {
             Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted pointer-events-none" size={20} />
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="input-field pl-10 pr-10"
+              className="input-field !pl-10 !pr-10"
               placeholder="Enter your password"
               required
             />

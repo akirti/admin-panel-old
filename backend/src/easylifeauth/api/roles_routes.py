@@ -4,7 +4,7 @@ Role management API routes - Full CRUD from admin-panel-scratch-3.
 import re
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from bson import ObjectId
 import math
 
@@ -207,8 +207,8 @@ async def create_role(
     if role_dict.get("domains"):
         role_dict["domains"] = await resolve_domains(db, role_dict["domains"])
 
-    role_dict["created_at"] = datetime.utcnow()
-    role_dict["updated_at"] = datetime.utcnow()
+    role_dict["created_at"] = datetime.now(timezone.utc)
+    role_dict["updated_at"] = datetime.now(timezone.utc)
 
     result = await db.roles.insert_one(role_dict)
     role_dict["_id"] = str(result.inserted_id)
@@ -246,7 +246,7 @@ async def update_role(
     if "domains" in update_data and update_data["domains"] is not None:
         update_data["domains"] = await resolve_domains(db, update_data["domains"])
 
-    update_data["updated_at"] = datetime.utcnow()
+    update_data["updated_at"] = datetime.now(timezone.utc)
 
     for key, value in update_data.items():
         if key != "updated_at" and existing.get(key) != value:
@@ -322,7 +322,7 @@ async def toggle_role_status(
     new_status = "inactive" if role.get("status") == "active" else "active"
     await db.roles.update_one(
         {"_id": role["_id"]},
-        {"$set": {"status": new_status, "updated_at": datetime.utcnow()}}
+        {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}}
     )
 
     # Notify users

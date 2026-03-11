@@ -4,7 +4,7 @@ Activity Logs / Audit Trail API routes.
 import re
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import Optional, Dict, Any, List
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from bson import ObjectId
 import math
 
@@ -67,7 +67,7 @@ async def list_activity_logs(
         query["entity_id"] = entity_id
 
     if days:
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
         query["timestamp"] = {"$gte": cutoff_date}
 
     # Get activity logs collection - may be named differently
@@ -101,7 +101,7 @@ async def get_activity_stats(
     db: DatabaseManager = Depends(get_db)
 ) -> Dict[str, Any]:
     """Get activity statistics."""
-    cutoff_date = datetime.utcnow() - timedelta(days=days)
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
 
     collection_name = "activity_logs"
     collection = db.db[collection_name] if hasattr(db, 'db') else None
@@ -242,7 +242,7 @@ async def cleanup_old_logs(
     if collection is None:
         return {"message": "Activity logs collection not found", "deleted_count": 0}
 
-    cutoff_date = datetime.utcnow() - timedelta(days=days)
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
 
     result = await collection.delete_many({
         "timestamp": {"$lt": cutoff_date}

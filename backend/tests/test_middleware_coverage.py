@@ -11,7 +11,7 @@ Covers:
 import pytest
 import asyncio
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from starlette.requests import Request
@@ -219,7 +219,7 @@ class TestRateLimitOverflowGuard:
         )
 
         # Pre-populate request_log with 10001 unique IPs
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         for i in range(10_001):
             ip = f"10.0.{i // 256}.{i % 256}"
             middleware.request_log[ip].append((now, SUBPATH_API_DATA))
@@ -251,8 +251,8 @@ class TestRateLimitCleanup:
         deletes IPs with no remaining entries (lines 164-181)."""
         middleware = RateLimitMiddleware(app=MagicMock(), enabled=True)
 
-        old_time = datetime.utcnow() - timedelta(hours=3)
-        recent_time = datetime.utcnow()
+        old_time = datetime.now(timezone.utc) - timedelta(hours=3)
+        recent_time = datetime.now(timezone.utc)
 
         middleware.request_log[MOCK_IP_PUBLIC_1] = [
             (old_time, "/api/old"),

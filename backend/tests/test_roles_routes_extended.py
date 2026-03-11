@@ -12,7 +12,7 @@ Covers uncovered lines in roles_routes.py:
   - delete_role roleId fallback not-found path (lines 285-286)
 """
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -75,8 +75,8 @@ def _make_role(
         "domains": domains or [],
         "status": status,
         "priority": priority,
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow(),
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
     }
 
 

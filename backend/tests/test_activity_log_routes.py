@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timezone
 
 from easylifeauth.api.activity_log_routes import router, create_pagination_meta
 from easylifeauth.api.dependencies import get_db
@@ -90,7 +90,7 @@ class TestActivityLogRoutes:
                 "action": "create",
                 "entity_type": "user",
                 "user_email": MOCK_EMAIL_ADMIN_TEST,
-                "timestamp": datetime.utcnow()
+                "timestamp": datetime.now(timezone.utc)
             }
         ]
 

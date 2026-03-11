@@ -1,6 +1,6 @@
 """Tests for Customer API Routes"""
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -606,7 +606,7 @@ class TestCustomersRoutes:
         """Test updating an existing customer."""
         oid = ObjectId(OID_d0e1)
         existing = self._sample_customer_doc(_id=oid)
-        updated = {**existing, "name": EXPECTED_UPDATED_NAME, "updated_at": datetime.utcnow()}
+        updated = {**existing, "name": EXPECTED_UPDATED_NAME, "updated_at": datetime.now(timezone.utc)}
 
         mock_db.customers.find_one = AsyncMock(side_effect=[existing, updated])
 

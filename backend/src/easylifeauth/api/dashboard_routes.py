@@ -3,7 +3,7 @@ Dashboard and statistics API routes - from admin-panel-scratch-3.
 """
 from fastapi import APIRouter, Depends, Query
 from typing import Dict, Any, List
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 from easylifeauth.db.db_manager import DatabaseManager
 from easylifeauth.api.dependencies import get_db
@@ -177,8 +177,8 @@ async def get_analytics(
     db: DatabaseManager = Depends(get_db)
 ) -> Dict[str, Any]:
     """Get dashboard analytics and trends. Accessible by super-admins and group-admins."""
-    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-    seven_days_ago = datetime.utcnow() - timedelta(days=7)
+    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+    seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
 
     # User growth over last 30 days
     user_growth_pipeline = [

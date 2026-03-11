@@ -1,6 +1,6 @@
 """Tests for Groups API Routes"""
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -200,8 +200,8 @@ class TestGroupsRoutes:
             "permissions": ["read", "write"],
             "status": "active",
             "priority": 1,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
         mock_db.groups.find_one = AsyncMock(return_value=group_data)
 
@@ -220,8 +220,8 @@ class TestGroupsRoutes:
             "permissions": ["read", "write"],
             "status": "active",
             "priority": 1,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
         mock_db.groups.find_one = AsyncMock(return_value=group_data)
 
@@ -281,8 +281,8 @@ class TestGroupsRoutes:
             "permissions": ["read"],
             "status": "active",
             "priority": 2,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
         mock_db.groups.find_one = AsyncMock(return_value=existing_group)
 

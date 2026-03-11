@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import io
 
@@ -204,7 +204,7 @@ class TestConfigurationsRoutes:
             "config_id": STR_CONFIG_123,
             "key": STR_TEST_CONFIG,
             "type": STR_LOOKUP_DATA,
-            "row_update_stp": datetime.utcnow()
+            "row_update_stp": datetime.now(timezone.utc)
         }
 
         mock_db.configurations.count_documents = AsyncMock(return_value=1)

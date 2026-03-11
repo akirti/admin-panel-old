@@ -4,7 +4,7 @@ User management API routes - Full CRUD from admin-panel-scratch-3.
 import re
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from bson import ObjectId
 import math
 
@@ -339,8 +339,8 @@ async def create_user(
         user_dict["groups"] = await resolve_groups(db, user_dict["groups"])
 
     user_dict["password_hash"] = get_password_hash(user_data.password)
-    user_dict["created_at"] = datetime.utcnow()
-    user_dict["updated_at"] = datetime.utcnow()
+    user_dict["created_at"] = datetime.now(timezone.utc)
+    user_dict["updated_at"] = datetime.now(timezone.utc)
     user_dict["last_login"] = None
     user_dict["is_super_admin"] = False
 
@@ -409,7 +409,7 @@ async def update_user(
     if "groups" in update_data and update_data["groups"] is not None:
         update_data["groups"] = await resolve_groups(db, update_data["groups"])
 
-    update_data["updated_at"] = datetime.utcnow()
+    update_data["updated_at"] = datetime.now(timezone.utc)
 
     # Update user
     await db.users.update_one(
@@ -496,7 +496,7 @@ async def toggle_user_status(
     new_status = not user.get("is_active", True)
     await db.users.update_one(
         {"_id": user["_id"]},
-        {"$set": {"is_active": new_status, "updated_at": datetime.utcnow()}}
+        {"$set": {"is_active": new_status, "updated_at": datetime.now(timezone.utc)}}
     )
 
     # Log activity
@@ -574,7 +574,7 @@ async def admin_reset_password(
 
     await db.users.update_one(
         {"_id": user["_id"]},
-        {"$set": {"password_hash": new_hash, "updated_at": datetime.utcnow()}}
+        {"$set": {"password_hash": new_hash, "updated_at": datetime.now(timezone.utc)}}
     )
 
     if email_service:

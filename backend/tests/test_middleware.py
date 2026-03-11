@@ -1,6 +1,6 @@
 """Tests for Middleware modules"""
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from unittest.mock import MagicMock, AsyncMock, patch
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.testclient import TestClient
@@ -320,9 +320,9 @@ class TestRateLimitMiddleware:
 
         # First two requests should pass
         await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, PATH_DATA)
-        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), PATH_DATA))
+        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.now(timezone.utc), PATH_DATA))
         await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, PATH_DATA)
-        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), PATH_DATA))
+        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.now(timezone.utc), PATH_DATA))
 
         # Third should fail
         with pytest.raises(HTTPException) as exc_info:
@@ -341,7 +341,7 @@ class TestRateLimitMiddleware:
 
         # First auth request should pass
         await middleware._check_rate_limit(MOCK_IP_PRIVATE_1, PATH_AUTH_LOGIN)
-        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), PATH_AUTH_LOGIN))
+        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.now(timezone.utc), PATH_AUTH_LOGIN))
 
         # Second should fail due to stricter auth limit
         with pytest.raises(HTTPException) as exc_info:
@@ -359,8 +359,8 @@ class TestRateLimitMiddleware:
         )
 
         # Fill up hour limit
-        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), PATH_DATA))
-        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.utcnow(), PATH_DATA))
+        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.now(timezone.utc), PATH_DATA))
+        middleware.request_log[MOCK_IP_PRIVATE_1].append((datetime.now(timezone.utc), PATH_DATA))
 
         # Should fail hour limit
         with pytest.raises(HTTPException) as exc_info:
@@ -418,8 +418,8 @@ class TestRateLimitMiddleware:
         )
 
         # Add old and new entries
-        old_time = datetime.utcnow() - timedelta(hours=3)
-        recent_time = datetime.utcnow()
+        old_time = datetime.now(timezone.utc) - timedelta(hours=3)
+        recent_time = datetime.now(timezone.utc)
 
         middleware.request_log[MOCK_IP_PRIVATE_1] = [
             (old_time, PATH_DATA),
@@ -431,7 +431,7 @@ class TestRateLimitMiddleware:
 
         # Run cleanup (just the cleanup part, not the infinite loop)
         async with middleware.lock:
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             cutoff = now - timedelta(hours=2)
 
             for ip in list(middleware.request_log.keys()):
@@ -569,6 +569,29 @@ class TestSecurityHeadersMiddleware:
         client = TestClient(app)
         response = client.get(PATH_ROOT)
         assert response.headers.get(STR_CONTENT_SECURITY_POLICY) == "default-src 'none';"
+
+    def test_swagger_paths_get_relaxed_csp(self):
+        """Test Swagger UI paths get relaxed CSP allowing cdn.jsdelivr.net"""
+        app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+        app.add_middleware(SecurityHeadersMiddleware, enable_csp=True)
+
+        for path in ["/docs", "/redoc", "/openapi.json"]:
+            @app.get(path)
+            async def swagger_stub():
+                return {"ok": True}
+
+        client = TestClient(app)
+        for path in ["/docs", "/redoc", "/openapi.json"]:
+            response = client.get(path)
+            csp = response.headers.get(STR_CONTENT_SECURITY_POLICY, "")
+            assert "cdn.jsdelivr.net" in csp, f"CDN missing in CSP for {path}"
+
+    def test_non_swagger_paths_get_strict_csp(self, app_with_security):
+        """Test non-Swagger paths get strict CSP without cdn.jsdelivr.net"""
+        client = TestClient(app_with_security)
+        response = client.get(PATH_ROOT)
+        csp = response.headers.get(STR_CONTENT_SECURITY_POLICY, "")
+        assert "cdn.jsdelivr.net" not in csp
 
 
 class TestRequestValidationMiddleware:

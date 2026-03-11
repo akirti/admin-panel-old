@@ -4,7 +4,7 @@ Domain Scenario management API routes - Full CRUD from admin-panel-scratch-3.
 import re
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from bson import ObjectId
 import math
 
@@ -218,8 +218,8 @@ async def create_scenario(
 
     scenario_dict = scenario_data.model_dump()
     scenario_dict["subDomains"] = [sd.model_dump() for sd in scenario_data.subDomains]
-    scenario_dict["created_at"] = datetime.utcnow()
-    scenario_dict["updated_at"] = datetime.utcnow()
+    scenario_dict["created_at"] = datetime.now(timezone.utc)
+    scenario_dict["updated_at"] = datetime.now(timezone.utc)
 
     result = await db.domain_scenarios.insert_one(scenario_dict)
     scenario_dict["_id"] = str(result.inserted_id)
@@ -262,7 +262,7 @@ async def update_scenario(
             sd.model_dump() if hasattr(sd, 'model_dump') else sd
             for sd in update_data["subDomains"]
         ]
-    update_data["updated_at"] = datetime.utcnow()
+    update_data["updated_at"] = datetime.now(timezone.utc)
 
     await db.domain_scenarios.update_one(
         {"_id": existing["_id"]},
@@ -323,7 +323,7 @@ async def toggle_scenario_status(
     new_status = "inactive" if scenario.get("status") == "active" else "active"
     await db.domain_scenarios.update_one(
         {"_id": scenario["_id"]},
-        {"$set": {"status": new_status, "updated_at": datetime.utcnow()}}
+        {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}}
     )
 
     return {"message": f"Scenario status changed to {new_status}", "status": new_status}
@@ -360,7 +360,7 @@ async def add_subdomain(
         {"_id": scenario["_id"]},
         {
             "$push": {"subDomains": subdomain_data.model_dump()},
-            "$set": {"updated_at": datetime.utcnow()}
+            "$set": {"updated_at": datetime.now(timezone.utc)}
         }
     )
 
@@ -392,7 +392,7 @@ async def remove_subdomain(
         {"_id": scenario["_id"]},
         {
             "$pull": {"subDomains": {"key": subdomain_key}},
-            "$set": {"updated_at": datetime.utcnow()}
+            "$set": {"updated_at": datetime.now(timezone.utc)}
         }
     )
 

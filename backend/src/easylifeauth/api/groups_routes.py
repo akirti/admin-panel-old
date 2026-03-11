@@ -4,7 +4,7 @@ Group management API routes - Full CRUD from admin-panel-scratch-3.
 import re
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from bson import ObjectId
 import math
 
@@ -246,8 +246,8 @@ async def create_group(
     if group_dict.get("customers"):
         group_dict["customers"] = await resolve_customers(db, group_dict["customers"])
 
-    group_dict["created_at"] = datetime.utcnow()
-    group_dict["updated_at"] = datetime.utcnow()
+    group_dict["created_at"] = datetime.now(timezone.utc)
+    group_dict["updated_at"] = datetime.now(timezone.utc)
 
     result = await db.groups.insert_one(group_dict)
     group_dict["_id"] = str(result.inserted_id)
@@ -287,7 +287,7 @@ async def update_group(
     if "customers" in update_data and update_data["customers"] is not None:
         update_data["customers"] = await resolve_customers(db, update_data["customers"])
 
-    update_data["updated_at"] = datetime.utcnow()
+    update_data["updated_at"] = datetime.now(timezone.utc)
 
     for key, value in update_data.items():
         if key != "updated_at" and existing.get(key) != value:
@@ -368,7 +368,7 @@ async def toggle_group_status(
     new_status = "inactive" if group.get("status") == "active" else "active"
     await db.groups.update_one(
         {"_id": group["_id"]},
-        {"$set": {"status": new_status, "updated_at": datetime.utcnow()}}
+        {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}}
     )
 
     # Notify users

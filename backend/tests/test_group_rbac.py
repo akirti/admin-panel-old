@@ -8,7 +8,7 @@ Tests cover:
 - Group CRUD operations with role checks
 """
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -375,8 +375,8 @@ class TestGroupCRUDIntegration:
             "_id": oid, STR_GROUPID: "editors", "name": STR_EDITORS,
             "description": "old", "permissions": ["read"],
             "status": "active", "priority": 2,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
         }
         db.groups.find_one = AsyncMock(side_effect=[existing, existing])
         db.users.find.return_value = _empty_cursor()

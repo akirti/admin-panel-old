@@ -1,7 +1,7 @@
 """
 Activity Logging Service - Records user actions for audit trail.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 from ..db.db_manager import DatabaseManager
 
@@ -45,7 +45,7 @@ class ActivityLogService:
             "entity_type": entity_type,
             "entity_id": str(entity_id),
             "user_email": user_email,
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(timezone.utc),
             "details": details or {},
         }
 

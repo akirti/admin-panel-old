@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 
 from easylifeauth.api.api_config_routes import router, get_api_config_service
@@ -66,7 +66,7 @@ def make_config_dict(**overrides):
         "cache_ttl": 300,
         "status": "active",
         "tags": ["test"],
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
         "created_by": MOCK_EMAIL_ADMIN_TEST,
         "updated_at": None,
         "updated_by": None,
@@ -354,7 +354,7 @@ class TestApiConfigRoutesSuperAdmin:
             "gcs_path": MOCK_GCS_CERT_PEM,
             "file_name": FILE_CERT_PEM,
             "cert_type": "cert",
-            "uploaded_at": datetime.utcnow().isoformat(),
+            "uploaded_at": datetime.now(timezone.utc).isoformat(),
         })
         mock_service.update_config = AsyncMock(return_value=config)
 
@@ -377,7 +377,7 @@ class TestApiConfigRoutesSuperAdmin:
             "gcs_path": MOCK_GCS_KEY_PEM,
             "file_name": "key.pem",
             "cert_type": "key",
-            "uploaded_at": datetime.utcnow().isoformat(),
+            "uploaded_at": datetime.now(timezone.utc).isoformat(),
         })
         mock_service.update_config = AsyncMock(return_value=config)
 
@@ -398,7 +398,7 @@ class TestApiConfigRoutesSuperAdmin:
             "gcs_path": MOCK_GCS_CA_PEM,
             "file_name": "ca.pem",
             "cert_type": "ca",
-            "uploaded_at": datetime.utcnow().isoformat(),
+            "uploaded_at": datetime.now(timezone.utc).isoformat(),
         })
         mock_service.update_config = AsyncMock(return_value=config)
 

@@ -4,7 +4,7 @@ Domain management API routes - Full CRUD from admin-panel-scratch-3.
 import re
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from bson import ObjectId
 import math
 
@@ -243,8 +243,8 @@ async def create_domain(
     # Ensure path has a default value if None
     if domain_dict.get("path") is None:
         domain_dict["path"] = f"/{domain_dict['key']}"
-    domain_dict["created_at"] = datetime.utcnow()
-    domain_dict["updated_at"] = datetime.utcnow()
+    domain_dict["created_at"] = datetime.now(timezone.utc)
+    domain_dict["updated_at"] = datetime.now(timezone.utc)
 
     result = await db.domains.insert_one(domain_dict)
     domain_dict["_id"] = str(result.inserted_id)
@@ -277,7 +277,7 @@ async def update_domain(
             sd.model_dump() if hasattr(sd, 'model_dump') else sd
             for sd in update_data["subDomains"]
         ]
-    update_data["updated_at"] = datetime.utcnow()
+    update_data["updated_at"] = datetime.now(timezone.utc)
 
     await db.domains.update_one(
         {"_id": existing["_id"]},
@@ -356,7 +356,7 @@ async def toggle_domain_status(
     new_status = "inactive" if domain.get("status") == "active" else "active"
     await db.domains.update_one(
         {"_id": domain["_id"]},
-        {"$set": {"status": new_status, "updated_at": datetime.utcnow()}}
+        {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}}
     )
 
     return {"message": f"Domain status changed to {new_status}", "status": new_status}
@@ -393,7 +393,7 @@ async def add_subdomain(
         {"_id": domain["_id"]},
         {
             "$push": {"subDomains": subdomain_data.model_dump()},
-            "$set": {"updated_at": datetime.utcnow()}
+            "$set": {"updated_at": datetime.now(timezone.utc)}
         }
     )
 
@@ -425,7 +425,7 @@ async def remove_subdomain(
         {"_id": domain["_id"]},
         {
             "$pull": {"subDomains": {"key": subdomain_key}},
-            "$set": {"updated_at": datetime.utcnow()}
+            "$set": {"updated_at": datetime.now(timezone.utc)}
         }
     )
 

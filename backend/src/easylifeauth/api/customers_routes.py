@@ -4,7 +4,7 @@ Customer management API routes - Full CRUD from admin-panel-scratch-3.
 import re
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from bson import ObjectId
 import math
 
@@ -209,8 +209,8 @@ async def create_customer(
         )
 
     customer_dict = customer_data.model_dump()
-    customer_dict["created_at"] = datetime.utcnow()
-    customer_dict["updated_at"] = datetime.utcnow()
+    customer_dict["created_at"] = datetime.now(timezone.utc)
+    customer_dict["updated_at"] = datetime.now(timezone.utc)
 
     result = await db.customers.insert_one(customer_dict)
     customer_dict["_id"] = str(result.inserted_id)
@@ -238,7 +238,7 @@ async def update_customer(
         )
 
     update_data = customer_data.model_dump(exclude_unset=True)
-    update_data["updated_at"] = datetime.utcnow()
+    update_data["updated_at"] = datetime.now(timezone.utc)
 
     await db.customers.update_one(
         {"_id": existing["_id"]},
@@ -310,7 +310,7 @@ async def toggle_customer_status(
     new_status = "inactive" if customer.get("status") == "active" else "active"
     await db.customers.update_one(
         {"_id": customer["_id"]},
-        {"$set": {"status": new_status, "updated_at": datetime.utcnow()}}
+        {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}}
     )
 
     return {"message": f"Customer status changed to {new_status}", "status": new_status}

@@ -4,7 +4,7 @@ Data export API routes for various formats (CSV, Excel, JSON).
 from fastapi import APIRouter, Depends, Query, HTTPException
 from fastapi.responses import StreamingResponse
 from typing import Optional, Dict, Any, List
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 import json
 import csv
 import io
@@ -298,7 +298,7 @@ async def export_activity_logs_csv(
     """Export activity logs to CSV format."""
     filters = {}
     if days:
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
         filters['timestamp'] = {'$gte': cutoff_date}
 
     documents = await get_collection_data(db, "activity_logs", filters)
@@ -315,7 +315,7 @@ async def export_activity_logs_json(
     """Export activity logs to JSON format."""
     filters = {}
     if days:
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
         filters['timestamp'] = {'$gte': cutoff_date}
 
     documents = await get_collection_data(db, "activity_logs", filters)

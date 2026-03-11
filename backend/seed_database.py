@@ -10,7 +10,7 @@ Environment Variables:
     DATABASE_NAME: Database name (default: easylife_auth)
 """
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from motor.motor_asyncio import AsyncIOMotorClient
 from werkzeug.security import generate_password_hash
 import os
@@ -29,7 +29,7 @@ async def seed_database():
     password_hash = generate_password_hash("password123")
     print(f"Generated password hash: {password_hash[:20]}...")
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     # ============================================
     # PERMISSIONS

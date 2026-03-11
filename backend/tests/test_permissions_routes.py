@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timezone
 
 from easylifeauth.api.permissions_routes import router, create_pagination_meta
 from easylifeauth.api.dependencies import get_db
@@ -99,8 +99,8 @@ class TestPermissionsRoutes:
             "name": EXPECTED_TEST_PERMISSION,
             "module": "users",
             "description": "Test description",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
 
         mock_db.permissions.count_documents = AsyncMock(return_value=1)
@@ -189,8 +189,8 @@ class TestPermissionsRoutes:
             "name": EXPECTED_TEST_PERMISSION,
             "module": "users",
             "description": "Test description",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
 
         mock_db.permissions.find_one = AsyncMock(return_value=perm.copy())
@@ -208,8 +208,8 @@ class TestPermissionsRoutes:
             "name": EXPECTED_TEST_PERMISSION,
             "module": "users",
             "description": "Test description",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
 
         mock_db.permissions.find_one = AsyncMock(return_value=perm.copy())
@@ -266,8 +266,8 @@ class TestPermissionsRoutes:
             "name": EXPECTED_TEST_PERMISSION,
             "module": "users",
             "description": "Test",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
         updated = existing.copy()
         updated["name"] = "Updated Permission"
@@ -286,8 +286,8 @@ class TestPermissionsRoutes:
             "name": EXPECTED_TEST_PERMISSION,
             "module": "users",
             "description": "Test",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
         updated = existing.copy()
         updated["name"] = "Updated Permission"

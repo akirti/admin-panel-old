@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timezone
 
 from easylifeauth.api.distribution_list_routes import (
     router,
@@ -42,7 +42,7 @@ def make_dist_list_dict(**overrides):
         "type": "custom",
         "emails": [MOCK_EMAIL_USER1_TEST, MOCK_EMAIL_USER2_TEST],
         "is_active": True,
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
         "created_by": MOCK_EMAIL_ADMIN_TEST,
         "updated_at": None,
         "updated_by": None,

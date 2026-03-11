@@ -1,6 +1,6 @@
 """Tests for Roles API Routes"""
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -189,8 +189,8 @@ class TestRolesRoutes:
             "permissions": ["read", "write"],
             "status": "active",
             "priority": 1,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
         mock_db.roles.find_one.return_value = role_data
 
@@ -209,8 +209,8 @@ class TestRolesRoutes:
             "permissions": ["read", "write"],
             "status": "active",
             "priority": 1,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
         # When "admin" is passed, ObjectId("admin") throws exception in the route
         # so it falls through to find by roleId - we just need to return role_data
@@ -272,8 +272,8 @@ class TestRolesRoutes:
             "permissions": ["read"],
             "status": "active",
             "priority": 2,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
         mock_db.roles.find_one.return_value = existing_role
 
@@ -299,8 +299,8 @@ class TestRolesRoutes:
             "permissions": ["read"],
             "status": "active",
             "priority": 2,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         }
         mock_db.roles.find_one.return_value = existing_role
 

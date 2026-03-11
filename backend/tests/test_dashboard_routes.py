@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 from bson import ObjectId
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 from easylifeauth.api.dashboard_routes import router
 from easylifeauth.api.dependencies import get_db
@@ -98,7 +98,7 @@ class TestDashboardRoutes:
         mock_db.configurations.count_documents = AsyncMock(return_value=8)
         mock_db.permissions.count_documents = AsyncMock(return_value=12)
 
-        activity_log = {"_id": ObjectId(), "action": "login", "timestamp": datetime.utcnow()}
+        activity_log = {"_id": ObjectId(), "action": "login", "timestamp": datetime.now(timezone.utc)}
         mock_cursor = MagicMock()
         mock_cursor.sort = MagicMock(return_value=mock_cursor)
         mock_cursor.limit = MagicMock(return_value=mock_cursor)
@@ -144,7 +144,7 @@ class TestDashboardRoutes:
             "_id": ObjectId(),
             "email": MOCK_EMAIL_USER_TEST,
             "full_name": "Test User",
-            "last_login": datetime.utcnow()
+            "last_login": datetime.now(timezone.utc)
         }
 
         mock_cursor = MagicMock()
@@ -250,7 +250,7 @@ class TestDashboardRoutes:
         mock_cursor.limit = MagicMock(return_value=mock_cursor)
         mock_cursor.__aiter__ = lambda self: self
         mock_cursor.__anext__ = AsyncMock(side_effect=[
-            {"email": MOCK_EMAIL_USER_TEST, "full_name": "Test User", "created_at": datetime.utcnow()},
+            {"email": MOCK_EMAIL_USER_TEST, "full_name": "Test User", "created_at": datetime.now(timezone.utc)},
             StopAsyncIteration
         ])
 

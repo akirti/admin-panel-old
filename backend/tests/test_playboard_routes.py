@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import io
 
@@ -216,8 +216,8 @@ class TestPlayboardRoutes:
             "name": EXPECTED_TEST_PLAYBOARD,
             STR_SCENARIOKEY: STR_SCENARIO1,
             "status": "active",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
             "data": {}
         }
 
@@ -305,8 +305,8 @@ class TestPlayboardRoutes:
             "name": EXPECTED_TEST_PLAYBOARD,
             STR_SCENARIOKEY: STR_SCENARIO1,
             "status": "active",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
             "data": {"key": "value"}
         }
 
@@ -431,8 +431,8 @@ class TestPlayboardRoutes:
             "name": "Old Name",
             STR_SCENARIOKEY: STR_SCENARIO1,
             "status": "active",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
             "data": {}
         }
 
@@ -470,8 +470,8 @@ class TestPlayboardRoutes:
             "name": STR_TEST,
             STR_SCENARIOKEY: STR_SCENARIO1,
             "status": "active",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
             "data": {}
         }
 
@@ -491,8 +491,8 @@ class TestPlayboardRoutes:
             "name": STR_TEST,
             STR_SCENARIOKEY: STR_SCENARIO1,
             "status": "active",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
             "data": {}
         }
 
@@ -511,8 +511,8 @@ class TestPlayboardRoutes:
             "name": STR_TEST,
             STR_SCENARIOKEY: STR_SCENARIO1,
             "status": "active",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
             "data": {"old": "data"}
         }
 
@@ -551,8 +551,8 @@ class TestPlayboardRoutes:
             "name": STR_TEST,
             STR_SCENARIOKEY: STR_SCENARIO1,
             "status": "active",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
             "data": {}
         }
 
@@ -572,8 +572,8 @@ class TestPlayboardRoutes:
             "name": STR_TEST,
             STR_SCENARIOKEY: STR_SCENARIO1,
             "status": "active",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
             "data": {}
         }
 
@@ -810,8 +810,8 @@ class TestPlayboardRoutesRegularUser:
             "name": STR_TEST,
             STR_SCENARIOKEY: STR_SCENARIO1,
             "status": "active",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
             "data": {}
         }
 
