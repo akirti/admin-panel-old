@@ -73,7 +73,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         # Content Security Policy - relaxed for Swagger UI paths
         if self.enable_csp:
-            if request.url.path in self.SWAGGER_PATHS:
+            path = request.scope.get("path", "")
+            if path in self.SWAGGER_PATHS:
                 response.headers["Content-Security-Policy"] = self.SWAGGER_CSP
             else:
                 response.headers["Content-Security-Policy"] = self.csp_directives
