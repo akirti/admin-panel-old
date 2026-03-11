@@ -6,14 +6,20 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Required for CSRF cookies
+  withCredentials: true, // Send cookies when same-origin
 });
 
-// CSRF token management
+// In-memory token storage (not localStorage — XSS-safe)
 let csrfToken = null;
+let accessToken = null;
+
+// Public helpers so AuthContext can set/clear the bearer token
+export const setAccessToken = (token) => { accessToken = token; };
+export const clearAccessToken = () => { accessToken = null; csrfToken = null; };
 
 // Helper to get cookie value by name
 const getCookie = (name) => {
+  if (typeof document === 'undefined') return null;
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
   if (parts.length === 2) return parts.pop().split(';').shift();
@@ -22,26 +28,27 @@ const getCookie = (name) => {
 
 const fetchCSRFToken = async () => {
   try {
-    // First try to read directly from cookie (if not httpOnly)
     let token = getCookie('csrf_token');
     if (token) {
       csrfToken = token;
       return csrfToken;
     }
 
-    // Fallback: call the API endpoint to get/set the token
+    const headers = {};
+    if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+
     let response = await axios.get(`${API_BASE_URL}/auth/csrf-token`, {
-      withCredentials: true
+      withCredentials: true,
+      headers,
     });
 
-    // If no token returned, retry (first call sets cookie)
     if (!response.data.csrf_token) {
       response = await axios.get(`${API_BASE_URL}/auth/csrf-token`, {
-        withCredentials: true
+        withCredentials: true,
+        headers,
       });
     }
 
-    // Try reading from cookie again after API call sets it
     token = getCookie('csrf_token');
     if (token) {
       csrfToken = token;
@@ -55,20 +62,30 @@ const fetchCSRFToken = async () => {
   }
 };
 
-// Request interceptor for CSRF token (auth tokens are sent via httpOnly cookies)
+// Request interceptor — attaches bearer, CSRF, and proxy-routing headers
 api.interceptors.request.use(
   async (config) => {
-    // Auth tokens are sent automatically as httpOnly cookies (withCredentials: true)
+    // 1. Bearer token from in-memory store (works cross-origin via Apigee)
+    if (accessToken) {
+      config.headers['Authorization'] = `Bearer ${accessToken}`;
+    }
 
-    // Add CSRF token for state-changing requests
-    const needsCSRF = ['post', 'put', 'delete', 'patch'].includes(config.method?.toLowerCase());
-    if (needsCSRF) {
+    // 2. CSRF token for state-changing requests
+    if (['post', 'put', 'delete', 'patch'].includes(config.method?.toLowerCase())) {
       if (!csrfToken) {
         await fetchCSRFToken();
       }
       if (csrfToken) {
         config.headers['X-CSRF-Token'] = csrfToken;
       }
+    }
+
+    // 3. Proxy-routing headers for Apigee
+    //    (browsers forbid setting Host/Origin/Referer directly)
+    if (typeof window !== 'undefined') {
+      config.headers['X-Forwarded-Host'] = window.location.host;
+      config.headers['X-Origin'] = window.location.origin;
+      config.headers['X-Referer'] = window.location.href;
     }
 
     return config;
@@ -84,12 +101,17 @@ const isCanceledRequest = (error) =>
 const handleUnauthorized = async (originalRequest) => {
   originalRequest._retry = true;
   try {
-    await axios.post(`${API_BASE_URL}/auth/refresh`, {}, {
+    const refreshResponse = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, {
       withCredentials: true,
       timeout: 10000
     });
+    // Capture new tokens from refresh response
+    if (refreshResponse.data?.access_token) {
+      accessToken = refreshResponse.data.access_token;
+    }
     return api(originalRequest);
   } catch (refreshError) {
+    clearAccessToken();
     redirectToLoginIfNeeded();
     return Promise.reject(refreshError);
   }
@@ -131,9 +153,15 @@ const handleCSRFError = async (originalRequest) => {
   return null;
 };
 
-// Response interceptor for token refresh and CSRF errors
+// Response interceptor — capture tokens, handle refresh & CSRF errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Auto-capture access_token from login/register/refresh responses
+    if (response.data?.access_token) {
+      accessToken = response.data.access_token;
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
 

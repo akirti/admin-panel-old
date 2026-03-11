@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI } from '../services/api';
+import { authAPI, clearAccessToken } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -45,18 +45,15 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const response = await authAPI.login(email, password);
-    const { access_token: _access_token, refresh_token: _refresh_token, ...userData } = response.data;
-
-    // Tokens are now set as httpOnly cookies by the backend
+    // access_token is captured automatically by the response interceptor
+    const { access_token: _at, refresh_token: _rt, ...userData } = response.data;
     setUser(userData);
     return userData;
   };
 
   const register = async (data) => {
     const response = await authAPI.register(data);
-    const { access_token: _access_token2, refresh_token: _refresh_token2, ...userData } = response.data;
-
-    // Tokens are now set as httpOnly cookies by the backend
+    const { access_token: _at, refresh_token: _rt, ...userData } = response.data;
     setUser(userData);
     return userData;
   };
@@ -64,9 +61,10 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       await authAPI.logout();
-    } catch (error) {
+    } catch {
       // Ignore logout errors - cookies are cleared server-side
     } finally {
+      clearAccessToken();
       setUser(null);
     }
   };
