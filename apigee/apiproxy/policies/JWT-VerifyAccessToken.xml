@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<VerifyJWT async="false" continueOnError="false" enabled="true" name="JWT-VerifyAccessToken">
+<VerifyJWT async="false" continueOnError="true" enabled="true" name="JWT-VerifyAccessToken">
     <DisplayName>Verify JWT Access Token</DisplayName>
     <Properties/>
     <Algorithm>HS256</Algorithm>

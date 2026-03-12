@@ -1320,7 +1320,7 @@
     <DefaultFaultRule name="DefaultFaultRule">
         <Step>
             <Name>AM-DefaultErrorResponse</Name>
-            <Condition>request.verb != "OPTIONS"</Condition>
+            <Condition>request.verb != "OPTIONS" and !(fault.name Matches "*JWT*") and !(fault.name Matches "*jwt*") and !(fault.name = "QuotaViolation") and !(fault.name = "SpikeArrestViolation")</Condition>
         </Step>
         <AlwaysEnforce>true</AlwaysEnforce>
     </DefaultFaultRule>
