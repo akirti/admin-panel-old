@@ -1292,6 +1292,11 @@
     </PostFlow>
 
     <FaultRules>
+        <!-- CORS preflight: RaiseFault already set the 200 response — skip all error overrides -->
+        <FaultRule name="CORSPreflight">
+            <Condition>request.verb == "OPTIONS"</Condition>
+            <!-- No steps — let the RaiseFault 200 response pass through unchanged -->
+        </FaultRule>
         <FaultRule name="InvalidJWT">
             <Step>
                 <Name>AM-InvalidJWTResponse</Name>
@@ -1315,6 +1320,7 @@
     <DefaultFaultRule name="DefaultFaultRule">
         <Step>
             <Name>AM-DefaultErrorResponse</Name>
+            <Condition>request.verb != "OPTIONS"</Condition>
         </Step>
         <AlwaysEnforce>true</AlwaysEnforce>
     </DefaultFaultRule>

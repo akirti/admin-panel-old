@@ -17,6 +17,7 @@ var DEFAULT_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
     "http://localhost:8000",
+    "https://akirtidev.mydomain.com",
     "https://easylifeqa.localhost.net",
     "https://easylifestg.localhost.net"
 ];
