@@ -15,7 +15,10 @@ var allowedOriginsRaw = context.getVariable("kvm.cors.allowed_origins") || "";
 // Default allowed origins when KVM entry is not configured
 var DEFAULT_ORIGINS = [
     "http://localhost:3000",
-    "http://localhost:5173"
+    "http://localhost:5173",
+    "http://localhost:8000",
+    "https://easylifeqa.localhost.net",
+    "https://easylifestg.localhost.net"
 ];
 
 var allowedOrigins;

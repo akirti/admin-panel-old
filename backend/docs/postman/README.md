@@ -6,20 +6,46 @@
    - Open Postman > Import > Upload Files
    - Select `EasyLife-Admin-Panel.postman_collection.json`
 
-2. **Import the environment**:
+2. **Import an environment**:
    - Open Postman > Environments > Import
-   - Select `EasyLife-Local.postman_environment.json`
+   - Select one of:
+     - `EasyLife-Local.postman_environment.json` (local development)
+     - `EasyLife-QA-Apigee.postman_environment.json` (QA via Apigee)
+     - `EasyLife-STG-Apigee.postman_environment.json` (STG via Apigee)
    - Update `admin_email` and `admin_password` with valid credentials
 
 3. **Select the environment** from the dropdown in the top-right corner
 
 4. **Login first**: Run `Authentication > Login` - tokens are auto-saved
 
+## Two-Tier Routing
+
+The API uses two tiers of routing:
+
+| Tier | Endpoints | URL Pattern | Auth |
+|------|-----------|-------------|------|
+| Infrastructure | Health, docs, info | `{{base_url}}/health/*`, `{{base_url}}/docs` | None |
+| Business API | All other endpoints | `{{base_url}}{{api_prefix}}/*` | JWT Bearer |
+
+Health and documentation endpoints are at the **root** (no `/api/v1` prefix). All business endpoints are under `/api/v1`.
+
+## JWT Standard Claims
+
+Tokens now include RFC 7519 standard claims:
+
+| Claim | Value | Purpose |
+|-------|-------|---------|
+| `sub` | `access_token` / `refresh_token` | Subject (token type) |
+| `iss` | `easylife-auth` | Issuer |
+| `aud` | `easylife-api` | Audience |
+
+These are validated by both the backend and the Apigee proxy (`JWT-VerifyAccessToken` policy).
+
 ## Collection Structure
 
 | Folder | Endpoints | Auth Level | Description |
 |--------|-----------|------------|-------------|
-| Health | 5 | None | Health checks, liveness, readiness probes |
+| Health | 8 | None | Health checks, probes, docs, OpenAPI spec |
 | Authentication | 10 | Mixed | Login, register, password management |
 | Dashboard | 4 | group-admin+ | Statistics and analytics |
 | Users | 9 | group-admin+ | User CRUD, status toggle |
@@ -28,6 +54,8 @@
 | Permissions | 5 | super-admin | Permission CRUD |
 | Domains | 10 | super-admin | Domain and subdomain management |
 | Scenarios | 6 | Mixed | Scenario CRUD |
+| Domain Scenarios | 5 | Mixed | Domain-specific scenario management |
+| Playboards | 5 | Mixed | Playboard management |
 | Scenario Requests | 8 | Mixed | Ask Scenario workflow |
 | Feedback | 4 | Mixed | Feedback submission and admin view |
 | Customers | 3 | group-admin+ | Customer management |
@@ -39,18 +67,37 @@
 | Admin Management | 5 | group-admin+ | User role/group/domain assignment |
 | Configurations | 3 | super-admin | App configuration management |
 | API Configs | 3 | super-admin | External API configuration |
+| Prevail Proxy | 1 | JWT required | Scenario execution proxy |
 | Distribution Lists | 2 | super-admin | Email distribution lists |
+
+## Environments
+
+### Local Development
+- **base_url**: `http://localhost:8000`
+- Direct backend access (no Apigee proxy)
+- Health at `http://localhost:8000/health/*`
+- API at `http://localhost:8000/api/v1/*`
+
+### QA (Apigee)
+- **base_url**: `https://api.qa.localhost.net/easylife/v1`
+- All traffic routed through Apigee proxy
+- JWT verified by Apigee (`JWT-VerifyAccessToken` policy)
+- Rate limiting and quota enforced by Apigee
+
+### STG (Apigee)
+- **base_url**: `https://api.stage.localhost.net/easylife/v1`
+- Same as QA but against staging backend
 
 ## Authentication Flow
 
 ```
-POST /auth/login  -->  access_token + refresh_token (auto-saved)
-                            |
-                    Bearer {{access_token}} on all requests
-                            |
-                   Token expires (15min default)
-                            |
-POST /auth/refresh -->  new access_token (auto-saved)
+POST /api/v1/auth/login  -->  access_token + refresh_token (auto-saved)
+                                    |
+                            Bearer {{access_token}} on all requests
+                                    |
+                           Token expires (15min default)
+                                    |
+POST /api/v1/auth/refresh -->  new access_token (auto-saved)
 ```
 
 The collection uses **Bearer token** auth at the collection level. After login, all requests automatically include the token.
@@ -59,8 +106,8 @@ The collection uses **Bearer token** auth at the collection level. After login, 
 
 | Variable | Description | Auto-Set |
 |----------|-------------|----------|
-| `base_url` | Backend URL (default: http://localhost:8000) | No |
-| `api_prefix` | API version prefix (/api/v1) | No |
+| `base_url` | Backend or Apigee URL | No |
+| `api_prefix` | API version prefix (`/api/v1`) | No |
 | `access_token` | JWT access token | Yes (on login) |
 | `refresh_token` | JWT refresh token | Yes (on login) |
 | `admin_email` | Admin email for login | No |
@@ -91,6 +138,8 @@ Many requests include disabled query parameters (shown in gray in Postman). Enab
 ## Tips
 
 - **Run Login first** after importing - all other requests depend on the token
-- **Create entities in order**: Domains > Scenarios > Playboards (parent-child relationships)
+- **Create entities in order**: Domains > Scenarios > Domain Scenarios > Playboards (parent-child relationships)
 - **Test IDs auto-save**: Creating a user/role/group/domain saves its ID for subsequent requests
+- **Health endpoints work without auth** - use them to verify connectivity before login
 - Use the **Postman Runner** to execute entire folders sequentially for integration testing
+- When using Apigee environments, ensure your Apigee KVM has the correct CORS origins configured

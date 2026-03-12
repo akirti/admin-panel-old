@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "EasyLife Admin Panel API",
-    "description": "Complete API collection for EasyLife Admin Panel backend.\n\n## Authentication\nMost endpoints require JWT Bearer token. Use the `/auth/login` endpoint first, then the token is auto-set via collection scripts.\n\n## Environment Variables\n- `base_url`: API base URL (default: http://localhost:8000)\n- `api_prefix`: API version prefix (default: /api/v1)\n- `access_token`: JWT access token (auto-set on login)\n- `refresh_token`: JWT refresh token (auto-set on login)\n- `admin_email`: Admin email for login\n- `admin_password`: Admin password for login",
+    "description": "Complete API collection for EasyLife Admin Panel backend.\n\n## Routing Architecture\nThis API uses **two-tier routing**:\n- **Root-level endpoints**: Health checks (`/health/*`), app info (`/info`), and documentation (`/docs`, `/redoc`, `/openapi.json`) are served at the root path (no `/api/v1` prefix).\n- **Business API endpoints**: All other endpoints are under `/api/v1` prefix.\n\n## Authentication\nMost endpoints require JWT Bearer token. Use the `/auth/login` endpoint first, then the token is auto-set via collection scripts.\n\n### JWT Standard Claims\nTokens now include standard JWT claims:\n- `sub` (subject): User identifier\n- `iss` (issuer): `easylife-auth`\n- `aud` (audience): `easylife-api`\n\n## Apigee Proxy Support\nFor deployments behind an Apigee API gateway, set the `apigee_base_url` variable to the Apigee proxy base URL. The backend supports `root_path` configuration and CORS origin validation for proxy environments.\n\n## Environment Variables\n- `base_url`: API base URL (default: http://localhost:8000)\n- `api_prefix`: API version prefix (default: /api/v1)\n- `apigee_base_url`: Apigee proxy base URL (optional, for gateway deployments)\n- `access_token`: JWT access token (auto-set on login)\n- `refresh_token`: JWT refresh token (auto-set on login)\n- `admin_email`: Admin email for login\n- `admin_password`: Admin password for login",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -24,19 +24,21 @@
     { "key": "test_user_id", "value": "" },
     { "key": "test_role_id", "value": "" },
     { "key": "test_group_id", "value": "" },
-    { "key": "test_domain_id", "value": "" }
+    { "key": "test_domain_id", "value": "" },
+    { "key": "apigee_base_url", "value": "" }
   ],
   "item": [
     {
       "name": "Health",
-      "description": "Health check and info endpoints (no auth required)",
+      "description": "Health check, info, and documentation endpoints (no auth required). These are served at the root path, NOT under /api/v1.",
       "item": [
         {
           "name": "Health Check",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{base_url}}{{api_prefix}}/health", "host": ["{{base_url}}{{api_prefix}}"], "path": ["health"] },
+            "url": { "raw": "{{base_url}}/health", "host": ["{{base_url}}"], "path": ["health"] },
             "description": "Comprehensive health check including DB connectivity"
           },
           "response": []
@@ -44,9 +46,10 @@
         {
           "name": "Liveness Probe",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{base_url}}{{api_prefix}}/health/live", "host": ["{{base_url}}{{api_prefix}}"], "path": ["health", "live"] },
+            "url": { "raw": "{{base_url}}/health/live", "host": ["{{base_url}}"], "path": ["health", "live"] },
             "description": "Simple liveness probe - returns 200 if app is running"
           },
           "response": []
@@ -54,9 +57,10 @@
         {
           "name": "Readiness Probe",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{base_url}}{{api_prefix}}/health/ready", "host": ["{{base_url}}{{api_prefix}}"], "path": ["health", "ready"] },
+            "url": { "raw": "{{base_url}}/health/ready", "host": ["{{base_url}}"], "path": ["health", "ready"] },
             "description": "Readiness probe - checks DB connectivity"
           },
           "response": []
@@ -66,7 +70,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{base_url}}{{api_prefix}}/health/metrics", "host": ["{{base_url}}{{api_prefix}}"], "path": ["health", "metrics"] },
+            "url": { "raw": "{{base_url}}/health/metrics", "host": ["{{base_url}}"], "path": ["health", "metrics"] },
             "description": "Detailed metrics (admin only)"
           },
           "response": []
@@ -74,10 +78,44 @@
         {
           "name": "App Info",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{base_url}}{{api_prefix}}/info", "host": ["{{base_url}}{{api_prefix}}"], "path": ["info"] },
+            "url": { "raw": "{{base_url}}/info", "host": ["{{base_url}}"], "path": ["info"] },
             "description": "Application version and info"
+          },
+          "response": []
+        },
+        {
+          "name": "Swagger UI",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/docs", "host": ["{{base_url}}"], "path": ["docs"] },
+            "description": "Interactive API documentation (Swagger UI)"
+          },
+          "response": []
+        },
+        {
+          "name": "ReDoc",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/redoc", "host": ["{{base_url}}"], "path": ["redoc"] },
+            "description": "Alternative API documentation (ReDoc)"
+          },
+          "response": []
+        },
+        {
+          "name": "OpenAPI Spec",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/openapi.json", "host": ["{{base_url}}"], "path": ["openapi.json"] },
+            "description": "OpenAPI 3.0 specification (JSON)"
           },
           "response": []
         }
@@ -856,6 +894,138 @@
       ]
     },
     {
+      "name": "Domain Scenarios",
+      "description": "Domain-specific scenario management",
+      "item": [
+        {
+          "name": "List Domain Scenarios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/domain-scenarios?page=0&limit=25",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["domain-scenarios"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "limit", "value": "25" },
+                { "key": "domain", "value": "", "disabled": true },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Domain Scenario by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/domain-scenarios/{{test_domain_id}}", "host": ["{{base_url}}{{api_prefix}}"], "path": ["domain-scenarios", "{{test_domain_id}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Domain Scenario",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"key\": \"test-domain-scenario\",\n  \"name\": \"Test Domain Scenario\",\n  \"domain\": \"test-domain\",\n  \"description\": \"A test domain scenario\",\n  \"status\": \"A\"\n}"
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/domain-scenarios", "host": ["{{base_url}}{{api_prefix}}"], "path": ["domain-scenarios"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Domain Scenario",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated Domain Scenario\"\n}" },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/domain-scenarios/test-domain-scenario", "host": ["{{base_url}}{{api_prefix}}"], "path": ["domain-scenarios", "test-domain-scenario"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Domain Scenario",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/domain-scenarios/test-domain-scenario", "host": ["{{base_url}}{{api_prefix}}"], "path": ["domain-scenarios", "test-domain-scenario"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Playboards",
+      "description": "Playboard management",
+      "item": [
+        {
+          "name": "List Playboards",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{api_prefix}}/playboards?page=0&limit=25",
+              "host": ["{{base_url}}{{api_prefix}}"],
+              "path": ["playboards"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "limit", "value": "25" },
+                { "key": "domain", "value": "", "disabled": true },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Playboard by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/playboards/{{test_domain_id}}", "host": ["{{base_url}}{{api_prefix}}"], "path": ["playboards", "{{test_domain_id}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Playboard",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"key\": \"test-playboard\",\n  \"name\": \"Test Playboard\",\n  \"domain\": \"test-domain\",\n  \"scenario\": \"test-scenario\",\n  \"description\": \"A test playboard\",\n  \"type\": \"standard\",\n  \"status\": \"A\"\n}"
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/playboards", "host": ["{{base_url}}{{api_prefix}}"], "path": ["playboards"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Playboard",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated Playboard\"\n}" },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/playboards/test-playboard", "host": ["{{base_url}}{{api_prefix}}"], "path": ["playboards", "test-playboard"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Playboard",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}{{api_prefix}}/playboards/test-playboard", "host": ["{{base_url}}{{api_prefix}}"], "path": ["playboards", "test-playboard"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Scenario Requests",
       "description": "Ask Scenario request management",
       "item": [
@@ -1400,6 +1570,26 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": { "mode": "raw", "raw": "{\n  \"url\": \"https://httpbin.org/get\",\n  \"method\": \"GET\"\n}" },
             "url": { "raw": "{{base_url}}{{api_prefix}}/api-configs/test", "host": ["{{base_url}}{{api_prefix}}"], "path": ["api-configs", "test"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Prevail Proxy",
+      "description": "Prevail scenario execution proxy",
+      "item": [
+        {
+          "name": "Execute Scenario",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"parameters\": {}\n}"
+            },
+            "url": { "raw": "{{base_url}}{{api_prefix}}/prevail/test-scenario", "host": ["{{base_url}}{{api_prefix}}"], "path": ["prevail", "test-scenario"] },
+            "description": "Execute a scenario via Prevail proxy"
           },
           "response": []
         }
