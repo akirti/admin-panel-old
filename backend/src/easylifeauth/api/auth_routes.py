@@ -29,12 +29,16 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 def _set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
     """Set httpOnly auth cookies on the response."""
     secure = not _is_dev
+    # Use SameSite=None for cross-origin deployments (Apigee proxy on different domain).
+    # SameSite=Lax blocks cookies on cross-origin XHR/fetch requests.
+    # SameSite=None requires Secure=True (HTTPS), which is already set in non-dev envs.
+    samesite = "none" if secure else "lax"
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
         secure=secure,
-        samesite="lax",
+        samesite=samesite,
         max_age=900,  # 15 minutes
         path="/",
     )
@@ -43,7 +47,7 @@ def _set_auth_cookies(response: Response, access_token: str, refresh_token: str)
         value=refresh_token,
         httponly=True,
         secure=secure,
-        samesite="lax",
+        samesite=samesite,
         max_age=86400,  # 24 hours
         path=f"{API_BASE_ROUTE}/auth/refresh",
     )
