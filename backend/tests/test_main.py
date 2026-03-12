@@ -512,7 +512,8 @@ class TestBootstrap:
         mock_create_app.assert_called_once()
         kwargs = mock_create_app.call_args[1]
         expected_keys = {
-            "db_config", "token_secret", "smtp_config", "jira_config",
+            "db_config", "token_secret", "jwt_issuer", "jwt_audience",
+            "smtp_config", "jira_config",
             "file_storage_config", "gcs_config", "cors_origins",
             "app_name", "title", "description", "root_path",
         }

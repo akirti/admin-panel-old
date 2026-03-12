@@ -81,3 +81,5 @@ docs/apigee-proxy-gap-analysis.md
 #frontend/envConfig/
 i-wrote.md
 easylife_auth.playboards.json
+features/**
+/features/**

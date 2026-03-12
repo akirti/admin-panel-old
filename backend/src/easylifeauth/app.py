@@ -52,6 +52,8 @@ from .middleware.apigee_identity import ApigeeIdentityMiddleware
 def create_app(
     db_config: Optional[Dict[str, Any]] = None,
     token_secret: Optional[str] = None,
+    jwt_issuer: str = "easylife-auth",
+    jwt_audience: str = "easylife-api",
     smtp_config: Optional[Dict[str, Any]] = None,
     jira_config: Optional[Dict[str, Any]] = None,
     file_storage_config: Optional[Dict[str, Any]] = None,
@@ -101,7 +103,9 @@ def create_app(
             # Initialize token manager
             token_manager = TokenManager(
                 secret_key=token_secret,
-                db=db_manager
+                db=db_manager,
+                issuer=jwt_issuer,
+                audience=jwt_audience
             )
             
             # Initialize email service (optional)

@@ -47,7 +47,9 @@
         "email_from_name":"{environment.smtp.email_from_name}"
         },
         "app_secrets": {
-        "auth_secret_key": "{environment.app_secrets.auth_secret_key}"
+        "auth_secret_key": "{environment.app_secrets.auth_secret_key}",
+        "jwt_issuer": "{environment.app_secrets.jwt_issuer}",
+        "jwt_audience": "{environment.app_secrets.jwt_audience}"
         },
         "authentication": {
         "access_token_expiry_minutes": 30,

@@ -13,14 +13,18 @@ class TokenManager:
     """Async JWT Token Management"""
     
     def __init__(
-        self, 
-        secret_key: str, 
-        algorithm: str = 'HS256', 
-        db: Optional[DatabaseManager] = None
+        self,
+        secret_key: str,
+        algorithm: str = 'HS256',
+        db: Optional[DatabaseManager] = None,
+        issuer: str = "easylife-auth",
+        audience: str = "easylife-api"
     ):
         self.secret_key = secret_key
         self.algorithm = algorithm
         self.db = db
+        self.issuer = issuer
+        self.audience = audience
         
         timeout = int(os.environ.get("EASYLIFE.SPECS.AUTH.TOKEN_TIMEOUT", 15))
         self.access_token_expires = timedelta(minutes=timeout)
@@ -112,6 +116,9 @@ class TokenManager:
         
         # Access token payload
         access_payload = {
+            "sub": "access_token",
+            "iss": self.issuer,
+            "aud": self.audience,
             "user_id": user_id,
             "email": email,
             "roles": roles or [],
@@ -124,6 +131,9 @@ class TokenManager:
 
         # Refresh token payload
         refresh_payload = {
+            "sub": "refresh_token",
+            "iss": self.issuer,
+            "aud": self.audience,
             "user_id": user_id,
             "email": email,
             "roles": roles or [],
@@ -148,7 +158,10 @@ class TokenManager:
     async def verify_token(self, token: str, token_type: str = "access") -> Dict[str, Any]:
         """Verify and decode token"""
         try:
-            payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
+            payload = jwt.decode(
+                token, self.secret_key, algorithms=[self.algorithm],
+                audience=self.audience, issuer=self.issuer
+            )
             
             if payload.get("type") != token_type:
                 raise AuthError("Invalid token type", 401)
@@ -228,6 +241,9 @@ class TokenManager:
     def decode_token(self, token: str) -> Dict[str, Any]:
         """Decode token without verification (for getting user info)"""
         try:
-            return jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
+            return jwt.decode(
+                token, self.secret_key, algorithms=[self.algorithm],
+                audience=self.audience, issuer=self.issuer
+            )
         except jwt.InvalidTokenError:
             return {}

@@ -168,6 +168,14 @@ def bootstrap():
 
     db_config = build_db_config(config_loader)
     token_secret = config_loader.get_config_by_path("environment.app_secrets.auth_secret_key")
+    jwt_issuer = (
+        config_loader.get_config_by_path("environment.app_secrets.jwt_issuer")
+        or os.environ.get("JWT_ISSUER", "easylife-auth")
+    )
+    jwt_audience = (
+        config_loader.get_config_by_path("environment.app_secrets.jwt_audience")
+        or os.environ.get("JWT_AUDIENCE", "easylife-api")
+    )
     smtp_config = config_loader.get_config_by_path("environment.smtp")
     cors_origins = build_cors_origins(config_loader)
     file_storage_config, gcs_config = build_storage_config(config_loader)
@@ -187,6 +195,8 @@ def bootstrap():
     kw = {}
     kw["db_config"] = db_config
     kw["token_secret"] = token_secret
+    kw["jwt_issuer"] = jwt_issuer
+    kw["jwt_audience"] = jwt_audience
     kw["smtp_config"] = smtp_config
     kw["jira_config"] = jira_config
     kw["file_storage_config"] = file_storage_config

@@ -90,7 +90,7 @@ api.interceptors.request.use(
 
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => { throw error; }
 );
 
 // Helper: check if the error was from a canceled/aborted request
@@ -113,7 +113,7 @@ const handleUnauthorized = async (originalRequest) => {
   } catch (refreshError) {
     clearAccessToken();
     redirectToLoginIfNeeded();
-    return Promise.reject(refreshError);
+    throw refreshError;
   }
 };
 
@@ -166,7 +166,7 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     if (isCanceledRequest(error)) {
-      return Promise.reject(error);
+      throw error;
     }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -178,7 +178,7 @@ api.interceptors.response.use(
       if (retryResult) return retryResult;
     }
 
-    return Promise.reject(error);
+    throw error;
   }
 );
 

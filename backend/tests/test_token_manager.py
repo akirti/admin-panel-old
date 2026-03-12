@@ -10,6 +10,8 @@ from easylifeauth.errors.auth_error import AuthError
 from mock_data import MOCK_EMAIL
 OID_9011 = "507f1f77bcf86cd799439011"
 STR_HS256 = "HS256"
+TEST_ISSUER = "easylife-auth"
+TEST_AUDIENCE = "easylife-api"
 
 
 
@@ -31,7 +33,12 @@ class TestTokenManager:
     @pytest.fixture
     def token_manager(self, mock_db):
         """Create token manager with mocks"""
-        return TokenManager(secret_key="test_secret_key", db=mock_db)
+        return TokenManager(
+            secret_key="test_secret_key",
+            db=mock_db,
+            issuer=TEST_ISSUER,
+            audience=TEST_AUDIENCE
+        )
 
     @pytest.mark.asyncio
     async def test_generate_tokens_success(self, token_manager, mock_db):
@@ -61,10 +68,39 @@ class TestTokenManager:
         assert "refresh_token" in result
 
     @pytest.mark.asyncio
+    async def test_generate_tokens_include_standard_claims(self, token_manager, mock_db):
+        """Test that generated tokens include sub, iss, aud standard claims"""
+        result = await token_manager.generate_tokens(
+            user_id=OID_9011,
+            email=MOCK_EMAIL,
+            roles=["user"]
+        )
+
+        # Decode without verification to inspect claims
+        access_payload = jwt.decode(
+            result["access_token"], "test_secret_key",
+            algorithms=[STR_HS256], audience=TEST_AUDIENCE, issuer=TEST_ISSUER
+        )
+        assert access_payload["sub"] == "access_token"
+        assert access_payload["iss"] == TEST_ISSUER
+        assert access_payload["aud"] == TEST_AUDIENCE
+
+        refresh_payload = jwt.decode(
+            result["refresh_token"], "test_secret_key",
+            algorithms=[STR_HS256], audience=TEST_AUDIENCE, issuer=TEST_ISSUER
+        )
+        assert refresh_payload["sub"] == "refresh_token"
+        assert refresh_payload["iss"] == TEST_ISSUER
+        assert refresh_payload["aud"] == TEST_AUDIENCE
+
+    @pytest.mark.asyncio
     async def test_verify_token_success(self, token_manager, mock_db):
         """Test verifying valid token"""
         now = datetime.now(timezone.utc)
         payload = {
+            "sub": "access_token",
+            "iss": TEST_ISSUER,
+            "aud": TEST_AUDIENCE,
             "user_id": OID_9011,
             "email": MOCK_EMAIL,
             "roles": ["user"],
@@ -93,6 +129,9 @@ class TestTokenManager:
         """Test verifying expired token"""
         now = datetime.now(timezone.utc)
         payload = {
+            "sub": "access_token",
+            "iss": TEST_ISSUER,
+            "aud": TEST_AUDIENCE,
             "user_id": OID_9011,
             "email": MOCK_EMAIL,
             "roles": ["user"],
@@ -118,6 +157,9 @@ class TestTokenManager:
         """Test verifying token with wrong type"""
         now = datetime.now(timezone.utc)
         payload = {
+            "sub": "refresh_token",
+            "iss": TEST_ISSUER,
+            "aud": TEST_AUDIENCE,
             "user_id": OID_9011,
             "email": MOCK_EMAIL,
             "roles": ["user"],
@@ -132,10 +174,55 @@ class TestTokenManager:
         assert exc_info.value.status_code == 401
 
     @pytest.mark.asyncio
+    async def test_verify_token_wrong_audience(self, token_manager, mock_db):
+        """Test verifying token with wrong audience is rejected"""
+        now = datetime.now(timezone.utc)
+        payload = {
+            "sub": "access_token",
+            "iss": TEST_ISSUER,
+            "aud": "wrong-audience",
+            "user_id": OID_9011,
+            "email": MOCK_EMAIL,
+            "roles": ["user"],
+            "iat": now,
+            "exp": now + timedelta(minutes=15),
+            "type": "access"
+        }
+        token = jwt.encode(payload, "test_secret_key", algorithm=STR_HS256)
+
+        with pytest.raises(AuthError) as exc_info:
+            await token_manager.verify_token(token, token_type="access")
+        assert exc_info.value.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_verify_token_wrong_issuer(self, token_manager, mock_db):
+        """Test verifying token with wrong issuer is rejected"""
+        now = datetime.now(timezone.utc)
+        payload = {
+            "sub": "access_token",
+            "iss": "wrong-issuer",
+            "aud": TEST_AUDIENCE,
+            "user_id": OID_9011,
+            "email": MOCK_EMAIL,
+            "roles": ["user"],
+            "iat": now,
+            "exp": now + timedelta(minutes=15),
+            "type": "access"
+        }
+        token = jwt.encode(payload, "test_secret_key", algorithm=STR_HS256)
+
+        with pytest.raises(AuthError) as exc_info:
+            await token_manager.verify_token(token, token_type="access")
+        assert exc_info.value.status_code == 401
+
+    @pytest.mark.asyncio
     async def test_verify_token_backend_validation_failed(self, token_manager, mock_db):
         """Test verifying token when backend validation fails"""
         now = datetime.now(timezone.utc)
         payload = {
+            "sub": "access_token",
+            "iss": TEST_ISSUER,
+            "aud": TEST_AUDIENCE,
             "user_id": OID_9011,
             "email": MOCK_EMAIL,
             "roles": ["user"],
@@ -314,6 +401,9 @@ class TestTokenManager:
         """Test decoding valid token without verification"""
         now = datetime.now(timezone.utc)
         payload = {
+            "sub": "access_token",
+            "iss": TEST_ISSUER,
+            "aud": TEST_AUDIENCE,
             "user_id": OID_9011,
             "email": MOCK_EMAIL,
             "roles": ["user"],
@@ -335,6 +425,9 @@ class TestTokenManager:
         """Test decoding token with wrong secret returns empty dict"""
         now = datetime.now(timezone.utc)
         payload = {
+            "sub": "access_token",
+            "iss": TEST_ISSUER,
+            "aud": TEST_AUDIENCE,
             "user_id": OID_9011,
             "email": MOCK_EMAIL,
             "type": "access"

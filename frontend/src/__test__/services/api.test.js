@@ -1906,10 +1906,10 @@ describe('request interceptor - CSRF', () => {
     expect(result.headers['X-CSRF-Token']).toBeUndefined();
   });
 
-  it('request interceptor rejects on error', async () => {
+  it('request interceptor rejects on error', () => {
     const interceptors = getInterceptors();
     const err = new Error('request fail');
-    await expect(interceptors.requestRejected(err)).rejects.toThrow('request fail');
+    expect(() => interceptors.requestRejected(err)).toThrow('request fail');
   });
 });
 
