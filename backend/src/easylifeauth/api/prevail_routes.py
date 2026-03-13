@@ -4,12 +4,10 @@ Proxies requests from the Explorer playboard to an external Prevail service.
 The Prevail service URL, auth, and SSL are configured via the api_configs collection
 with key="prevail".
 """
-import time
 import logging
-from typing import Any, Dict
+import os
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from fastapi.responses import JSONResponse
 
 from easylifeauth.api.dependencies import get_db, get_gcs_service
 from easylifeauth.security.access_control import get_current_user, CurrentUser
@@ -71,13 +69,10 @@ async def execute_prevail_query(
             detail="Invalid JSON payload.",
         )
 
-    # Extract the logged-in user's token (cookie first, then Authorization header)
-    token = request.cookies.get("access_token", "").strip()
-    if not token:
-        auth_header = request.headers.get("authorization", "")
-        token = auth_header.replace("Bearer ", "", 1).strip() if auth_header.startswith("Bearer ") else auth_header.strip()
-
-    # Use the api_config_service test_api infrastructure to make the call
+    # Use the api_config_service test_api infrastructure to make the call.
+    # Auth uses the api_config's own credentials (service-to-service),
+    # NOT the user's JWT — forwarding it caused 401 from Prevail service
+    # due to aud/iss claim mismatch. See features/issue2/prevail-401-issuefix.md.
     call_config = {
         **config,
         "endpoint": target_url,
@@ -87,10 +82,28 @@ async def execute_prevail_query(
         "timeout": config.get("timeout", 120),
     }
 
-    # Only override auth with user's token if a real token exists
-    if token:
-        call_config["auth_type"] = "bearer"
-        call_config["auth_config"] = {"token": token}
+    # Pass authenticated user identity as custom headers so the Prevail
+    # service knows who initiated the request without re-verifying the JWT.
+    # Prevail's access_control.py accepts these headers for service-to-service auth.
+    user_headers = {
+        "X-User-Id": current_user.user_id,
+        "X-User-Email": current_user.email,
+        "X-User-Roles": ",".join(current_user.roles),
+    }
+
+    # If a shared service secret is configured, include it so Prevail can
+    # verify this is a trusted internal caller (not a spoofed request).
+    service_secret = os.environ.get("INTERNAL_SERVICE_SECRET")
+    if service_secret:
+        user_headers["X-Service-Secret"] = service_secret
+
+    existing_headers = call_config.get("headers") or {}
+    call_config["headers"] = {**existing_headers, **user_headers}
+
+    # Set auth_type to "none" — Prevail will authenticate via X-User-* headers,
+    # not via a bearer token. The api_config's auth_type/auth_config are ignored.
+    call_config["auth_type"] = "none"
+    call_config["auth_config"] = {}
 
     result = await service.test_api(call_config)
 

@@ -4,22 +4,31 @@ Tests 100 concurrent users against FastAPI backend endpoints
 
 Endpoints covered:
 - Health checks (live, ready, metrics)
-- Authentication (login, refresh, profile, logout, CSRF, password change)
-- Users, Roles, Groups, Permissions (list, count, detail, types)
-- Domains (list, all, count, types, admin/all)
-- Scenarios, Domain Scenarios, Playboards (list, count, detail)
-- Scenario Requests (list, lookups: statuses, types, domains, defaults)
-- Customers (list, count, filters)
-- Configurations (list, count, types, GCS status)
-- Feedback (list, stats, admin list, create, public)
-- Activity Logs (list, stats, actions, entity-types)
-- Error Logs (list, stats, levels, types, archives, current-file)
-- API Configs (list, count, tags, GCS status)
-- Distribution Lists (list, types)
-- Export (users, roles, groups, domains CSV/JSON)
+- Authentication (login, refresh, profile, logout, CSRF, password change, register)
+- Users (list, count, detail, assigned-customers, customer-tags, toggle-status)
+- Roles (list, count, detail, users-with-role, toggle-status)
+- Groups (list, count, detail, types, users-in-group, toggle-status)
+- Permissions (list, count, detail, modules, roles, groups)
+- Domains (list, all, count, types, admin/all, detail, scenarios, toggle-status)
+- Scenarios (list, all, by-domain, detail)
+- Domain Scenarios (list, count, detail, playboards, toggle-status)
+- Playboards (list, count, detail, download, toggle-status)
+- Scenario Requests (list, detail, lookups: statuses/types/domains/defaults/users,
+    comments, workflow, status updates, file upload)
+- Customers (list, count, filters, detail, users, assign/remove-users, toggle-status)
+- Configurations (list, count, types, GCS status, detail, versions, download)
+- Feedback (list, stats, admin list, create, public, detail)
+- Activity Logs (list, stats, actions, entity-types, entity-history, user-activities)
+- Error Logs (list, stats, levels, types, archives, current-file, force-archive)
+- API Configs (list, count, tags, GCS status, detail, by-key, test, toggle-status)
+- Distribution Lists (list, types, detail, by-key, by-type, emails)
+- Export (users, roles, groups, domains, scenarios, activity-logs CSV/JSON)
 - Dashboard (stats, summary, analytics, recent-logins)
-- Admin Management (user list)
-- Jira (status, projects, boards, issue-types, statuses, assignable-users)
+- Admin Management (user list, user detail, status/roles/groups/domains updates)
+- Jira (status, projects, boards, issue-types, statuses, assignable-users,
+    tasks/my, tasks/by-request, create, transition, sync)
+- Bulk Upload (templates, GCS status, GCS list)
+- Prevail Proxy (scenario proxy)
 
 Run with:
     locust -f locustfile.py --host=http://localhost:8000
@@ -557,6 +566,17 @@ class AdminPanelUser(HttpUser):
             name="/api/v1/ask_scenarios/lookup/defaults"
         )
 
+    @task(1)
+    def get_request_users_lookup(self):
+        """Search users for scenario request autocomplete."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/ask_scenarios/lookup/users?q=test",
+            headers=self._get_auth_headers(),
+            name="/api/v1/ask_scenarios/lookup/users"
+        )
+
     # ==================== Customers Endpoints ====================
 
     @task(3)
@@ -719,6 +739,18 @@ class AdminPanelUser(HttpUser):
             "/api/v1/activity-logs/entity-types",
             headers=self._get_auth_headers(),
             name="/api/v1/activity-logs/entity-types"
+        )
+
+    @task(1)
+    def get_activity_by_user(self):
+        """Get activity logs for current user."""
+        if not self._is_authenticated() or not self.current_user:
+            return
+        email = self.current_user["email"]
+        self.client.get(
+            f"/api/v1/activity-logs/user/{email}",
+            headers=self._get_auth_headers(),
+            name="/api/v1/activity-logs/user/[email]"
         )
 
     # ==================== Error Logs Endpoints ====================
@@ -885,11 +917,23 @@ class AdminPanelUser(HttpUser):
         """Export data as JSON (random entity type)."""
         if not self._is_authenticated():
             return
-        entity = random.choice(["users", "roles", "groups", "domains"])
+        entity = random.choice(["users", "roles", "groups", "domains", "scenarios", "activity-logs"])
         self.client.get(
             f"/api/v1/export/{entity}/json",
             headers=self._get_auth_headers(),
             name="/api/v1/export/[entity]/json"
+        )
+
+    @task(1)
+    def export_data_csv(self):
+        """Export data as CSV (random entity type)."""
+        if not self._is_authenticated():
+            return
+        entity = random.choice(["users", "roles", "groups", "domains", "scenarios", "activity-logs"])
+        self.client.get(
+            f"/api/v1/export/{entity}/csv",
+            headers=self._get_auth_headers(),
+            name="/api/v1/export/[entity]/csv"
         )
 
     # ==================== Dashboard Endpoints ====================
@@ -1040,6 +1084,63 @@ class AdminPanelUser(HttpUser):
             headers=self._get_auth_headers(),
             name="/api/v1/jira/assignable-users"
         )
+
+    # ==================== Bulk Upload Endpoints ====================
+
+    @task(1)
+    def bulk_gcs_status(self):
+        """Check GCS configuration status for bulk uploads."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/bulk/gcs/status",
+            headers=self._get_auth_headers(),
+            name="/api/v1/bulk/gcs/status"
+        )
+
+    @task(1)
+    def bulk_gcs_list(self):
+        """List GCS files for bulk upload."""
+        if not self._is_authenticated():
+            return
+        self.client.get(
+            "/api/v1/bulk/gcs/list",
+            headers=self._get_auth_headers(),
+            name="/api/v1/bulk/gcs/list"
+        )
+
+    @task(1)
+    def bulk_download_template(self):
+        """Download bulk upload template."""
+        if not self._is_authenticated():
+            return
+        entity = random.choice(["users", "roles", "groups", "domains"])
+        self.client.get(
+            f"/api/v1/bulk/template/{entity}",
+            headers=self._get_auth_headers(),
+            name="/api/v1/bulk/template/[entity]"
+        )
+
+    # ==================== Prevail Proxy Endpoint ====================
+
+    @task(1)
+    def prevail_proxy(self):
+        """Proxy request to Prevail service."""
+        if not self._is_authenticated():
+            return
+        scenario_key = "test_scenario"
+        with self.client.post(
+            f"/api/v1/prevail/{scenario_key}",
+            json={},
+            headers=self._get_auth_headers(),
+            catch_response=True,
+            name="/api/v1/prevail/[scenario_key]"
+        ) as response:
+            # Accept any response since Prevail may not be configured
+            if response.status_code in (200, 404, 502, 503):
+                response.success()
+            else:
+                response.failure(f"Prevail proxy failed: {response.status_code}")
 
 
 class PublicEndpointUser(HttpUser):
@@ -1249,6 +1350,67 @@ class WriteOperationsUser(HttpUser):
             headers=self._get_auth_headers(),
             name="/api/v1/error-logs/force-archive [POST]"
         )
+
+    @task(1)
+    def create_scenario_request(self):
+        """Create a scenario request."""
+        if not self._is_authenticated():
+            return
+        request_data = {
+            "title": f"Load Test Request {random.randint(1, 10000)}",
+            "description": "Auto-generated scenario request from load test.",
+            "request_type": "new_scenario",
+        }
+        with self.client.post(
+            "/api/v1/ask_scenarios",
+            json=request_data,
+            headers=self._get_auth_headers(),
+            catch_response=True,
+            name="/api/v1/ask_scenarios [POST]"
+        ) as response:
+            if response.status_code in (200, 201, 422):
+                # 422 is expected if required fields differ
+                response.success()
+            else:
+                response.failure(f"Create scenario request failed: {response.status_code}")
+
+    @task(1)
+    def test_api_config(self):
+        """Test an API config connection."""
+        if not self._is_authenticated():
+            return
+        test_data = {
+            "url": "https://httpbin.org/get",
+            "method": "GET",
+        }
+        with self.client.post(
+            "/api/v1/api-configs/test",
+            json=test_data,
+            headers=self._get_auth_headers(),
+            catch_response=True,
+            name="/api/v1/api-configs/test [POST]"
+        ) as response:
+            if response.status_code in (200, 400, 422):
+                response.success()
+            else:
+                response.failure(f"API config test failed: {response.status_code}")
+
+    @task(1)
+    def jira_sync_request(self):
+        """Sync a scenario request to Jira (gracefully handles missing request)."""
+        if not self._is_authenticated():
+            return
+        # Use a dummy request_id - will likely 404 but tests the route
+        with self.client.post(
+            "/api/v1/jira/sync/request/000000000000000000000000",
+            headers=self._get_auth_headers(),
+            catch_response=True,
+            name="/api/v1/jira/sync/request/[id] [POST]"
+        ) as response:
+            if response.status_code in (200, 404, 400, 503):
+                response.success()
+            else:
+                response.failure(f"Jira sync failed: {response.status_code}")
 
 
 # Event hooks for custom reporting

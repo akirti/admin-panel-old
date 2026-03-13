@@ -189,13 +189,13 @@ class TestExecutePrevailQuery:
         assert response.json() == "plain text result"
 
     # ------------------------------------------------------------------
-    # Cookie forwarding
+    # Service-to-service auth (api_config credentials, NOT user JWT)
     # ------------------------------------------------------------------
 
-    def test_cookie_token_is_forwarded_to_external_service(
+    def test_auth_type_set_to_none_for_header_based_auth(
         self, client, mock_service, active_prevail_config
     ):
-        """Test that the access_token cookie is extracted and used as bearer auth"""
+        """Test that auth_type is set to 'none' since Prevail uses X-User-* headers"""
         mock_service.get_config_by_key.return_value = active_prevail_config
         mock_service.test_api.return_value = {
             "success": True,
@@ -211,13 +211,14 @@ class TestExecutePrevailQuery:
         )
 
         call_config = mock_service.test_api.call_args[0][0]
-        assert call_config["auth_type"] == "bearer"
-        assert call_config["auth_config"] == {"token": "cookie-jwt-token-abc"}
+        # auth_type is "none" — Prevail authenticates via X-User-* headers
+        assert call_config["auth_type"] == "none"
+        assert call_config["auth_config"] == {}
 
-    def test_authorization_header_token_is_forwarded_when_no_cookie(
+    def test_user_jwt_header_is_not_forwarded_to_prevail(
         self, client, mock_service, active_prevail_config
     ):
-        """Test that the Authorization header token is used when no cookie is present"""
+        """Test that the Authorization header JWT is NOT forwarded to the Prevail service"""
         mock_service.get_config_by_key.return_value = active_prevail_config
         mock_service.test_api.return_value = {
             "success": True,
@@ -233,13 +234,14 @@ class TestExecutePrevailQuery:
         )
 
         call_config = mock_service.test_api.call_args[0][0]
-        assert call_config["auth_type"] == "bearer"
-        assert call_config["auth_config"] == {"token": "header-jwt-token-xyz"}
+        # auth_type is "none", user JWT is NOT forwarded
+        assert call_config["auth_type"] == "none"
+        assert call_config["auth_config"] == {}
 
-    def test_cookie_takes_precedence_over_authorization_header(
+    def test_user_identity_headers_are_added(
         self, client, mock_service, active_prevail_config
     ):
-        """Test that the cookie token takes precedence over the Authorization header"""
+        """Test that X-User-Id, X-User-Email, X-User-Roles headers are added"""
         mock_service.get_config_by_key.return_value = active_prevail_config
         mock_service.test_api.return_value = {
             "success": True,
@@ -249,20 +251,60 @@ class TestExecutePrevailQuery:
         }
 
         client.post(
-            "/prevail/scenario-both",
+            "/prevail/scenario-identity",
             json={"q": "test"},
-            cookies={"access_token": "cookie-token"},
-            headers={STR_AUTHORIZATION: "Bearer header-token"},
         )
 
         call_config = mock_service.test_api.call_args[0][0]
-        assert call_config["auth_type"] == "bearer"
-        assert call_config["auth_config"] == {"token": "cookie-token"}
+        assert call_config["headers"]["X-User-Id"] == "user123"
+        assert call_config["headers"]["X-User-Email"] == "testuser@example.com"
+        assert call_config["headers"]["X-User-Roles"] == "user"
 
-    def test_no_token_preserves_original_config_auth(
+    @patch.dict("os.environ", {"INTERNAL_SERVICE_SECRET": "shared-secret-abc"})
+    def test_service_secret_header_added_when_env_var_set(
         self, client, mock_service, active_prevail_config
     ):
-        """Test that without a user token, the original config auth is preserved"""
+        """Test that X-Service-Secret header is added when INTERNAL_SERVICE_SECRET is set"""
+        mock_service.get_config_by_key.return_value = active_prevail_config
+        mock_service.test_api.return_value = {
+            "success": True,
+            "status_code": 200,
+            "response_body": {"ok": True},
+            "error": None,
+        }
+
+        client.post(
+            "/prevail/scenario-secret",
+            json={"q": "test"},
+        )
+
+        call_config = mock_service.test_api.call_args[0][0]
+        assert call_config["headers"]["X-Service-Secret"] == "shared-secret-abc"
+
+    def test_no_service_secret_header_when_env_var_not_set(
+        self, client, mock_service, active_prevail_config
+    ):
+        """Test that X-Service-Secret header is NOT added when env var is not set"""
+        mock_service.get_config_by_key.return_value = active_prevail_config
+        mock_service.test_api.return_value = {
+            "success": True,
+            "status_code": 200,
+            "response_body": {"ok": True},
+            "error": None,
+        }
+
+        client.post(
+            "/prevail/scenario-nosecret",
+            json={"q": "test"},
+        )
+
+        call_config = mock_service.test_api.call_args[0][0]
+        assert "X-Service-Secret" not in call_config["headers"]
+
+    def test_auth_type_always_overridden_to_none(
+        self, client, mock_service, active_prevail_config
+    ):
+        """Test that auth_type is always set to 'none' regardless of api_config auth"""
         active_prevail_config["auth_type"] = "api_key"
         active_prevail_config["auth_config"] = {
             "key_name": "X-API-Key",
@@ -276,16 +318,12 @@ class TestExecutePrevailQuery:
             "error": None,
         }
 
-        # No cookie, no Authorization header
         client.post("/prevail/scenario-noauth", json={"q": "test"})
 
         call_config = mock_service.test_api.call_args[0][0]
-        # Original auth_type should remain since no user token was provided
-        assert call_config["auth_type"] == "api_key"
-        assert call_config["auth_config"] == {
-            "key_name": "X-API-Key",
-            "key_value": "service-key-123",
-        }
+        # auth_type is always "none" — Prevail uses X-User-* headers for auth
+        assert call_config["auth_type"] == "none"
+        assert call_config["auth_config"] == {}
 
     # ------------------------------------------------------------------
     # Config not found / inactive / no endpoint
@@ -795,12 +833,10 @@ class TestExecutePrevailQueryEdgeCases:
         call_config = mock_service.test_api.call_args[0][0]
         assert call_config["body"] == large_payload
 
-    def test_whitespace_only_cookie_is_treated_as_no_token(
+    def test_whitespace_only_cookie_does_not_affect_auth(
         self, client, mock_service, active_prevail_config
     ):
-        """Test that a whitespace-only cookie is treated as no user token"""
-        active_prevail_config["auth_type"] = "none"
-        active_prevail_config["auth_config"] = {}
+        """Test that a whitespace-only cookie doesn't affect the auth setup"""
         mock_service.get_config_by_key.return_value = active_prevail_config
         mock_service.test_api.return_value = {
             "success": True,
@@ -816,8 +852,7 @@ class TestExecutePrevailQueryEdgeCases:
         )
 
         call_config = mock_service.test_api.call_args[0][0]
-        # Whitespace is stripped, leaving empty string which is falsy,
-        # so the original config auth should be preserved
+        # auth_type is always "none" — user identity via X-User-* headers
         assert call_config["auth_type"] == "none"
 
     def test_nested_json_payload_is_forwarded(
