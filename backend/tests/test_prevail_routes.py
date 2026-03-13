@@ -7,13 +7,32 @@ from fastapi import FastAPI
 from easylifeauth.api.prevail_routes import router, get_api_config_service
 from easylifeauth.api.dependencies import get_db, get_gcs_service
 from easylifeauth.security.access_control import get_current_user
-from mock_data import MOCK_URL_PREVAIL, MOCK_URL_PREVAIL_API, MOCK_URL_PREVAIL_SCENARIO, MOCK_URL_PREVAIL_SCENARIO_X, MOCK_URL_PREVAIL_TRAILING, MOCK_URL_PROXY_SHORT
+from mock_data import (
+    MOCK_URL_PREVAIL, MOCK_URL_PREVAIL_API, MOCK_URL_PREVAIL_SCENARIO,
+    MOCK_URL_PREVAIL_SCENARIO_X, MOCK_URL_PREVAIL_TRAILING, MOCK_URL_PROXY_SHORT,
+    MOCK_PREVAIL_USER_ID, MOCK_PREVAIL_USER_EMAIL, MOCK_PREVAIL_EDGE_USER_ID,
+    MOCK_PREVAIL_EDGE_USER_EMAIL, MOCK_PREVAIL_SERVICE_TOKEN,
+    MOCK_PREVAIL_SERVICE_SECRET, MOCK_PREVAIL_CONFIG_ID, MOCK_PREVAIL_CONFIG_EDGE_ID,
+    STR_DOMAIN1,
+)
 
 PATH_PREVAIL_SCENARIO_X = "/prevail/scenario-x"
 
 EXPECTED_PREVAIL_SERVICE_ERROR = "Prevail service error"
 METHOD_POST = "POST"
 STR_AUTHORIZATION = "Authorization"
+STR_PREVAIL = "prevail"
+STR_PREVAIL_API = "Prevail API"
+STR_ACTIVE = "active"
+STR_BEARER = "bearer"
+STR_NONE = "none"
+ROLE_USER = "user"
+STR_OK = "ok"
+STR_SUCCESS = "success"
+STR_STATUS_CODE = "status_code"
+STR_RESPONSE_BODY = "response_body"
+STR_ERROR = "error"
+BODY_Q_TEST = {"q": "test"}
 
 
 
@@ -44,11 +63,11 @@ class TestExecutePrevailQuery:
     def mock_current_user(self):
         """Create mock authenticated user"""
         user = MagicMock()
-        user.user_id = "user123"
-        user.email = "testuser@example.com"
-        user.roles = ["user"]
+        user.user_id = MOCK_PREVAIL_USER_ID
+        user.email = MOCK_PREVAIL_USER_EMAIL
+        user.roles = [ROLE_USER]
         user.groups = []
-        user.domains = ["domain1"]
+        user.domains = [STR_DOMAIN1]
         return user
 
     @pytest.fixture
@@ -63,14 +82,14 @@ class TestExecutePrevailQuery:
     def active_prevail_config(self):
         """Return a standard active prevail configuration"""
         return {
-            "_id": "config_abc123",
-            "key": "prevail",
-            "name": "Prevail API",
+            "_id": MOCK_PREVAIL_CONFIG_ID,
+            "key": STR_PREVAIL,
+            "name": STR_PREVAIL_API,
             "endpoint": MOCK_URL_PREVAIL,
-            "status": "active",
+            "status": STR_ACTIVE,
             "method": METHOD_POST,
-            "auth_type": "bearer",
-            "auth_config": {"token": "service-token-xyz"},
+            "auth_type": STR_BEARER,
+            "auth_config": {"token": MOCK_PREVAIL_SERVICE_TOKEN},
             "timeout": 120,
             "ssl_verify": True,
         }
@@ -151,7 +170,7 @@ class TestExecutePrevailQuery:
             "error": None,
         }
 
-        client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
+        client.post(PATH_PREVAIL_SCENARIO_X, json=BODY_Q_TEST)
 
         call_config = mock_service.test_api.call_args[0][0]
         assert call_config["endpoint"] == MOCK_URL_PREVAIL_SCENARIO_X
@@ -206,13 +225,13 @@ class TestExecutePrevailQuery:
 
         client.post(
             "/prevail/scenario-cookie",
-            json={"q": "test"},
+            json=BODY_Q_TEST,
             cookies={"access_token": "cookie-jwt-token-abc"},
         )
 
         call_config = mock_service.test_api.call_args[0][0]
         # auth_type is "none" — Prevail authenticates via X-User-* headers
-        assert call_config["auth_type"] == "none"
+        assert call_config["auth_type"] == STR_NONE
         assert call_config["auth_config"] == {}
 
     def test_user_jwt_header_is_not_forwarded_to_prevail(
@@ -229,13 +248,13 @@ class TestExecutePrevailQuery:
 
         client.post(
             "/prevail/scenario-header",
-            json={"q": "test"},
+            json=BODY_Q_TEST,
             headers={STR_AUTHORIZATION: "Bearer header-jwt-token-xyz"},
         )
 
         call_config = mock_service.test_api.call_args[0][0]
         # auth_type is "none", user JWT is NOT forwarded
-        assert call_config["auth_type"] == "none"
+        assert call_config["auth_type"] == STR_NONE
         assert call_config["auth_config"] == {}
 
     def test_user_identity_headers_are_added(
@@ -252,15 +271,15 @@ class TestExecutePrevailQuery:
 
         client.post(
             "/prevail/scenario-identity",
-            json={"q": "test"},
+            json=BODY_Q_TEST,
         )
 
         call_config = mock_service.test_api.call_args[0][0]
-        assert call_config["headers"]["X-User-Id"] == "user123"
-        assert call_config["headers"]["X-User-Email"] == "testuser@example.com"
-        assert call_config["headers"]["X-User-Roles"] == "user"
+        assert call_config["headers"]["X-User-Id"] == MOCK_PREVAIL_USER_ID
+        assert call_config["headers"]["X-User-Email"] == MOCK_PREVAIL_USER_EMAIL
+        assert call_config["headers"]["X-User-Roles"] == ROLE_USER
 
-    @patch.dict("os.environ", {"INTERNAL_SERVICE_SECRET": "shared-secret-abc"})
+    @patch.dict("os.environ", {"INTERNAL_SERVICE_SECRET": MOCK_PREVAIL_SERVICE_SECRET})
     def test_service_secret_header_added_when_env_var_set(
         self, client, mock_service, active_prevail_config
     ):
@@ -275,11 +294,11 @@ class TestExecutePrevailQuery:
 
         client.post(
             "/prevail/scenario-secret",
-            json={"q": "test"},
+            json=BODY_Q_TEST,
         )
 
         call_config = mock_service.test_api.call_args[0][0]
-        assert call_config["headers"]["X-Service-Secret"] == "shared-secret-abc"
+        assert call_config["headers"]["X-Service-Secret"] == MOCK_PREVAIL_SERVICE_SECRET
 
     def test_no_service_secret_header_when_env_var_not_set(
         self, client, mock_service, active_prevail_config
@@ -295,7 +314,7 @@ class TestExecutePrevailQuery:
 
         client.post(
             "/prevail/scenario-nosecret",
-            json={"q": "test"},
+            json=BODY_Q_TEST,
         )
 
         call_config = mock_service.test_api.call_args[0][0]
@@ -318,11 +337,11 @@ class TestExecutePrevailQuery:
             "error": None,
         }
 
-        client.post("/prevail/scenario-noauth", json={"q": "test"})
+        client.post("/prevail/scenario-noauth", json=BODY_Q_TEST)
 
         call_config = mock_service.test_api.call_args[0][0]
         # auth_type is always "none" — Prevail uses X-User-* headers for auth
-        assert call_config["auth_type"] == "none"
+        assert call_config["auth_type"] == STR_NONE
         assert call_config["auth_config"] == {}
 
     # ------------------------------------------------------------------
@@ -333,7 +352,7 @@ class TestExecutePrevailQuery:
         """Test that 503 is returned when no prevail config exists"""
         mock_service.get_config_by_key.return_value = None
 
-        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json=BODY_Q_TEST)
 
         assert response.status_code == 503
         assert "not configured" in response.json()["detail"]
@@ -345,7 +364,7 @@ class TestExecutePrevailQuery:
         active_prevail_config["status"] = "inactive"
         mock_service.get_config_by_key.return_value = active_prevail_config
 
-        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json=BODY_Q_TEST)
 
         assert response.status_code == 503
         assert "inactive" in response.json()["detail"]
@@ -357,7 +376,7 @@ class TestExecutePrevailQuery:
         active_prevail_config["endpoint"] = None
         mock_service.get_config_by_key.return_value = active_prevail_config
 
-        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json=BODY_Q_TEST)
 
         assert response.status_code == 503
         assert "endpoint is not configured" in response.json()["detail"]
@@ -369,7 +388,7 @@ class TestExecutePrevailQuery:
         active_prevail_config["endpoint"] = ""
         mock_service.get_config_by_key.return_value = active_prevail_config
 
-        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json=BODY_Q_TEST)
 
         assert response.status_code == 503
         assert "endpoint is not configured" in response.json()["detail"]
@@ -409,7 +428,7 @@ class TestExecutePrevailQuery:
             "error": "Connection error: [Errno -2] Name or service not known",
         }
 
-        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json=BODY_Q_TEST)
 
         assert response.status_code == 502
         assert EXPECTED_PREVAIL_SERVICE_ERROR in response.json()["detail"]
@@ -427,7 +446,7 @@ class TestExecutePrevailQuery:
             "error": "Connection error: host unreachable",
         }
 
-        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json=BODY_Q_TEST)
 
         # The route uses `result.get("status_code") or 502` so None -> 502
         assert response.status_code == 502
@@ -448,7 +467,7 @@ class TestExecutePrevailQuery:
             "error": "Connection timeout",
         }
 
-        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json=BODY_Q_TEST)
 
         assert response.status_code == 502
         assert EXPECTED_PREVAIL_SERVICE_ERROR in response.json()["detail"]
@@ -466,7 +485,7 @@ class TestExecutePrevailQuery:
             "error": "Read timeout - server took too long to respond",
         }
 
-        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json=BODY_Q_TEST)
 
         assert response.status_code == 502
         assert "timeout" in response.json()["detail"].lower()
@@ -487,7 +506,7 @@ class TestExecutePrevailQuery:
             "error": "HTTP error: 403 Forbidden",
         }
 
-        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json=BODY_Q_TEST)
 
         assert response.status_code == 403
         assert EXPECTED_PREVAIL_SERVICE_ERROR in response.json()["detail"]
@@ -504,7 +523,7 @@ class TestExecutePrevailQuery:
             "error": "HTTP error: 404 Not Found",
         }
 
-        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json=BODY_Q_TEST)
 
         assert response.status_code == 404
         assert EXPECTED_PREVAIL_SERVICE_ERROR in response.json()["detail"]
@@ -521,7 +540,7 @@ class TestExecutePrevailQuery:
             "error": "HTTP error: 500 Internal Server Error",
         }
 
-        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json=BODY_Q_TEST)
 
         assert response.status_code == 500
         assert EXPECTED_PREVAIL_SERVICE_ERROR in response.json()["detail"]
@@ -538,7 +557,7 @@ class TestExecutePrevailQuery:
             "error": "Unexpected error: something went wrong",
         }
 
-        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json=BODY_Q_TEST)
 
         # `result.get("status_code") or 502` -> 0 is falsy, so 502
         assert response.status_code == 502
@@ -559,7 +578,7 @@ class TestExecutePrevailQuery:
             "error": None,
         }
 
-        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json=BODY_Q_TEST)
 
         assert response.status_code == 502
         assert "No response from Prevail service" in response.json()["detail"]
@@ -581,7 +600,7 @@ class TestExecutePrevailQuery:
             "error": None,
         }
 
-        client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
+        client.post(PATH_PREVAIL_SCENARIO_X, json=BODY_Q_TEST)
 
         call_config = mock_service.test_api.call_args[0][0]
         assert call_config["timeout"] == 120
@@ -599,7 +618,7 @@ class TestExecutePrevailQuery:
             "error": None,
         }
 
-        client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
+        client.post(PATH_PREVAIL_SCENARIO_X, json=BODY_Q_TEST)
 
         call_config = mock_service.test_api.call_args[0][0]
         assert call_config["timeout"] == 60
@@ -620,7 +639,7 @@ class TestExecutePrevailQuery:
             "error": None,
         }
 
-        client.post("/prevail/complex-scenario-key-123", json={"q": "test"})
+        client.post("/prevail/complex-scenario-key-123", json=BODY_Q_TEST)
 
         call_config = mock_service.test_api.call_args[0][0]
         assert call_config["endpoint"].endswith("/complex-scenario-key-123")
@@ -641,7 +660,7 @@ class TestExecutePrevailQuery:
             "error": "SSL error: certificate verify failed",
         }
 
-        response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
+        response = client.post(PATH_PREVAIL_SCENARIO_X, json=BODY_Q_TEST)
 
         assert response.status_code == 502
         assert "SSL error" in response.json()["detail"]
@@ -662,9 +681,9 @@ class TestExecutePrevailQuery:
             "error": None,
         }
 
-        client.post("/prevail/any-scenario", json={"q": "test"})
+        client.post("/prevail/any-scenario", json=BODY_Q_TEST)
 
-        mock_service.get_config_by_key.assert_called_once_with("prevail")
+        mock_service.get_config_by_key.assert_called_once_with(STR_PREVAIL)
 
     # ------------------------------------------------------------------
     # Preserves original config fields in call_config
@@ -687,7 +706,7 @@ class TestExecutePrevailQuery:
 
         client.post(
             PATH_PREVAIL_SCENARIO_X,
-            json={"q": "test"},
+            json=BODY_Q_TEST,
             headers={STR_AUTHORIZATION: "Bearer my-token"},
         )
 
@@ -695,7 +714,7 @@ class TestExecutePrevailQuery:
         assert call_config["ssl_verify"] is False
         assert call_config["use_proxy"] is True
         assert call_config["proxy_url"] == MOCK_URL_PROXY_SHORT
-        assert call_config["key"] == "prevail"
+        assert call_config["key"] == STR_PREVAIL
 
 
 class TestExecutePrevailQueryAuthentication:
@@ -730,7 +749,7 @@ class TestExecutePrevailQueryAuthentication:
 
         try:
             client = TestClient(app)
-            response = client.post(PATH_PREVAIL_SCENARIO_X, json={"q": "test"})
+            response = client.post(PATH_PREVAIL_SCENARIO_X, json=BODY_Q_TEST)
             # Without a valid token the access control dependency returns 401 or 500
             # (500 if token_manager is not initialized, 401 if it rejects the token)
             assert response.status_code in (401, 403, 500)
@@ -757,9 +776,9 @@ class TestExecutePrevailQueryEdgeCases:
     def mock_current_user(self):
         """Create mock authenticated user"""
         user = MagicMock()
-        user.user_id = "user456"
-        user.email = "edge@example.com"
-        user.roles = ["user"]
+        user.user_id = MOCK_PREVAIL_EDGE_USER_ID
+        user.email = MOCK_PREVAIL_EDGE_USER_EMAIL
+        user.roles = [ROLE_USER]
         user.groups = []
         user.domains = []
         return user
@@ -776,13 +795,13 @@ class TestExecutePrevailQueryEdgeCases:
     def active_prevail_config(self):
         """Return a standard active prevail configuration"""
         return {
-            "_id": "config_edge",
-            "key": "prevail",
-            "name": "Prevail API",
+            "_id": MOCK_PREVAIL_CONFIG_EDGE_ID,
+            "key": STR_PREVAIL,
+            "name": STR_PREVAIL_API,
             "endpoint": MOCK_URL_PREVAIL_API,
-            "status": "active",
+            "status": STR_ACTIVE,
             "method": METHOD_POST,
-            "auth_type": "none",
+            "auth_type": STR_NONE,
             "auth_config": {},
             "timeout": 30,
         }
@@ -847,13 +866,13 @@ class TestExecutePrevailQueryEdgeCases:
 
         client.post(
             "/prevail/scenario-ws",
-            json={"q": "test"},
+            json=BODY_Q_TEST,
             cookies={"access_token": "   "},
         )
 
         call_config = mock_service.test_api.call_args[0][0]
         # auth_type is always "none" — user identity via X-User-* headers
-        assert call_config["auth_type"] == "none"
+        assert call_config["auth_type"] == STR_NONE
 
     def test_nested_json_payload_is_forwarded(
         self, client, mock_service, active_prevail_config
@@ -894,7 +913,7 @@ class TestExecutePrevailQueryEdgeCases:
             "error": "HTTP error: 401 Unauthorized",
         }
 
-        response = client.post("/prevail/scenario-auth", json={"q": "test"})
+        response = client.post("/prevail/scenario-auth", json=BODY_Q_TEST)
 
         assert response.status_code == 401
         assert EXPECTED_PREVAIL_SERVICE_ERROR in response.json()["detail"]
@@ -911,7 +930,7 @@ class TestExecutePrevailQueryEdgeCases:
             "error": "HTTP error: 429 Too Many Requests",
         }
 
-        response = client.post("/prevail/scenario-ratelimit", json={"q": "test"})
+        response = client.post("/prevail/scenario-ratelimit", json=BODY_Q_TEST)
 
         assert response.status_code == 429
         assert EXPECTED_PREVAIL_SERVICE_ERROR in response.json()["detail"]

@@ -167,5 +167,14 @@
   "STR_SCENARIOKEY": "scenarioKey",
   "STR_SUBDOMAINS": "subDomains",
   "STR_TEST_PERM": "test-perm",
-  "MOCK_KEY_TEST_SCENARIO": "test-scenario"
+  "MOCK_KEY_TEST_SCENARIO": "test-scenario",
+
+  "MOCK_PREVAIL_USER_ID": "user123",
+  "MOCK_PREVAIL_USER_EMAIL": "testuser@example.com",
+  "MOCK_PREVAIL_EDGE_USER_ID": "user456",
+  "MOCK_PREVAIL_EDGE_USER_EMAIL": "edge@example.com",
+  "MOCK_PREVAIL_SERVICE_TOKEN": "service-token-xyz",
+  "MOCK_PREVAIL_SERVICE_SECRET": "shared-secret-abc",
+  "MOCK_PREVAIL_CONFIG_ID": "config_abc123",
+  "MOCK_PREVAIL_CONFIG_EDGE_ID": "config_edge"
 }

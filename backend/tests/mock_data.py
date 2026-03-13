@@ -194,6 +194,16 @@ STR_SUBDOMAINS = _test_data["STR_SUBDOMAINS"]
 STR_TEST_PERM = _test_data["STR_TEST_PERM"]
 MOCK_KEY_TEST_SCENARIO = _test_data["MOCK_KEY_TEST_SCENARIO"]
 
+# ── Prevail proxy test constants ─────────────────────────────────────────────
+MOCK_PREVAIL_USER_ID = _test_data["MOCK_PREVAIL_USER_ID"]
+MOCK_PREVAIL_USER_EMAIL = _test_data["MOCK_PREVAIL_USER_EMAIL"]
+MOCK_PREVAIL_EDGE_USER_ID = _test_data["MOCK_PREVAIL_EDGE_USER_ID"]
+MOCK_PREVAIL_EDGE_USER_EMAIL = _test_data["MOCK_PREVAIL_EDGE_USER_EMAIL"]
+MOCK_PREVAIL_SERVICE_TOKEN = _test_data["MOCK_PREVAIL_SERVICE_TOKEN"]
+MOCK_PREVAIL_SERVICE_SECRET = _test_data["MOCK_PREVAIL_SERVICE_SECRET"]
+MOCK_PREVAIL_CONFIG_ID = _test_data["MOCK_PREVAIL_CONFIG_ID"]
+MOCK_PREVAIL_CONFIG_EDGE_ID = _test_data["MOCK_PREVAIL_CONFIG_EDGE_ID"]
+
 
 async def empty_async_gen():
     """Async generator that yields nothing.
