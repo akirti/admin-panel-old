@@ -279,11 +279,20 @@ class TestExecutePrevailQuery:
         assert call_config["headers"]["X-User-Email"] == MOCK_PREVAIL_USER_EMAIL
         assert call_config["headers"]["X-User-Roles"] == ROLE_USER
 
-    @patch.dict("os.environ", {"INTERNAL_SERVICE_SECRET": MOCK_PREVAIL_SERVICE_SECRET})
     def test_service_secret_header_added_when_env_var_set(
-        self, client, mock_service, active_prevail_config
+        self, app, mock_db, mock_gcs_service, mock_current_user, mock_service,
+        active_prevail_config, monkeypatch
     ):
         """Test that X-Service-Secret header is added when INTERNAL_SERVICE_SECRET is set"""
+        monkeypatch.setenv("INTERNAL_SERVICE_SECRET", MOCK_PREVAIL_SERVICE_SECRET)
+
+        # Build client AFTER env var is set so the route handler sees it
+        app.dependency_overrides[get_db] = lambda: mock_db
+        app.dependency_overrides[get_gcs_service] = lambda: mock_gcs_service
+        app.dependency_overrides[get_current_user] = lambda: mock_current_user
+        app.dependency_overrides[get_api_config_service] = lambda: mock_service
+        patched_client = TestClient(app)
+
         mock_service.get_config_by_key.return_value = active_prevail_config
         mock_service.test_api.return_value = {
             "success": True,
@@ -292,7 +301,7 @@ class TestExecutePrevailQuery:
             "error": None,
         }
 
-        client.post(
+        patched_client.post(
             "/prevail/scenario-secret",
             json=BODY_Q_TEST,
         )
