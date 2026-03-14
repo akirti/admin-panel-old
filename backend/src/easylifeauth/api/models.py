@@ -1359,6 +1359,10 @@ class DistributionListType(str, Enum):
     SCENARIO_REQUEST = "scenario_request"
     FEEDBACK = "feedback"
     SYSTEM_ALERT = "system_alert"
+    SYSTEM_NOTIFICATION = "system_notification"
+    CONFIGURATION_UPDATE = "configuration_update"
+    NO_REPLY = "no_reply"
+    SUPPORT = "support"
     CUSTOM = "custom"
 
 

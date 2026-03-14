@@ -11,6 +11,7 @@ from easylifeauth.api.models import (
     DistributionListInDB,
     DistributionListAddEmail,
     DistributionListRemoveEmail,
+    DistributionListType,
     PaginationMeta
 )
 from easylifeauth.db.db_manager import DatabaseManager
@@ -97,14 +98,8 @@ async def get_distribution_list_types(
     """Get available distribution list types."""
     return {
         "types": [
-            {"value": "scenario_request", "label": "Scenario Request"},
-            {"value": "feedback", "label": "Feedback"},
-            {"value": "system_alert", "label": "System Alert"},
-            {"value": "system_notification", "label": "System Notification"},
-            {"value": "configuration_update", "label": "Configuration Update"},
-            {"value": "no_reply", "label": "No Reply"},
-            {"value": "support", "label": "Support"},
-            {"value": "custom", "label": "Custom"}
+            {"value": t.value, "label": t.value.replace("_", " ").title()}
+            for t in DistributionListType
         ]
     }
 
