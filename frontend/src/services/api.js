@@ -648,4 +648,27 @@ export const jiraAPI = {
     api.get('/jira/assignable-users', { params: { project_key: projectKey, q: query, max_results: maxResults } })
 };
 
+// UI Templates API
+export const uiTemplatesAPI = {
+  list: (params = {}) => api.get('/ui-templates', { params }),
+  count: (params = {}) => api.get('/ui-templates/count', { params }),
+  lookup: (page, component = null) =>
+    api.get('/ui-templates/lookup', { params: { page, component } }),
+  get: (id) => api.get(`/ui-templates/${id}`),
+  create: (data) => api.post('/ui-templates', data),
+  update: (id, data) => api.put(`/ui-templates/${id}`, data),
+  delete: (id) => api.delete(`/ui-templates/${id}`),
+  toggleStatus: (id) => api.post(`/ui-templates/${id}/toggle-status`),
+  bumpVersion: (id, data) => api.post(`/ui-templates/${id}/bump-version`, data),
+  reorderWidgets: (id, widgetKeys) =>
+    api.put(`/ui-templates/${id}/widgets/reorder`, widgetKeys),
+  updateWidgetAttributes: (id, widgetKey, attributes) =>
+    api.put(`/ui-templates/${id}/widgets/${widgetKey}/attributes`, attributes),
+  addComment: (id, comment) => api.post(`/ui-templates/${id}/comments`, comment),
+  setWidgetOverride: (id, widgetKey, overrideKey, override) =>
+    api.put(`/ui-templates/${id}/widgets/${widgetKey}/overrides/${overrideKey}`, override),
+  removeWidgetOverride: (id, widgetKey, overrideKey) =>
+    api.delete(`/ui-templates/${id}/widgets/${widgetKey}/overrides/${overrideKey}`),
+};
+
 export default api;

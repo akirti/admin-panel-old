@@ -95,7 +95,7 @@ async function setupLookupMocks() {
   const { scenarioRequestAPI, jiraAPI } = await import('../../../services/api');
   scenarioRequestAPI.getDomains.mockResolvedValue({ data: [{ key: 'finance', name: 'Finance' }] });
   scenarioRequestAPI.getRequestTypes.mockResolvedValue({ data: [{ value: 'scenario', label: 'New Scenario Request' }] });
-  scenarioRequestAPI.getDefaults.mockResolvedValue({ data: { team: 'Team-A', assignee: 'acc1', assignee_name: 'Alice' } });
+  scenarioRequestAPI.getDefaults.mockResolvedValue({ data: { team: 'Team-A', team_name: 'Team-A', assignee: 'acc1', assignee_name: 'Alice' } });
   scenarioRequestAPI.getStatuses.mockResolvedValue({ data: [{ value: 'submitted', label: 'Submitted' }, { value: 'review', label: 'Review' }] });
   jiraAPI.getBoards.mockResolvedValue({ data: [{ id: 1, name: 'Board-1' }] });
   jiraAPI.getAssignableUsers.mockResolvedValue({ data: [{ accountId: 'acc1', displayName: 'Alice', emailAddress: 'alice@test.com' }] });
@@ -591,8 +591,13 @@ describe('AskScenarioPage', () => {
 
   it('loads Jira boards in team dropdown', async () => {
     await setupLookupMocks();
+    const user = userEvent.setup();
 
     renderNew();
+
+    // Autocomplete: type 2+ chars to see suggestions
+    const teamInput = screen.getByPlaceholderText('Type to search teams...');
+    await user.type(teamInput, 'Bo');
 
     await waitFor(() => {
       expect(screen.getByText('Board-1')).toBeInTheDocument();
@@ -601,11 +606,16 @@ describe('AskScenarioPage', () => {
 
   it('loads Jira assignable users in assignee dropdown', async () => {
     await setupLookupMocks();
+    const user = userEvent.setup();
 
     renderNew();
 
+    // Autocomplete: type 2+ chars to see suggestions
+    const assigneeInput = screen.getByPlaceholderText('Type to search assignees...');
+    await user.type(assigneeInput, 'Al');
+
     await waitFor(() => {
-      expect(screen.getByText('Alice (alice@test.com)')).toBeInTheDocument();
+      expect(screen.getByText('Alice')).toBeInTheDocument();
     });
   });
 
@@ -1496,34 +1506,42 @@ describe('AskScenarioPage', () => {
 
     renderNew();
 
+    // Type to trigger autocomplete
+    const assigneeInput = screen.getByPlaceholderText('Type to search assignees...');
+    await user.type(assigneeInput, 'Al');
+
     await waitFor(() => {
-      expect(screen.getByText('Alice (alice@test.com)')).toBeInTheDocument();
+      expect(screen.getByText('Alice')).toBeInTheDocument();
     });
 
-    // Select an assignee
-    const assigneeSelect = document.querySelector('select[name="assignee"]');
-    await user.selectOptions(assigneeSelect, 'acc1');
+    // Click the suggestion
+    await user.click(screen.getByText('Alice'));
 
-    expect(assigneeSelect.value).toBe('acc1');
+    // Input should now show the selected name
+    expect(assigneeInput.value).toBe('Alice');
   });
 
-  it('handles assignee selection with unknown user (empty assignee_name)', async () => {
+  it('handles assignee selection with clear (empty assignee_name)', async () => {
     await setupLookupMocks();
+    const user = userEvent.setup();
 
     renderNew();
 
+    // Type to trigger autocomplete, select, then clear
+    const assigneeInput = screen.getByPlaceholderText('Type to search assignees...');
+    await user.type(assigneeInput, 'Al');
+
     await waitFor(() => {
-      expect(screen.getByText('Alice (alice@test.com)')).toBeInTheDocument();
+      expect(screen.getByText('Alice')).toBeInTheDocument();
     });
 
-    // Select empty value
-    const assigneeSelect = document.querySelector('select[name="assignee"]');
-    fireEvent.change(assigneeSelect, { target: { value: '' } });
+    await user.click(screen.getByText('Alice'));
+    await user.clear(assigneeInput);
 
-    expect(assigneeSelect.value).toBe('');
+    expect(assigneeInput.value).toBe('');
   });
 
-  it('renders team option for formData.team not in jiraBoards list', async () => {
+  it('renders team name for formData.team not in jiraBoards list', async () => {
     const { scenarioRequestAPI } = await setupLookupMocks();
     scenarioRequestAPI.get.mockResolvedValue({
       data: {
@@ -1537,6 +1555,7 @@ describe('AskScenarioPage', () => {
         steps: [],
         files: [],
         team: 'Unknown-Team',
+        team_name: 'Unknown-Team',
         assignee: 'unknown-acc',
         assignee_name: 'Unknown User',
       },
@@ -1545,14 +1564,14 @@ describe('AskScenarioPage', () => {
     renderEdit();
 
     await waitFor(() => {
-      // Team not in jiraBoards should still appear as an option
-      expect(screen.getByText('Unknown-Team')).toBeInTheDocument();
-      // Assignee not in jiraUsers should still appear as an option
-      expect(screen.getByText('Unknown User')).toBeInTheDocument();
+      // Team name should be shown in the autocomplete input
+      expect(screen.getByDisplayValue('Unknown-Team')).toBeInTheDocument();
+      // Assignee name should be shown in the autocomplete input
+      expect(screen.getByDisplayValue('Unknown User')).toBeInTheDocument();
     });
   });
 
-  it('renders assignee fallback to assignee id when assignee_name is empty', async () => {
+  it('renders empty assignee input when assignee_name is empty', async () => {
     const { scenarioRequestAPI } = await setupLookupMocks();
     scenarioRequestAPI.get.mockResolvedValue({
       data: {
@@ -1573,12 +1592,13 @@ describe('AskScenarioPage', () => {
     renderEdit();
 
     await waitFor(() => {
-      // Should fall back to showing the assignee id
-      expect(screen.getByText('unknown-acc-id')).toBeInTheDocument();
+      // With empty assignee_name, autocomplete input should be empty
+      const assigneeInput = screen.getByPlaceholderText('Type to search assignees...');
+      expect(assigneeInput.value).toBe('');
     });
   });
 
-  it('renders Jira user without email address', async () => {
+  it('renders Jira user without email address in autocomplete', async () => {
     const { scenarioRequestAPI, jiraAPI } = await import('../../../services/api');
     scenarioRequestAPI.getDomains.mockResolvedValue({ data: [{ key: 'finance', name: 'Finance' }] });
     scenarioRequestAPI.getRequestTypes.mockResolvedValue({ data: [{ value: 'scenario', label: 'New Scenario Request' }] });
@@ -1587,8 +1607,13 @@ describe('AskScenarioPage', () => {
     jiraAPI.getAssignableUsers.mockResolvedValue({
       data: [{ accountId: 'acc-no-email', displayName: 'No Email User' }],
     });
+    const user = userEvent.setup();
 
     renderNew();
+
+    // Type to trigger autocomplete
+    const assigneeInput = screen.getByPlaceholderText('Type to search assignees...');
+    await user.type(assigneeInput, 'No');
 
     await waitFor(() => {
       // Should display without email parenthetical
@@ -1743,13 +1768,23 @@ describe('AskScenarioPage', () => {
       expect(screen.getByText('Test step')).toBeInTheDocument();
     });
 
-    // Select team
-    const teamSelect = document.querySelector('select[name="team"]');
-    await user.selectOptions(teamSelect, 'Board-1');
+    // Select team via autocomplete (clear default first)
+    const teamInput = screen.getByPlaceholderText('Type to search teams...');
+    await user.clear(teamInput);
+    await user.type(teamInput, 'Bo');
+    await waitFor(() => {
+      expect(screen.getByText('Board-1')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('Board-1'));
 
-    // Select assignee
-    const assigneeSelect = document.querySelector('select[name="assignee"]');
-    await user.selectOptions(assigneeSelect, 'acc1');
+    // Select assignee via autocomplete (clear default first)
+    const assigneeInput = screen.getByPlaceholderText('Type to search assignees...');
+    await user.clear(assigneeInput);
+    await user.type(assigneeInput, 'Al');
+    await waitFor(() => {
+      expect(screen.getByText('Alice')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('Alice'));
 
     fireEvent.click(screen.getByText('Submit Request'));
 
@@ -1762,7 +1797,8 @@ describe('AskScenarioPage', () => {
           steps: expect.arrayContaining([
             expect.objectContaining({ description: 'Test step' }),
           ]),
-          team: 'Board-1',
+          team: '1',
+          team_name: 'Board-1',
           assignee: 'acc1',
           assignee_name: 'Alice',
         })

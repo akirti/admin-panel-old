@@ -44,6 +44,7 @@ class JiraService:
         self.project_key = None
         self.issue_type = "Task"
         self.default_team = None
+        self.default_team_name = None
         self.default_assignee = None
         self.default_assignee_name = None
         self._client: Optional[JIRA] = None
@@ -59,6 +60,7 @@ class JiraService:
             self.project_key = config.get("project_key", "SCEN")
             self.issue_type = config.get("issue_type", "Task")
             self.default_team = config.get("default_team")
+            self.default_team_name = config.get("default_team_name")
             self.default_assignee = config.get("default_assignee")
             self.default_assignee_name = config.get("default_assignee_name")
             self.target_days = config.get("target_days", DEFAULT_TARGET_DAYS)

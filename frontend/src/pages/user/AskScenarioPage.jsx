@@ -180,6 +180,106 @@ function RichTextEditor({ value, onChange, placeholder, rows = 6 }) {
   );
 }
 
+// Autocomplete input component with dropdown suggestions
+function AutocompleteInput({ label, value, displayValue, options, onSelect, onClear, placeholder, minChars = 2, renderOption }) {
+  const [inputValue, setInputValue] = useState(displayValue || '');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [filtered, setFiltered] = useState([]);
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    setInputValue(displayValue || '');
+  }, [displayValue]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    setInputValue(val);
+    if (val.length >= minChars) {
+      const lower = val.toLowerCase();
+      const matches = options.filter(opt => {
+        const searchText = (opt.searchText || opt.label || '').toLowerCase();
+        return searchText.includes(lower);
+      });
+      setFiltered(matches);
+      setShowDropdown(true);
+    } else {
+      setShowDropdown(false);
+    }
+    if (!val) {
+      onClear();
+    }
+  };
+
+  const handleSelect = (option) => {
+    setInputValue(option.label);
+    setShowDropdown(false);
+    onSelect(option);
+  };
+
+  return (
+    <div className="w-full" ref={wrapperRef}>
+      <label className="block text-sm font-medium text-content-secondary mb-2">{label}</label>
+      <div className="relative">
+        <input
+          type="text"
+          value={inputValue}
+          onChange={handleInputChange}
+          onFocus={() => {
+            if (inputValue.length >= minChars) {
+              const lower = inputValue.toLowerCase();
+              setFiltered(options.filter(opt => (opt.searchText || opt.label || '').toLowerCase().includes(lower)));
+              setShowDropdown(true);
+            }
+          }}
+          placeholder={placeholder}
+          className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
+        />
+        {value && (
+          <button
+            type="button"
+            onClick={() => { setInputValue(''); onClear(); setShowDropdown(false); }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-content-muted hover:text-red-600"
+          >
+            <X size={16} />
+          </button>
+        )}
+        {showDropdown && filtered.length > 0 && (
+          <ul role="listbox" className="absolute z-50 w-full mt-1 bg-surface border border-edge rounded-lg shadow-lg max-h-60 overflow-y-auto">
+            {filtered.map((opt) => (
+              <li
+                key={opt.id}
+                role="option"
+                tabIndex={0}
+                aria-selected={opt.id === value}
+                onClick={() => handleSelect(opt)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelect(opt); } }}
+                className="px-4 py-2.5 hover:bg-surface-secondary focus:bg-surface-secondary cursor-pointer text-sm text-content outline-none"
+              >
+                {renderOption ? renderOption(opt) : opt.label}
+              </li>
+            ))}
+          </ul>
+        )}
+        {showDropdown && filtered.length === 0 && inputValue.length >= minChars && (
+          <div className="absolute z-50 w-full mt-1 bg-surface border border-edge rounded-lg shadow-lg px-4 py-3 text-sm text-content-muted">
+            No matches found
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Strips HTML tags for plain text checks
 function stripHtml(html) {
   const tmp = document.createElement('div');
@@ -199,6 +299,7 @@ function buildFormDataFromRequest(request) {
     steps: request.steps || [],
     reason: request.reason || '',
     team: request.team || '',
+    team_name: request.team_name || '',
     assignee: request.assignee || '',
     assignee_name: request.assignee_name || '',
     status: request.status || '',
@@ -376,6 +477,7 @@ const INITIAL_FORM_DATA = {
   steps: [],
   reason: '',
   team: '',
+  team_name: '',
   assignee: '',
   assignee_name: '',
   status: '',
@@ -414,6 +516,22 @@ function useAskScenarioForm() {
       assignee: e.target.value,
       assignee_name: selectedUser ? selectedUser.displayName : ''
     }));
+  };
+
+  const handleTeamSelect = (option) => {
+    setFormData(prev => ({ ...prev, team: option.id, team_name: option.label }));
+  };
+
+  const handleTeamClear = () => {
+    setFormData(prev => ({ ...prev, team: '', team_name: '' }));
+  };
+
+  const handleAssigneeSelect = (option) => {
+    setFormData(prev => ({ ...prev, assignee: option.id, assignee_name: option.label }));
+  };
+
+  const handleAssigneeClear = () => {
+    setFormData(prev => ({ ...prev, assignee: '', assignee_name: '' }));
   };
 
   const handleAddStep = () => {
@@ -457,6 +575,7 @@ function useAskScenarioForm() {
       ...prev,
       requestType: requestTypesData[0].value,
       team: defaults.team || '',
+      team_name: defaults.team_name || '',
       assignee: defaults.assignee || '',
       assignee_name: defaults.assignee_name || ''
     }));
@@ -466,6 +585,7 @@ function useAskScenarioForm() {
     formData, setFormData, newStep, setNewStep,
     uploadedFiles, existingFiles,
     handleChange, handleRichTextChange, makeAssigneeChangeHandler,
+    handleTeamSelect, handleTeamClear, handleAssigneeSelect, handleAssigneeClear,
     handleAddStep, handleRemoveStep, handleFileUpload, handleRemoveFile,
     resetFormFromRequest, applyDefaults
   };
@@ -611,6 +731,7 @@ function buildUserUpdatePayload(formData) {
     steps: formData.steps.length > 0 ? formData.steps : [],
     reason: formData.reason || null,
     team: formData.team || null,
+    team_name: formData.team_name || null,
     assignee: formData.assignee || null,
     assignee_name: formData.assignee_name || null
   };
@@ -743,46 +864,51 @@ function DomainSelect({ formData, domains, handleChange }) {
   );
 }
 
-function TeamAssigneeSection({ formData, jiraBoards, jiraUsers, handleChange, handleAssigneeChange }) {
-  const teamNotInBoards = formData.team && !jiraBoards.find(b => b.name === formData.team);
-  const assigneeNotInUsers = formData.assignee && !jiraUsers.find(u => u.accountId === formData.assignee);
+function TeamAssigneeSection({ formData, jiraBoards, jiraUsers, onTeamSelect, onTeamClear, onAssigneeSelect, onAssigneeClear }) {
+  const teamOptions = jiraBoards.map(board => ({
+    id: String(board.id),
+    label: board.name,
+    searchText: board.name
+  }));
+
+  const assigneeOptions = jiraUsers.map(user => ({
+    id: user.accountId,
+    label: user.displayName,
+    searchText: `${user.displayName} ${user.emailAddress || ''}`,
+    email: user.emailAddress
+  }));
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-3 border-t border-edge">
-      <div className="w-full">
-        <label className="block text-sm font-medium text-content-secondary mb-2">Team</label>
-        <select name="team" value={formData.team} onChange={handleChange}
-          className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content">
-          <option value="">Select a team...</option>
-          {jiraBoards.map(board => (
-            <option key={board.id} value={board.name}>{board.name}</option>
-          ))}
-          {teamNotInBoards && (
-            <option value={formData.team}>{formData.team}</option>
-          )}
-        </select>
-      </div>
+      <AutocompleteInput
+        label="Team"
+        value={formData.team}
+        displayValue={formData.team_name}
+        options={teamOptions}
+        onSelect={onTeamSelect}
+        onClear={onTeamClear}
+        placeholder="Type to search teams..."
+        minChars={2}
+      />
 
-      <div className="w-full">
-        <label className="block text-sm font-medium text-content-secondary mb-2">Assignee</label>
-        <select name="assignee" value={formData.assignee} onChange={handleAssigneeChange}
-          className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content">
-          <option value="">Select an assignee...</option>
-          {jiraUsers.map(jUser => (
-            <option key={jUser.accountId} value={jUser.accountId}>
-              {jUser.displayName}{jUser.emailAddress ? ` (${jUser.emailAddress})` : ''}
-            </option>
-          ))}
-          {assigneeNotInUsers && (
-            <option value={formData.assignee}>{formData.assignee_name || formData.assignee}</option>
-          )}
-        </select>
-      </div>
+      <AutocompleteInput
+        label="Assignee"
+        value={formData.assignee}
+        displayValue={formData.assignee_name}
+        options={assigneeOptions}
+        onSelect={onAssigneeSelect}
+        onClear={onAssigneeClear}
+        placeholder="Type to search assignees..."
+        minChars={2}
+        renderOption={(opt) => (
+          <span>{opt.label}{opt.email ? <span className="text-content-muted"> ({opt.email})</span> : ''}</span>
+        )}
+      />
     </div>
   );
 }
 
-function BasicInfoSection({ formData, requestTypes, domains, jiraBoards, jiraUsers, handleChange, handleRichTextChange, handleAssigneeChange }) {
+function BasicInfoSection({ formData, requestTypes, domains, jiraBoards, jiraUsers, handleChange, handleRichTextChange, onTeamSelect, onTeamClear, onAssigneeSelect, onAssigneeClear }) {
   return (
     <div className="card">
       <div className="card-header">
@@ -825,7 +951,8 @@ function BasicInfoSection({ formData, requestTypes, domains, jiraBoards, jiraUse
 
         <TeamAssigneeSection
           formData={formData} jiraBoards={jiraBoards} jiraUsers={jiraUsers}
-          handleChange={handleChange} handleAssigneeChange={handleAssigneeChange}
+          onTeamSelect={onTeamSelect} onTeamClear={onTeamClear}
+          onAssigneeSelect={onAssigneeSelect} onAssigneeClear={onAssigneeClear}
         />
       </div>
     </div>
@@ -966,7 +1093,6 @@ function AskScenarioPage() {
 
   const form = useAskScenarioForm();
   const data = useAskScenarioData({ isEditMode, isEditor, requestId, user, navigate, form });
-  const handleAssigneeChange = form.makeAssigneeChangeHandler(data.jiraUsers);
   const { handleSubmit } = useAskScenarioSubmit({
     isEditMode, isEditor, requestId,
     formData: form.formData, uploadedFiles: form.uploadedFiles,
@@ -992,7 +1118,8 @@ function AskScenarioPage() {
           formData={form.formData} requestTypes={data.requestTypes} domains={data.domains}
           jiraBoards={data.jiraBoards} jiraUsers={data.jiraUsers}
           handleChange={form.handleChange} handleRichTextChange={form.handleRichTextChange}
-          handleAssigneeChange={handleAssigneeChange}
+          onTeamSelect={form.handleTeamSelect} onTeamClear={form.handleTeamClear}
+          onAssigneeSelect={form.handleAssigneeSelect} onAssigneeClear={form.handleAssigneeClear}
         />
 
         <ImplementationDetailsSection

@@ -23,6 +23,7 @@ from .api_config_routes import router as api_config_router
 from .distribution_list_routes import router as distribution_list_router
 from .error_log_routes import router as error_log_router
 from .prevail_routes import router as prevail_router
+from .ui_template_routes import router as ui_template_router
 
 __all__ = [
     "auth_router",
@@ -49,4 +50,5 @@ __all__ = [
     "distribution_list_router",
     "error_log_router",
     "prevail_router",
+    "ui_template_router",
 ]

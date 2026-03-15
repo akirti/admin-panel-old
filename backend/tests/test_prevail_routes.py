@@ -1,11 +1,11 @@
 """Tests for Prevail Proxy Routes"""
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 
 from easylifeauth.api.prevail_routes import router, get_api_config_service
-from easylifeauth.api.dependencies import get_db, get_gcs_service
+from easylifeauth.api.dependencies import get_db, get_gcs_service, get_handshake_secret
 from easylifeauth.security.access_control import get_current_user
 from mock_data import (
     MOCK_URL_PREVAIL, MOCK_URL_PREVAIL_API, MOCK_URL_PREVAIL_SCENARIO,
@@ -101,6 +101,7 @@ class TestExecutePrevailQuery:
         app.dependency_overrides[get_gcs_service] = lambda: mock_gcs_service
         app.dependency_overrides[get_current_user] = lambda: mock_current_user
         app.dependency_overrides[get_api_config_service] = lambda: mock_service
+        app.dependency_overrides[get_handshake_secret] = lambda: None
         return TestClient(app)
 
     # ------------------------------------------------------------------
@@ -279,16 +280,16 @@ class TestExecutePrevailQuery:
         assert call_config["headers"]["X-User-Email"] == MOCK_PREVAIL_USER_EMAIL
         assert call_config["headers"]["X-User-Roles"] == ROLE_USER
 
-    @patch.dict("os.environ", {"INTERNAL_SERVICE_SECRET": MOCK_PREVAIL_SERVICE_SECRET})
-    def test_service_secret_header_added_when_env_var_set(
+    def test_service_secret_header_added_when_configured(
         self, app, mock_db, mock_gcs_service, mock_current_user, mock_service,
         active_prevail_config
     ):
-        """Test that X-Service-Secret header is added when INTERNAL_SERVICE_SECRET is set"""
+        """Test that X-Service-Secret header is added when handshake secret is configured"""
         app.dependency_overrides[get_db] = lambda: mock_db
         app.dependency_overrides[get_gcs_service] = lambda: mock_gcs_service
         app.dependency_overrides[get_current_user] = lambda: mock_current_user
         app.dependency_overrides[get_api_config_service] = lambda: mock_service
+        app.dependency_overrides[get_handshake_secret] = lambda: MOCK_PREVAIL_SERVICE_SECRET
         client = TestClient(app)
 
         mock_service.get_config_by_key.return_value = active_prevail_config
@@ -307,10 +308,10 @@ class TestExecutePrevailQuery:
         call_config = mock_service.test_api.call_args[0][0]
         assert call_config["headers"]["X-Service-Secret"] == MOCK_PREVAIL_SERVICE_SECRET
 
-    def test_no_service_secret_header_when_env_var_not_set(
+    def test_no_service_secret_header_when_not_configured(
         self, client, mock_service, active_prevail_config
     ):
-        """Test that X-Service-Secret header is NOT added when env var is not set"""
+        """Test that X-Service-Secret header is NOT added when handshake secret is not configured"""
         mock_service.get_config_by_key.return_value = active_prevail_config
         mock_service.test_api.return_value = {
             "success": True,
@@ -753,6 +754,7 @@ class TestExecutePrevailQueryAuthentication:
         app.dependency_overrides[get_db] = lambda: MagicMock()
         app.dependency_overrides[get_gcs_service] = lambda: MagicMock()
         app.dependency_overrides[get_api_config_service] = lambda: mock_service
+        app.dependency_overrides[get_handshake_secret] = lambda: None
 
         try:
             client = TestClient(app)
@@ -820,6 +822,7 @@ class TestExecutePrevailQueryEdgeCases:
         app.dependency_overrides[get_gcs_service] = lambda: MagicMock()
         app.dependency_overrides[get_current_user] = lambda: mock_current_user
         app.dependency_overrides[get_api_config_service] = lambda: mock_service
+        app.dependency_overrides[get_handshake_secret] = lambda: None
         return TestClient(app)
 
     def test_empty_json_body_is_forwarded(

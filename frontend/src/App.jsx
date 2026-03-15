@@ -46,6 +46,7 @@ import CustomersManagement from './pages/admin/CustomersManagement';
 import FeedbackManagement from './pages/admin/FeedbackManagement';
 import ApiConfigsManagement from './pages/admin/ApiConfigsManagement';
 import DistributionListManagement from './pages/admin/DistributionListManagement';
+import UISchemaManagement from './pages/admin/UISchemaManagement';
 
 // Public Pages
 import FeedbackPage from './pages/FeedbackPage';
@@ -155,6 +156,9 @@ function App() {
             <Route path=":dataDomain" element={<V1ExplorerDomainPage />} />
             <Route path=":dataDomain/:scenarioKey" element={<V1ExplorerReportPage />} />
           </Route>
+
+          {/* UI Schemas — accessible from main menu with permission check */}
+          <Route path="/ui-schemas" element={<UISchemaManagement />} />
         </Route>
 
         {/* Admin Routes - Super Admin Only */}
@@ -182,6 +186,7 @@ function App() {
           <Route path="feedback" element={<FeedbackManagement />} />
           <Route path="api-configs" element={<ApiConfigsManagement />} />
           <Route path="distribution-lists" element={<DistributionListManagement />} />
+          <Route path="ui-schemas" element={<UISchemaManagement />} />
         </Route>
 
         {/* Group Admin Routes */}
@@ -196,6 +201,7 @@ function App() {
           <Route path="scenario-requests" element={<ScenarioRequestsManagement />} />
           <Route path="scenario-requests/:requestId" element={<RequestDetailPage />} />
           <Route path="scenario-requests/:requestId/edit" element={<AskScenarioPage />} />
+          <Route path="ui-schemas" element={<UISchemaManagement />} />
         </Route>
 
         {/* Redirects */}

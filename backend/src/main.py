@@ -61,13 +61,13 @@ def _safe_int(value, default: int) -> int:
         return default
 
 
-def build_db_config(loader: ConfigurationLoader) -> Optional[dict]:
+def build_db_config(loader: ConfigurationLoader, db_token: str = "authentication") -> Optional[dict]:
     """Extract DB config and inject connection pool settings from globals.
 
     Returns None when required fields (host, username, password) are missing
     or still contain unresolved ``{placeholder}`` strings.
     """
-    db_config = loader.get_DB_config("authentication")
+    db_config = loader.get_DB_config(db_token)
     if not db_config:
         return None
 
@@ -148,6 +148,7 @@ def build_jira_config(loader: ConfigurationLoader) -> Optional[dict]:
         "issue_type": jira_raw.get("issue_type", "Task"),
         "components": jira_raw.get("components", []),
         "default_team": jira_raw.get("default_team"),
+        "default_team_name": jira_raw.get("default_team_name"),
         "default_assignee": jira_raw.get("default_assignee"),
         "default_assignee_name": jira_raw.get("default_assignee_name"),
         "default_priority": jira_raw.get("default_priority", "Medium"),
@@ -186,14 +187,22 @@ def bootstrap():
     if pem_path and jira_config:
         jira_config["ssl"]["bundle_pem_path"] = pem_path
 
+    handshake_secret = config_loader.get_config_by_path(
+        "environment.app_secrets.private_handshake_secret_key"
+    )
+
     root_path = (
         os.environ.get("ROOT_PATH")
         or config_loader.get_config_by_path("environment.root_path")
         or ""
     )
 
+    # Build separate DB config for ui_templates
+    ui_templates_db_config = build_db_config(config_loader, db_token="ui_templates")
+
     kw = {}
     kw["db_config"] = db_config
+    kw["ui_templates_db_config"] = ui_templates_db_config
     kw["token_secret"] = token_secret
     kw["jwt_issuer"] = jwt_issuer
     kw["jwt_audience"] = jwt_audience
@@ -206,6 +215,7 @@ def bootstrap():
     kw["title"] = "EasyLife Admin Panel API"
     kw["description"] = "Authentication, Authorization, and Administration API"
     kw["root_path"] = root_path
+    kw["handshake_secret"] = handshake_secret
     return create_app(**kw)
 
 

@@ -28,7 +28,8 @@ import {
   Building2,
   Plug,
   Mail,
-  Compass
+  Compass,
+  LayoutTemplate
 } from 'lucide-react';
 import { Badge } from '../shared';
 
@@ -52,9 +53,10 @@ const ADMIN_NAV = [
   { path: '/admin/error-logs', icon: AlertTriangle, label: 'Error Logs' },
   { path: '/admin/bulk-upload', icon: Upload, label: 'Bulk Upload' },
   { path: '/admin/distribution-lists', icon: Mail, label: 'Distribution Lists' },
+  { path: '/admin/ui-schemas', icon: LayoutTemplate, label: 'UI Schemas', dividerBefore: true },
 ];
 
-const GROUP_ADMIN_NAV = [
+const GROUP_ADMIN_NAV_BASE = [
   { path: '/dashboard', icon: Home, label: 'User Dashboard' },
   { path: '/explorer', icon: Compass, label: 'Explorer', dividerAfter: true },
   { path: '/management', icon: LayoutDashboard, label: 'Management Dashboard', exact: true },
@@ -62,6 +64,14 @@ const GROUP_ADMIN_NAV = [
   { path: '/management/domains', icon: Layers, label: 'Domains' },
   { path: '/management/scenario-requests', icon: ClipboardList, label: 'Scenario Requests' },
 ];
+
+const getGroupAdminNav = (hasGroup) => {
+  const items = [...GROUP_ADMIN_NAV_BASE];
+  if (hasGroup && hasGroup('ui-management')) {
+    items.push({ path: '/management/ui-schemas', icon: LayoutTemplate, label: 'UI Schemas' });
+  }
+  return items;
+};
 
 const USER_NAV = [
   { path: '/dashboard', icon: Home, label: 'Dashboard' },
@@ -73,8 +83,11 @@ const USER_NAV = [
   { path: '/feedback', icon: MessageSquare, label: 'Feedback' },
 ];
 
-const getUserNav = (isSuperAdmin, canManageUsers) => {
+const getUserNav = (isSuperAdmin, canManageUsers, canAccessUISchemas) => {
   const items = [...USER_NAV];
+  if (canAccessUISchemas()) {
+    items.push({ path: '/ui-schemas', icon: LayoutTemplate, label: 'UI Schemas', dividerBefore: true });
+  }
   if (isSuperAdmin()) {
     items.push({ path: '/admin', icon: Settings, label: 'Admin Panel' });
   } else if (canManageUsers()) {
@@ -83,10 +96,10 @@ const getUserNav = (isSuperAdmin, canManageUsers) => {
   return items;
 };
 
-function getNavItems(isAdmin, isGroupAdmin, isSuperAdmin, canManageUsers) {
+function getNavItems(isAdmin, isGroupAdmin, isSuperAdmin, canManageUsers, hasGroup, canAccessUISchemas) {
   if (isAdmin) return ADMIN_NAV;
-  if (isGroupAdmin) return GROUP_ADMIN_NAV;
-  return getUserNav(isSuperAdmin, canManageUsers);
+  if (isGroupAdmin) return getGroupAdminNav(hasGroup);
+  return getUserNav(isSuperAdmin, canManageUsers, canAccessUISchemas);
 }
 
 function getPanelTitle(isAdmin, isGroupAdmin) {
@@ -117,6 +130,9 @@ function NavItem({ item, isActive, sidebarOpen, iconSize }) {
 
   return (
     <li key={item.path || item.label}>
+      {item.dividerBefore && (
+        <div className="my-3 border-t border-edge"></div>
+      )}
       {item.external ? (
         <a
           href={item.href}
@@ -190,18 +206,25 @@ function SidebarUserMenu({ user, sidebarOpen, iconSize, userMenuOpen, setUserMen
 }
 
 function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
-  const { user, logout, isSuperAdmin, canManageUsers } = useAuth();
+  const { user, logout, isSuperAdmin, canManageUsers, hasGroup, hasAnyPermission, hasAccessToDomain, hasAnyRole } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const canAccessUISchemas = () => {
+    const hasRole = hasAnyRole(['super-administrator', 'administrator', 'group-administrator']);
+    const hasPerm = hasAnyPermission(['ui_template.read', 'ui_template.write', 'ui_template.edit', 'ui_template.delete']);
+    const hasDomain = hasAccessToDomain('ui_template');
+    return hasRole && hasPerm && hasDomain;
+  };
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
 
-  const navItems = getNavItems(isAdmin, isGroupAdmin, isSuperAdmin, canManageUsers);
+  const navItems = getNavItems(isAdmin, isGroupAdmin, isSuperAdmin, canManageUsers, hasGroup, canAccessUISchemas);
   const iconSize = sidebarOpen ? 20 : 24;
 
   const isActive = (path, exact = false) => {

@@ -1227,6 +1227,84 @@
             <Condition>(proxy.pathsuffix MatchesPath "/jira/sync/**")</Condition>
         </Flow>
 
+        <!-- ==================== UI Templates Endpoints ==================== -->
+        <Flow name="UITemplates-List">
+            <Description>List UI templates with pagination and filters</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ui-templates") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="UITemplates-Create">
+            <Description>Create new UI template</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ui-templates") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="UITemplates-Count">
+            <Description>Get UI templates count</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ui-templates/count") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="UITemplates-Lookup">
+            <Description>Lookup UI template by page and component</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ui-templates/lookup") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="UITemplates-ToggleStatus">
+            <Description>Toggle UI template active/inactive status</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ui-templates/*/toggle-status") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="UITemplates-BumpVersion">
+            <Description>Create version copy of UI template</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ui-templates/*/bump-version") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="UITemplates-ReorderWidgets">
+            <Description>Reorder widgets in a UI template</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ui-templates/*/widgets/reorder") and (request.verb = "PUT")</Condition>
+        </Flow>
+
+        <Flow name="UITemplates-WidgetAttributes">
+            <Description>Update widget attributes</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ui-templates/*/widgets/*/attributes") and (request.verb = "PUT")</Condition>
+        </Flow>
+
+        <Flow name="UITemplates-WidgetOverrides">
+            <Description>Manage widget overrides</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ui-templates/*/widgets/*/overrides/**")</Condition>
+        </Flow>
+
+        <Flow name="UITemplates-Comments">
+            <Description>Add comment to UI template</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ui-templates/*/comments") and (request.verb = "POST")</Condition>
+        </Flow>
+
+        <Flow name="UITemplates-CRUD">
+            <Description>Get, update, or delete a specific UI template</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/ui-templates/*")</Condition>
+        </Flow>
+
         <!-- ==================== Health Check Endpoints ==================== -->
         <Flow name="Health">
             <Description>Health check endpoint</Description>

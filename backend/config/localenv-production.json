@@ -47,9 +47,10 @@
         "email_from_name":"{environment.smtp.email_from_name}"
         },
         "app_secrets": {
-        "auth_secret_key": "{environment.app_secrets.auth_secret_key}",
-        "jwt_issuer": "{environment.app_secrets.jwt_issuer}",
-        "jwt_audience": "{environment.app_secrets.jwt_audience}"
+          "auth_secret_key": "{environment.app_secrets.auth_secret_key}",
+          "jwt_issuer": "{environment.app_secrets.jwt_issuer}",
+          "jwt_audience": "{environment.app_secrets.jwt_audience}",
+          "private_handshake_secret_key": "{environment.app_secrets.private_handshake_secret_key}"
         },
         "authentication": {
         "access_token_expiry_minutes": 30,
@@ -94,6 +95,7 @@
         "assignee": "{environment.jira.assignee}",
         "reporter": "{environment.jira.reporter}",
         "default_team": "{environment.jira.default_team}",
+        "default_team_name": "{environment.jira.default_team_name}",
         "default_assignee": "{environment.jira.default_assignee}",
         "default_assignee_name": "{environment.jira.default_assignee_name}",
         "default_epic": "{environment.jira.default_epic}",

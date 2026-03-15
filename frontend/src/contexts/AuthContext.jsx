@@ -126,6 +126,14 @@ export function AuthProvider({ children }) {
     return user?.permissions || [];
   };
 
+  const getUserGroups = () => {
+    return user?.groups || [];
+  };
+
+  const hasGroup = (group) => {
+    return user?.groups?.includes(group) || false;
+  };
+
   const value = {
     user,
     loading,
@@ -147,6 +155,8 @@ export function AuthProvider({ children }) {
     hasAnyPermission,
     getUserDomains,
     getUserPermissions,
+    getUserGroups,
+    hasGroup,
     ROLES,
     ADMIN_ROLES,
     GROUP_ADMIN_ROLES,

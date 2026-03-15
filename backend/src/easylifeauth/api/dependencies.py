@@ -18,6 +18,7 @@ from ..services.file_storage_service import FileStorageService
 from ..services.activity_log_service import ActivityLogService, init_activity_log_service
 from ..services.error_log_service import ErrorLogService, init_error_log_service
 from ..services.gcs_service import GCSService
+from ..services.ui_template_service import UITemplateService
 from ..security.access_control import CurrentUser, get_current_user, set_token_manager
 
 
@@ -38,6 +39,8 @@ _file_storage_service: Optional[FileStorageService] = None
 _activity_log_service: Optional[ActivityLogService] = None
 _error_log_service: Optional[ErrorLogService] = None
 _gcs_service: Optional[GCSService] = None
+_ui_template_service: Optional[UITemplateService] = None
+_handshake_secret: Optional[str] = None
 
 
 def init_dependencies(
@@ -46,7 +49,9 @@ def init_dependencies(
     email_service: Optional[EmailService] = None,
     jira_config: Optional[Dict[str, Any]] = None,
     file_storage_config: Optional[Dict[str, Any]] = None,
-    gcs_config: Optional[Dict[str, Any]] = None
+    gcs_config: Optional[Dict[str, Any]] = None,
+    handshake_secret: Optional[str] = None,
+    ui_templates_db: Optional[DatabaseManager] = None
 ) -> None:
     """Initialize all dependencies"""
     global _db, _token_manager, _user_service, _admin_service
@@ -54,10 +59,12 @@ def init_dependencies(
     global _scenario_service, _playboard_service, _feedback_service
     global _scenario_request_service, _jira_service, _file_storage_service
     global _activity_log_service, _error_log_service, _gcs_service
+    global _ui_template_service, _handshake_secret
 
     _db = db
     _token_manager = token_manager
     _email_service = email_service
+    _handshake_secret = handshake_secret
 
     # Set token manager for access control
     set_token_manager(token_manager)
@@ -91,6 +98,10 @@ def init_dependencies(
     _scenario_request_service = NewScenarioService(
         db, token_manager, email_service, _jira_service, _file_storage_service
     )
+
+    # Initialize UI template service with separate DB if configured
+    _ui_template_service = UITemplateService(ui_templates_db or db)
+    print(f"✓ UI template service initialized (db: {'ui_templates' if ui_templates_db else 'shared'})")
 
     # Initialize activity log service
     _activity_log_service = init_activity_log_service(db)
@@ -246,6 +257,18 @@ def get_error_log_service() -> Optional[ErrorLogService]:
     return _error_log_service
 
 
+def get_handshake_secret() -> Optional[str]:
+    """Get private handshake secret for service-to-service auth"""
+    return _handshake_secret
+
+
+def get_ui_template_service() -> UITemplateService:
+    """Get UI template service"""
+    if _ui_template_service is None:
+        raise RuntimeError("UI template service not initialized")
+    return _ui_template_service
+
+
 # Re-export get_current_user
 __all__ = [
     "init_dependencies",
@@ -266,5 +289,7 @@ __all__ = [
     "get_activity_log_service",
     "get_gcs_service",
     "get_error_log_service",
+    "get_handshake_secret",
+    "get_ui_template_service",
     "get_current_user",
 ]

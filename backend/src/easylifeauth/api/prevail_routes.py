@@ -5,11 +5,10 @@ The Prevail service URL, auth, and SSL are configured via the api_configs collec
 with key="prevail".
 """
 import logging
-import os
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 
-from easylifeauth.api.dependencies import get_db, get_gcs_service
+from easylifeauth.api.dependencies import get_db, get_gcs_service, get_handshake_secret
 from easylifeauth.security.access_control import get_current_user, CurrentUser
 from easylifeauth.services.api_config_service import ApiConfigService
 
@@ -28,6 +27,7 @@ async def execute_prevail_query(
     request: Request,
     current_user: CurrentUser = Depends(get_current_user),
     service: ApiConfigService = Depends(get_api_config_service),
+    handshake_secret: str = Depends(get_handshake_secret),
 ):
     """
     Proxy a playboard query to the external Prevail service.
@@ -93,9 +93,8 @@ async def execute_prevail_query(
 
     # If a shared service secret is configured, include it so Prevail can
     # verify this is a trusted internal caller (not a spoofed request).
-    service_secret = os.environ.get("INTERNAL_SERVICE_SECRET")
-    if service_secret:
-        user_headers["X-Service-Secret"] = service_secret
+    if handshake_secret:
+        user_headers["X-Service-Secret"] = handshake_secret
 
     existing_headers = call_config.get("headers") or {}
     call_config["headers"] = {**existing_headers, **user_headers}

@@ -131,7 +131,8 @@ class ScenarioRequestCreate(BaseModel):
     reason: Optional[str] = None
 
     # Jira team and assignee (populated from defaults on create)
-    team: Optional[str] = None  # Jira board/team name
+    team: Optional[str] = None  # Jira board/team ID
+    team_name: Optional[str] = None  # Jira board/team display name
     assignee: Optional[str] = None  # Jira user accountId
     assignee_name: Optional[str] = None  # Jira user display name
 
@@ -151,6 +152,7 @@ class ScenarioRequestUpdate(BaseModel):
 
     # Team and assignee
     team: Optional[str] = None
+    team_name: Optional[str] = None
     assignee: Optional[str] = None
     assignee_name: Optional[str] = None
 
@@ -175,6 +177,7 @@ class ScenarioRequestAdminUpdate(BaseModel):
 
     # Jira team and assignee
     team: Optional[str] = None
+    team_name: Optional[str] = None
     assignee: Optional[str] = None
     assignee_name: Optional[str] = None
     new_comment: Optional[ScenarioComments] = None
@@ -303,7 +306,7 @@ class ScenarioRequestResponse(BaseModel):
 USER_EDITABLE_FIELDS = {
     "name", "description", "has_suggestion", "knows_steps",
     "steps", "files", "reason", "new_comment",
-    "team", "assignee", "assignee_name"
+    "team", "team_name", "assignee", "assignee_name"
 }
 
 # Fields that admins/editors can edit (includes user fields)
@@ -311,7 +314,7 @@ ADMIN_EDITABLE_FIELDS = USER_EDITABLE_FIELDS | {
     "dataDomain", "status", "scenarioKey", "configName",
     "fulfilmentDate", "new_workflow", "buckets", "email_recipients",
     "jira_links", "remove_jira_link_index",
-    "team", "assignee", "assignee_name"
+    "team", "team_name", "assignee", "assignee_name"
 }
 
 # Fields that only work with toggle (can be set once or toggled)

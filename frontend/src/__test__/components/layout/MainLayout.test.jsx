@@ -8,6 +8,10 @@ const mockLogout = jest.fn().mockResolvedValue(undefined);
 const mockIsSuperAdmin = jest.fn(() => false);
 const mockCanManageUsers = jest.fn(() => false);
 const mockIsEditor = jest.fn(() => false);
+const mockHasAnyPermission = jest.fn(() => false);
+const mockHasAccessToDomain = jest.fn(() => false);
+const mockHasAnyRole = jest.fn(() => false);
+const mockHasGroup = jest.fn(() => false);
 
 jest.mock('react-router', () => {
   const actual = jest.requireActual('react-router');
@@ -29,6 +33,10 @@ jest.mock('../../../contexts/AuthContext', () => ({
     isSuperAdmin: mockIsSuperAdmin,
     canManageUsers: mockCanManageUsers,
     isEditor: mockIsEditor,
+    hasAnyPermission: mockHasAnyPermission,
+    hasAccessToDomain: mockHasAccessToDomain,
+    hasAnyRole: mockHasAnyRole,
+    hasGroup: mockHasGroup,
   })),
 }));
 
@@ -56,6 +64,10 @@ describe('MainLayout', () => {
     mockIsSuperAdmin.mockReturnValue(false);
     mockCanManageUsers.mockReturnValue(false);
     mockIsEditor.mockReturnValue(false);
+    mockHasAnyPermission.mockReturnValue(false);
+    mockHasAccessToDomain.mockReturnValue(false);
+    mockHasAnyRole.mockReturnValue(false);
+    mockHasGroup.mockReturnValue(false);
     useAuth.mockReturnValue({
       user: {
         full_name: 'Test User',
@@ -67,6 +79,10 @@ describe('MainLayout', () => {
       isSuperAdmin: mockIsSuperAdmin,
       canManageUsers: mockCanManageUsers,
       isEditor: mockIsEditor,
+      hasAnyPermission: mockHasAnyPermission,
+      hasAccessToDomain: mockHasAccessToDomain,
+      hasAnyRole: mockHasAnyRole,
+      hasGroup: mockHasGroup,
     });
   });
 

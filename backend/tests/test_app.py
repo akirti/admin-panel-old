@@ -287,3 +287,133 @@ class TestRouterInclusion:
         # Health check at root (infrastructure tier)
         response = client.get("/health")
         assert response.status_code == 200
+
+
+class TestUITemplatesDB:
+    """Tests for separate ui_templates database initialization"""
+
+    @pytest.mark.asyncio
+    async def test_lifespan_with_ui_templates_db_config(self):
+        """Test lifespan initializes separate ui_templates DB when config provided"""
+        with patch(PATCH_EASYLIFEAUTH_APP_DATABASEMANAGER) as MockDB:
+            mock_auth_db = MagicMock()
+            mock_auth_db.ping = AsyncMock(return_value=True)
+            mock_auth_db.close = MagicMock()
+
+            mock_ui_db = MagicMock()
+            mock_ui_db.ping = AsyncMock(return_value=True)
+            mock_ui_db.close = MagicMock()
+
+            MockDB.side_effect = [mock_auth_db, mock_ui_db]
+
+            with patch(PATCH_EASYLIFEAUTH_APP_TOKENMANAGER):
+                with patch(PATCH_EASYLIFEAUTH_APP_INIT_DEPENDENCIES) as mock_init:
+                    app = create_app(
+                        db_config={"uri": MOCK_URL_MONGODB, "database": "auth"},
+                        ui_templates_db_config={"uri": MOCK_URL_MONGODB, "database": "ui_tpl"},
+                        token_secret="test_secret"
+                    )
+
+                    with TestClient(app):
+                        assert MockDB.call_count == 2
+                        mock_init.assert_called_once()
+                        call_kwargs = mock_init.call_args
+                        assert call_kwargs[1]["ui_templates_db"] is mock_ui_db
+
+    @pytest.mark.asyncio
+    async def test_lifespan_ui_templates_db_ping_failure(self):
+        """Test lifespan handles ui_templates DB ping returning False"""
+        with patch(PATCH_EASYLIFEAUTH_APP_DATABASEMANAGER) as MockDB:
+            mock_auth_db = MagicMock()
+            mock_auth_db.ping = AsyncMock(return_value=True)
+            mock_auth_db.close = MagicMock()
+
+            mock_ui_db = MagicMock()
+            mock_ui_db.ping = AsyncMock(return_value=False)
+            mock_ui_db.close = MagicMock()
+
+            MockDB.side_effect = [mock_auth_db, mock_ui_db]
+
+            with patch(PATCH_EASYLIFEAUTH_APP_TOKENMANAGER):
+                with patch(PATCH_EASYLIFEAUTH_APP_INIT_DEPENDENCIES):
+                    app = create_app(
+                        db_config={"uri": MOCK_URL_MONGODB, "database": "auth"},
+                        ui_templates_db_config={"uri": MOCK_URL_MONGODB, "database": "ui_tpl"},
+                        token_secret="test_secret"
+                    )
+
+                    with TestClient(app):
+                        assert MockDB.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_lifespan_ui_templates_db_ping_exception(self):
+        """Test lifespan handles ui_templates DB connection exception"""
+        with patch(PATCH_EASYLIFEAUTH_APP_DATABASEMANAGER) as MockDB:
+            mock_auth_db = MagicMock()
+            mock_auth_db.ping = AsyncMock(return_value=True)
+            mock_auth_db.close = MagicMock()
+
+            mock_ui_db = MagicMock()
+            mock_ui_db.ping = AsyncMock(side_effect=Exception("Connection refused"))
+            mock_ui_db.close = MagicMock()
+
+            MockDB.side_effect = [mock_auth_db, mock_ui_db]
+
+            with patch(PATCH_EASYLIFEAUTH_APP_TOKENMANAGER):
+                with patch(PATCH_EASYLIFEAUTH_APP_INIT_DEPENDENCIES):
+                    app = create_app(
+                        db_config={"uri": MOCK_URL_MONGODB, "database": "auth"},
+                        ui_templates_db_config={"uri": MOCK_URL_MONGODB, "database": "ui_tpl"},
+                        token_secret="test_secret"
+                    )
+
+                    # Should not raise
+                    with TestClient(app):
+                        assert MockDB.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_lifespan_ui_templates_db_shutdown_close_error(self):
+        """Test lifespan handles ui_templates DB close error on shutdown"""
+        with patch(PATCH_EASYLIFEAUTH_APP_DATABASEMANAGER) as MockDB:
+            mock_auth_db = MagicMock()
+            mock_auth_db.ping = AsyncMock(return_value=True)
+            mock_auth_db.close = MagicMock()
+
+            mock_ui_db = MagicMock()
+            mock_ui_db.ping = AsyncMock(return_value=True)
+            mock_ui_db.close = MagicMock(side_effect=Exception("close error"))
+
+            MockDB.side_effect = [mock_auth_db, mock_ui_db]
+
+            with patch(PATCH_EASYLIFEAUTH_APP_TOKENMANAGER):
+                with patch(PATCH_EASYLIFEAUTH_APP_INIT_DEPENDENCIES):
+                    app = create_app(
+                        db_config={"uri": MOCK_URL_MONGODB, "database": "auth"},
+                        ui_templates_db_config={"uri": MOCK_URL_MONGODB, "database": "ui_tpl"},
+                        token_secret="test_secret"
+                    )
+
+                    # Should not raise on shutdown
+                    with TestClient(app):
+                        pass
+
+    @pytest.mark.asyncio
+    async def test_lifespan_without_ui_templates_db_config(self):
+        """Test lifespan skips ui_templates DB when config not provided"""
+        with patch(PATCH_EASYLIFEAUTH_APP_DATABASEMANAGER) as MockDB:
+            mock_db = MagicMock()
+            mock_db.ping = AsyncMock(return_value=True)
+            mock_db.close = MagicMock()
+            MockDB.return_value = mock_db
+
+            with patch(PATCH_EASYLIFEAUTH_APP_TOKENMANAGER):
+                with patch(PATCH_EASYLIFEAUTH_APP_INIT_DEPENDENCIES) as mock_init:
+                    app = create_app(
+                        db_config={"uri": MOCK_URL_MONGODB, "database": "auth"},
+                        token_secret="test_secret"
+                    )
+
+                    with TestClient(app):
+                        MockDB.assert_called_once()
+                        call_kwargs = mock_init.call_args
+                        assert call_kwargs[1]["ui_templates_db"] is None

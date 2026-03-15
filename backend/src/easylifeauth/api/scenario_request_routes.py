@@ -78,18 +78,20 @@ async def get_domain_options(
 
 
 @router.get("/lookup/defaults")
-async def get_defaults(
-    current_user: CurrentUser = Depends(get_current_user),
+def get_defaults(
+    _current_user: CurrentUser = Depends(get_current_user),
     jira_service: JiraService = Depends(get_jira_service)
 ) -> Dict[str, Any]:
     """Get default team and assignee for new scenario requests"""
     defaults = {
         "team": None,
+        "team_name": None,
         "assignee": None,
         "assignee_name": None
     }
     if jira_service and jira_service.enabled:
         defaults["team"] = jira_service.default_team
+        defaults["team_name"] = jira_service.default_team_name
         defaults["assignee"] = jira_service.default_assignee
         defaults["assignee_name"] = jira_service.default_assignee_name
     return defaults

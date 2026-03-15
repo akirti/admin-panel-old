@@ -28,7 +28,20 @@
         "database": "{databases.authentication.db_info.database}",
         "collections": "{databases.authentication.db_info.collections}"
       }
+    },
+    "ui_templates": {
+      "type": "db",
+      "db_info": {
+        "type": "mongodb",
+        "connection_scheme": "{databases.ui_templates.db_info.connection_scheme}",
+        "username": "{databases.ui_templates.db_info.username}",
+        "password": "{databases.ui_templates.db_info.password}",
+        "host": "{databases.ui_templates.db_info.host}",
+        "database": "{databases.ui_templates.db_info.database}",
+        "collections": "{databases.ui_templates.db_info.collections}"
+      }
     }
+
   },
   "environment":{
     "app_name":"easylife-admin-panel",
@@ -49,7 +62,8 @@
     "app_secrets": {
       "auth_secret_key": "{environment.app_secrets.auth_secret_key}",
       "jwt_issuer": "{environment.app_secrets.jwt_issuer}",
-      "jwt_audience": "{environment.app_secrets.jwt_audience}"
+      "jwt_audience": "{environment.app_secrets.jwt_audience}",
+      "private_handshake_secret_key": "{environment.app_secrets.private_handshake_secret_key}"
     },
     "authentication": {
       "access_token_expiry_minutes": "{environment.authentication.access_token_expiry_minutes}",
@@ -94,6 +108,7 @@
       "assignee": "{environment.jira.assignee}",
       "reporter": "{environment.jira.reporter}",
       "default_team": "{environment.jira.default_team}",
+      "default_team_name": "{environment.jira.default_team_name}",
       "default_assignee": "{environment.jira.default_assignee}",
       "default_assignee_name": "{environment.jira.default_assignee_name}",
       "default_epic": "{environment.jira.default_epic}",

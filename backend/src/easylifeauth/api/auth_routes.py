@@ -1,7 +1,7 @@
 """Async Authentication Routes"""
 import os
 from typing import Dict, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
+from fastapi import APIRouter, Body, Depends, HTTPException, status, Request, Response
 
 from .models import (
     UserRegister, UserLogin, UserProfileUpdate,
@@ -154,7 +154,7 @@ async def login(
 async def refresh_token(
     request: Request,
     response: Response,
-    data: Optional[RefreshToken] = None,
+    data: Optional[RefreshToken] = Body(default=None),
     token_manager: TokenManager = Depends(get_token_manager)
 ):
     """Refresh JWT Token using refresh_token from cookie or body (no auth required)"""

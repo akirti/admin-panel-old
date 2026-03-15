@@ -36,6 +36,7 @@ from .api import (
     distribution_list_router,
     error_log_router,
     prevail_router,
+    ui_template_router,
 )
 from .api.dependencies import init_dependencies
 from .db.db_manager import DatabaseManager
@@ -51,6 +52,7 @@ from .middleware.apigee_identity import ApigeeIdentityMiddleware
 
 def create_app(
     db_config: Optional[Dict[str, Any]] = None,
+    ui_templates_db_config: Optional[Dict[str, Any]] = None,
     token_secret: Optional[str] = None,
     jwt_issuer: str = "easylife-auth",
     jwt_audience: str = "easylife-api",
@@ -63,6 +65,7 @@ def create_app(
     title: str = "EasyLife Auth API",
     description: str = "Authentication and Authorization API for EasyLife",
     root_path: str = "",
+    handshake_secret: Optional[str] = None,
 ) -> FastAPI:
     """Create and configure FastAPI application
 
@@ -80,26 +83,39 @@ def create_app(
     
     # Store references for cleanup
     db_manager: Optional[DatabaseManager] = None
-    
+    ui_templates_db_manager: Optional[DatabaseManager] = None
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        nonlocal db_manager
-        
+        nonlocal db_manager, ui_templates_db_manager
+
         # Startup
         if db_config and token_secret:
-            # Initialize database with Motor (async)
+            # Initialize authentication database with Motor (async)
             db_manager = DatabaseManager(config=db_config)
-            
+
             # Test connection
             try:
                 is_connected = await db_manager.ping()
                 if is_connected:
-                    print("✓ Connected to MongoDB")
+                    print("✓ Connected to MongoDB (auth)")
                 else:
-                    print("✗ Failed to connect to MongoDB")
+                    print("✗ Failed to connect to MongoDB (auth)")
             except Exception as e:
-                print(f"✗ MongoDB connection error: {e}")
-            
+                print(f"✗ MongoDB connection error (auth): {e}")
+
+            # Initialize separate UI templates database
+            if ui_templates_db_config:
+                ui_templates_db_manager = DatabaseManager(config=ui_templates_db_config)
+                try:
+                    is_connected = await ui_templates_db_manager.ping()
+                    if is_connected:
+                        print("✓ Connected to MongoDB (ui_templates)")
+                    else:
+                        print("✗ Failed to connect to MongoDB (ui_templates)")
+                except Exception as e:
+                    print(f"✗ MongoDB connection error (ui_templates): {e}")
+
             # Initialize token manager
             token_manager = TokenManager(
                 secret_key=token_secret,
@@ -107,13 +123,13 @@ def create_app(
                 issuer=jwt_issuer,
                 audience=jwt_audience
             )
-            
+
             # Initialize email service (optional)
             email_service = None
             if smtp_config and all(k in smtp_config for k in ["smtp_server", "smtp_port", "email"]):
                 email_service = EmailService(smtp_config)
                 print("✓ Email service configured")
-            
+
             # Initialize all dependencies with new services
             init_dependencies(
                 db_manager,
@@ -121,14 +137,22 @@ def create_app(
                 email_service,
                 jira_config=jira_config,
                 file_storage_config=file_storage_config,
-                gcs_config=gcs_config
+                gcs_config=gcs_config,
+                handshake_secret=handshake_secret,
+                ui_templates_db=ui_templates_db_manager
             )
             print("✓ Services initialized")
-        
+
         yield
 
         # Shutdown - close database connections gracefully
         print("Shutting down application...")
+        if ui_templates_db_manager:
+            try:
+                ui_templates_db_manager.close()
+                print("✓ UI templates database connection closed")
+            except Exception as e:
+                print(f"Warning: Error closing UI templates database connection: {e}")
         if db_manager:
             try:
                 db_manager.close()
@@ -338,6 +362,7 @@ def create_app(
     app.include_router(distribution_list_router, prefix=API_BASE_ROUTE)
     app.include_router(error_log_router, prefix=API_BASE_ROUTE)
     app.include_router(prevail_router, prefix=API_BASE_ROUTE)
+    app.include_router(ui_template_router, prefix=API_BASE_ROUTE)
 
     # Root endpoint
     @app.get("/")
