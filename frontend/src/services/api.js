@@ -648,6 +648,14 @@ export const jiraAPI = {
     api.get('/jira/assignable-users', { params: { project_key: projectKey, q: query, max_results: maxResults } })
 };
 
+// Atlassian Lookup API (server-side board/user search)
+export const atlassianAPI = {
+  searchBoards: (projectKey = null, search = null, maxResults = 50) =>
+    api.get('/atlassian/search/boards', { params: { project_key: projectKey, search, max_results: maxResults } }),
+  searchUsers: (projectKey = null, query = null, maxResults = 50) =>
+    api.get('/atlassian/search/users', { params: { project_key: projectKey, q: query, max_results: maxResults } }),
+};
+
 // UI Templates API
 export const uiTemplatesAPI = {
   list: (params = {}) => api.get('/ui-templates', { params }),

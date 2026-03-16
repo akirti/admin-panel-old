@@ -67,6 +67,10 @@ jest.mock('../../../services/api', () => ({
     getBoards: jest.fn(),
     getAssignableUsers: jest.fn(),
   },
+  atlassianAPI: {
+    searchBoards: jest.fn(),
+    searchUsers: jest.fn(),
+  },
 }));
 
 // ---- helpers ----
@@ -92,14 +96,16 @@ function renderEdit(requestId = 'REQ-001') {
 }
 
 async function setupLookupMocks() {
-  const { scenarioRequestAPI, jiraAPI } = await import('../../../services/api');
+  const { scenarioRequestAPI, jiraAPI, atlassianAPI } = await import('../../../services/api');
   scenarioRequestAPI.getDomains.mockResolvedValue({ data: [{ key: 'finance', name: 'Finance' }] });
   scenarioRequestAPI.getRequestTypes.mockResolvedValue({ data: [{ value: 'scenario', label: 'New Scenario Request' }] });
   scenarioRequestAPI.getDefaults.mockResolvedValue({ data: { team: 'Team-A', team_name: 'Team-A', assignee: 'acc1', assignee_name: 'Alice' } });
   scenarioRequestAPI.getStatuses.mockResolvedValue({ data: [{ value: 'submitted', label: 'Submitted' }, { value: 'review', label: 'Review' }] });
   jiraAPI.getBoards.mockResolvedValue({ data: [{ id: 1, name: 'Board-1' }] });
   jiraAPI.getAssignableUsers.mockResolvedValue({ data: [{ accountId: 'acc1', displayName: 'Alice', emailAddress: 'alice@test.com' }] });
-  return { scenarioRequestAPI, jiraAPI };
+  atlassianAPI.searchBoards.mockResolvedValue({ data: [{ id: 1, name: 'Board-1' }] });
+  atlassianAPI.searchUsers.mockResolvedValue({ data: [{ accountId: 'acc1', displayName: 'Alice', emailAddress: 'alice@test.com' }] });
+  return { scenarioRequestAPI, jiraAPI, atlassianAPI };
 }
 
 // ---- tests ----
@@ -826,12 +832,14 @@ describe('AskScenarioPage', () => {
   });
 
   it('shows Jira error gracefully', async () => {
-    const { scenarioRequestAPI, jiraAPI } = await import('../../../services/api');
+    const { scenarioRequestAPI, jiraAPI, atlassianAPI } = await import('../../../services/api');
     scenarioRequestAPI.getDomains.mockResolvedValue({ data: [{ key: 'finance', name: 'Finance' }] });
     scenarioRequestAPI.getRequestTypes.mockResolvedValue({ data: [{ value: 'scenario', label: 'New Scenario Request' }] });
     scenarioRequestAPI.getDefaults.mockResolvedValue({ data: { team: 'Team-A' } });
     jiraAPI.getBoards.mockRejectedValue(new Error('Jira unavailable'));
     jiraAPI.getAssignableUsers.mockRejectedValue(new Error('Jira unavailable'));
+    atlassianAPI.searchBoards.mockRejectedValue(new Error('Jira unavailable'));
+    atlassianAPI.searchUsers.mockRejectedValue(new Error('Jira unavailable'));
 
     renderNew();
 
@@ -1599,12 +1607,16 @@ describe('AskScenarioPage', () => {
   });
 
   it('renders Jira user without email address in autocomplete', async () => {
-    const { scenarioRequestAPI, jiraAPI } = await import('../../../services/api');
+    const { scenarioRequestAPI, jiraAPI, atlassianAPI } = await import('../../../services/api');
     scenarioRequestAPI.getDomains.mockResolvedValue({ data: [{ key: 'finance', name: 'Finance' }] });
     scenarioRequestAPI.getRequestTypes.mockResolvedValue({ data: [{ value: 'scenario', label: 'New Scenario Request' }] });
     scenarioRequestAPI.getDefaults.mockResolvedValue({ data: {} });
     jiraAPI.getBoards.mockResolvedValue({ data: [] });
     jiraAPI.getAssignableUsers.mockResolvedValue({
+      data: [{ accountId: 'acc-no-email', displayName: 'No Email User' }],
+    });
+    atlassianAPI.searchBoards.mockResolvedValue({ data: [] });
+    atlassianAPI.searchUsers.mockResolvedValue({
       data: [{ accountId: 'acc-no-email', displayName: 'No Email User' }],
     });
     const user = userEvent.setup();
@@ -1622,7 +1634,7 @@ describe('AskScenarioPage', () => {
   });
 
   it('renders domain options using value/label fallbacks when key/name are absent', async () => {
-    const { scenarioRequestAPI, jiraAPI } = await import('../../../services/api');
+    const { scenarioRequestAPI, jiraAPI, atlassianAPI } = await import('../../../services/api');
     scenarioRequestAPI.getDomains.mockResolvedValue({
       data: [{ value: 'sales', label: 'Sales Domain' }],
     });
@@ -1630,6 +1642,8 @@ describe('AskScenarioPage', () => {
     scenarioRequestAPI.getDefaults.mockResolvedValue({ data: {} });
     jiraAPI.getBoards.mockResolvedValue({ data: [] });
     jiraAPI.getAssignableUsers.mockResolvedValue({ data: [] });
+    atlassianAPI.searchBoards.mockResolvedValue({ data: [] });
+    atlassianAPI.searchUsers.mockResolvedValue({ data: [] });
 
     renderNew();
 
@@ -1639,12 +1653,14 @@ describe('AskScenarioPage', () => {
   });
 
   it('shows default request type option when requestTypes is empty', async () => {
-    const { scenarioRequestAPI, jiraAPI } = await import('../../../services/api');
+    const { scenarioRequestAPI, jiraAPI, atlassianAPI } = await import('../../../services/api');
     scenarioRequestAPI.getDomains.mockResolvedValue({ data: [] });
     scenarioRequestAPI.getRequestTypes.mockResolvedValue({ data: [] });
     scenarioRequestAPI.getDefaults.mockResolvedValue({ data: {} });
     jiraAPI.getBoards.mockResolvedValue({ data: [] });
     jiraAPI.getAssignableUsers.mockResolvedValue({ data: [] });
+    atlassianAPI.searchBoards.mockResolvedValue({ data: [] });
+    atlassianAPI.searchUsers.mockResolvedValue({ data: [] });
 
     renderNew();
 
@@ -1654,12 +1670,14 @@ describe('AskScenarioPage', () => {
   });
 
   it('handles lookups with null data fields', async () => {
-    const { scenarioRequestAPI, jiraAPI } = await import('../../../services/api');
+    const { scenarioRequestAPI, jiraAPI, atlassianAPI } = await import('../../../services/api');
     scenarioRequestAPI.getDomains.mockResolvedValue({ data: null });
     scenarioRequestAPI.getRequestTypes.mockResolvedValue({ data: null });
     scenarioRequestAPI.getDefaults.mockResolvedValue({ data: null });
     jiraAPI.getBoards.mockResolvedValue({ data: null });
     jiraAPI.getAssignableUsers.mockResolvedValue({ data: null });
+    atlassianAPI.searchBoards.mockResolvedValue({ data: null });
+    atlassianAPI.searchUsers.mockResolvedValue({ data: null });
 
     renderNew();
 
@@ -1670,12 +1688,14 @@ describe('AskScenarioPage', () => {
   });
 
   it('handles loadLookups failure gracefully', async () => {
-    const { scenarioRequestAPI, jiraAPI } = await import('../../../services/api');
+    const { scenarioRequestAPI, jiraAPI, atlassianAPI } = await import('../../../services/api');
     scenarioRequestAPI.getDomains.mockRejectedValue(new Error('API down'));
     scenarioRequestAPI.getRequestTypes.mockRejectedValue(new Error('API down'));
     scenarioRequestAPI.getDefaults.mockRejectedValue(new Error('API down'));
     jiraAPI.getBoards.mockResolvedValue({ data: [] });
     jiraAPI.getAssignableUsers.mockResolvedValue({ data: [] });
+    atlassianAPI.searchBoards.mockResolvedValue({ data: [] });
+    atlassianAPI.searchUsers.mockResolvedValue({ data: [] });
 
     renderNew();
 
@@ -2504,13 +2524,15 @@ describe('AskScenarioPage', () => {
   });
 
   it('does not load statuses for non-edit mode', async () => {
-    const { scenarioRequestAPI, jiraAPI } = await import('../../../services/api');
+    const { scenarioRequestAPI, jiraAPI, atlassianAPI } = await import('../../../services/api');
     scenarioRequestAPI.getDomains.mockResolvedValue({ data: [] });
     scenarioRequestAPI.getRequestTypes.mockResolvedValue({ data: [{ value: 'scenario', label: 'Scenario' }] });
     scenarioRequestAPI.getDefaults.mockResolvedValue({ data: {} });
     scenarioRequestAPI.getStatuses.mockResolvedValue({ data: [] });
     jiraAPI.getBoards.mockResolvedValue({ data: [] });
     jiraAPI.getAssignableUsers.mockResolvedValue({ data: [] });
+    atlassianAPI.searchBoards.mockResolvedValue({ data: [] });
+    atlassianAPI.searchUsers.mockResolvedValue({ data: [] });
 
     renderNew();
 
@@ -2581,7 +2603,7 @@ describe('AskScenarioPage', () => {
   });
 
   it('handles request type change', async () => {
-    const { scenarioRequestAPI, jiraAPI } = await import('../../../services/api');
+    const { scenarioRequestAPI, jiraAPI, atlassianAPI } = await import('../../../services/api');
     scenarioRequestAPI.getDomains.mockResolvedValue({ data: [] });
     scenarioRequestAPI.getRequestTypes.mockResolvedValue({
       data: [
@@ -2592,6 +2614,8 @@ describe('AskScenarioPage', () => {
     scenarioRequestAPI.getDefaults.mockResolvedValue({ data: {} });
     jiraAPI.getBoards.mockResolvedValue({ data: [] });
     jiraAPI.getAssignableUsers.mockResolvedValue({ data: [] });
+    atlassianAPI.searchBoards.mockResolvedValue({ data: [] });
+    atlassianAPI.searchUsers.mockResolvedValue({ data: [] });
     const user = userEvent.setup();
 
     renderNew();
@@ -2607,12 +2631,14 @@ describe('AskScenarioPage', () => {
   });
 
   it('does not set default request type when requestTypes data is empty', async () => {
-    const { scenarioRequestAPI, jiraAPI } = await import('../../../services/api');
+    const { scenarioRequestAPI, jiraAPI, atlassianAPI } = await import('../../../services/api');
     scenarioRequestAPI.getDomains.mockResolvedValue({ data: [] });
     scenarioRequestAPI.getRequestTypes.mockResolvedValue({ data: [] });
     scenarioRequestAPI.getDefaults.mockResolvedValue({ data: {} });
     jiraAPI.getBoards.mockResolvedValue({ data: [] });
     jiraAPI.getAssignableUsers.mockResolvedValue({ data: [] });
+    atlassianAPI.searchBoards.mockResolvedValue({ data: [] });
+    atlassianAPI.searchUsers.mockResolvedValue({ data: [] });
 
     renderNew();
 

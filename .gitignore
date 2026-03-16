@@ -85,3 +85,11 @@ features/**
 /features/**
 docs/**
 /docs/**
+issues/**
+/issues/**
+HANDOFF.md
+i-wrote.md
+.claude/**
+/*claude/**
+.gitignore
+

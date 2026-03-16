@@ -18,7 +18,7 @@ import {
   ArrowLeft,
   Save
 } from 'lucide-react';
-import { scenarioRequestAPI, jiraAPI } from '../../services/api';
+import { scenarioRequestAPI, jiraAPI, atlassianAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 // Simple Rich Text Editor Component
@@ -890,12 +890,9 @@ function DomainSelect({ formData, domains, handleChange }) {
 function TeamAssigneeSection({ formData, projectKey, projectName, onTeamSelect, onTeamClear, onAssigneeSelect, onAssigneeClear }) {
   const searchTeams = async (query) => {
     try {
-      const res = await jiraAPI.getBoards(projectKey || null);
+      const res = await atlassianAPI.searchBoards(projectKey || null, query, 50);
       const boards = res.data || [];
-      const lower = query.toLowerCase();
-      return boards
-        .filter(b => b.name.toLowerCase().includes(lower))
-        .map(board => ({ id: String(board.id), label: board.name, searchText: board.name }));
+      return boards.map(board => ({ id: String(board.id), label: board.name, searchText: board.name }));
     } catch {
       return [];
     }
@@ -903,7 +900,7 @@ function TeamAssigneeSection({ formData, projectKey, projectName, onTeamSelect, 
 
   const searchAssignees = async (query) => {
     try {
-      const res = await jiraAPI.getAssignableUsers(projectKey || null, query, 50);
+      const res = await atlassianAPI.searchUsers(projectKey || null, query, 50);
       return (res.data || []).map(user => ({
         id: user.accountId,
         label: user.displayName,
