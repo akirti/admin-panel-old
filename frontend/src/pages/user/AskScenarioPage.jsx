@@ -180,12 +180,16 @@ function RichTextEditor({ value, onChange, placeholder, rows = 6 }) {
   );
 }
 
-// Autocomplete input component with dropdown suggestions
-function AutocompleteInput({ label, value, displayValue, options, onSelect, onClear, placeholder, minChars = 2, renderOption }) {
+// Autocomplete input with server-side search support
+// - If onSearch is provided, calls it on each input change (debounced) and uses returned results
+// - If only options is provided, filters client-side (legacy mode)
+function AutocompleteInput({ label, value, displayValue, options, onSearch, onSelect, onClear, placeholder, minChars = 2, renderOption, loading: externalLoading }) {
   const [inputValue, setInputValue] = useState(displayValue || '');
   const [showDropdown, setShowDropdown] = useState(false);
-  const [filtered, setFiltered] = useState([]);
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
   const wrapperRef = useRef(null);
+  const debounceRef = useRef(null);
 
   useEffect(() => {
     setInputValue(displayValue || '');
@@ -201,19 +205,45 @@ function AutocompleteInput({ label, value, displayValue, options, onSelect, onCl
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Clean up debounce on unmount
+  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
+
+  const doSearch = (val) => {
+    if (onSearch) {
+      // Server-side search with debounce
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      setSearching(true);
+      debounceRef.current = setTimeout(async () => {
+        try {
+          const searchResults = await onSearch(val);
+          setResults(searchResults);
+          setShowDropdown(true);
+        } catch {
+          setResults([]);
+        } finally {
+          setSearching(false);
+        }
+      }, 300);
+    } else {
+      // Client-side filter
+      const lower = val.toLowerCase();
+      const matches = (options || []).filter(opt => {
+        const searchText = (opt.searchText || opt.label || '').toLowerCase();
+        return searchText.includes(lower);
+      });
+      setResults(matches);
+      setShowDropdown(true);
+    }
+  };
+
   const handleInputChange = (e) => {
     const val = e.target.value;
     setInputValue(val);
     if (val.length >= minChars) {
-      const lower = val.toLowerCase();
-      const matches = options.filter(opt => {
-        const searchText = (opt.searchText || opt.label || '').toLowerCase();
-        return searchText.includes(lower);
-      });
-      setFiltered(matches);
-      setShowDropdown(true);
+      doSearch(val);
     } else {
       setShowDropdown(false);
+      setResults([]);
     }
     if (!val) {
       onClear();
@@ -226,6 +256,8 @@ function AutocompleteInput({ label, value, displayValue, options, onSelect, onCl
     onSelect(option);
   };
 
+  const isLoading = searching || externalLoading;
+
   return (
     <div className="w-full" ref={wrapperRef}>
       <label className="block text-sm font-medium text-content-secondary mb-2">{label}</label>
@@ -236,26 +268,29 @@ function AutocompleteInput({ label, value, displayValue, options, onSelect, onCl
           onChange={handleInputChange}
           onFocus={() => {
             if (inputValue.length >= minChars) {
-              const lower = inputValue.toLowerCase();
-              setFiltered(options.filter(opt => (opt.searchText || opt.label || '').toLowerCase().includes(lower)));
-              setShowDropdown(true);
+              doSearch(inputValue);
             }
           }}
           placeholder={placeholder}
           className="w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface text-content placeholder-content-muted"
         />
-        {value && (
+        {value && !isLoading && (
           <button
             type="button"
-            onClick={() => { setInputValue(''); onClear(); setShowDropdown(false); }}
+            onClick={() => { setInputValue(''); onClear(); setShowDropdown(false); setResults([]); }}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-content-muted hover:text-red-600"
           >
             <X size={16} />
           </button>
         )}
-        {showDropdown && filtered.length > 0 && (
+        {isLoading && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-content-muted">
+            <Loader2 size={16} className="animate-spin" />
+          </span>
+        )}
+        {showDropdown && results.length > 0 && (
           <ul role="listbox" className="absolute z-50 w-full mt-1 bg-surface border border-edge rounded-lg shadow-lg max-h-60 overflow-y-auto">
-            {filtered.map((opt) => (
+            {results.map((opt) => (
               <li
                 key={opt.id}
                 role="option"
@@ -270,7 +305,7 @@ function AutocompleteInput({ label, value, displayValue, options, onSelect, onCl
             ))}
           </ul>
         )}
-        {showDropdown && filtered.length === 0 && inputValue.length >= minChars && (
+        {showDropdown && results.length === 0 && !isLoading && inputValue.length >= minChars && (
           <div className="absolute z-50 w-full mt-1 bg-surface border border-edge rounded-lg shadow-lg px-4 py-3 text-sm text-content-muted">
             No matches found
           </div>
@@ -600,8 +635,8 @@ function useAskScenarioData({ isEditMode, isEditor, requestId, user, navigate, f
   const [requestTypes, setRequestTypes] = useState([]);
   const [statuses, setStatuses] = useState([]);
   const [originalRequest, setOriginalRequest] = useState(null);
-  const [jiraBoards, setJiraBoards] = useState([]);
-  const [jiraUsers, setJiraUsers] = useState([]);
+  const [projectKey, setProjectKey] = useState(null);
+  const [projectName, setProjectName] = useState(null);
 
   const buildLookupPromises = () => {
     const promises = [
@@ -625,27 +660,15 @@ function useAskScenarioData({ isEditMode, isEditor, requestId, user, navigate, f
     return { defaults, requestTypes: results[1].data };
   };
 
-  const loadJiraData = async () => {
-    try {
-      const [boardsRes, usersRes] = await Promise.all([
-        jiraAPI.getBoards().catch(() => ({ data: [] })),
-        jiraAPI.getAssignableUsers().catch(() => ({ data: [] }))
-      ]);
-      setJiraBoards(boardsRes.data || []);
-      setJiraUsers(usersRes.data || []);
-    } catch {
-      // error handled silently
-    }
-  };
-
   const loadLookups = async () => {
     try {
       const results = await Promise.all(buildLookupPromises());
       const { defaults, requestTypes: requestTypesData } = applyLookupResults(results);
+      if (defaults.project_key) setProjectKey(defaults.project_key);
+      if (defaults.project_name) setProjectName(defaults.project_name);
       if (!isEditMode && requestTypesData && requestTypesData.length > 0) {
         form.applyDefaults(defaults, requestTypesData);
       }
-      loadJiraData();
     } catch {
       // error handled silently
     }
@@ -689,7 +712,7 @@ function useAskScenarioData({ isEditMode, isEditor, requestId, user, navigate, f
   return {
     loading, setLoading, loadingRequest,
     domains, requestTypes, statuses, originalRequest,
-    jiraBoards, jiraUsers
+    projectKey, projectName
   };
 }
 
@@ -864,51 +887,72 @@ function DomainSelect({ formData, domains, handleChange }) {
   );
 }
 
-function TeamAssigneeSection({ formData, jiraBoards, jiraUsers, onTeamSelect, onTeamClear, onAssigneeSelect, onAssigneeClear }) {
-  const teamOptions = jiraBoards.map(board => ({
-    id: String(board.id),
-    label: board.name,
-    searchText: board.name
-  }));
+function TeamAssigneeSection({ formData, projectKey, projectName, onTeamSelect, onTeamClear, onAssigneeSelect, onAssigneeClear }) {
+  const searchTeams = async (query) => {
+    try {
+      const res = await jiraAPI.getBoards(projectKey || null);
+      const boards = res.data || [];
+      const lower = query.toLowerCase();
+      return boards
+        .filter(b => b.name.toLowerCase().includes(lower))
+        .map(board => ({ id: String(board.id), label: board.name, searchText: board.name }));
+    } catch {
+      return [];
+    }
+  };
 
-  const assigneeOptions = jiraUsers.map(user => ({
-    id: user.accountId,
-    label: user.displayName,
-    searchText: `${user.displayName} ${user.emailAddress || ''}`,
-    email: user.emailAddress
-  }));
+  const searchAssignees = async (query) => {
+    try {
+      const res = await jiraAPI.getAssignableUsers(projectKey || null, query, 50);
+      return (res.data || []).map(user => ({
+        id: user.accountId,
+        label: user.displayName,
+        searchText: `${user.displayName} ${user.emailAddress || ''}`,
+        email: user.emailAddress
+      }));
+    } catch {
+      return [];
+    }
+  };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-3 border-t border-edge">
-      <AutocompleteInput
-        label="Team"
-        value={formData.team}
-        displayValue={formData.team_name}
-        options={teamOptions}
-        onSelect={onTeamSelect}
-        onClear={onTeamClear}
-        placeholder="Type to search teams..."
-        minChars={2}
-      />
+    <div className="pt-3 border-t border-edge space-y-4">
+      {projectName && (
+        <p className="text-sm text-content-secondary">
+          <span className="font-medium">Project:</span> {projectName}{projectKey ? ` (${projectKey})` : ''}
+        </p>
+      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <AutocompleteInput
+          label="Team"
+          value={formData.team}
+          displayValue={formData.team_name}
+          onSearch={searchTeams}
+          onSelect={onTeamSelect}
+          onClear={onTeamClear}
+          placeholder="Type to search teams..."
+          minChars={2}
+        />
 
-      <AutocompleteInput
-        label="Assignee"
-        value={formData.assignee}
-        displayValue={formData.assignee_name}
-        options={assigneeOptions}
-        onSelect={onAssigneeSelect}
-        onClear={onAssigneeClear}
-        placeholder="Type to search assignees..."
-        minChars={2}
-        renderOption={(opt) => (
-          <span>{opt.label}{opt.email ? <span className="text-content-muted"> ({opt.email})</span> : ''}</span>
-        )}
-      />
+        <AutocompleteInput
+          label="Assignee"
+          value={formData.assignee}
+          displayValue={formData.assignee_name}
+          onSearch={searchAssignees}
+          onSelect={onAssigneeSelect}
+          onClear={onAssigneeClear}
+          placeholder="Type to search assignees..."
+          minChars={2}
+          renderOption={(opt) => (
+            <span>{opt.label}{opt.email ? <span className="text-content-muted"> ({opt.email})</span> : ''}</span>
+          )}
+        />
+      </div>
     </div>
   );
 }
 
-function BasicInfoSection({ formData, requestTypes, domains, jiraBoards, jiraUsers, handleChange, handleRichTextChange, onTeamSelect, onTeamClear, onAssigneeSelect, onAssigneeClear }) {
+function BasicInfoSection({ formData, requestTypes, domains, projectKey, projectName, handleChange, handleRichTextChange, onTeamSelect, onTeamClear, onAssigneeSelect, onAssigneeClear }) {
   return (
     <div className="card">
       <div className="card-header">
@@ -950,7 +994,7 @@ function BasicInfoSection({ formData, requestTypes, domains, jiraBoards, jiraUse
         </div>
 
         <TeamAssigneeSection
-          formData={formData} jiraBoards={jiraBoards} jiraUsers={jiraUsers}
+          formData={formData} projectKey={projectKey} projectName={projectName}
           onTeamSelect={onTeamSelect} onTeamClear={onTeamClear}
           onAssigneeSelect={onAssigneeSelect} onAssigneeClear={onAssigneeClear}
         />
@@ -1116,7 +1160,7 @@ function AskScenarioPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <BasicInfoSection
           formData={form.formData} requestTypes={data.requestTypes} domains={data.domains}
-          jiraBoards={data.jiraBoards} jiraUsers={data.jiraUsers}
+          projectKey={data.projectKey} projectName={data.projectName}
           handleChange={form.handleChange} handleRichTextChange={form.handleRichTextChange}
           onTeamSelect={form.handleTeamSelect} onTeamClear={form.handleTeamClear}
           onAssigneeSelect={form.handleAssigneeSelect} onAssigneeClear={form.handleAssigneeClear}

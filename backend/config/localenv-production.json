@@ -90,6 +90,7 @@
         "api_token": "{environment.jira.api_token}",
         "email": "{environment.jira.email}",
         "project_key": "{environment.jira.project_key}",
+        "project_name": "{environment.jira.project_name}",
         "issue_type": "{environment.jira.issue_type}",
         "components": "{environment.jira.components}",
         "assignee": "{environment.jira.assignee}",

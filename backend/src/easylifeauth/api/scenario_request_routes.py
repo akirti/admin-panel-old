@@ -87,13 +87,17 @@ def get_defaults(
         "team": None,
         "team_name": None,
         "assignee": None,
-        "assignee_name": None
+        "assignee_name": None,
+        "project_key": None,
+        "project_name": None
     }
     if jira_service and jira_service.enabled:
         defaults["team"] = jira_service.default_team
         defaults["team_name"] = jira_service.default_team_name
         defaults["assignee"] = jira_service.default_assignee
         defaults["assignee_name"] = jira_service.default_assignee_name
+        defaults["project_key"] = jira_service.project_key
+        defaults["project_name"] = jira_service.project_name
     return defaults
 
 

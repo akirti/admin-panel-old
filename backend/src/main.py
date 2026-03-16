@@ -145,6 +145,7 @@ def build_jira_config(loader: ConfigurationLoader) -> Optional[dict]:
         "email": jira_raw.get("email"),
         "api_token": jira_raw.get("api_token"),
         "project_key": jira_raw.get("project_key", "SCEN"),
+        "project_name": jira_raw.get("project_name"),
         "issue_type": jira_raw.get("issue_type", "Task"),
         "components": jira_raw.get("components", []),
         "default_team": jira_raw.get("default_team"),

@@ -42,6 +42,7 @@ class JiraService:
         self.email = None
         self.api_token = None
         self.project_key = None
+        self.project_name = None
         self.issue_type = "Task"
         self.default_team = None
         self.default_team_name = None
@@ -58,6 +59,7 @@ class JiraService:
             self.email = config.get("email")
             self.api_token = config.get("api_token")
             self.project_key = config.get("project_key", "SCEN")
+            self.project_name = config.get("project_name")
             self.issue_type = config.get("issue_type", "Task")
             self.default_team = config.get("default_team")
             self.default_team_name = config.get("default_team_name")
