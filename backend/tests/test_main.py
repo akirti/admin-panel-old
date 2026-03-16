@@ -514,7 +514,7 @@ class TestBootstrap:
         expected_keys = {
             "db_config", "ui_templates_db_config",
             "token_secret", "jwt_issuer", "jwt_audience",
-            "smtp_config", "jira_config",
+            "smtp_config", "jira_config", "atlassian_lookup_config",
             "file_storage_config", "gcs_config", "cors_origins",
             "app_name", "title", "description", "root_path",
             "handshake_secret",

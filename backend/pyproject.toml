@@ -33,9 +33,11 @@ dependencies = [
 [project.optional-dependencies]
 gcs = ["google-cloud-storage>=2.14.0,<4.0.0"]
 jira = ["jira>=3.10.5,<4.0.0"]
+atlassian = ["atlassian-python-api>=3.41.0"]
 all = [
     "google-cloud-storage>=2.14.0,<4.0.0",
     "jira>=3.10.5,<4.0.0",
+    "atlassian-python-api>=3.41.0",
 ]
 
 [tool.poetry]

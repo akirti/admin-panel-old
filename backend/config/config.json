@@ -118,6 +118,7 @@
       "default_task_environment": "{environment.jira.default_task_environment}",
       "default_task_labels": "{environment.jira.default_task_labels}",
       "default_target_days": "{environment.jira.default_target_days}",
+      "jira_type": "{environment.jira.jira_type}",
       "ssl": {
         "enabled": "{environment.jira.ssl.enabled}",
         "bundle_path": "{environment.jira.ssl.bundle_path}",

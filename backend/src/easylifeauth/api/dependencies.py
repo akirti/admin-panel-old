@@ -14,6 +14,7 @@ from ..services.playboard_service import PlayboardService
 from ..services.feedback_service import FeedbackService
 from ..services.new_scenarios_service import NewScenarioService
 from ..services.jira_service import JiraService
+from ..services.atlassian_lookup_service import AtlassianLookupService
 from ..services.file_storage_service import FileStorageService
 from ..services.activity_log_service import ActivityLogService, init_activity_log_service
 from ..services.error_log_service import ErrorLogService, init_error_log_service
@@ -35,6 +36,7 @@ _playboard_service: Optional[PlayboardService] = None
 _feedback_service: Optional[FeedbackService] = None
 _scenario_request_service: Optional[NewScenarioService] = None
 _jira_service: Optional[JiraService] = None
+_atlassian_lookup_service: Optional[AtlassianLookupService] = None
 _file_storage_service: Optional[FileStorageService] = None
 _activity_log_service: Optional[ActivityLogService] = None
 _error_log_service: Optional[ErrorLogService] = None
@@ -48,6 +50,7 @@ def init_dependencies(
     token_manager: TokenManager,
     email_service: Optional[EmailService] = None,
     jira_config: Optional[Dict[str, Any]] = None,
+    atlassian_lookup_config: Optional[Dict[str, Any]] = None,
     file_storage_config: Optional[Dict[str, Any]] = None,
     gcs_config: Optional[Dict[str, Any]] = None,
     handshake_secret: Optional[str] = None,
@@ -57,7 +60,8 @@ def init_dependencies(
     global _db, _token_manager, _user_service, _admin_service
     global _password_service, _email_service, _domain_service
     global _scenario_service, _playboard_service, _feedback_service
-    global _scenario_request_service, _jira_service, _file_storage_service
+    global _scenario_request_service, _jira_service, _atlassian_lookup_service
+    global _file_storage_service
     global _activity_log_service, _error_log_service, _gcs_service
     global _ui_template_service, _handshake_secret
 
@@ -75,6 +79,13 @@ def init_dependencies(
         _jira_service = JiraService(jira_config)
         if _jira_service.enabled:
             print("✓ Jira integration configured")
+
+    # Initialize Atlassian lookup service if configured
+    _atlassian_lookup_service = None
+    if atlassian_lookup_config:
+        _atlassian_lookup_service = AtlassianLookupService(atlassian_lookup_config)
+        if _atlassian_lookup_service.enabled:
+            print("✓ Atlassian lookup service configured")
 
     # Initialize file storage service if configured
     _file_storage_service = None
@@ -237,6 +248,11 @@ def get_jira_service() -> Optional[JiraService]:
     return _jira_service
 
 
+def get_atlassian_lookup_service() -> Optional[AtlassianLookupService]:
+    """Get Atlassian lookup service for board/user search"""
+    return _atlassian_lookup_service
+
+
 def get_file_storage_service() -> Optional[FileStorageService]:
     """Get file storage service"""
     return _file_storage_service
@@ -285,6 +301,7 @@ __all__ = [
     "get_feedback_service",
     "get_scenario_request_service",
     "get_jira_service",
+    "get_atlassian_lookup_service",
     "get_file_storage_service",
     "get_activity_log_service",
     "get_gcs_service",

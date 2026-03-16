@@ -159,6 +159,25 @@ def build_jira_config(loader: ConfigurationLoader) -> Optional[dict]:
         "default_task_labels": jira_raw.get("default_task_labels"),
         "target_days": _safe_int(jira_raw.get("default_target_days", 7), 7),
         "ssl": jira_raw.get("ssl", {}),
+        "jira_type": jira_raw.get("jira_type", "cloud"),
+    }
+
+
+def build_atlassian_lookup_config(jira_config: Optional[dict]) -> Optional[dict]:
+    """Build Atlassian lookup config from the same Jira config block.
+
+    Reuses Jira credentials but adds jira_type for cloud/server branching.
+    Returns None if jira_config is None.
+    """
+    if not jira_config or not jira_config.get("base_url"):
+        return None
+    return {
+        "base_url": jira_config.get("base_url"),
+        "username": jira_config.get("username"),
+        "password": jira_config.get("password"),
+        "email": jira_config.get("email"),
+        "api_token": jira_config.get("api_token"),
+        "jira_type": jira_config.get("jira_type", "cloud"),
     }
 
 
@@ -182,6 +201,7 @@ def bootstrap():
     cors_origins = build_cors_origins(config_loader)
     file_storage_config, gcs_config = build_storage_config(config_loader)
     jira_config = build_jira_config(config_loader)
+    atlassian_lookup_config = build_atlassian_lookup_config(jira_config)
     app_name = config_loader.get_config_by_path("environment.app_name") or "easylife-admin-panel"
 
     pem_path = setup_jira_ssl_bundle(jira_config, config_path)
@@ -209,6 +229,7 @@ def bootstrap():
     kw["jwt_audience"] = jwt_audience
     kw["smtp_config"] = smtp_config
     kw["jira_config"] = jira_config
+    kw["atlassian_lookup_config"] = atlassian_lookup_config
     kw["file_storage_config"] = file_storage_config
     kw["gcs_config"] = gcs_config
     kw["cors_origins"] = cors_origins

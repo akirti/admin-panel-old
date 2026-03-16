@@ -1229,6 +1229,21 @@
             <Condition>(proxy.pathsuffix MatchesPath "/jira/sync/**")</Condition>
         </Flow>
 
+        <!-- ==================== Atlassian Lookup Endpoints ==================== -->
+        <Flow name="Atlassian-SearchBoards">
+            <Description>Search Jira boards with server-side filtering</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/atlassian/search/boards") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="Atlassian-SearchUsers">
+            <Description>Search Jira users by name or email</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/atlassian/search/users") and (request.verb = "GET")</Condition>
+        </Flow>
+
         <!-- ==================== UI Templates Endpoints ==================== -->
         <Flow name="UITemplates-List">
             <Description>List UI templates with pagination and filters</Description>

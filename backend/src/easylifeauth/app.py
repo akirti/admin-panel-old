@@ -37,6 +37,7 @@ from .api import (
     error_log_router,
     prevail_router,
     ui_template_router,
+    atlassian_lookup_router,
 )
 from .api.dependencies import init_dependencies
 from .db.db_manager import DatabaseManager
@@ -58,6 +59,7 @@ def create_app(
     jwt_audience: str = "easylife-api",
     smtp_config: Optional[Dict[str, Any]] = None,
     jira_config: Optional[Dict[str, Any]] = None,
+    atlassian_lookup_config: Optional[Dict[str, Any]] = None,
     file_storage_config: Optional[Dict[str, Any]] = None,
     gcs_config: Optional[Dict[str, Any]] = None,
     cors_origins: list = None,
@@ -136,6 +138,7 @@ def create_app(
                 token_manager,
                 email_service,
                 jira_config=jira_config,
+                atlassian_lookup_config=atlassian_lookup_config,
                 file_storage_config=file_storage_config,
                 gcs_config=gcs_config,
                 handshake_secret=handshake_secret,
@@ -363,6 +366,7 @@ def create_app(
     app.include_router(error_log_router, prefix=API_BASE_ROUTE)
     app.include_router(prevail_router, prefix=API_BASE_ROUTE)
     app.include_router(ui_template_router, prefix=API_BASE_ROUTE)
+    app.include_router(atlassian_lookup_router, prefix=API_BASE_ROUTE)
 
     # Root endpoint
     @app.get("/")

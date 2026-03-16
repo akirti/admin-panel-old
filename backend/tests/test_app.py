@@ -393,9 +393,9 @@ class TestUITemplatesDB:
                         token_secret="test_secret"
                     )
 
-                    # Should not raise on shutdown
+                    # Should not raise on shutdown even when ui_templates close errors
                     with TestClient(app):
-                        pass
+                        mock_ui_db.close.assert_not_called()  # close runs on exit
 
     @pytest.mark.asyncio
     async def test_lifespan_without_ui_templates_db_config(self):
