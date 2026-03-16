@@ -7,7 +7,7 @@ from bson import ObjectId
 from datetime import datetime
 
 from easylifeauth.api.scenario_request_routes import router
-from easylifeauth.api.dependencies import get_current_user, get_scenario_request_service
+from easylifeauth.api.dependencies import get_current_user, get_scenario_request_service, get_jira_service
 from easylifeauth.security.access_control import require_admin_or_editor
 from easylifeauth.errors.auth_error import AuthError
 from mock_data import MOCK_EMAIL_ADMIN_TEST, MOCK_EMAIL_EDITOR_TEST, MOCK_EMAIL_OTHER_TEST, MOCK_EMAIL_USER_TEST, MOCK_EMAIL_VIEWER_TEST
@@ -664,3 +664,83 @@ class TestScenarioRequestRoutesAdminEndpoints:
 
         response = client.put("/ask_scenarios/req_123/admin", json={"assigned_to": STR_USER_456})
         assert response.status_code == 200
+
+
+class TestGetDefaults:
+    """Tests for GET /ask_scenarios/lookup/defaults endpoint"""
+
+    @pytest.fixture
+    def app(self):
+        app = FastAPI()
+        app.include_router(router)
+        return app
+
+    @pytest.fixture
+    def mock_user(self):
+        user = MagicMock()
+        user.email = MOCK_EMAIL_USER_TEST
+        user.user_id = STR_USER_123
+        user.roles = ["user"]
+        user.model_dump = MagicMock(return_value={
+            "email": MOCK_EMAIL_USER_TEST,
+            "user_id": STR_USER_123,
+            "roles": ["user"]
+        })
+        return user
+
+    def test_defaults_with_jira_enabled(self, app, mock_user):
+        """Test defaults returns jira config when jira service is enabled"""
+        mock_jira = MagicMock()
+        mock_jira.enabled = True
+        mock_jira.default_team = "team-42"
+        mock_jira.default_team_name = "Dev Team"
+        mock_jira.default_assignee = "acc-001"
+        mock_jira.default_assignee_name = "Jane Doe"
+        mock_jira.project_key = "SCEN"
+        mock_jira.project_name = "Scenarios"
+
+        app.dependency_overrides[get_current_user] = lambda: mock_user
+        app.dependency_overrides[get_jira_service] = lambda: mock_jira
+        client = TestClient(app)
+
+        response = client.get("/ask_scenarios/lookup/defaults")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["team"] == "team-42"
+        assert data["team_name"] == "Dev Team"
+        assert data["assignee"] == "acc-001"
+        assert data["assignee_name"] == "Jane Doe"
+        assert data["project_key"] == "SCEN"
+        assert data["project_name"] == "Scenarios"
+
+    def test_defaults_with_jira_disabled(self, app, mock_user):
+        """Test defaults returns nulls when jira service is disabled"""
+        mock_jira = MagicMock()
+        mock_jira.enabled = False
+
+        app.dependency_overrides[get_current_user] = lambda: mock_user
+        app.dependency_overrides[get_jira_service] = lambda: mock_jira
+        client = TestClient(app)
+
+        response = client.get("/ask_scenarios/lookup/defaults")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["team"] is None
+        assert data["team_name"] is None
+        assert data["assignee"] is None
+        assert data["assignee_name"] is None
+        assert data["project_key"] is None
+        assert data["project_name"] is None
+
+    def test_defaults_with_no_jira_service(self, app, mock_user):
+        """Test defaults returns nulls when jira service is None"""
+        app.dependency_overrides[get_current_user] = lambda: mock_user
+        app.dependency_overrides[get_jira_service] = lambda: None
+        client = TestClient(app)
+
+        response = client.get("/ask_scenarios/lookup/defaults")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["team"] is None
+        assert data["project_key"] is None
+        assert data["project_name"] is None
