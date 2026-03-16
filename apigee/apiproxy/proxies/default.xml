@@ -4,9 +4,10 @@
 
     <PreFlow name="PreFlow">
         <Request>
-            <!-- Validate CORS origin against allowed list (runs for ALL requests including OPTIONS) -->
+            <!-- Validate CORS origin against allowed list (skip for infrastructure endpoints) -->
             <Step>
                 <Name>JS-ValidateCORSOrigin</Name>
+                <Condition>!(proxy.pathsuffix JavaRegex "/(health|health/.*|info|docs|redoc|openapi\\.json)")</Condition>
             </Step>
             <!-- CORS Preflight handling -->
             <Step>
@@ -16,11 +17,12 @@
             <!-- Retrieve credentials (hostname, JWT secret) from encrypted KVM - MUST run before JWT verification -->
             <Step>
                 <Name>KVM-Get-Credentials</Name>
-                <Condition>request.verb != "OPTIONS"</Condition>
+                <Condition>request.verb != "OPTIONS" and !(proxy.pathsuffix JavaRegex "/(health|health/.*|info|docs|redoc|openapi\\.json)")</Condition>
             </Step>
             <!-- Spike Arrest to prevent abuse (rate limit by client IP) -->
             <Step>
                 <Name>SA-RateLimit</Name>
+                <Condition>!(proxy.pathsuffix JavaRegex "/(health|health/.*|info|docs|redoc|openapi\\.json)")</Condition>
             </Step>
             <!-- Extract access_token from httpOnly cookie into Authorization header (for page-refresh flows) -->
             <Step>
