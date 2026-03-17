@@ -76,7 +76,7 @@ applications:
     path: ./frontend/dist
     env:
       EASYLIFE_ENVIRONMENT: production
-      VITE_API_BASE_URL: https://easylife-backend.apps.internal/api/v1
-      VITE_PREVAIL_API_BASE_URL: https://easylife-backend-core.apps.internal/api/v1
+      VITE_API_BASE_URL: http://localhost
+      VITE_PREVAIL_API_BASE_URL: http://localhost
     routes:
       - route: easylife.apps.example.com

@@ -18,7 +18,7 @@ const usePlayboardUpload = (scenarioKey, fetchData) => {
 
   const handleFileSelect = async (file) => {
     setUploadFile(file);
-    if (file && file.name.endsWith('.json')) {
+    if (file?.name.endsWith('.json')) {
       try {
         const text = await file.text();
         const json = JSON.parse(text);
