@@ -3,6 +3,7 @@ require('@testing-library/jest-dom');
 // Mock window.__env for runtime config
 window.__env = {
   ENV: 'test',
+  APP_BASE_PATH: '',
   API_BASE_URL: '/api/v1',
   PREVAIL_API_BASE_URL: '/api/v1',
 };

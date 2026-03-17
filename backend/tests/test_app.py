@@ -77,6 +77,32 @@ class TestAppRoutes:
         # Should redirect or return docs page
         assert response.status_code in [200, 307]
 
+    def test_docs_uses_relative_openapi_url(self, client):
+        """Test Swagger UI references openapi.json with a relative URL"""
+        response = client.get("/docs")
+        assert response.status_code in [200, 307]
+        if response.status_code == 200:
+            # Swagger UI HTML should contain relative "openapi.json" URL
+            assert "openapi.json" in response.text
+
+    def test_redoc_endpoint_returns_html(self, client):
+        """Test custom ReDoc endpoint returns HTML page"""
+        response = client.get("/redoc")
+        assert response.status_code == 200
+        assert "text/html" in response.headers.get("content-type", "")
+
+    def test_redoc_uses_relative_spec_url(self, client):
+        """Test ReDoc HTML uses relative spec-url for openapi.json"""
+        response = client.get("/redoc")
+        assert response.status_code == 200
+        assert 'spec-url="openapi.json"' in response.text
+
+    def test_redoc_includes_redoc_script(self, client):
+        """Test ReDoc HTML includes the ReDoc standalone script"""
+        response = client.get("/redoc")
+        assert response.status_code == 200
+        assert "redoc.standalone.js" in response.text
+
     @pytest.mark.skipif(
         sys.version_info < (3, 10),
         reason="pydantic v2 OpenAPI schema generation requires Python 3.10+",
@@ -88,6 +114,35 @@ class TestAppRoutes:
         data = response.json()
         assert "openapi" in data
         assert "paths" in data
+
+
+class TestDocsWithRootPath:
+    """Tests for docs endpoints behind a reverse proxy (root_path set)"""
+
+    @pytest.fixture
+    def client_with_root_path(self):
+        app = create_app(root_path="/mine/tine/security")
+        return TestClient(app)
+
+    def test_docs_still_accessible(self, client_with_root_path):
+        """Test /docs is accessible when root_path is set"""
+        response = client_with_root_path.get("/docs")
+        assert response.status_code in [200, 307]
+
+    def test_redoc_still_accessible(self, client_with_root_path):
+        """Test /redoc is accessible when root_path is set"""
+        response = client_with_root_path.get("/redoc")
+        assert response.status_code == 200
+        assert 'spec-url="openapi.json"' in response.text
+
+    def test_redoc_does_not_use_absolute_root_path_url(self, client_with_root_path):
+        """Test ReDoc does not hardcode root_path in the spec URL"""
+        response = client_with_root_path.get("/redoc")
+        assert response.status_code == 200
+        # Should NOT contain the absolute root_path-prefixed URL
+        assert "/mine/tine/security/openapi.json" not in response.text
+        # Should use relative URL
+        assert 'spec-url="openapi.json"' in response.text
 
 
 class TestExceptionHandlers:

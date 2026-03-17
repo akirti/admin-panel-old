@@ -5,7 +5,7 @@ Main application entry point
 from typing import Optional, Dict, Any
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 from contextlib import asynccontextmanager
@@ -170,8 +170,16 @@ def create_app(
         lifespan=lifespan,
         root_path=root_path,
         docs_url="/docs",
-        redoc_url="/redoc",
+        redoc_url=None,  # Custom ReDoc below — uses relative openapi.json URL
         openapi_url="/openapi.json",
+        swagger_ui_parameters={
+            # Use relative URL so openapi.json is fetched relative to the
+            # browser's current path. When accessed via a reverse proxy like
+            # domain.com/proxy/base/docs, "openapi.json" resolves to
+            # domain.com/proxy/base/openapi.json — correct regardless of
+            # what root_path is configured to.
+            "url": "openapi.json",
+        },
     )
     
     
@@ -367,6 +375,21 @@ def create_app(
     app.include_router(prevail_router, prefix=API_BASE_ROUTE)
     app.include_router(ui_template_router, prefix=API_BASE_ROUTE)
     app.include_router(atlassian_lookup_router, prefix=API_BASE_ROUTE)
+
+    # Custom ReDoc using relative openapi.json URL (works behind any proxy basepath)
+    @app.get("/redoc", include_in_schema=False)
+    async def redoc_html():
+        return HTMLResponse(
+            f"""<!DOCTYPE html><html><head>
+            <title>{title} - ReDoc</title>
+            <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+            <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700"
+                  rel="stylesheet">
+            <style>body{{margin:0;padding:0}}</style></head><body>
+            <redoc spec-url="openapi.json"></redoc>
+            <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
+            </body></html>"""
+        )
 
     # Root endpoint
     @app.get("/")
