@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { API_BASE_URL } from '../config/env';
+import { API_BASE_URL, APP_BASE_PATH } from '../config/env';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -119,10 +119,16 @@ const handleUnauthorized = async (originalRequest) => {
 
 // Helper: redirect to login unless already on a public auth page
 const redirectToLoginIfNeeded = () => {
+  const basePath = APP_BASE_PATH || '';
   const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password'];
-  const isPublicPage = publicPaths.some(p => window.location.pathname.startsWith(p));
+  const pathname = window.location.pathname;
+  // Strip basePath prefix before checking against public paths
+  const relativePath = basePath && pathname.startsWith(basePath)
+    ? pathname.slice(basePath.length)
+    : pathname;
+  const isPublicPage = publicPaths.some(p => relativePath.startsWith(p));
   if (!isPublicPage) {
-    window.location.href = '/login';
+    window.location.href = `${basePath}/login`;
   }
 };
 
