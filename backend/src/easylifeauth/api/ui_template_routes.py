@@ -61,7 +61,7 @@ AuthenticatedUser = Annotated[object, Depends(get_current_user)]
 
 # ── Endpoints ─────────────────────────────────────────────
 
-@router.get("/")
+@router.get("")
 async def list_templates(
     current_user: ManagementUser,
     page: int = Query(0, ge=0),
@@ -118,7 +118,7 @@ async def get_template(
     return template
 
 
-@router.post("/", responses={400: {"description": "Bad request"}})
+@router.post("", responses={400: {"description": "Bad request"}})
 async def create_template(
     body: UITemplateCreate,
     current_user: ManagementUser,
