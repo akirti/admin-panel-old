@@ -6,7 +6,7 @@ import V1ExplorerSidebar from './v1_ExplorerSidebar';
 function V1ExplorerLayout() {
   return (
     <ExplorerProvider>
-      <div className="flex h-[calc(100vh-7rem)] -m-6">
+      <div className="flex -mx-6 -mb-6" style={{ height: 'calc(100vh - 8.5rem)' }}>
         <V1ExplorerSidebar />
         <div className="flex-1 overflow-auto p-6">
           <Outlet />

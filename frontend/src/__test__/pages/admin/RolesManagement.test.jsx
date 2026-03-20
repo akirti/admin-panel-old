@@ -27,6 +27,24 @@ jest.mock('../../../services/api', () => ({
 jest.mock('../../../components/shared', () => ({
   Modal: ({ isOpen, children, title }) =>
     isOpen ? <div data-testid="modal"><h2>{title}</h2>{children}</div> : null,
+  Table: ({ columns, data, loading, emptyMessage }) => {
+    if (loading) return <div>Loading...</div>;
+    if (!data || data.length === 0) return <div>{emptyMessage || 'No data available'}</div>;
+    return (
+      <table>
+        <thead><tr>{columns.map(c => <th key={c.key}>{c.title}</th>)}</tr></thead>
+        <tbody>
+          {data.map((row, i) => (
+            <tr key={row._id || i}>
+              {columns.map(c => (
+                <td key={c.key}>{c.render ? c.render(row[c.key], row) : row[c.key]}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  },
 }));
 
 const mockRoles = [
@@ -144,7 +162,7 @@ describe('RolesManagement', () => {
     render(<RolesManagement />);
 
     await waitFor(() => {
-      expect(screen.getByText(/no roles found/i)).toBeInTheDocument();
+      expect(screen.getByText('No data available')).toBeInTheDocument();
     });
   });
 
@@ -165,7 +183,7 @@ describe('RolesManagement', () => {
     domainsAPI.list.mockReturnValue(new Promise(Function.prototype));
 
     render(<RolesManagement />);
-    expect(screen.getByText(/loading roles/i)).toBeInTheDocument();
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
   it('handles API error', async () => {
@@ -784,7 +802,7 @@ describe('RolesManagement', () => {
     expect(permFilter.value).toBe('users.read');
   });
 
-  it('shows and clicks Clear Filters button', async () => {
+  it('shows and clicks Clear button', async () => {
     await setupMocks();
     const user = userEvent.setup();
     render(<RolesManagement />);
@@ -797,10 +815,10 @@ describe('RolesManagement', () => {
     await user.selectOptions(domainFilter, 'sales');
 
     await waitFor(() => {
-      expect(screen.getByText('Clear Filters')).toBeInTheDocument();
+      expect(screen.getByText('Clear')).toBeInTheDocument();
     });
 
-    await user.click(screen.getByText('Clear Filters'));
+    await user.click(screen.getByText('Clear'));
     expect(domainFilter.value).toBe('');
   });
 
@@ -1097,8 +1115,8 @@ describe('RolesManagement', () => {
       expect(screen.getByText('No Priority Role')).toBeInTheDocument();
     });
 
-    // Priority defaults to 0
-    expect(screen.getByText('0')).toBeInTheDocument();
+    // Priority defaults to 0 (may appear in stat cards too)
+    expect(screen.getAllByText('0').length).toBeGreaterThanOrEqual(1);
   });
 
   it('navigates pagination forward and backward', async () => {
@@ -1222,8 +1240,9 @@ describe('RolesManagement', () => {
       expect(screen.getByText('Inactive User')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Active')).toBeInTheDocument();
-    expect(screen.getByText('Inactive')).toBeInTheDocument();
+    // "Active"/"Inactive" may appear in both table cells and user modal badges
+    expect(screen.getAllByText('Active').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Inactive').length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows username fallback when full_name is missing in users modal', async () => {
@@ -1788,10 +1807,10 @@ describe('RolesManagement', () => {
     await user.selectOptions(permFilter, 'users.read');
 
     await waitFor(() => {
-      expect(screen.getByText('Clear Filters')).toBeInTheDocument();
+      expect(screen.getByText('Clear')).toBeInTheDocument();
     });
 
-    await user.click(screen.getByText('Clear Filters'));
+    await user.click(screen.getByText('Clear'));
     expect(permFilter.value).toBe('');
   });
 
@@ -1811,10 +1830,10 @@ describe('RolesManagement', () => {
     await user.selectOptions(permFilter, 'users.read');
 
     await waitFor(() => {
-      expect(screen.getByText('Clear Filters')).toBeInTheDocument();
+      expect(screen.getByText('Clear')).toBeInTheDocument();
     });
 
-    await user.click(screen.getByText('Clear Filters'));
+    await user.click(screen.getByText('Clear'));
     expect(domainFilter.value).toBe('');
     expect(permFilter.value).toBe('');
   });
@@ -1848,7 +1867,7 @@ describe('RolesManagement', () => {
     render(<RolesManagement />);
 
     await waitFor(() => {
-      expect(screen.getByText(/no roles found/i)).toBeInTheDocument();
+      expect(screen.getByText('No data available')).toBeInTheDocument();
     });
   });
 

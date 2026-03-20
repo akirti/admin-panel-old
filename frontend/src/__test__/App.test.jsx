@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import App from '../App';
 
@@ -34,6 +34,7 @@ jest.mock('../pages/admin/CustomersManagement', () => ({ __esModule: true, defau
 jest.mock('../pages/admin/FeedbackManagement', () => ({ __esModule: true, default: () => <div>Feedback Management</div> }));
 jest.mock('../pages/admin/ApiConfigsManagement', () => ({ __esModule: true, default: () => <div>API Configs</div> }));
 jest.mock('../pages/admin/DistributionListManagement', () => ({ __esModule: true, default: () => <div>Distribution Lists</div> }));
+jest.mock('../pages/admin/UISchemaManagement', () => ({ __esModule: true, default: () => <div>UI Schemas</div> }));
 jest.mock('../pages/FeedbackPage', () => ({ __esModule: true, default: () => <div>Feedback Page</div> }));
 
 // Layout mocks that render Outlet (require inside factory to avoid out-of-scope reference)
@@ -69,29 +70,37 @@ describe('App', () => {
       mockAuthValue = { user: null, loading: false };
     });
 
-    it('renders login page', () => {
+    it('renders login page', async () => {
       render(<MemoryRouter initialEntries={['/login']}><App /></MemoryRouter>);
-      expect(screen.getByText('Login Page')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Login Page')).toBeInTheDocument();
+      });
     });
 
-    it('renders register page', () => {
+    it('renders register page', async () => {
       render(<MemoryRouter initialEntries={['/register']}><App /></MemoryRouter>);
-      expect(screen.getByText('Register Page')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Register Page')).toBeInTheDocument();
+      });
     });
 
-    it('renders forgot password page', () => {
+    it('renders forgot password page', async () => {
       render(<MemoryRouter initialEntries={['/forgot-password']}><App /></MemoryRouter>);
-      expect(screen.getByText('Forgot Password Page')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Forgot Password Page')).toBeInTheDocument();
+      });
     });
 
-    it('renders feedback page (no auth required)', () => {
+    it('renders feedback page (no auth required)', async () => {
       render(<MemoryRouter initialEntries={['/feedback']}><App /></MemoryRouter>);
-      expect(screen.getByText('Feedback Page')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Feedback Page')).toBeInTheDocument();
+      });
     });
   });
 
   describe('public route redirect when logged in', () => {
-    it('redirects from login to dashboard when user is logged in', () => {
+    it('redirects from login to dashboard when user is logged in', async () => {
       mockAuthValue = {
         user: { email: 'test@test.com', roles: ['user'] },
         loading: false,
@@ -99,18 +108,22 @@ describe('App', () => {
         canManageUsers: () => false,
       };
       render(<MemoryRouter initialEntries={['/login']}><App /></MemoryRouter>);
-      expect(screen.getByText('Dashboard Page')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Dashboard Page')).toBeInTheDocument();
+      });
     });
   });
 
   describe('protected routes', () => {
-    it('redirects to login when not authenticated', () => {
+    it('redirects to login when not authenticated', async () => {
       mockAuthValue = { user: null, loading: false };
       render(<MemoryRouter initialEntries={['/dashboard']}><App /></MemoryRouter>);
-      expect(screen.getByText('Login Page')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Login Page')).toBeInTheDocument();
+      });
     });
 
-    it('renders dashboard when authenticated', () => {
+    it('renders dashboard when authenticated', async () => {
       mockAuthValue = {
         user: { email: 'test@test.com', roles: ['user'] },
         loading: false,
@@ -119,10 +132,12 @@ describe('App', () => {
         canManageUsers: () => false,
       };
       render(<MemoryRouter initialEntries={['/dashboard']}><App /></MemoryRouter>);
-      expect(screen.getByText('Dashboard Page')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Dashboard Page')).toBeInTheDocument();
+      });
     });
 
-    it('renders profile page when authenticated', () => {
+    it('renders profile page when authenticated', async () => {
       mockAuthValue = {
         user: { email: 'test@test.com', roles: ['user'] },
         loading: false,
@@ -130,7 +145,9 @@ describe('App', () => {
         canManageUsers: () => false,
       };
       render(<MemoryRouter initialEntries={['/profile']}><App /></MemoryRouter>);
-      expect(screen.getByText('Profile Page')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Profile Page')).toBeInTheDocument();
+      });
     });
 
     it('shows loading state', () => {
@@ -141,7 +158,7 @@ describe('App', () => {
   });
 
   describe('admin routes', () => {
-    it('redirects non-admin to dashboard', () => {
+    it('redirects non-admin to dashboard', async () => {
       mockAuthValue = {
         user: { email: 'test@test.com', roles: ['user'] },
         loading: false,
@@ -149,10 +166,12 @@ describe('App', () => {
         canManageUsers: () => false,
       };
       render(<MemoryRouter initialEntries={['/admin']}><App /></MemoryRouter>);
-      expect(screen.getByText('Dashboard Page')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Dashboard Page')).toBeInTheDocument();
+      });
     });
 
-    it('renders admin dashboard for super-admin', () => {
+    it('renders admin dashboard for super-admin', async () => {
       mockAuthValue = {
         user: { email: 'admin@test.com', roles: ['super-administrator'] },
         loading: false,
@@ -160,12 +179,14 @@ describe('App', () => {
         canManageUsers: () => true,
       };
       render(<MemoryRouter initialEntries={['/admin']}><App /></MemoryRouter>);
-      expect(screen.getByText('Admin Dashboard')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Admin Dashboard')).toBeInTheDocument();
+      });
     });
   });
 
   describe('redirects', () => {
-    it('redirects / to /dashboard', () => {
+    it('redirects / to /dashboard', async () => {
       mockAuthValue = {
         user: { email: 'test@test.com', roles: ['user'] },
         loading: false,
@@ -173,10 +194,12 @@ describe('App', () => {
         canManageUsers: () => false,
       };
       render(<MemoryRouter initialEntries={['/']}><App /></MemoryRouter>);
-      expect(screen.getByText('Dashboard Page')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Dashboard Page')).toBeInTheDocument();
+      });
     });
 
-    it('redirects unknown routes to /dashboard', () => {
+    it('redirects unknown routes to /dashboard', async () => {
       mockAuthValue = {
         user: { email: 'test@test.com', roles: ['user'] },
         loading: false,
@@ -184,7 +207,9 @@ describe('App', () => {
         canManageUsers: () => false,
       };
       render(<MemoryRouter initialEntries={['/nonexistent']}><App /></MemoryRouter>);
-      expect(screen.getByText('Dashboard Page')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Dashboard Page')).toBeInTheDocument();
+      });
     });
   });
 });

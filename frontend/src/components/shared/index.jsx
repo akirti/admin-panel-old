@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { memo, useEffect, useCallback } from 'react';
 import { X, Search, Upload, Loader2 } from 'lucide-react';
 
 // Button Component
@@ -125,7 +125,7 @@ export const Card = ({ children, className = '', ...props }) => {
 };
 
 // Badge Component
-export const Badge = ({ children, variant = 'default', className = '' }) => {
+export const Badge = memo(({ children, variant = 'default', className = '' }) => {
   const variants = {
     default: 'bg-neutral-100 text-neutral-800',
     success: 'bg-green-100 text-green-800',
@@ -140,7 +140,8 @@ export const Badge = ({ children, variant = 'default', className = '' }) => {
       {children}
     </span>
   );
-};
+});
+Badge.displayName = 'Badge';
 
 // Modal Component
 export const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
@@ -226,7 +227,7 @@ export const Toggle = ({ enabled, onChange, label }) => {
 };
 
 // Stat Card Component
-export const StatCard = ({ title, value, icon, trend, trendValue }) => {
+export const StatCard = memo(({ title, value, icon, trend, trendValue }) => {
   return (
     <Card className="p-6">
       <div className="flex items-center justify-between">
@@ -247,10 +248,11 @@ export const StatCard = ({ title, value, icon, trend, trendValue }) => {
       </div>
     </Card>
   );
-};
+});
+StatCard.displayName = 'StatCard';
 
 // Search Input Component
-export const SearchInput = ({ value, onChange, placeholder = 'Search...' }) => {
+export const SearchInput = memo(({ value, onChange, placeholder = 'Search...' }) => {
   return (
     <div className="relative" role="search">
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -266,7 +268,8 @@ export const SearchInput = ({ value, onChange, placeholder = 'Search...' }) => {
       />
     </div>
   );
-};
+});
+SearchInput.displayName = 'SearchInput';
 
 const computePageRange = (displayPage, totalPages, maxVisible = 7) => {
   let startPage = Math.max(1, displayPage - Math.floor(maxVisible / 2));
@@ -397,8 +400,29 @@ export const FileUpload = ({ onFileSelect, accept = '*', label = 'Upload File' }
   );
 };
 
+// Export Breadcrumbs
+export { default as Breadcrumbs } from './Breadcrumbs';
+
 // Export ExportButton
 export { default as ExportButton } from './ExportButton';
 
 // Export DataGrid and its hook for direct use
 export { DataGrid, useDataGrid } from './DataGrid';
+
+// Empty State, Tooltip, Undo Toast
+export { default as EmptyState } from './EmptyState';
+export { default as Tooltip } from './Tooltip';
+export { useUndoAction } from './UndoToast';
+
+// Font Size Control
+export { default as FontSizeControl } from './FontSizeControl';
+
+// Chart components
+export {
+  ChartSkeleton,
+  ChartCard,
+  TrendLineChart,
+  StatusBarChart,
+  DistributionDonutChart,
+  ActivityHeatmap,
+} from './Charts';

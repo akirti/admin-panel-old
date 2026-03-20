@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { FeatureFlagProvider } from './contexts/FeatureFlagContext';
 import './index.css';
 
 // Derive router basename from APP_BASE_PATH (Apigee proxy prefix).
@@ -15,9 +16,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter basename={basename}>
       <ThemeProvider>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <FeatureFlagProvider>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </FeatureFlagProvider>
       </ThemeProvider>
     </BrowserRouter>
   </React.StrictMode>,

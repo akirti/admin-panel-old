@@ -27,6 +27,32 @@ jest.mock('react-hot-toast', () => ({ __esModule: true,
   },
 }));
 
+jest.mock('../../../components/shared', () => ({
+  Badge: ({ children, variant }) => <span data-variant={variant}>{children}</span>,
+  Modal: ({ isOpen, onClose, title, children }) => {
+    if (!isOpen) return null;
+    return <div data-testid="modal"><h2>{title}</h2><button onClick={onClose} aria-label="Close dialog">X</button>{children}</div>;
+  },
+  Table: ({ columns, data, loading, emptyMessage }) => {
+    if (loading) return <div>Loading...</div>;
+    if (!data || data.length === 0) return <div>{emptyMessage || 'No data available'}</div>;
+    return (
+      <table>
+        <thead><tr>{columns.map(c => <th key={c.key}>{c.title}</th>)}</tr></thead>
+        <tbody>
+          {data.map((row, i) => (
+            <tr key={row._id || i}>
+              {columns.map(c => (
+                <td key={c.key}>{c.render ? c.render(row[c.key], row) : row[c.key]}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  },
+}));
+
 const mockUsers = [
   {
     _id: '1',
@@ -92,7 +118,7 @@ describe('UsersManagement', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Users' })).toBeInTheDocument();
-      expect(screen.getByText('Manage user accounts and access')).toBeInTheDocument();
+      expect(screen.getByText(/Manage user accounts and access/)).toBeInTheDocument();
     });
   });
 
@@ -505,16 +531,16 @@ describe('UsersManagement', () => {
     });
   });
 
-  it('shows loading spinner while fetching data', async () => {
+  it('shows loading state while fetching data', async () => {
     const { usersAPI, rolesAPI, groupsAPI, customersAPI } = await import('../../../services/api');
     usersAPI.list.mockReturnValue(new Promise(Function.prototype));
     rolesAPI.list.mockReturnValue(new Promise(Function.prototype));
     groupsAPI.list.mockReturnValue(new Promise(Function.prototype));
     customersAPI.list.mockReturnValue(new Promise(Function.prototype));
 
-    const { container } = renderUsersManagement();
+    renderUsersManagement();
 
-    expect(container.querySelector('.animate-spin')).toBeInTheDocument();
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
   it('edit modal shows email field as disabled', async () => {
@@ -646,7 +672,7 @@ describe('UsersManagement', () => {
     });
   });
 
-  it('clears filters when Clear Filters is clicked', async () => {
+  it('clears filters when Clear is clicked', async () => {
     await setupMocks();
     const { usersAPI } = await import('../../../services/api');
     const user = userEvent.setup();
@@ -661,11 +687,10 @@ describe('UsersManagement', () => {
     const roleSelect = screen.getByDisplayValue('All Roles');
     await user.selectOptions(roleSelect, 'admin');
 
-    await waitFor(() => {
-      expect(screen.getByText('Clear Filters')).toBeInTheDocument();
-    });
+    // The filter bar has a "Clear" button to reset filters
+    const clearButton = await waitFor(() => screen.getByText('Clear'));
 
-    await user.click(screen.getByText('Clear Filters'));
+    await user.click(clearButton);
 
     // After clearing, the role filter should be reset
     expect(roleSelect.value).toBe('');

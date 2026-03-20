@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Input, Table, Modal, Badge, SearchInput, Select, Pagination } from '../../components/shared';
 import { apiConfigsAPI } from '../../services/api';
-import { PlayCircle, Eye, Pencil, ShieldCheck, ToggleLeft, Trash2, Plus, Check, X } from 'lucide-react';
+import { PlayCircle, Eye, Pencil, ShieldCheck, ToggleLeft, Trash2, Plus, Check, X, Search, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AUTH_CONFIG_HINTS, PLACEHOLDER_URLS } from '../../constants/apiConfigDefaults';
 
@@ -561,12 +561,12 @@ function buildFormDataFromItem(item) {
 }
 
 /* ─── Header Section ─── */
-function ApiConfigsHeader({ gcsStatus, onAddNew }) {
+function ApiConfigsHeader({ total, gcsStatus, onAddNew }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
         <h1 className="text-2xl font-bold text-content">API Configurations</h1>
-        <p className="text-content-muted mt-1">Manage external API configurations and test connectivity</p>
+        <p className="text-content-muted mt-1">Manage external API configurations and test connectivity ({total} total)</p>
       </div>
       <div className="flex space-x-3">
         {gcsStatus && (
@@ -580,22 +580,47 @@ function ApiConfigsHeader({ gcsStatus, onAddNew }) {
   );
 }
 
-/* ─── Filter Section ─── */
-function ApiConfigsFilters({ search, onSearchChange, filterStatus, onFilterStatusChange, filterTag, onFilterTagChange, tags }) {
+/* ─── Stats Section ─── */
+function ApiConfigsStats({ configs, total, filterStatus, filterTag }) {
+  if (filterStatus || filterTag || configs.length === 0) return null;
+  const active = configs.filter(c => c.status === 'active').length;
+  const byMethod = {};
+  configs.forEach(c => { const m = (c.method || 'GET').toUpperCase(); byMethod[m] = (byMethod[m] || 0) + 1; });
+  const topMethod = Object.entries(byMethod).sort((a, b) => b[1] - a[1])[0];
   return (
-    <Card className="p-4">
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <SearchInput value={search} onChange={onSearchChange} placeholder="Search by key, name, or endpoint..." />
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="card p-4"><div className="text-sm text-content-muted">Total API Configs</div><div className="text-2xl font-bold text-content">{total}</div></div>
+      <div className="card p-4"><div className="text-sm text-content-muted">Active</div><div className="text-2xl font-bold text-green-600">{active}</div></div>
+      <div className="card p-4"><div className="text-sm text-content-muted">Inactive</div><div className="text-2xl font-bold text-red-600">{total - active}</div></div>
+      {topMethod && <div className="card p-4"><div className="text-sm text-content-muted">{topMethod[0]}</div><div className="text-2xl font-bold text-content">{topMethod[1]}</div><div className="text-xs text-content-muted">endpoints</div></div>}
+    </div>
+  );
+}
+
+/* ─── Filter Section ─── */
+function ApiConfigsFilters({ search, onSearchChange, filterStatus, onFilterStatusChange, filterTag, onFilterTagChange, tags, onClear }) {
+  return (
+    <div className="card !p-4">
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted pointer-events-none" size={18} />
+          <input type="text" value={search} onChange={(e) => onSearchChange(e.target.value)} placeholder="Search by key, name, or endpoint..." className="input !py-2 pl-10 w-full" />
         </div>
-        <div className="w-40">
-          <Select value={filterStatus} onChange={onFilterStatusChange} options={[{ value: '', label: 'All Status' }, { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
-        </div>
-        <div className="w-40">
-          <Select value={filterTag} onChange={onFilterTagChange} options={[{ value: '', label: 'All Tags' }, ...tags.map(t => ({ value: t, label: t }))]} />
+        <div className="flex items-center gap-2">
+          <Filter size={16} className="text-content-muted shrink-0" />
+          <select className="input !py-2 min-w-[140px]" value={filterStatus} onChange={onFilterStatusChange}>
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <select className="input !py-2 min-w-[140px]" value={filterTag} onChange={onFilterTagChange}>
+            <option value="">All Tags</option>
+            {tags.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+          {(filterStatus || filterTag) && <button className="text-sm text-primary-600 hover:underline whitespace-nowrap" onClick={onClear}>Clear</button>}
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -867,13 +892,16 @@ const ApiConfigsManagement = () => {
 
   return (
     <div className="space-y-6">
-      <ApiConfigsHeader gcsStatus={gcsStatus} onAddNew={() => { resetForm(); setModalOpen(true); }} />
+      <ApiConfigsHeader total={pagination.total} gcsStatus={gcsStatus} onAddNew={() => { resetForm(); setModalOpen(true); }} />
+
+      <ApiConfigsStats configs={configs} total={pagination.total} filterStatus={filterStatus} filterTag={filterTag} />
 
       <ApiConfigsFilters
         search={search} onSearchChange={handleSearchChange}
         filterStatus={filterStatus} onFilterStatusChange={handleFilterStatusChange}
         filterTag={filterTag} onFilterTagChange={handleFilterTagChange}
         tags={tags}
+        onClear={() => { setFilterStatus(''); setFilterTag(''); resetPage(); }}
       />
 
       <Card>

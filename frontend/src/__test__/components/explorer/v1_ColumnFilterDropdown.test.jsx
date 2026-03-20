@@ -37,7 +37,7 @@ describe('V1ColumnFilterDropdown', () => {
     await user.click(screen.getByLabelText('Filter Status'));
 
     expect(screen.getByText('Apply')).toBeInTheDocument();
-    expect(screen.getByText('Clear')).toBeInTheDocument();
+    expect(screen.getByText('Clear Filter')).toBeInTheDocument();
   });
 
   it('allows selecting options and applying', async () => {
@@ -64,7 +64,7 @@ describe('V1ColumnFilterDropdown', () => {
     );
 
     await user.click(screen.getByLabelText('Filter Status'));
-    await user.click(screen.getByText('Clear'));
+    await user.click(screen.getByText('Clear Filter'));
 
     expect(onChange).toHaveBeenCalledWith([]);
   });

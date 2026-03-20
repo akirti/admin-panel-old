@@ -44,6 +44,22 @@ jest.mock('../../../components/shared/ThemeSwitcher', () => ({
   __esModule: true, default: () => <div data-testid="theme-switcher">ThemeSwitcher</div>,
 }));
 
+jest.mock('../../../components/shared/FontSizeControl', () => ({
+  __esModule: true, default: () => <div data-testid="font-size-control">FontSizeControl</div>,
+}));
+
+jest.mock('../../../components/shared/Breadcrumbs', () => ({
+  __esModule: true, default: () => <div data-testid="breadcrumbs">Breadcrumbs</div>,
+}));
+
+jest.mock('../../../contexts/FeatureFlagContext', () => ({
+  useFeatureFlags: () => ({
+    flags: {},
+    isEnabled: () => true,
+    setFlag: jest.fn(),
+  }),
+}));
+
 jest.mock('../../../components/shared', () => ({
   Badge: ({ children }) => <span data-testid="badge">{children}</span>,
 }));

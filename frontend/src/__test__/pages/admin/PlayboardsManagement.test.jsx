@@ -789,8 +789,7 @@ describe('PlayboardsManagement', () => {
       expect(screen.getByText('Key')).toBeInTheDocument();
       expect(screen.getByText('Scenario')).toBeInTheDocument();
       expect(screen.getByText('Status')).toBeInTheDocument();
-      // 'Actions' appears twice (row actions count column + action buttons column)
-      expect(screen.getAllByText('Actions').length).toBe(2);
+      expect(screen.getByText('Row Actions')).toBeInTheDocument();
     });
   });
 

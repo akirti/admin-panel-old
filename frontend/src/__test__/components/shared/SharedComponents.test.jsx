@@ -227,9 +227,9 @@ describe('Table', () => {
 });
 
 describe('Toggle', () => {
-  it('renders toggle button', () => {
+  it('renders toggle switch', () => {
     render(<Toggle enabled={false} onChange={jest.fn()} />);
-    expect(screen.getByRole('button')).toBeInTheDocument();
+    expect(screen.getByRole('switch')).toBeInTheDocument();
   });
 
   it('renders label when provided', () => {
@@ -241,18 +241,18 @@ describe('Toggle', () => {
     const user = userEvent.setup();
     const onChange = jest.fn();
     render(<Toggle enabled={false} onChange={onChange} />);
-    await user.click(screen.getByRole('button'));
+    await user.click(screen.getByRole('switch'));
     expect(onChange).toHaveBeenCalledWith(true);
   });
 
   it('applies active class when enabled', () => {
     render(<Toggle enabled={true} onChange={jest.fn()} />);
-    expect(screen.getByRole('button')).toHaveClass('bg-primary-600');
+    expect(screen.getByRole('switch')).toHaveClass('bg-primary-600');
   });
 
   it('applies inactive class when disabled', () => {
     render(<Toggle enabled={false} onChange={jest.fn()} />);
-    expect(screen.getByRole('button')).toHaveClass('bg-neutral-200');
+    expect(screen.getByRole('switch')).toHaveClass('bg-neutral-200');
   });
 });
 

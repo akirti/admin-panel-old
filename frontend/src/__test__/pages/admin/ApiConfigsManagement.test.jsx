@@ -483,8 +483,8 @@ describe('ApiConfigsManagement', () => {
     renderApiConfigsManagement();
 
     await waitFor(() => {
-      expect(screen.getByText('GET')).toBeInTheDocument();
-      expect(screen.getByText('POST')).toBeInTheDocument();
+      expect(screen.getAllByText('GET').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('POST').length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -782,7 +782,7 @@ describe('ApiConfigsManagement', () => {
     renderApiConfigsManagement();
 
     await waitFor(() => {
-      expect(screen.getByText('Manage external API configurations and test connectivity')).toBeInTheDocument();
+      expect(screen.getByText(/Manage external API configurations and test connectivity/)).toBeInTheDocument();
     });
   });
 
@@ -945,8 +945,8 @@ describe('ApiConfigsManagement', () => {
       expect(screen.getAllByText('Active').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Inactive').length).toBeGreaterThanOrEqual(1);
       // Method badges
-      expect(screen.getByText('GET')).toBeInTheDocument();
-      expect(screen.getByText('POST')).toBeInTheDocument();
+      expect(screen.getAllByText('GET').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('POST').length).toBeGreaterThanOrEqual(1);
     });
   });
 

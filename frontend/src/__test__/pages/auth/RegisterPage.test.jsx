@@ -55,7 +55,7 @@ describe('RegisterPage', () => {
       expect(screen.getByPlaceholderText('Enter your full name')).toBeInTheDocument();
       expect(screen.getByPlaceholderText('Choose a username')).toBeInTheDocument();
       expect(screen.getByPlaceholderText('Enter your email')).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('Create a password')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Create a password (min 8 characters)')).toBeInTheDocument();
       expect(screen.getByPlaceholderText('Confirm your password')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Create Account' })).toBeInTheDocument();
     });
@@ -74,13 +74,13 @@ describe('RegisterPage', () => {
       await user.type(screen.getByPlaceholderText('Enter your full name'), TEST_FULL_NAME);
       await user.type(screen.getByPlaceholderText('Choose a username'), TEST_USERNAME);
       await user.type(screen.getByPlaceholderText('Enter your email'), TEST_EMAIL);
-      await user.type(screen.getByPlaceholderText('Create a password'), TEST_WEAK_PASSWORD);
+      await user.type(screen.getByPlaceholderText('Create a password (min 8 characters)'), TEST_WEAK_PASSWORD);
       await user.type(screen.getByPlaceholderText('Confirm your password'), TEST_WEAK_PASSWORD);
 
       expect(screen.getByPlaceholderText('Enter your full name')).toHaveValue(TEST_FULL_NAME);
       expect(screen.getByPlaceholderText('Choose a username')).toHaveValue(TEST_USERNAME);
       expect(screen.getByPlaceholderText('Enter your email')).toHaveValue(TEST_EMAIL);
-      expect(screen.getByPlaceholderText('Create a password')).toHaveValue(TEST_WEAK_PASSWORD);
+      expect(screen.getByPlaceholderText('Create a password (min 8 characters)')).toHaveValue(TEST_WEAK_PASSWORD);
       expect(screen.getByPlaceholderText('Confirm your password')).toHaveValue(TEST_WEAK_PASSWORD);
     });
 
@@ -88,7 +88,7 @@ describe('RegisterPage', () => {
       const user = userEvent.setup();
       renderRegisterPage();
 
-      const passwordInput = screen.getByPlaceholderText('Create a password');
+      const passwordInput = screen.getByPlaceholderText('Create a password (min 8 characters)');
       const confirmInput = screen.getByPlaceholderText('Confirm your password');
 
       expect(passwordInput).toHaveAttribute('type', 'password');
@@ -104,32 +104,34 @@ describe('RegisterPage', () => {
 
   describe('validation', () => {
     it('shows error when passwords do not match', async () => {
-      const toast = await import('react-hot-toast');
       const user = userEvent.setup();
       renderRegisterPage();
 
       await user.type(screen.getByPlaceholderText('Choose a username'), TEST_USERNAME);
       await user.type(screen.getByPlaceholderText('Enter your email'), TEST_EMAIL);
-      await user.type(screen.getByPlaceholderText('Create a password'), TEST_WEAK_PASSWORD);
+      await user.type(screen.getByPlaceholderText('Create a password (min 8 characters)'), TEST_WEAK_PASSWORD);
       await user.type(screen.getByPlaceholderText('Confirm your password'), TEST_MISMATCHED_PASSWORD);
       await user.click(screen.getByRole('button', { name: 'Create Account' }));
 
-      expect(toast.default.error).toHaveBeenCalledWith('Passwords do not match');
+      await waitFor(() => {
+        expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
+      });
       expect(mockRegister).not.toHaveBeenCalled();
     });
 
     it('shows error when password is too short', async () => {
-      const toast = await import('react-hot-toast');
       const user = userEvent.setup();
       renderRegisterPage();
 
       await user.type(screen.getByPlaceholderText('Choose a username'), TEST_USERNAME);
       await user.type(screen.getByPlaceholderText('Enter your email'), TEST_EMAIL);
-      await user.type(screen.getByPlaceholderText('Create a password'), TEST_SHORT_PASSWORD);
+      await user.type(screen.getByPlaceholderText('Create a password (min 8 characters)'), TEST_SHORT_PASSWORD);
       await user.type(screen.getByPlaceholderText('Confirm your password'), TEST_SHORT_PASSWORD);
       await user.click(screen.getByRole('button', { name: 'Create Account' }));
 
-      expect(toast.default.error).toHaveBeenCalledWith('Password must be at least 8 characters');
+      await waitFor(() => {
+        expect(screen.getByText('Password must be at least 8 characters')).toBeInTheDocument();
+      });
       expect(mockRegister).not.toHaveBeenCalled();
     });
   });
@@ -143,7 +145,7 @@ describe('RegisterPage', () => {
       await user.type(screen.getByPlaceholderText('Enter your full name'), TEST_FULL_NAME);
       await user.type(screen.getByPlaceholderText('Choose a username'), TEST_USERNAME);
       await user.type(screen.getByPlaceholderText('Enter your email'), TEST_EMAIL);
-      await user.type(screen.getByPlaceholderText('Create a password'), TEST_PASSWORD);
+      await user.type(screen.getByPlaceholderText('Create a password (min 8 characters)'), TEST_PASSWORD);
       await user.type(screen.getByPlaceholderText('Confirm your password'), TEST_PASSWORD);
       await user.click(screen.getByRole('button', { name: 'Create Account' }));
 
@@ -166,7 +168,7 @@ describe('RegisterPage', () => {
 
       await user.type(screen.getByPlaceholderText('Choose a username'), TEST_USERNAME);
       await user.type(screen.getByPlaceholderText('Enter your email'), TEST_EMAIL);
-      await user.type(screen.getByPlaceholderText('Create a password'), TEST_PASSWORD);
+      await user.type(screen.getByPlaceholderText('Create a password (min 8 characters)'), TEST_PASSWORD);
       await user.type(screen.getByPlaceholderText('Confirm your password'), TEST_PASSWORD);
       await user.click(screen.getByRole('button', { name: 'Create Account' }));
 
@@ -188,7 +190,7 @@ describe('RegisterPage', () => {
 
       await user.type(screen.getByPlaceholderText('Choose a username'), TEST_USERNAME);
       await user.type(screen.getByPlaceholderText('Enter your email'), TEST_EMAIL);
-      await user.type(screen.getByPlaceholderText('Create a password'), TEST_PASSWORD);
+      await user.type(screen.getByPlaceholderText('Create a password (min 8 characters)'), TEST_PASSWORD);
       await user.type(screen.getByPlaceholderText('Confirm your password'), TEST_PASSWORD);
       await user.click(screen.getByRole('button', { name: 'Create Account' }));
 
@@ -205,7 +207,7 @@ describe('RegisterPage', () => {
 
       await user.type(screen.getByPlaceholderText('Choose a username'), TEST_USERNAME);
       await user.type(screen.getByPlaceholderText('Enter your email'), TEST_EMAIL);
-      await user.type(screen.getByPlaceholderText('Create a password'), TEST_PASSWORD);
+      await user.type(screen.getByPlaceholderText('Create a password (min 8 characters)'), TEST_PASSWORD);
       await user.type(screen.getByPlaceholderText('Confirm your password'), TEST_PASSWORD);
       await user.click(screen.getByRole('button', { name: 'Create Account' }));
 

@@ -277,7 +277,12 @@ class ConfigurationLoader:
 
         values_lookup: Dict[str, Any] = {}
         values_lookup.update(simulator_data)       # simulator defaults (lowest)
-        values_lookup.update(localenv_flat)         # localenv hardcoded override simulator
+        # Only override simulator with localenv values that are NOT placeholders
+        localenv_resolved_values = {
+            k: v for k, v in localenv_flat.items()
+            if not (isinstance(v, str) and v.strip().startswith('{') and v.strip().endswith('}'))
+        }
+        values_lookup.update(localenv_resolved_values)  # localenv hardcoded override simulator
         values_lookup.update(env_overrides)         # OS env vars (highest)
 
         # e) Resolve any {placeholders} within localenv itself, re-flatten,

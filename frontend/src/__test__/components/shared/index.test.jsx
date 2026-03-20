@@ -37,7 +37,8 @@ describe('shared/index re-exports', () => {
 
   it('exports Badge component', () => {
     expect(Badge).toBeDefined();
-    expect(typeof Badge).toBe('function');
+    // Badge is wrapped with React.memo, so it's an object
+    expect(typeof Badge === 'function' || typeof Badge === 'object').toBe(true);
   });
 
   it('exports Modal component', () => {
@@ -57,12 +58,14 @@ describe('shared/index re-exports', () => {
 
   it('exports StatCard component', () => {
     expect(StatCard).toBeDefined();
-    expect(typeof StatCard).toBe('function');
+    // StatCard is wrapped with React.memo, so it's an object
+    expect(typeof StatCard === 'function' || typeof StatCard === 'object').toBe(true);
   });
 
   it('exports SearchInput component', () => {
     expect(SearchInput).toBeDefined();
-    expect(typeof SearchInput).toBe('function');
+    // SearchInput is wrapped with React.memo, so it's an object
+    expect(typeof SearchInput === 'function' || typeof SearchInput === 'object').toBe(true);
   });
 
   it('exports Pagination component', () => {

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Input, Table, Modal, Badge, SearchInput, Select, Toggle, FileUpload, Pagination } from '../../components/shared';
 import { playboardsAPI, scenariosAPI, domainsAPI } from '../../services/api';
 import toast from 'react-hot-toast';
-import { Eye, Download, Pencil, Trash2, X, Plus, Upload, ChevronUp, ChevronDown, Copy, ChevronRight } from 'lucide-react';
+import { Eye, Download, Pencil, Trash2, X, Plus, Upload, ChevronUp, ChevronDown, Copy, ChevronRight, Search, Filter } from 'lucide-react';
 
 // Collapsible section component
 const CollapsibleSection = ({ title, defaultOpen = false, children, badge }) => {
@@ -933,15 +933,55 @@ async function downloadPlayboardJson(item) {
   URL.revokeObjectURL(url);
 }
 
-const PlayboardsHeader = ({ onUploadClick, onBuildClick }) => (
+const PlayboardsHeader = ({ total, onUploadClick, onBuildClick }) => (
   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
       <h1 className="text-2xl font-bold text-content">Playboards</h1>
-      <p className="text-content-muted mt-1">Manage playboard configurations with widgets, filters, and actions</p>
+      <p className="text-content-muted mt-1">Manage playboard configurations with widgets, filters, and actions ({total} total)</p>
     </div>
     <div className="flex space-x-3">
       <Button variant="secondary" onClick={onUploadClick}><Upload size={16} className="mr-2" />Upload JSON</Button>
       <Button onClick={onBuildClick}><Plus size={16} className="mr-2" />Build Playboard</Button>
+    </div>
+  </div>
+);
+
+const PlayboardsStats = ({ playboards, total, search }) => {
+  if (search || playboards.length === 0) return null;
+  const active = playboards.filter(p => p.status === 'active').length;
+  const byScenario = {};
+  playboards.forEach(p => { const s = p.scenarioKey || 'Unknown'; byScenario[s] = (byScenario[s] || 0) + 1; });
+  const topScenario = Object.entries(byScenario).sort((a, b) => b[1] - a[1])[0];
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="card p-4"><div className="text-sm text-content-muted">Total Playboards</div><div className="text-2xl font-bold text-content">{total}</div></div>
+      <div className="card p-4"><div className="text-sm text-content-muted">Active</div><div className="text-2xl font-bold text-green-600">{active}</div></div>
+      <div className="card p-4"><div className="text-sm text-content-muted">Inactive</div><div className="text-2xl font-bold text-red-600">{total - active}</div></div>
+      {topScenario && <div className="card p-4"><div className="text-sm text-content-muted truncate">{topScenario[0]}</div><div className="text-2xl font-bold text-content">{topScenario[1]}</div><div className="text-xs text-content-muted">playboards</div></div>}
+    </div>
+  );
+};
+
+const PlayboardsFilterBar = ({ search, onSearchChange, domains, filterDomain, onFilterDomain, filterStatus, onFilterStatus, onClear }) => (
+  <div className="card !p-4">
+    <div className="flex items-center gap-3">
+      <div className="relative flex-1 min-w-[200px]">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted pointer-events-none" size={18} />
+        <input type="text" value={search} onChange={(e) => onSearchChange(e.target.value)} placeholder="Search playboards..." className="input !py-2 pl-10 w-full" />
+      </div>
+      <div className="flex items-center gap-2">
+        <Filter size={16} className="text-content-muted shrink-0" />
+        <select className="input !py-2 min-w-[140px]" value={filterDomain || ''} onChange={(e) => onFilterDomain(e.target.value)}>
+          <option value="">Filter by Domain</option>
+          {domains.map(d => <option key={d.key} value={d.key}>{d.name || d.key}</option>)}
+        </select>
+        <select className="input !py-2 min-w-[140px]" value={filterStatus || ''} onChange={(e) => onFilterStatus(e.target.value)}>
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+        {(filterDomain || filterStatus) && <button className="text-sm text-primary-600 hover:underline whitespace-nowrap" onClick={onClear}>Clear</button>}
+      </div>
     </div>
   </div>
 );
@@ -1289,18 +1329,37 @@ const PlayboardsManagement = () => {
   const rowActionBuilder = useRowActionBuilder(crud.formData, crud.setFormData);
   const gridColumns = useGridColumns(crud.formData, crud.setFormData);
 
+  const [filterDomain, setFilterDomain] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+
   const columns = buildPlayboardColumns(crud);
+
+  const filteredPlayboards = pbData.playboards.filter(p => {
+    if (filterDomain && p.dataDomain !== filterDomain) return false;
+    if (filterStatus && p.status !== filterStatus) return false;
+    return true;
+  });
+
+  const handleSearchChange = (val) => { pbData.setSearch(val); pbData.setPagination(prev => ({ ...prev, page: 0 })); };
+  const handleFilterDomain = (val) => { setFilterDomain(val); pbData.setPagination(prev => ({ ...prev, page: 0 })); };
+  const handleFilterStatus = (val) => { setFilterStatus(val); pbData.setPagination(prev => ({ ...prev, page: 0 })); };
+  const handleClearFilters = () => { setFilterDomain(''); setFilterStatus(''); };
 
   return (
     <div className="space-y-6">
-      <PlayboardsHeader onUploadClick={upload.openUploadModal} onBuildClick={crud.openBuildModal} />
+      <PlayboardsHeader total={pbData.pagination.total} onUploadClick={upload.openUploadModal} onBuildClick={crud.openBuildModal} />
 
-      <Card className="p-4">
-        <SearchInput value={pbData.search} onChange={(val) => { pbData.setSearch(val); pbData.setPagination(prev => ({ ...prev, page: 0 })); }} placeholder="Search playboards..." />
-      </Card>
+      <PlayboardsStats playboards={pbData.playboards} total={pbData.pagination.total} search={pbData.search} />
+
+      <PlayboardsFilterBar
+        search={pbData.search} onSearchChange={handleSearchChange}
+        domains={pbData.domains} filterDomain={filterDomain} onFilterDomain={handleFilterDomain}
+        filterStatus={filterStatus} onFilterStatus={handleFilterStatus}
+        onClear={handleClearFilters}
+      />
 
       <Card>
-        <Table columns={columns} data={pbData.playboards} loading={pbData.loading} />
+        <Table columns={columns} data={filteredPlayboards} loading={pbData.loading} />
         {pbData.pagination.pages > 1 && <Pagination currentPage={pbData.pagination.page} totalPages={pbData.pagination.pages} total={pbData.pagination.total} limit={pbData.pagination.limit} onPageChange={pbData.handlePageChange} />}
       </Card>
 

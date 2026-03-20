@@ -189,7 +189,7 @@ describe('AdminDashboard', () => {
     renderAdminDashboard();
 
     await waitFor(() => {
-      expect(screen.getByText('Activity Trend (Last 7 Days)')).toBeInTheDocument();
+      expect(screen.getByText('Activity Trend')).toBeInTheDocument();
       expect(screen.getByText('Role Distribution')).toBeInTheDocument();
       expect(screen.getByText('Top Active Users (Last 7 Days)')).toBeInTheDocument();
       expect(screen.getByText('Recent User Signups')).toBeInTheDocument();
@@ -423,7 +423,7 @@ describe('AdminDashboard', () => {
 
     await waitFor(() => {
       // Activity trend and role distribution should not appear
-      expect(screen.queryByText('Activity Trend (Last 7 Days)')).not.toBeInTheDocument();
+      expect(screen.queryByText('Activity Trend')).not.toBeInTheDocument();
       expect(screen.queryByText('Role Distribution')).not.toBeInTheDocument();
       // But top active users and recent signups should
       expect(screen.getByText('Top Active Users (Last 7 Days)')).toBeInTheDocument();
@@ -444,7 +444,7 @@ describe('AdminDashboard', () => {
     await waitFor(() => {
       expect(screen.getByText('Admin Dashboard')).toBeInTheDocument();
       // No analytics sections should appear
-      expect(screen.queryByText('Activity Trend (Last 7 Days)')).not.toBeInTheDocument();
+      expect(screen.queryByText('Activity Trend')).not.toBeInTheDocument();
       expect(screen.queryByText('Role Distribution')).not.toBeInTheDocument();
       expect(screen.queryByText('Top Active Users (Last 7 Days)')).not.toBeInTheDocument();
     });

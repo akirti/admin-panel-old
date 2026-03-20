@@ -29,6 +29,24 @@ jest.mock('../../../services/api', () => ({
 jest.mock('../../../components/shared', () => ({
   Modal: ({ isOpen, children, title }) =>
     isOpen ? <div data-testid="modal"><h2>{title}</h2>{children}</div> : null,
+  Table: ({ columns, data, loading, emptyMessage }) => {
+    if (loading) return <div>Loading...</div>;
+    if (!data || data.length === 0) return <div>{emptyMessage || 'No data available'}</div>;
+    return (
+      <table>
+        <thead><tr>{columns.map(c => <th key={c.key}>{c.title}</th>)}</tr></thead>
+        <tbody>
+          {data.map((row, i) => (
+            <tr key={row._id || i}>
+              {columns.map(c => (
+                <td key={c.key}>{c.render ? c.render(row[c.key], row) : row[c.key]}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  },
 }));
 
 const mockGroups = [
@@ -156,7 +174,7 @@ describe('GroupsManagement', () => {
     render(<GroupsManagement />);
 
     await waitFor(() => {
-      expect(screen.getByText(/no groups found/i)).toBeInTheDocument();
+      expect(screen.getByText('No data available')).toBeInTheDocument();
     });
   });
 
@@ -169,7 +187,7 @@ describe('GroupsManagement', () => {
     customersAPI.list.mockReturnValue(new Promise(Function.prototype));
 
     render(<GroupsManagement />);
-    expect(screen.getByText(/loading groups/i)).toBeInTheDocument();
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
   it('handles API error', async () => {
@@ -1398,8 +1416,8 @@ describe('GroupsManagement', () => {
       expect(screen.getByText('No Description Group')).toBeInTheDocument();
     });
 
-    // Group with type 'custom' renders bg-surface-hover text-content-secondary
-    expect(screen.getByText('custom')).toBeInTheDocument();
+    // Group with type 'custom' renders in the table (may appear multiple times)
+    expect(screen.getAllByText('custom').length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders system type badge with purple styling', async () => {
@@ -1435,15 +1453,17 @@ describe('GroupsManagement', () => {
     await waitFor(() => {
       expect(screen.getByText('Active User')).toBeInTheDocument();
       expect(screen.getByText('Inactive User')).toBeInTheDocument();
-      expect(screen.getByText('Active')).toBeInTheDocument();
-      expect(screen.getByText('Inactive')).toBeInTheDocument();
+      expect(screen.getAllByText('Active').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Inactive').length).toBeGreaterThanOrEqual(1);
     });
 
-    // Check badge styles
-    const activeBadge = screen.getByText('Active');
-    expect(activeBadge.className).toContain('bg-green-100');
-    const inactiveBadge = screen.getByText('Inactive');
-    expect(inactiveBadge.className).toContain('bg-red-100');
+    // Check badge styles - find the Active badge in the users modal
+    const activeBadges = screen.getAllByText('Active');
+    const activeBadge = activeBadges.find(el => el.className.includes('bg-green-100'));
+    expect(activeBadge).toBeTruthy();
+    const inactiveBadges = screen.getAllByText('Inactive');
+    const inactiveBadge = inactiveBadges.find(el => el.className.includes('bg-red-100'));
+    expect(inactiveBadge).toBeTruthy();
   });
 
   it('renders user without full_name showing username fallback', async () => {
@@ -2013,8 +2033,9 @@ describe('GroupsManagement', () => {
     });
 
     // Sales Team has priority 1, Support has priority 10
-    expect(screen.getByText('1')).toBeInTheDocument();
-    expect(screen.getByText('10')).toBeInTheDocument();
+    // Priority values may appear alongside other numbers in stat cards
+    expect(screen.getAllByText('1').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('10').length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows group without priority displays 0', async () => {
@@ -2037,7 +2058,7 @@ describe('GroupsManagement', () => {
     });
 
     // Priority should display 0 as fallback
-    expect(screen.getByText('0')).toBeInTheDocument();
+    expect(screen.getAllByText('0').length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows group without status displays "active" text', async () => {
@@ -2644,7 +2665,7 @@ describe('GroupsManagement', () => {
     render(<GroupsManagement />);
 
     await waitFor(() => {
-      expect(screen.getByText(/no groups found/i)).toBeInTheDocument();
+      expect(screen.getByText('No data available')).toBeInTheDocument();
     });
 
     await user.click(screen.getByText('Add Group'));
@@ -2896,7 +2917,7 @@ describe('GroupsManagement', () => {
     render(<GroupsManagement />);
 
     await waitFor(() => {
-      expect(screen.getByText(/no groups found/i)).toBeInTheDocument();
+      expect(screen.getByText('No data available')).toBeInTheDocument();
     });
   });
 

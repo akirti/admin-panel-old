@@ -84,10 +84,13 @@ class DatabaseManager:
         password = config.get('password')
         host = config.get('host')
 
-        if not all([username, password, host]):
-            raise ValueError("Missing required DB connection parameters: username, password, or host")
+        if not host:
+            raise ValueError("Missing required DB connection parameter: host")
 
-        conn_string = f"{scheme}://{username}:{password}@{host}"
+        if username and password:
+            conn_string = f"{scheme}://{username}:{password}@{host}"
+        else:
+            conn_string = f"{scheme}://{host}"
 
         # Get connection pool settings from config with defaults
         # Reduced maxIdleTimeMS to clear stale connections faster after system resume
@@ -161,7 +164,19 @@ class DatabaseManager:
             "error_log_archives": "error_log_archives"
         }
 
-        for key in config.get("collections", []):
+        collections = config.get("collections", [])
+        # If collections is a string (unresolved placeholder or comma-separated), convert to list
+        if isinstance(collections, str):
+            if '{' in collections:
+                # Unresolved placeholder — use all default collections
+                collections = list(collection_mapping.keys())
+            else:
+                collections = [c.strip() for c in collections.split(',') if c.strip()]
+        # If no collections specified, use all defaults
+        if not collections:
+            collections = list(collection_mapping.keys())
+
+        for key in collections:
             if key in collection_mapping:
                 setattr(self, collection_mapping[key], self.db[key])
             else:

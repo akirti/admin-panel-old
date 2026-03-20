@@ -28,6 +28,31 @@ jest.mock('react-hot-toast', () => ({ __esModule: true,
   },
 }));
 
+jest.mock('../../../components/shared', () => ({
+  Modal: ({ isOpen, onClose, title, children }) => {
+    if (!isOpen) return null;
+    return <div data-testid="modal"><h2>{title}</h2><button onClick={onClose} aria-label="Close dialog">X</button>{children}</div>;
+  },
+  Table: ({ columns, data, loading, emptyMessage }) => {
+    if (loading) return <div>Loading...</div>;
+    if (!data || data.length === 0) return <div>{emptyMessage || 'No data available'}</div>;
+    return (
+      <table>
+        <thead><tr>{columns.map(c => <th key={c.key}>{c.title}</th>)}</tr></thead>
+        <tbody>
+          {data.map((row, i) => (
+            <tr key={row._id || i}>
+              {columns.map(c => (
+                <td key={c.key}>{c.render ? c.render(row[c.key], row) : row[c.key]}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  },
+}));
+
 const mockScenarios = [
   {
     _id: 's1',
@@ -97,8 +122,8 @@ describe('ScenariosManagement', () => {
     renderScenariosManagement();
 
     await waitFor(() => {
-      expect(screen.getByText('Active')).toBeInTheDocument();
-      expect(screen.getByText('Inactive')).toBeInTheDocument();
+      expect(screen.getAllByText('Active').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Inactive').length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -175,7 +200,7 @@ describe('ScenariosManagement', () => {
     renderScenariosManagement();
 
     await waitFor(() => {
-      expect(toast.default.error).toHaveBeenCalledWith('Failed to fetch data');
+      expect(screen.getByText('Failed to fetch data')).toBeInTheDocument();
     });
   });
 
@@ -210,7 +235,7 @@ describe('ScenariosManagement', () => {
         key: 'new-scenario',
         name: 'New Scenario',
       }));
-      expect(toast.default.success).toHaveBeenCalledWith('Scenario created successfully');
+      expect(screen.getByText('Scenario created successfully')).toBeInTheDocument();
     });
   });
 
@@ -260,7 +285,7 @@ describe('ScenariosManagement', () => {
         key: 'revenue-report',
         name: 'Revenue Report',
       }));
-      expect(toast.default.success).toHaveBeenCalledWith('Scenario updated successfully');
+      expect(screen.getByText('Scenario updated successfully')).toBeInTheDocument();
     });
   });
 
@@ -283,7 +308,7 @@ describe('ScenariosManagement', () => {
 
     await waitFor(() => {
       expect(scenarioAPI.delete).toHaveBeenCalledWith('s1');
-      expect(toast.default.success).toHaveBeenCalledWith('Scenario deleted successfully');
+      expect(screen.getByText('Scenario deleted successfully')).toBeInTheDocument();
     });
 
     jest.restoreAllMocks();
@@ -332,7 +357,7 @@ describe('ScenariosManagement', () => {
     await user.click(screen.getByText('Create'));
 
     await waitFor(() => {
-      expect(toast.default.error).toHaveBeenCalledWith('Key already exists');
+      expect(screen.getByText('Key already exists')).toBeInTheDocument();
     });
   });
 
@@ -354,7 +379,7 @@ describe('ScenariosManagement', () => {
     await user.click(deleteButtons[0]);
 
     await waitFor(() => {
-      expect(toast.default.error).toHaveBeenCalledWith('Cannot delete');
+      expect(screen.getByText('Cannot delete')).toBeInTheDocument();
     });
 
     jest.restoreAllMocks();
@@ -427,14 +452,14 @@ describe('ScenariosManagement', () => {
     });
   });
 
-  it('shows loading spinner while fetching data', async () => {
+  it('shows loading state while fetching data', async () => {
     const { scenarioAPI, domainAPI } = await import('../../../services/api');
     scenarioAPI.getAll.mockReturnValue(new Promise(Function.prototype));
     domainAPI.getAll.mockReturnValue(new Promise(Function.prototype));
 
-    const { container } = renderScenariosManagement();
+    renderScenariosManagement();
 
-    expect(container.querySelector('.animate-spin')).toBeInTheDocument();
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
   it('handles update failure', async () => {
@@ -460,7 +485,7 @@ describe('ScenariosManagement', () => {
     await user.click(screen.getByText('Update'));
 
     await waitFor(() => {
-      expect(toast.default.error).toHaveBeenCalledWith('Update failed');
+      expect(screen.getByText('Update failed')).toBeInTheDocument();
     });
   });
 
@@ -603,8 +628,9 @@ describe('ScenariosManagement', () => {
     renderScenariosManagement();
 
     await waitFor(() => {
-      expect(screen.getByText('1')).toBeInTheDocument();
-      expect(screen.getByText('2')).toBeInTheDocument();
+      // Order values appear alongside stat card numbers
+      expect(screen.getAllByText('1').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('2').length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -631,7 +657,7 @@ describe('ScenariosManagement', () => {
     await user.click(screen.getByText('Update'));
 
     await waitFor(() => {
-      expect(toast.default.error).toHaveBeenCalledWith('Failed to save scenario');
+      expect(screen.getByText('Failed to save scenario')).toBeInTheDocument();
     });
   });
 
@@ -653,7 +679,7 @@ describe('ScenariosManagement', () => {
     await user.click(deleteButtons[0]);
 
     await waitFor(() => {
-      expect(toast.default.error).toHaveBeenCalledWith('Failed to delete scenario');
+      expect(screen.getByText('Failed to delete scenario')).toBeInTheDocument();
     });
 
     jest.restoreAllMocks();

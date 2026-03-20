@@ -30,6 +30,32 @@ jest.mock('../../../components/shared/LucideIconPicker', () => ({
   __esModule: true, default: () => <div data-testid="icon-picker">Icon Picker</div>,
 }));
 
+jest.mock('../../../components/shared', () => ({
+  Modal: ({ isOpen, onClose, title, children }) => {
+    if (!isOpen) return null;
+    return <div data-testid="modal"><h2>{title}</h2><button onClick={onClose} aria-label="Close dialog">X</button>{children}</div>;
+  },
+  Badge: ({ children, variant }) => <span data-variant={variant}>{children}</span>,
+  Table: ({ columns, data, loading, emptyMessage }) => {
+    if (loading) return <div>Loading...</div>;
+    if (!data || data.length === 0) return <div>{emptyMessage || 'No data available'}</div>;
+    return (
+      <table>
+        <thead><tr>{columns.map(c => <th key={c.key}>{c.title}</th>)}</tr></thead>
+        <tbody>
+          {data.map((row, i) => (
+            <tr key={row._id || i}>
+              {columns.map(c => (
+                <td key={c.key}>{c.render ? c.render(row[c.key], row) : row[c.key]}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  },
+}));
+
 const mockDomains = [
   {
     _id: 'd1',
@@ -99,8 +125,8 @@ describe('DomainsManagement', () => {
     renderDomainsManagement();
 
     await waitFor(() => {
-      expect(screen.getByText('Active')).toBeInTheDocument();
-      expect(screen.getByText('Inactive')).toBeInTheDocument();
+      expect(screen.getAllByText('Active').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Inactive').length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -155,19 +181,18 @@ describe('DomainsManagement', () => {
 
     await user.type(screen.getByPlaceholderText('Search domains...'), 'nonexistent');
 
-    expect(screen.getByText('No domains found')).toBeInTheDocument();
+    expect(screen.getByText('No data available')).toBeInTheDocument();
   });
 
   it('handles API error on load', async () => {
     const { domainAPI } = await import('../../../services/api');
-    const toast = await import('react-hot-toast');
     domainAPI.getAll.mockRejectedValue(new Error('API Error'));
     domainAPI.getTypes.mockResolvedValue({ data: [] });
 
     renderDomainsManagement();
 
     await waitFor(() => {
-      expect(toast.default.error).toHaveBeenCalledWith('Failed to fetch domains');
+      expect(screen.getByText('Failed to fetch domains')).toBeInTheDocument();
     });
   });
 
@@ -213,7 +238,7 @@ describe('DomainsManagement', () => {
         key: 'new-domain',
         name: 'New Domain',
       }));
-      expect(toast.default.success).toHaveBeenCalledWith('Domain created successfully');
+      expect(screen.getByText('Domain created successfully')).toBeInTheDocument();
     });
   });
 
@@ -263,7 +288,7 @@ describe('DomainsManagement', () => {
         key: 'finance',
         name: 'Finance',
       }));
-      expect(toast.default.success).toHaveBeenCalledWith('Domain updated successfully');
+      expect(screen.getByText('Domain updated successfully')).toBeInTheDocument();
     });
   });
 
@@ -286,7 +311,7 @@ describe('DomainsManagement', () => {
 
     await waitFor(() => {
       expect(domainAPI.delete).toHaveBeenCalledWith('d1');
-      expect(toast.default.success).toHaveBeenCalledWith('Domain deleted successfully');
+      expect(screen.getByText('Domain deleted successfully')).toBeInTheDocument();
     });
 
     jest.restoreAllMocks();
@@ -336,7 +361,7 @@ describe('DomainsManagement', () => {
     await user.click(screen.getByText('Create'));
 
     await waitFor(() => {
-      expect(toast.default.error).toHaveBeenCalledWith('Key already exists');
+      expect(screen.getByText('Key already exists')).toBeInTheDocument();
     });
   });
 
@@ -358,7 +383,7 @@ describe('DomainsManagement', () => {
     await user.click(deleteButtons[0]);
 
     await waitFor(() => {
-      expect(toast.default.error).toHaveBeenCalledWith('Cannot delete');
+      expect(screen.getByText('Cannot delete')).toBeInTheDocument();
     });
 
     jest.restoreAllMocks();

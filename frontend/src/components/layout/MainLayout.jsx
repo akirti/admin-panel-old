@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useFeatureFlags } from '../../contexts/FeatureFlagContext';
 import ThemeSwitcher from '../shared/ThemeSwitcher';
+import Breadcrumbs from '../shared/Breadcrumbs';
 import {
   LayoutDashboard,
   Users,
@@ -32,10 +34,11 @@ import {
   LayoutTemplate
 } from 'lucide-react';
 import { Badge } from '../shared';
+import FontSizeControl from '../shared/FontSizeControl';
 
 const ADMIN_NAV = [
   { path: '/dashboard', icon: Home, label: 'User Dashboard' },
-  { path: '/explorer', icon: Compass, label: 'Explorer', dividerAfter: true },
+  { path: '/explorer', icon: Compass, label: 'Explorer', dividerAfter: true, featureFlag: 'explorer' },
   { path: '/admin', icon: LayoutDashboard, label: 'Admin Dashboard', exact: true },
   { path: '/admin/users', icon: Users, label: 'Users' },
   { path: '/admin/roles', icon: Shield, label: 'Roles' },
@@ -46,14 +49,14 @@ const ADMIN_NAV = [
   { path: '/admin/scenarios', icon: FileText, label: 'Scenarios' },
   { path: '/admin/playboards', icon: LayoutGrid, label: 'Playboards' },
   { path: '/admin/configurations', icon: Cog, label: 'Configurations' },
-  { path: '/admin/api-configs', icon: Plug, label: 'API Configs' },
+  { path: '/admin/api-configs', icon: Plug, label: 'API Configs', featureFlag: 'apiConfigs' },
   { path: '/admin/scenario-requests', icon: ClipboardList, label: 'Scenario Requests' },
-  { path: '/admin/feedback', icon: MessageSquare, label: 'Feedback' },
-  { path: '/admin/activity-logs', icon: Activity, label: 'Activity Logs' },
-  { path: '/admin/error-logs', icon: AlertTriangle, label: 'Error Logs' },
-  { path: '/admin/bulk-upload', icon: Upload, label: 'Bulk Upload' },
-  { path: '/admin/distribution-lists', icon: Mail, label: 'Distribution Lists' },
-  { path: '/admin/ui-schemas', icon: LayoutTemplate, label: 'UI Schemas', dividerBefore: true },
+  { path: '/admin/feedback', icon: MessageSquare, label: 'Feedback', featureFlag: 'feedback' },
+  { path: '/admin/activity-logs', icon: Activity, label: 'Activity Logs', featureFlag: 'activityLogs' },
+  { path: '/admin/error-logs', icon: AlertTriangle, label: 'Error Logs', featureFlag: 'errorLogs' },
+  { path: '/admin/bulk-upload', icon: Upload, label: 'Bulk Upload', featureFlag: 'bulkUpload' },
+  { path: '/admin/distribution-lists', icon: Mail, label: 'Distribution Lists', featureFlag: 'distributionLists' },
+  { path: '/admin/ui-schemas', icon: LayoutTemplate, label: 'UI Schemas', dividerBefore: true, featureFlag: 'uiSchemas' },
 ];
 
 const GROUP_ADMIN_NAV_BASE = [
@@ -78,9 +81,9 @@ const USER_NAV = [
   { path: '/domains', icon: Layers, label: 'My Domains' },
   { path: '/ask-scenario', icon: MessageSquarePlus, label: 'Ask Scenario' },
   { path: '/my-requests', icon: ClipboardList, label: 'My Requests' },
-  { path: '/explorer', icon: Compass, label: 'Explorer' },
+  { path: '/explorer', icon: Compass, label: 'Explorer', featureFlag: 'explorer' },
   { path: '/profile', icon: User, label: 'Profile' },
-  { path: '/feedback', icon: MessageSquare, label: 'Feedback' },
+  { path: '/feedback', icon: MessageSquare, label: 'Feedback', featureFlag: 'feedback' },
 ];
 
 const getUserNav = (isSuperAdmin, canManageUsers, canAccessUISchemas) => {
@@ -215,10 +218,17 @@ function SidebarUserMenu({ user, sidebarOpen, iconSize, userMenuOpen, setUserMen
 
 function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
   const { user, logout, isSuperAdmin, canManageUsers, hasGroup, hasAnyPermission, hasAccessToDomain, hasAnyRole } = useAuth();
+  const { isEnabled } = useFeatureFlags();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const canAccessUISchemas = () => {
     const hasRole = hasAnyRole(['super-administrator', 'administrator', 'group-administrator']);
@@ -233,7 +243,12 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
   };
 
   const navItems = getNavItems(isAdmin, isGroupAdmin, isSuperAdmin, canManageUsers, hasGroup, canAccessUISchemas);
-  const iconSize = sidebarOpen ? 20 : 24;
+  const filteredNavItems = navItems.filter((item) => !item.featureFlag || isEnabled(item.featureFlag));
+
+  // Auto-collapse main sidebar when Explorer is active (Explorer has its own domain sidebar)
+  const isExplorerActive = location.pathname.startsWith('/explorer');
+  const effectiveSidebarOpen = isExplorerActive ? false : sidebarOpen;
+  const iconSize = effectiveSidebarOpen ? 20 : 24;
 
   const isActive = (path, exact = false) => {
     if (exact) return location.pathname === path;
@@ -246,41 +261,55 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
       Skip to main content
     </a>
     <div className="flex h-screen bg-base-secondary">
+      {/* Mobile backdrop */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Sidebar */}
       <aside
-        className={`${
-          sidebarOpen ? 'w-64' : 'w-20'
-        } bg-sidebar-bg shadow-sm border-r border-edge transition-all duration-300 flex flex-col`}
+        className={`
+          ${effectiveSidebarOpen ? 'w-64' : 'w-20'}
+          bg-sidebar-bg shadow-sm border-r border-edge transition-all duration-300 flex flex-col
+          fixed md:static inset-y-0 left-0 z-50
+          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}
         role="complementary"
         aria-label="Sidebar"
       >
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-edge">
-          {sidebarOpen && (
+          {effectiveSidebarOpen && (
             <span className="text-xl font-bold text-primary-600">
               {getPanelTitle(isAdmin, isGroupAdmin)}
             </span>
           )}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 rounded-lg hover:bg-surface-hover text-content-secondary"
-            aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-            aria-expanded={sidebarOpen}
-            aria-controls="sidebar-nav"
-          >
-            {sidebarOpen ? <X size={20} /> : <Menu size={24} />}
-          </button>
+          {!isExplorerActive && (
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 rounded-lg hover:bg-surface-hover text-content-secondary"
+              aria-label={effectiveSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+              aria-expanded={effectiveSidebarOpen}
+              aria-controls="sidebar-nav"
+            >
+              {effectiveSidebarOpen ? <X size={20} /> : <Menu size={24} />}
+            </button>
+          )}
         </div>
 
         {/* Navigation */}
         <nav id="sidebar-nav" className="flex-1 py-4 px-3 overflow-y-auto" aria-label="Main navigation">
           <ul className="space-y-1">
-            {navItems.map((item) => (
+            {filteredNavItems.map((item) => (
               <NavItem
                 key={item.path || item.label}
                 item={item}
                 isActive={isActive}
-                sidebarOpen={sidebarOpen}
+                sidebarOpen={effectiveSidebarOpen}
                 iconSize={iconSize}
               />
             ))}
@@ -289,13 +318,13 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
 
         {/* Theme Switcher */}
         <div className="px-4 py-2 border-t border-edge">
-          <ThemeSwitcher compact={!sidebarOpen} />
+          <ThemeSwitcher compact={!effectiveSidebarOpen} />
         </div>
 
         {/* User Info */}
         <SidebarUserMenu
           user={user}
-          sidebarOpen={sidebarOpen}
+          sidebarOpen={effectiveSidebarOpen}
           iconSize={iconSize}
           userMenuOpen={userMenuOpen}
           setUserMenuOpen={setUserMenuOpen}
@@ -307,11 +336,21 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
       <main className="flex-1 overflow-auto" id="main-content">
         {/* Header */}
         <header className="h-16 bg-header-bg shadow-sm border-b border-edge flex items-center justify-between px-6">
-          <h1 className="text-xl font-semibold text-content">
-            {getHeaderTitle(isAdmin, isGroupAdmin)}
-          </h1>
+          <div className="flex items-center gap-3">
+            <button
+              className="md:hidden p-2 rounded-lg hover:bg-surface-hover text-content-secondary"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              <Menu size={24} />
+            </button>
+            <h1 className="text-xl font-semibold text-content">
+              {getHeaderTitle(isAdmin, isGroupAdmin)}
+            </h1>
+          </div>
 
           <div className="flex items-center gap-4">
+            <FontSizeControl compact />
             {/* Role badges */}
             <div className="flex gap-2">
               {user?.roles?.slice(0, 2).map((role) => (
@@ -325,6 +364,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
 
         {/* Page Content */}
         <div className="p-6">
+          <Breadcrumbs />
           <Outlet />
         </div>
       </main>

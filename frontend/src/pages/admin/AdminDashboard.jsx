@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { dashboardAPI, scenarioRequestAPI, feedbackAPI } from '../../services/api';
 import { Badge } from '../../components/shared';
+import { ChartCard, TrendLineChart, StatusBarChart, DistributionDonutChart } from '../../components/shared/Charts';
 import {
   Users, Layers, FileText, Shield, TrendingUp,
   Clock, CheckCircle, XCircle, Settings,
@@ -231,73 +232,62 @@ function FeedbackStatsRow({ feedbackStats }) {
   );
 }
 
-/* ─── Activity Trend Chart ─── */
-function ActivityTrendChart({ activityTrend }) {
+/* ─── Activity Trend Section (recharts) ─── */
+function ActivityTrendSection({ activityTrend }) {
   if (!activityTrend || activityTrend.length === 0) return null;
-  const maxCount = Math.max(...activityTrend.map(t => t.count), 1);
   return (
-    <div className="card p-6">
-      <h3 className="text-lg font-semibold text-content mb-4">Activity Trend (Last 7 Days)</h3>
-      <div className="flex items-end space-x-2 h-48">
-        {activityTrend.map((item) => {
-          const height = (item.count / maxCount) * 100;
-          return (
-            <div key={item.date} className="flex-1 flex flex-col items-center">
-              <div className="text-xs font-medium text-content mb-1">{item.count}</div>
-              <div
-                className="w-full bg-primary-500 rounded-t hover:bg-primary-600 transition-colors"
-                style={{ height: `${height}%`, minHeight: item.count > 0 ? '8px' : '0' }}
-                title={`${item.date}: ${item.count} activities`}
-              />
-              <span className="text-xs text-content-muted mt-2">
-                {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    <ChartCard title="Activity Trend" subtitle="Last 7 days">
+      <TrendLineChart
+        data={activityTrend}
+        dataKey="count"
+        xKey="date"
+        name="Activities"
+        height={250}
+        formatX={(val) => new Date(val).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+      />
+    </ChartCard>
   );
 }
 
-/* ─── Role Distribution ─── */
-function RoleDistribution({ roleDistribution }) {
+/* ─── Role Distribution Section (recharts donut) ─── */
+function RoleDistributionSection({ roleDistribution }) {
   if (!roleDistribution || roleDistribution.length === 0) return null;
-  const total = roleDistribution.reduce((sum, r) => sum + r.count, 0);
+  const chartData = roleDistribution.slice(0, 6).map(r => ({ name: r.role, value: r.count }));
   return (
-    <div className="card p-6">
-      <h3 className="text-lg font-semibold text-content mb-4">Role Distribution</h3>
-      <div className="space-y-3">
-        {roleDistribution.slice(0, 5).map((role) => {
-          const percentage = total > 0 ? ((role.count / total) * 100).toFixed(1) : 0;
-          return (
-            <div key={role.role}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-content-secondary truncate">{role.role}</span>
-                <span className="text-sm text-content-muted">{role.count} ({percentage}%)</span>
-              </div>
-              <div className="w-full bg-surface-hover rounded-full h-2">
-                <div
-                  className="bg-primary-500 h-2 rounded-full"
-                  style={{ width: `${percentage}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    <ChartCard title="Role Distribution" subtitle="Users by role">
+      <DistributionDonutChart data={chartData} height={250} />
+    </ChartCard>
   );
 }
 
-/* ─── Analytics Section (chart + role distribution) ─── */
-function AnalyticsSection({ analytics }) {
+/* ─── Request Status Chart (recharts bar) ─── */
+function RequestStatusSection({ requestStats }) {
+  const chartData = [
+    { name: 'Submitted', value: requestStats.submitted, color: '#3b82f6' },
+    { name: 'In Progress', value: requestStats.inProgress, color: '#f59e0b' },
+    { name: 'Deployed', value: requestStats.deployed, color: '#10b981' },
+    { name: 'Rejected', value: requestStats.rejected, color: '#ef4444' },
+  ];
+  return (
+    <ChartCard title="Requests by Status" subtitle="Scenario request pipeline">
+      <StatusBarChart data={chartData} height={250} />
+    </ChartCard>
+  );
+}
+
+/* ─── Analytics Section (charts + role distribution) ─── */
+function AnalyticsSection({ analytics, requestStats }) {
   if (!analytics) return null;
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <ActivityTrendChart activityTrend={analytics.activity_trend} />
-      <RoleDistribution roleDistribution={analytics.role_distribution} />
-    </div>
+    <>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ActivityTrendSection activityTrend={analytics.activity_trend} />
+        <RoleDistributionSection roleDistribution={analytics.role_distribution} />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RequestStatusSection requestStats={requestStats} />
+      </div>
+    </>
   );
 }
 
@@ -500,11 +490,18 @@ function QuickActions({ isSuperAdmin }) {
   );
 }
 
-/* ─── Loading Spinner ─── */
+/* ─── Loading Skeleton ─── */
 function DashboardLoading() {
   return (
-    <div className="flex items-center justify-center h-64">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+    <div className="space-y-6" role="status" aria-label="Loading dashboard">
+      <div className="h-8 w-64 bg-surface-hover rounded animate-pulse" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1,2,3,4].map(i => <div key={i} className="card p-4 h-24 animate-pulse bg-surface-hover" />)}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {[1,2].map(i => <div key={i} className="card p-6 h-72 animate-pulse bg-surface-hover" />)}
+      </div>
+      <span className="sr-only">Loading dashboard...</span>
     </div>
   );
 }
@@ -586,7 +583,7 @@ function AdminDashboard() {
       <DataStatsRow stats={stats} isSuperAdmin={isSuperAdmin} />
       <RequestStatsRow requestStats={requestStats} />
       <FeedbackStatsRow feedbackStats={feedbackStats} />
-      <AnalyticsSection analytics={analytics} />
+      <AnalyticsSection analytics={analytics} requestStats={requestStats} />
       <AnalyticsUsersSection analytics={analytics} />
       <ConfigurationsOverview summary={summary} stats={stats} />
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Input, Table, Modal, Badge, SearchInput, Select, FileUpload, Pagination } from '../../components/shared';
 import { configurationsAPI } from '../../services/api';
-import { Eye, Pencil, Download, Clock, Trash2, Upload, Plus } from 'lucide-react';
+import { Eye, Pencil, Download, Clock, Trash2, Upload, Plus, Search, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 /* ─── helpers (outside component) ─── */
@@ -304,12 +304,12 @@ async function downloadJsonConfig(item) {
 }
 
 /* ─── Header Section ─── */
-function ConfigsHeader({ onOpenUpload, onAddNew }) {
+function ConfigsHeader({ total, onOpenUpload, onAddNew }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
         <h1 className="text-2xl font-bold text-content">Configurations</h1>
-        <p className="text-content-muted mt-1">Manage process configs, lookups, and file configurations</p>
+        <p className="text-content-muted mt-1">Manage process configs, lookups, and file configurations ({total} total)</p>
       </div>
       <div className="flex space-x-3">
         <Button variant="secondary" onClick={onOpenUpload}><Upload size={16} className="mr-2" />Upload File</Button>
@@ -319,19 +319,41 @@ function ConfigsHeader({ onOpenUpload, onAddNew }) {
   );
 }
 
-/* ─── Filters Section ─── */
-function ConfigsFilters({ search, onSearchChange, filterType, onFilterTypeChange, configTypes }) {
+/* ─── Stats Section ─── */
+function ConfigsStats({ configurations, total, filterType }) {
+  if (filterType || configurations.length === 0) return null;
+  const byType = {};
+  configurations.forEach(c => { const t = c.type || 'unknown'; byType[t] = (byType[t] || 0) + 1; });
+  const typeEntries = Object.entries(byType).sort((a, b) => b[1] - a[1]);
   return (
-    <Card className="p-4">
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <SearchInput value={search} onChange={onSearchChange} placeholder="Search by key or config ID..." />
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="card p-4"><div className="text-sm text-content-muted">Total Configs</div><div className="text-2xl font-bold text-content">{total}</div></div>
+      {typeEntries.slice(0, 3).map(([type, count]) => (
+        <div key={type} className="card p-4"><div className="text-sm text-content-muted capitalize">{type.replace(/-/g, ' ')}</div><div className="text-2xl font-bold text-content">{count}</div></div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Filters Section ─── */
+function ConfigsFilters({ search, onSearchChange, filterType, onFilterTypeChange, configTypes, onClear }) {
+  return (
+    <div className="card !p-4">
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted pointer-events-none" size={18} />
+          <input type="text" value={search} onChange={(e) => onSearchChange(e.target.value)} placeholder="Search by key or config ID..." className="input !py-2 pl-10 w-full" />
         </div>
-        <div className="w-48">
-          <Select value={filterType} onChange={onFilterTypeChange} options={[{ value: '', label: 'All Types' }, ...configTypes.map(t => ({ value: t.value, label: t.label }))]} />
+        <div className="flex items-center gap-2">
+          <Filter size={16} className="text-content-muted shrink-0" />
+          <select className="input !py-2 min-w-[140px]" value={filterType} onChange={onFilterTypeChange}>
+            <option value="">All Types</option>
+            {configTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+          {filterType && <button className="text-sm text-primary-600 hover:underline whitespace-nowrap" onClick={onClear}>Clear</button>}
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -579,9 +601,11 @@ const ConfigurationsManagement = () => {
 
   return (
     <div className="space-y-6">
-      <ConfigsHeader onOpenUpload={() => actions.setUploadModalOpen(true)} onAddNew={() => { resetForm(); setModalOpen(true); }} />
+      <ConfigsHeader total={pagination.total} onOpenUpload={() => actions.setUploadModalOpen(true)} onAddNew={() => { resetForm(); setModalOpen(true); }} />
 
-      <ConfigsFilters search={search} onSearchChange={handleSearchChange} filterType={filterType} onFilterTypeChange={handleFilterTypeChange} configTypes={configTypes} />
+      <ConfigsStats configurations={configurations} total={pagination.total} filterType={filterType} />
+
+      <ConfigsFilters search={search} onSearchChange={handleSearchChange} filterType={filterType} onFilterTypeChange={handleFilterTypeChange} configTypes={configTypes} onClear={() => { setFilterType(''); resetPage(); }} />
 
       <Card>
         <Table columns={columns} data={configurations} loading={loading} />

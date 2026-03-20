@@ -111,7 +111,10 @@ const buildActionUrl = (action, row) => {
 
   const targetDomain = action.dataDomain || "";
   const targetScenarioKey = action.key || action.scenerioKey || "";
-  return `/explorer/${targetDomain}/${targetScenarioKey}?${urlParams}`;
+
+  // Prepend APP_BASE_PATH for correct routing when behind a proxy (Apigee)
+  const basePath = (window.__env && window.__env.APP_BASE_PATH) || "";
+  return `${basePath}/explorer/${targetDomain}/${targetScenarioKey}?${urlParams}`;
 };
 
 // Aria sort helper

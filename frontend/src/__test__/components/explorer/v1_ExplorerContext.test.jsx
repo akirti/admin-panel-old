@@ -10,6 +10,12 @@ jest.mock('../../../services/api', () => ({
   },
 }));
 
+jest.mock('../../../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { email: 'test@test.com', roles: ['user'] },
+  }),
+}));
+
 import { domainAPI, scenarioAPI } from '../../../services/api';
 
 // Test component to consume context

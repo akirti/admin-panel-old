@@ -6,6 +6,15 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontSize: {
+        'xs': 'var(--fs-xs)',
+        'sm': 'var(--fs-sm)',
+        'base': 'var(--fs-base)',
+        'lg': 'var(--fs-lg)',
+        'xl': 'var(--fs-xl)',
+        '2xl': 'var(--fs-2xl)',
+        '3xl': 'var(--fs-3xl)',
+      },
       colors: {
         primary: {
           50: 'var(--color-primary-50)',

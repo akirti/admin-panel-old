@@ -20,6 +20,8 @@ jest.mock('../../services/api', () => ({
   },
   setAccessToken: jest.fn(),
   clearAccessToken: jest.fn(),
+  scheduleProactiveRefresh: jest.fn(),
+  clearProactiveRefresh: jest.fn(),
 }));
 
 import { authAPI } from '../../services/api';

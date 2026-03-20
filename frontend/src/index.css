@@ -508,3 +508,271 @@ textarea:focus-visible,
     scroll-behavior: auto !important;
   }
 }
+
+/* Mobile sidebar overlay */
+@media (max-width: 767px) {
+  .card {
+    padding: 1rem !important;
+  }
+}
+
+/* ============================================
+   TYPOGRAPHY SYSTEM
+   ============================================ */
+
+/* Font size scale — controlled by --font-scale CSS variable for accessibility */
+:root {
+  --font-scale: 1;
+  --fs-xs: calc(0.75rem * var(--font-scale));    /* 12px base */
+  --fs-sm: calc(0.875rem * var(--font-scale));   /* 14px base */
+  --fs-base: calc(1rem * var(--font-scale));     /* 16px base */
+  --fs-lg: calc(1.125rem * var(--font-scale));   /* 18px base */
+  --fs-xl: calc(1.25rem * var(--font-scale));    /* 20px base */
+  --fs-2xl: calc(1.5rem * var(--font-scale));    /* 24px base */
+  --fs-3xl: calc(1.875rem * var(--font-scale));  /* 30px base */
+
+  /* Icon size tokens */
+  --icon-xs: 12px;
+  --icon-sm: 14px;
+  --icon-md: 16px;
+  --icon-lg: 20px;
+  --icon-xl: 24px;
+  --icon-2xl: 32px;
+  --icon-hero: 48px;
+}
+
+/* Font scale presets */
+[data-font-scale="small"] { --font-scale: 0.875; }
+[data-font-scale="default"] { --font-scale: 1; }
+[data-font-scale="large"] { --font-scale: 1.125; }
+[data-font-scale="x-large"] { --font-scale: 1.25; }
+
+/* Apply scaled font sizes to base elements */
+body {
+  font-size: var(--fs-base);
+  line-height: 1.6;
+}
+
+/* Semantic typography classes */
+.typo-page-title {
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.typo-section-title {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.typo-body {
+  font-size: var(--fs-base);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.typo-body-sm {
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.typo-caption {
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.typo-label {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.typo-stat-value {
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.typo-badge {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.typo-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: var(--fs-sm);
+}
+
+/* Table typography */
+.table-header th {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================
+   SKEUOMORPHIC DESIGN REFINEMENTS
+   ============================================ */
+
+/* Textured card surfaces with realistic depth */
+.card {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.08),
+    0 4px 6px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card:hover {
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    0 8px 16px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* Tactile button press effects */
+.btn-primary,
+.btn-secondary,
+[class*="btn-"] {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.btn-primary:active,
+.btn-secondary:active,
+[class*="btn-"]:active {
+  transform: scale(0.97);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Embossed/inset section headers */
+.table-header {
+  background: linear-gradient(to bottom, var(--color-surface-secondary), var(--color-bg-secondary));
+  border-bottom: 1px solid var(--color-border);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Realistic toggle switches */
+.toggle-track {
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15), inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.toggle-thumb {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Input fields with inset shadow for depth */
+.input,
+.input-field,
+.input-sm {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.input:focus,
+.input-field:focus,
+.input-sm:focus {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 3px rgba(var(--color-primary-500-rgb, 59, 130, 246), 0.15);
+}
+
+/* Stat card hover lift */
+.stat-card:hover,
+.card.cursor-pointer:hover {
+  transform: translateY(-1px);
+}
+
+/* Sidebar depth */
+.sidebar-link.active {
+  box-shadow: inset 3px 0 0 var(--color-primary-600), 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* ============================================
+   DARK MODE ENHANCEMENTS
+   ============================================ */
+
+/* Auto-detect system dark mode preference */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-primary-50:  #1e1e2e;
+    --color-primary-100: #2a2a3e;
+    --color-primary-200: #3a3a52;
+    --color-primary-300: #6366f1;
+    --color-primary-400: #818cf8;
+    --color-primary-500: #818cf8;
+    --color-primary-600: #6366f1;
+    --color-primary-700: #4f46e5;
+    --color-primary-800: #4338ca;
+    --color-primary-900: #3730a3;
+    --color-primary-950: #1e1b4b;
+
+    --color-surface:           #1a1a2e;
+    --color-surface-secondary: #16162a;
+    --color-surface-hover:     #252542;
+    --color-surface-input:     #1e1e32;
+
+    --color-bg:           #0f0f1a;
+    --color-bg-secondary: #141425;
+
+    --color-sidebar-bg:    #141425;
+    --color-sidebar-hover: #1e1e32;
+    --color-header-bg:     #141425;
+
+    --color-text:           #e2e8f0;
+    --color-text-secondary: #94a3b8;
+    --color-text-muted:     #64748b;
+    --color-text-inverse:   #0f0f1a;
+
+    --color-border:       #2a2a42;
+    --color-border-light: #1e1e32;
+  }
+}
+
+/* Smooth theme transitions */
+html {
+  transition: background-color 0.15s ease;
+}
+
+/* Scoped theme transitions — only on elements that change visibly with theme */
+.card,
+.btn-primary, .btn-secondary, [class*="btn-"],
+.input, .input-field, .input-sm,
+.sidebar-link, .stat-card, .table-header,
+.badge, nav, aside, header, main {
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+html[data-theme] .card,
+html[data-theme] .btn-primary,
+html[data-theme] .input,
+html[data-theme] .sidebar-link {
+  transition-duration: 0.15s;
+}
+
+/* Dark theme adjustments for skeuomorphic effects */
+[data-theme="dark"] .card {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    0 4px 6px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .table-header {
+  text-shadow: none;
+}
+
+[data-theme="dark"] .btn-primary,
+[data-theme="dark"] [class*="btn-"] {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .input,
+[data-theme="dark"] .input-field,
+[data-theme="dark"] .input-sm {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}

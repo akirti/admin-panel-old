@@ -62,7 +62,7 @@
           "auth_secret_key": "{environment.app_secrets.auth_secret_key}",
           "jwt_issuer": "{environment.app_secrets.jwt_issuer}",
           "jwt_audience": "{environment.app_secrets.jwt_audience}",
-          "private_handshake_secret_key": "989d4603c8aacef6a4fa8c5279564636321c86f26124fce7bfccd124337fda47"
+          "private_handshake_secret_key": "{environment.app_secrets.private_handshake_secret_key}"
         },
         "authentication": {
         "access_token_expiry_minutes": 30,

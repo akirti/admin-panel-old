@@ -1,4 +1,5 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { memo, useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { FixedSizeList } from 'react-window';
 import { ArrowUpDown, ArrowUp, ArrowDown, Filter, X, Check, Loader2 } from 'lucide-react';
 
 // --- Filter condition operators ---
@@ -483,7 +484,7 @@ function ColumnFilterDropdown({ title, uniqueValues, selectedValues, existingFil
 
 // --- Column Header ---
 
-function ColumnHeader({ column, sortConfig, columnFilters, onSort, onFilterOpen, activeFilter, onFilterApply, onFilterClose, uniqueValues }) {
+const ColumnHeader = memo(function ColumnHeader({ column, sortConfig, columnFilters, onSort, onFilterOpen, activeFilter, onFilterApply, onFilterClose, uniqueValues }) {
   const isSorted = sortConfig.key === column.key;
   const filterData = columnFilters[column.key];
   const isFiltered = !!filterData;
@@ -549,11 +550,11 @@ function ColumnHeader({ column, sortConfig, columnFilters, onSort, onFilterOpen,
       )}
     </th>
   );
-}
+});
 
 // --- Active filter chips bar ---
 
-function ActiveFiltersBar({ columns, columnFilters, onClearFilter, onClearAll }) {
+const ActiveFiltersBar = memo(function ActiveFiltersBar({ columns, columnFilters, onClearFilter, onClearAll }) {
   const filterEntries = Object.entries(columnFilters);
   if (filterEntries.length === 0) return null;
 
@@ -587,6 +588,48 @@ function ActiveFiltersBar({ columns, columnFilters, onClearFilter, onClearAll })
       </button>
     </div>
   );
+});
+
+// --- VirtualizedBody: renders rows via react-window when data exceeds threshold ---
+
+// Extracted outside VirtualizedBody so react-window gets a stable component reference
+function VirtualizedRow({ index, style, data: itemData }) {
+  const { rows, columns, onRowClick } = itemData;
+  const row = rows[index];
+  return (
+    <div
+      style={style}
+      className={`flex items-center border-b border-edge ${onRowClick ? 'cursor-pointer hover:bg-surface-hover' : 'hover:bg-surface-hover'} transition-colors`}
+      onClick={() => onRowClick && onRowClick(row)}
+      role="row"
+    >
+      {columns.map((column) => (
+        <div
+          key={column.key}
+          className="px-6 py-3 text-sm text-content flex-shrink-0"
+          style={{ width: column.width || 'auto', minWidth: column.minWidth || 120 }}
+        >
+          {column.render ? column.render(row[column.key], row) : row[column.key]}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function VirtualizedBody({ data, columns, rowHeight = 52, maxHeight = 600, onRowClick }) {
+  const itemData = useMemo(() => ({ rows: data, columns, onRowClick }), [data, columns, onRowClick]);
+
+  return (
+    <FixedSizeList
+      height={Math.min(data.length * rowHeight, maxHeight)}
+      itemCount={data.length}
+      itemSize={rowHeight}
+      width="100%"
+      itemData={itemData}
+    >
+      {VirtualizedRow}
+    </FixedSizeList>
+  );
 }
 
 // --- DataGrid: full table with sort + filter ---
@@ -599,6 +642,7 @@ export const DataGrid = ({
   emptyMessage = 'No data available',
   sortable = true,
   filterable = true,
+  virtualize = true,
 }) => {
   const [activeFilter, setActiveFilter] = useState(null);
 
@@ -613,6 +657,8 @@ export const DataGrid = ({
   );
 
   const grid = useDataGrid(data, gridColumns);
+
+  const shouldVirtualize = virtualize && grid.processedData.length > 100;
 
   const handleFilterOpen = useCallback((key) => {
     setActiveFilter((prev) => (prev === key ? null : key));
@@ -658,29 +704,39 @@ export const DataGrid = ({
               ))}
             </tr>
           </thead>
-          <tbody className="bg-surface divide-y divide-edge">
-            {grid.processedData.length === 0 ? (
+          {shouldVirtualize ? (
+            <tbody className="bg-surface">
               <tr>
-                <td colSpan={gridColumns.length} className="px-6 py-12 text-center text-content-muted" role="status">
-                  {data.length > 0 ? 'No results match the current filters' : emptyMessage}
+                <td colSpan={gridColumns.length} className="p-0">
+                  <VirtualizedBody data={grid.processedData} columns={gridColumns} onRowClick={onRowClick} />
                 </td>
               </tr>
-            ) : (
-              grid.processedData.map((row, index) => (
-                <tr
-                  key={row._id || row.id || index}
-                  className={`${onRowClick ? 'cursor-pointer hover:bg-surface-hover' : 'hover:bg-surface-hover'} transition-colors`}
-                  onClick={() => onRowClick && onRowClick(row)}
-                >
-                  {gridColumns.map((column) => (
-                    <td key={column.key} className="px-6 py-4 whitespace-nowrap text-sm text-content">
-                      {column.render ? column.render(row[column.key], row) : row[column.key]}
-                    </td>
-                  ))}
+            </tbody>
+          ) : (
+            <tbody className="bg-surface divide-y divide-edge">
+              {grid.processedData.length === 0 ? (
+                <tr>
+                  <td colSpan={gridColumns.length} className="px-6 py-12 text-center text-content-muted" role="status">
+                    {data.length > 0 ? 'No results match the current filters' : emptyMessage}
+                  </td>
                 </tr>
-              ))
-            )}
-          </tbody>
+              ) : (
+                grid.processedData.map((row, index) => (
+                  <tr
+                    key={row._id || row.id || index}
+                    className={`${onRowClick ? 'cursor-pointer hover:bg-surface-hover' : 'hover:bg-surface-hover'} transition-colors`}
+                    onClick={() => onRowClick && onRowClick(row)}
+                  >
+                    {gridColumns.map((column) => (
+                      <td key={column.key} className="px-6 py-4 whitespace-nowrap text-sm text-content">
+                        {column.render ? column.render(row[column.key], row) : row[column.key]}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          )}
         </table>
       </div>
 

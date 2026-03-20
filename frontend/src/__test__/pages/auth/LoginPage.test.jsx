@@ -147,7 +147,7 @@ describe('LoginPage', () => {
       renderLoginPage();
 
       await user.type(screen.getByPlaceholderText('Enter your email'), 'test@example.com');
-      await user.type(screen.getByPlaceholderText('Enter your password'), 'wrong');
+      await user.type(screen.getByPlaceholderText('Enter your password'), 'wrongpassword');
       await user.click(screen.getByRole('button', { name: 'Sign In' }));
 
       await waitFor(() => {
@@ -162,7 +162,7 @@ describe('LoginPage', () => {
       renderLoginPage();
 
       await user.type(screen.getByPlaceholderText('Enter your email'), 'test@example.com');
-      await user.type(screen.getByPlaceholderText('Enter your password'), 'wrong');
+      await user.type(screen.getByPlaceholderText('Enter your password'), 'wrongpassword');
       await user.click(screen.getByRole('button', { name: 'Sign In' }));
 
       await waitFor(() => {

@@ -71,16 +71,22 @@ def build_db_config(loader: ConfigurationLoader, db_token: str = "authentication
     if not db_config:
         return None
 
-    # Validate required connection fields are resolved
-    required_keys = ("host", "username", "password")
-    for key in required_keys:
+    # Validate host is present and resolved (username/password can be empty for no-auth dev)
+    host = db_config.get("host")
+    if not host or _is_placeholder(host):
+        logger.warning(
+            "DB config key 'host' is missing or unresolved (%s) — skipping database setup",
+            host,
+        )
+        return None
+    for key in ("username", "password"):
         val = db_config.get(key)
-        if not val or _is_placeholder(val):
+        if val is not None and _is_placeholder(val):
             logger.warning(
-                "DB config key '%s' is missing or unresolved (%s) — skipping database setup",
+                "DB config key '%s' has unresolved placeholder (%s) — clearing it",
                 key, val,
             )
-            return None
+            db_config[key] = ""
 
     globals_pool = loader.get_config_by_path("globals.databases.default")
     if globals_pool:
@@ -181,15 +187,19 @@ def build_atlassian_lookup_config(jira_config: Optional[dict]) -> Optional[dict]
     }
 
 
+def resolve_simulator_file() -> str:
+    """Resolve simulator file path from SIMULATOR_FILE env var."""
+    return os.environ.get("SIMULATOR_FILE", None)
+
+
 def bootstrap():
     """Orchestrate configuration loading and create the FastAPI application."""
     config_path = resolve_config_path()
     environment = resolve_environment()
-    config_loader = ConfigurationLoader(config_path=config_path, environment=environment)
-    # In bootstrap(), after config_loader is created:
-    print("AUTH DB user:", config_loader.get_config_by_path("databases.authentication.db_info.username"))
-    print("UI_TPL DB user:", config_loader.get_config_by_path("databases.ui_templates.db_info.username"))
-    print("Unresolved:", config_loader.unresolved_properties)
+    simulator_file = resolve_simulator_file()
+    config_loader = ConfigurationLoader(config_path=config_path, environment=environment, simulator_file=simulator_file)
+    if config_loader.unresolved_properties:
+        logger.debug("Unresolved config placeholders: %d", len(config_loader.unresolved_properties))
     db_config = build_db_config(config_loader)
     token_secret = config_loader.get_config_by_path("environment.app_secrets.auth_secret_key")
     jwt_issuer = (
@@ -224,10 +234,6 @@ def bootstrap():
     # Build separate DB config for ui_templates
     ui_templates_db_config = build_db_config(config_loader, db_token="ui_templates")
 
-    print("AUTH DB user:", config_loader.get_config_by_path("databases.authentication.db_info.username"))
-    print("UI_TPL DB user:", config_loader.get_config_by_path("databases.ui_templates.db_info.username"))
-    print("Unresolved:", config_loader.unresolved_properties)
-    print(ui_templates_db_config)
     kw = {}
     kw["db_config"] = db_config
     kw["ui_templates_db_config"] = ui_templates_db_config

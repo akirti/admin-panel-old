@@ -617,6 +617,8 @@ function V1ExplorerReportPage() {
       setFilters(formValues);
       setPage(1);
       setShowTable(true);
+      // Store active filters globally so action drill-downs can pass them to child scenarios
+      window.__activeFilters = formValues;
       fetchReport({ ...formValues, page: 1, pageSize });
     },
     [fetchReport, pageSize]

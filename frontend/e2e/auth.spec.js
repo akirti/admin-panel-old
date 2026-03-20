@@ -7,8 +7,8 @@ test.describe('Authentication', () => {
 
   test('should display login form with proper labels', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Welcome Back' })).toBeVisible();
-    await expect(page.getByLabel('Email')).toBeVisible();
-    await expect(page.getByLabel('Password')).toBeVisible();
+    await expect(page.locator('#login-email')).toBeVisible();
+    await expect(page.locator('#login-password')).toBeVisible();
     await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
   });
 
@@ -16,22 +16,22 @@ test.describe('Authentication', () => {
     const submitButton = page.getByRole('button', { name: /sign in/i });
     await submitButton.click();
     // HTML5 validation should prevent submission
-    const emailInput = page.getByLabel('Email');
+    const emailInput = page.locator('#login-email');
     await expect(emailInput).toHaveAttribute('required', '');
   });
 
   test('should toggle password visibility', async ({ page }) => {
-    const passwordInput = page.getByLabel('Password');
+    const passwordInput = page.locator('#login-password');
     await expect(passwordInput).toHaveAttribute('type', 'password');
 
-    const toggleButton = page.getByRole('button', { name: /show password|toggle password/i });
+    const toggleButton = page.getByRole('button', { name: /show password/i });
     await toggleButton.click();
     await expect(passwordInput).toHaveAttribute('type', 'text');
   });
 
   test('should show error on invalid credentials', async ({ page }) => {
-    await page.getByLabel('Email').fill('invalid@test.com');
-    await page.getByLabel('Password').fill('wrongpassword');
+    await page.locator('#login-email').fill('invalid@test.com');
+    await page.locator('#login-password').fill('wrongpassword');
     await page.getByRole('button', { name: /sign in/i }).click();
 
     // Should show error toast or remain on login page
@@ -49,10 +49,10 @@ test.describe('Authentication', () => {
   });
 
   test('should have keyboard navigable form', async ({ page }) => {
-    await page.getByLabel('Email').focus();
+    await page.locator('#login-email').focus();
     await page.keyboard.press('Tab');
     // Focus should move to password field
-    const passwordInput = page.getByLabel('Password');
+    const passwordInput = page.locator('#login-password');
     await expect(passwordInput).toBeFocused();
   });
 });
