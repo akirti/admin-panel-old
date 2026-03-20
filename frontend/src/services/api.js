@@ -13,9 +13,51 @@ const api = axios.create({
 let csrfToken = null;
 let accessToken = null;
 
+// Proactive refresh — refresh token before expiry while user is active
+let tokenExpiresAt = null;
+let proactiveRefreshTimer = null;
+
+// Called after successful login or refresh to schedule proactive refresh
+export const scheduleProactiveRefresh = (expiresInSeconds) => {
+  if (proactiveRefreshTimer) clearTimeout(proactiveRefreshTimer);
+
+  // Refresh 2 minutes before expiry, minimum 30 seconds
+  const refreshInMs = Math.max((expiresInSeconds - 120) * 1000, 30000);
+  tokenExpiresAt = Date.now() + (expiresInSeconds * 1000);
+
+  proactiveRefreshTimer = setTimeout(async () => {
+    // Only refresh if user is still on the page (not on login page)
+    if (!accessToken) return;
+    try {
+      const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, {
+        withCredentials: true,
+        timeout: 10000
+      });
+      if (response.data?.access_token) {
+        accessToken = response.data.access_token;
+      }
+      // Schedule next proactive refresh
+      const nextExpiry = response.data?.expires_in || 900; // default 15 min
+      scheduleProactiveRefresh(nextExpiry);
+    } catch {
+      // Refresh failed - user will get 401 on next API call, handled by interceptor
+    }
+  }, refreshInMs);
+};
+
+export const clearProactiveRefresh = () => {
+  if (proactiveRefreshTimer) clearTimeout(proactiveRefreshTimer);
+  proactiveRefreshTimer = null;
+  tokenExpiresAt = null;
+};
+
 // Public helpers so AuthContext can set/clear the bearer token
 export const setAccessToken = (token) => { accessToken = token; };
-export const clearAccessToken = () => { accessToken = null; csrfToken = null; };
+export const clearAccessToken = () => {
+  accessToken = null;
+  csrfToken = null;
+  clearProactiveRefresh();
+};
 
 // Helper to get cookie value by name
 const getCookie = (name) => {
@@ -97,24 +139,49 @@ api.interceptors.request.use(
 const isCanceledRequest = (error) =>
   error.code === 'ERR_CANCELED' || error.name === 'CanceledError';
 
+// Refresh queue — serialize all refresh attempts through a single promise
+let refreshPromise = null;
+
 // Helper: attempt to refresh the JWT token and retry the original request
 const handleUnauthorized = async (originalRequest) => {
   originalRequest._retry = true;
-  try {
-    const refreshResponse = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, {
-      withCredentials: true,
-      timeout: 10000
-    });
-    // Capture new tokens from refresh response
+
+  // If a refresh is already in progress, wait for it
+  if (refreshPromise) {
+    try {
+      await refreshPromise;
+      // Refresh succeeded, retry with new token
+      return api(originalRequest);
+    } catch {
+      throw new Error('Session expired');
+    }
+  }
+
+  // Start a new refresh
+  refreshPromise = axios.post(`${API_BASE_URL}/auth/refresh`, {}, {
+    withCredentials: true,
+    timeout: 10000
+  }).then((refreshResponse) => {
     if (refreshResponse.data?.access_token) {
       accessToken = refreshResponse.data.access_token;
     }
-    return api(originalRequest);
-  } catch (refreshError) {
+    // Store token expiry time for proactive refresh
+    if (refreshResponse.data?.expires_in) {
+      tokenExpiresAt = Date.now() + (refreshResponse.data.expires_in * 1000);
+    } else {
+      tokenExpiresAt = Date.now() + (13 * 60 * 1000); // Default 13 min (refresh at 13 of 15)
+    }
+  }).catch((err) => {
     clearAccessToken();
+    tokenExpiresAt = null;
     redirectToLoginIfNeeded();
-    throw refreshError;
-  }
+    throw err;
+  }).finally(() => {
+    refreshPromise = null;
+  });
+
+  await refreshPromise;
+  return api(originalRequest);
 };
 
 // Helper: redirect to login unless already on a public auth page
@@ -165,6 +232,9 @@ api.interceptors.response.use(
     // Auto-capture access_token from login/register/refresh responses
     if (response.data?.access_token) {
       accessToken = response.data.access_token;
+      // Schedule proactive refresh based on expiry
+      const expiresIn = response.data?.expires_in || 900;
+      scheduleProactiveRefresh(expiresIn);
     }
     return response;
   },

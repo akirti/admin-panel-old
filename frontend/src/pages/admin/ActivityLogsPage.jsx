@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Filter, User, Activity, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { activityLogsAPI, exportAPI } from '../../services/api';
-import { ExportButton } from '../../components/shared';
+import { ExportButton, Table } from '../../components/shared';
 
 const ACTION_COLORS = {
   create: 'bg-green-100 text-green-800',
@@ -122,70 +122,58 @@ function ActivityTimeline({ timeline }) {
   );
 }
 
-function LogsTable({ logs, loading, getActionColor, formatChanges }) {
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-48">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-edge">
-        <thead>
-          <tr className="table-header">
-            <th className="px-6 py-3 text-left">Time</th>
-            <th className="px-6 py-3 text-left">Action</th>
-            <th className="px-6 py-3 text-left">Entity Type</th>
-            <th className="px-6 py-3 text-left">Entity ID</th>
-            <th className="px-6 py-3 text-left">User</th>
-            <th className="px-6 py-3 text-left">Changes</th>
-          </tr>
-        </thead>
-        <tbody className="bg-surface divide-y divide-edge">
-          {logs.length === 0 ? (
-            <tr>
-              <td colSpan={6} className="px-6 py-8 text-center text-content-muted">
-                No activity logs found
-              </td>
-            </tr>
-          ) : (
-            logs.map((log) => (
-              <tr key={log._id} className="hover:bg-surface-hover">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-content">
-                  {new Date(log.timestamp).toLocaleString()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 text-xs rounded ${getActionColor(log.action)}`}>
-                    {log.action}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">
-                    {log.entity_type}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="font-mono text-sm text-content-muted">
-                    {log.entity_id?.length > 20 ? `${log.entity_id.slice(0, 20)}...` : log.entity_id}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-content">
-                  {log.user_email}
-                </td>
-                <td className="px-6 py-4 text-xs text-content-muted max-w-xs truncate">
-                  {formatChanges(log.changes)}
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+const logsColumns = [
+  {
+    key: 'timestamp',
+    title: 'Time',
+    render: (val) => <span className="text-sm text-content">{new Date(val).toLocaleString()}</span>,
+    sortValue: (val) => val ? new Date(val).getTime() : 0,
+    filterValue: (val) => val ? new Date(val).toLocaleDateString() : '',
+  },
+  {
+    key: 'action',
+    title: 'Action',
+    render: (val) => (
+      <span className={`px-2 py-1 text-xs rounded ${getActionColor(val)}`}>
+        {val}
+      </span>
+    ),
+  },
+  {
+    key: 'entity_type',
+    title: 'Entity Type',
+    render: (val) => (
+      <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">
+        {val}
+      </span>
+    ),
+  },
+  {
+    key: 'entity_id',
+    title: 'Entity ID',
+    render: (val) => (
+      <span className="font-mono text-sm text-content-muted">
+        {val?.length > 20 ? `${val.slice(0, 20)}...` : val}
+      </span>
+    ),
+    filterable: false,
+  },
+  {
+    key: 'user_email',
+    title: 'User',
+  },
+  {
+    key: 'changes',
+    title: 'Changes',
+    sortable: false,
+    filterable: false,
+    render: (val) => (
+      <span className="text-xs text-content-muted max-w-xs truncate block">
+        {formatChanges(val)}
+      </span>
+    ),
+  },
+];
 
 function PaginationControls({ pagination, onPageChange }) {
   if (pagination.pages <= 1) return null;
@@ -330,7 +318,12 @@ const ActivityLogsPage = () => {
       />
       {showTimeline && <ActivityTimeline timeline={stats.timeline} />}
       <div className="card overflow-hidden p-0">
-        <LogsTable logs={logs} loading={loading} getActionColor={getActionColor} formatChanges={formatChanges} />
+        <Table
+          columns={logsColumns}
+          data={logs}
+          loading={loading}
+          emptyMessage="No activity logs found"
+        />
         <PaginationControls pagination={pagination} onPageChange={handlePageChange} />
       </div>
     </div>

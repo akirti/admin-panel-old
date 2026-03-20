@@ -1,15 +1,23 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { domainAPI, scenarioAPI } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const ExplorerContext = createContext(null);
 
 export function ExplorerProvider({ children }) {
+  const { user } = useAuth();
   const [domains, setDomains] = useState([]);
   const [scenarios, setScenarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Don't fetch until auth is confirmed
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -21,7 +29,6 @@ export function ExplorerProvider({ children }) {
         const domainData = domainsRes.data?.data || domainsRes.data || [];
         const scenarioData = scenariosRes.data?.data || scenariosRes.data || [];
 
-        // Sort domains by order
         const sortedDomains = [...domainData].sort((a, b) => (a.order || 0) - (b.order || 0));
 
         setDomains(sortedDomains);
@@ -34,7 +41,7 @@ export function ExplorerProvider({ children }) {
     };
 
     fetchData();
-  }, []);
+  }, [user]); // Re-fetch when user changes (login/logout)
 
   const getScenariosByDomain = (domainKey) => {
     return scenarios.filter(

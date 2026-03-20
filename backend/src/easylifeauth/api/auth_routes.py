@@ -26,7 +26,8 @@ _is_dev = os.environ.get("ENV", "development").lower() in ("development", "dev")
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-def _set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
+def _set_auth_cookies(response: Response, access_token: str, refresh_token: str,
+                      access_max_age: int = 1800, refresh_max_age: int = 86400) -> None:
     """Set httpOnly auth cookies on the response."""
     secure = not _is_dev
     # Use SameSite=None for cross-origin deployments (Apigee proxy on different domain).
@@ -39,7 +40,7 @@ def _set_auth_cookies(response: Response, access_token: str, refresh_token: str)
         httponly=True,
         secure=secure,
         samesite=samesite,
-        max_age=900,  # 15 minutes
+        max_age=access_max_age,
         path="/",
     )
     response.set_cookie(
@@ -48,7 +49,7 @@ def _set_auth_cookies(response: Response, access_token: str, refresh_token: str)
         httponly=True,
         secure=secure,
         samesite=samesite,
-        max_age=86400,  # 24 hours
+        max_age=refresh_max_age,
         path=f"{API_BASE_ROUTE}/auth/refresh",
     )
 
@@ -114,6 +115,7 @@ async def login(
     credentials: UserLogin,
     response: Response,
     user_service: UserService = Depends(get_user_service),
+    token_manager: TokenManager = Depends(get_token_manager),
     activity_log: Optional[ActivityLogService] = Depends(get_activity_log_service)
 ):
     """Login user"""
@@ -123,8 +125,13 @@ async def login(
             password=credentials.password
         )
 
-        # Set httpOnly cookies
-        _set_auth_cookies(response, result["access_token"], result["refresh_token"])
+        # Set httpOnly cookies with dynamic expiry from token manager
+        _set_auth_cookies(
+            response, result["access_token"], result["refresh_token"],
+            access_max_age=int(token_manager.access_token_expires.total_seconds()),
+            refresh_max_age=int(token_manager.refresh_token_expires.total_seconds()),
+        )
+        result["expires_in"] = int(token_manager.access_token_expires.total_seconds())
 
         # Log successful login
         if activity_log and result.get("user"):
@@ -170,8 +177,13 @@ async def refresh_token(
         db = get_db()
         result = await token_manager.refresh_access_token(refresh, db)
 
-        # Set new httpOnly cookies
-        _set_auth_cookies(response, result["access_token"], result["refresh_token"])
+        # Set new httpOnly cookies with dynamic expiry from token manager
+        _set_auth_cookies(
+            response, result["access_token"], result["refresh_token"],
+            access_max_age=int(token_manager.access_token_expires.total_seconds()),
+            refresh_max_age=int(token_manager.refresh_token_expires.total_seconds()),
+        )
+        result["expires_in"] = int(token_manager.access_token_expires.total_seconds())
 
         return result
     except AuthError as e:

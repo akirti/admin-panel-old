@@ -21,18 +21,35 @@ function RegisterPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.username) newErrors.username = 'Username is required';
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+    }
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const clearError = (field) => {
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-
-    if (formData.password.length < 8) {
-      toast.error('Password must be at least 8 characters');
-      return;
-    }
+    if (!validate()) return;
 
     setLoading(true);
 
@@ -72,82 +89,105 @@ function RegisterPage() {
         </div>
 
         <div>
-          <label className="input-label">
-            Username
+          <label htmlFor="reg-username" className="input-label">
+            Username <span className="text-red-500" aria-hidden="true">*</span>
           </label>
           <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} aria-hidden="true" />
             <input
+              id="reg-username"
               type="text"
               name="username"
               value={formData.username}
-              onChange={handleChange}
-              className="input-field pl-10"
+              onChange={(e) => { handleChange(e); clearError('username'); }}
+              className={`input-field pl-10 ${errors.username ? 'border-red-500' : ''}`}
               placeholder="Choose a username"
               required
+              aria-invalid={errors.username ? 'true' : undefined}
+              aria-describedby={errors.username ? 'reg-username-error' : undefined}
+              autoComplete="username"
             />
           </div>
+          {errors.username && <p id="reg-username-error" className="mt-1 text-sm text-red-600" role="alert">{errors.username}</p>}
         </div>
 
         <div>
-          <label className="input-label">
-            Email
+          <label htmlFor="reg-email" className="input-label">
+            Email <span className="text-red-500" aria-hidden="true">*</span>
           </label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} aria-hidden="true" />
             <input
+              id="reg-email"
               type="email"
               name="email"
               value={formData.email}
-              onChange={handleChange}
-              className="input-field pl-10"
+              onChange={(e) => { handleChange(e); clearError('email'); }}
+              className={`input-field pl-10 ${errors.email ? 'border-red-500' : ''}`}
               placeholder="Enter your email"
               required
+              aria-invalid={errors.email ? 'true' : undefined}
+              aria-describedby={errors.email ? 'reg-email-error' : undefined}
+              autoComplete="email"
             />
           </div>
+          {errors.email && <p id="reg-email-error" className="mt-1 text-sm text-red-600" role="alert">{errors.email}</p>}
         </div>
 
         <div>
-          <label className="input-label">
-            Password
+          <label htmlFor="reg-password" className="input-label">
+            Password <span className="text-red-500" aria-hidden="true">*</span>
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} aria-hidden="true" />
             <input
+              id="reg-password"
               type={showPassword ? 'text' : 'password'}
               name="password"
               value={formData.password}
-              onChange={handleChange}
-              className="input-field pl-10 pr-10"
-              placeholder="Create a password"
+              onChange={(e) => { handleChange(e); clearError('password'); }}
+              className={`input-field pl-10 pr-10 ${errors.password ? 'border-red-500' : ''}`}
+              placeholder="Create a password (min 8 characters)"
               required
+              minLength={8}
+              aria-invalid={errors.password ? 'true' : undefined}
+              aria-describedby={errors.password ? 'reg-password-error' : 'reg-password-hint'}
+              autoComplete="new-password"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-content-muted hover:text-content-secondary"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
+          <p id="reg-password-hint" className="mt-1 text-xs text-content-muted">Minimum 8 characters</p>
+          {errors.password && <p id="reg-password-error" className="mt-1 text-sm text-red-600" role="alert">{errors.password}</p>}
         </div>
 
         <div>
-          <label className="input-label">
-            Confirm Password
+          <label htmlFor="reg-confirm-password" className="input-label">
+            Confirm Password <span className="text-red-500" aria-hidden="true">*</span>
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} aria-hidden="true" />
             <input
+              id="reg-confirm-password"
               type={showPassword ? 'text' : 'password'}
               name="confirmPassword"
               value={formData.confirmPassword}
-              onChange={handleChange}
-              className="input-field pl-10"
+              onChange={(e) => { handleChange(e); clearError('confirmPassword'); }}
+              className={`input-field pl-10 ${errors.confirmPassword ? 'border-red-500' : ''}`}
               placeholder="Confirm your password"
               required
+              aria-invalid={errors.confirmPassword ? 'true' : undefined}
+              aria-describedby={errors.confirmPassword ? 'reg-confirm-error' : undefined}
+              autoComplete="new-password"
             />
           </div>
+          {errors.confirmPassword && <p id="reg-confirm-error" className="mt-1 text-sm text-red-600" role="alert">{errors.confirmPassword}</p>}
         </div>
 
         <button

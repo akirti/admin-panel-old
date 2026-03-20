@@ -139,6 +139,7 @@ function NavItem({ item, isActive, sidebarOpen, iconSize }) {
           target="_blank"
           rel="noopener noreferrer"
           className={`sidebar-link ${alignClass}`}
+          title={!sidebarOpen ? item.label : undefined}
         >
           {linkContent}
         </a>
@@ -146,6 +147,8 @@ function NavItem({ item, isActive, sidebarOpen, iconSize }) {
         <Link
           to={item.path}
           className={`sidebar-link ${activeClass} ${alignClass}`}
+          aria-current={active ? "page" : undefined}
+          title={!sidebarOpen ? item.label : undefined}
         >
           {linkContent}
         </Link>
@@ -163,6 +166,9 @@ function SidebarUserMenu({ user, sidebarOpen, iconSize, userMenuOpen, setUserMen
       <div className="relative">
         <button
           onClick={() => setUserMenuOpen(!userMenuOpen)}
+          aria-label="User menu"
+          aria-expanded={userMenuOpen}
+          aria-haspopup="true"
           className={`w-full flex items-center gap-3 p-2 rounded-lg hover:bg-surface-hover min-w-0 ${!sidebarOpen ? 'justify-center' : ''}`}
         >
           <div className="avatar shrink-0">
@@ -182,11 +188,12 @@ function SidebarUserMenu({ user, sidebarOpen, iconSize, userMenuOpen, setUserMen
         </button>
 
         {userMenuOpen && (
-          <div className="absolute bottom-full left-0 w-full mb-2 bg-surface rounded-lg shadow-lg border border-edge py-2">
+          <div className="absolute bottom-full left-0 w-full mb-2 bg-surface rounded-lg shadow-lg border border-edge py-2" role="menu" aria-label="User options">
             <Link
               to="/profile"
               className="flex items-center gap-2 px-4 py-2 hover:bg-surface-hover text-content-secondary"
               onClick={() => setUserMenuOpen(false)}
+              role="menuitem"
             >
               <User size={16} />
               <span>Profile</span>
@@ -194,6 +201,7 @@ function SidebarUserMenu({ user, sidebarOpen, iconSize, userMenuOpen, setUserMen
             <button
               onClick={onLogout}
               className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600"
+              role="menuitem"
             >
               <LogOut size={16} />
               <span>Logout</span>
@@ -233,12 +241,18 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
   };
 
   return (
+    <>
+    <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-primary-600 focus:text-white focus:top-0 focus:left-0">
+      Skip to main content
+    </a>
     <div className="flex h-screen bg-base-secondary">
       {/* Sidebar */}
       <aside
         className={`${
           sidebarOpen ? 'w-64' : 'w-20'
         } bg-sidebar-bg shadow-sm border-r border-edge transition-all duration-300 flex flex-col`}
+        role="complementary"
+        aria-label="Sidebar"
       >
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-edge">
@@ -250,13 +264,16 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-2 rounded-lg hover:bg-surface-hover text-content-secondary"
+            aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            aria-expanded={sidebarOpen}
+            aria-controls="sidebar-nav"
           >
             {sidebarOpen ? <X size={20} /> : <Menu size={24} />}
           </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-4 px-3 overflow-y-auto">
+        <nav id="sidebar-nav" className="flex-1 py-4 px-3 overflow-y-auto" aria-label="Main navigation">
           <ul className="space-y-1">
             {navItems.map((item) => (
               <NavItem
@@ -287,7 +304,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto" id="main-content">
         {/* Header */}
         <header className="h-16 bg-header-bg shadow-sm border-b border-edge flex items-center justify-between px-6">
           <h1 className="text-xl font-semibold text-content">
@@ -312,6 +329,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
         </div>
       </main>
     </div>
+    </>
   );
 }
 

@@ -1,55 +1,63 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useAuth } from './contexts/AuthContext';
 
-// Layouts
+// Layouts (static imports — they wrap routes)
 import MainLayout from './components/layout/MainLayout';
 import AuthLayout from './components/layout/AuthLayout';
 
-// Auth Pages
-import LoginPage from './pages/auth/LoginPage';
-import RegisterPage from './pages/auth/RegisterPage';
-import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
-import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+// Auth Pages (lazy)
+const LoginPage = React.lazy(() => import('./pages/auth/LoginPage'));
+const RegisterPage = React.lazy(() => import('./pages/auth/RegisterPage'));
+const ForgotPasswordPage = React.lazy(() => import('./pages/auth/ForgotPasswordPage'));
+const ResetPasswordPage = React.lazy(() => import('./pages/auth/ResetPasswordPage'));
 
-// User Pages
-import DashboardPage from './pages/user/DashboardPage';
-import ProfilePage from './pages/user/ProfilePage';
-import DomainsPage from './pages/user/DomainsPage';
-import DomainDetailPage from './pages/user/DomainDetailPage';
-import ScenarioDetailPage from './pages/user/ScenarioDetailPage';
-import AskScenarioPage from './pages/user/AskScenarioPage';
-import MyRequestsPage from './pages/user/MyRequestsPage';
-import RequestDetailPage from './pages/user/RequestDetailPage';
+// User Pages (lazy)
+const DashboardPage = React.lazy(() => import('./pages/user/DashboardPage'));
+const ProfilePage = React.lazy(() => import('./pages/user/ProfilePage'));
+const DomainsPage = React.lazy(() => import('./pages/user/DomainsPage'));
+const DomainDetailPage = React.lazy(() => import('./pages/user/DomainDetailPage'));
+const ScenarioDetailPage = React.lazy(() => import('./pages/user/ScenarioDetailPage'));
+const AskScenarioPage = React.lazy(() => import('./pages/user/AskScenarioPage'));
+const MyRequestsPage = React.lazy(() => import('./pages/user/MyRequestsPage'));
+const RequestDetailPage = React.lazy(() => import('./pages/user/RequestDetailPage'));
 
-// Explorer Pages
-import V1ExplorerLayout from './components/explorer/v1_ExplorerLayout';
-import V1ExplorerDomainPage from './pages/explorer/v1_ExplorerDomainPage';
-import V1ExplorerReportPage from './pages/explorer/v1_ExplorerReportPage';
+// Explorer Pages (lazy)
+const V1ExplorerLayout = React.lazy(() => import('./components/explorer/v1_ExplorerLayout'));
+const V1ExplorerDomainPage = React.lazy(() => import('./pages/explorer/v1_ExplorerDomainPage'));
+const V1ExplorerReportPage = React.lazy(() => import('./pages/explorer/v1_ExplorerReportPage'));
 
-// Admin Pages
-import AdminDashboard from './pages/admin/AdminDashboard';
-import UsersManagement from './pages/admin/UsersManagement';
-import RolesManagement from './pages/admin/RolesManagement';
-import DomainsManagement from './pages/admin/DomainsManagement';
-import ScenariosManagement from './pages/admin/ScenariosManagement';
-import ScenarioRequestsManagement from './pages/admin/ScenarioRequestsManagement';
-import GroupsManagement from './pages/admin/GroupsManagement';
-import PermissionsManagement from './pages/admin/PermissionsManagement';
-import ConfigurationsManagement from './pages/admin/ConfigurationsManagement';
-import PlayboardsManagement from './pages/admin/PlayboardsManagement';
-import ActivityLogsPage from './pages/admin/ActivityLogsPage';
-import ErrorLogsPage from './pages/admin/ErrorLogsPage';
-import BulkUploadPage from './pages/admin/BulkUploadPage';
-import CustomersManagement from './pages/admin/CustomersManagement';
-import FeedbackManagement from './pages/admin/FeedbackManagement';
-import ApiConfigsManagement from './pages/admin/ApiConfigsManagement';
-import DistributionListManagement from './pages/admin/DistributionListManagement';
-import UISchemaManagement from './pages/admin/UISchemaManagement';
+// Admin Pages (lazy)
+const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
+const UsersManagement = React.lazy(() => import('./pages/admin/UsersManagement'));
+const RolesManagement = React.lazy(() => import('./pages/admin/RolesManagement'));
+const DomainsManagement = React.lazy(() => import('./pages/admin/DomainsManagement'));
+const ScenariosManagement = React.lazy(() => import('./pages/admin/ScenariosManagement'));
+const ScenarioRequestsManagement = React.lazy(() => import('./pages/admin/ScenarioRequestsManagement'));
+const GroupsManagement = React.lazy(() => import('./pages/admin/GroupsManagement'));
+const PermissionsManagement = React.lazy(() => import('./pages/admin/PermissionsManagement'));
+const ConfigurationsManagement = React.lazy(() => import('./pages/admin/ConfigurationsManagement'));
+const PlayboardsManagement = React.lazy(() => import('./pages/admin/PlayboardsManagement'));
+const ActivityLogsPage = React.lazy(() => import('./pages/admin/ActivityLogsPage'));
+const ErrorLogsPage = React.lazy(() => import('./pages/admin/ErrorLogsPage'));
+const BulkUploadPage = React.lazy(() => import('./pages/admin/BulkUploadPage'));
+const CustomersManagement = React.lazy(() => import('./pages/admin/CustomersManagement'));
+const FeedbackManagement = React.lazy(() => import('./pages/admin/FeedbackManagement'));
+const ApiConfigsManagement = React.lazy(() => import('./pages/admin/ApiConfigsManagement'));
+const DistributionListManagement = React.lazy(() => import('./pages/admin/DistributionListManagement'));
+const UISchemaManagement = React.lazy(() => import('./pages/admin/UISchemaManagement'));
 
-// Public Pages
-import FeedbackPage from './pages/FeedbackPage';
+// Public Pages (lazy)
+const FeedbackPage = React.lazy(() => import('./pages/FeedbackPage'));
+
+// Suspense fallback loading component
+const PageLoader = () => (
+  <div className="flex items-center justify-center h-64" role="status" aria-label="Loading page">
+    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
+    <span className="sr-only">Loading...</span>
+  </div>
+);
 
 // Protected Route Component
 function ProtectedRoute({ children, requireAdmin = false, requireGroupAdmin = false }) {
@@ -57,8 +65,9 @@ function ProtectedRoute({ children, requireAdmin = false, requireGroupAdmin = fa
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen" role="status" aria-label="Authenticating">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <span className="sr-only">Authenticating...</span>
       </div>
     );
   }
@@ -84,8 +93,9 @@ function PublicRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen" role="status" aria-label="Loading">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <span className="sr-only">Loading...</span>
       </div>
     );
   }
@@ -100,16 +110,19 @@ function PublicRoute({ children }) {
 function App() {
   return (
     <>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          style: {
-            background: 'var(--color-surface)',
-            color: 'var(--color-text)',
-            border: '1px solid var(--color-border)',
-          },
-        }}
-      />
+      <div aria-live="polite">
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: 'var(--color-surface)',
+              color: 'var(--color-text)',
+              border: '1px solid var(--color-border)',
+            },
+          }}
+        />
+      </div>
+      <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* Auth Routes */}
         <Route element={<AuthLayout />}>
@@ -208,6 +221,7 @@ function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
+      </Suspense>
     </>
   );
 }

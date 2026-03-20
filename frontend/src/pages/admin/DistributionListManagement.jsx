@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Input, Modal, Toggle, Badge } from '../../components/shared';
+import { Input, Modal, Toggle, Badge, Table } from '../../components/shared';
 import { distributionListsAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 import { Search, Plus, Edit2, Trash2, ToggleLeft, ToggleRight, Mail, ChevronLeft, ChevronRight, X } from 'lucide-react';
@@ -24,89 +24,80 @@ const getTypeLabel = (listTypes, value) => {
   return typeObj?.label || value;
 };
 
-function DistributionTable({ lists, listTypes, loading, onEdit, onToggleStatus, onDelete }) {
-  if (loading) {
-    return (
-      <div className="p-8 text-center text-content-muted">Loading distribution lists...</div>
-    );
-  }
-
-  if (lists.length === 0) {
-    return (
-      <div className="p-8 text-center text-content-muted">
-        <Mail className="mx-auto mb-4 text-content-muted" size={48} />
-        <p>No distribution lists found. Click "Add Distribution List" to create one.</p>
+const getDistributionColumns = (listTypes, onEdit, onToggleStatus, onDelete) => [
+  {
+    key: 'name',
+    title: 'Name',
+    render: (val, row) => (
+      <div>
+        <div className="font-medium text-content">{val}</div>
+        <div className="text-xs text-content-muted">{row.key}</div>
       </div>
-    );
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="table-header">
-            <th className="px-4 py-3 text-left">Name</th>
-            <th className="px-4 py-3 text-left">Type</th>
-            <th className="px-4 py-3 text-left">Recipients</th>
-            <th className="px-4 py-3 text-left">Status</th>
-            <th className="px-4 py-3 text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-edge">
-          {lists.map((item) => (
-            <tr key={item._id} className="hover:bg-surface-hover">
-              <td className="px-4 py-3">
-                <div className="font-medium text-content">{item.name}</div>
-                <div className="text-xs text-content-muted">{item.key}</div>
-              </td>
-              <td className="px-4 py-3">
-                <Badge variant={getTypeBadgeVariant(item.type)}>
-                  {getTypeLabel(listTypes, item.type)}
-                </Badge>
-              </td>
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-1">
-                  <span className="font-medium">{item.emails?.length || 0}</span>
-                  <span className="text-content-muted text-sm">emails</span>
-                </div>
-              </td>
-              <td className="px-4 py-3">
-                <Badge variant={item.is_active ? 'success' : 'warning'}>
-                  {item.is_active ? 'Active' : 'Inactive'}
-                </Badge>
-              </td>
-              <td className="px-4 py-3 text-right">
-                <div className="flex justify-end gap-1">
-                  <button
-                    className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                    onClick={() => onEdit(item)}
-                    title="Edit"
-                  >
-                    <Edit2 size={18} />
-                  </button>
-                  <button
-                    className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${item.is_active ? 'text-content-muted hover:text-orange-600 hover:bg-orange-50' : 'text-content-muted hover:text-green-600 hover:bg-green-50'}`}
-                    onClick={() => onToggleStatus(item)}
-                    title={item.is_active ? 'Disable' : 'Enable'}
-                  >
-                    {item.is_active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
-                  </button>
-                  <button
-                    className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    onClick={() => onDelete(item)}
-                    title="Delete"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+    ),
+    sortValue: (val) => val?.toLowerCase(),
+  },
+  {
+    key: 'type',
+    title: 'Type',
+    render: (val) => (
+      <Badge variant={getTypeBadgeVariant(val)}>
+        {getTypeLabel(listTypes, val)}
+      </Badge>
+    ),
+    filterValue: (val) => getTypeLabel(listTypes, val),
+  },
+  {
+    key: 'emails',
+    title: 'Recipients',
+    render: (val) => (
+      <div className="flex items-center gap-1">
+        <span className="font-medium">{val?.length || 0}</span>
+        <span className="text-content-muted text-sm">emails</span>
+      </div>
+    ),
+    sortValue: (val) => val?.length || 0,
+    filterable: false,
+  },
+  {
+    key: 'is_active',
+    title: 'Status',
+    render: (val) => (
+      <Badge variant={val ? 'success' : 'warning'}>
+        {val ? 'Active' : 'Inactive'}
+      </Badge>
+    ),
+    filterValue: (val) => val ? 'Active' : 'Inactive',
+  },
+  {
+    key: 'actions',
+    title: 'Actions',
+    render: (_, row) => (
+      <div className="flex justify-end gap-1">
+        <button
+          className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+          onClick={(e) => { e.stopPropagation(); onEdit(row); }}
+          title="Edit"
+        >
+          <Edit2 size={18} />
+        </button>
+        <button
+          className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${row.is_active ? 'text-content-muted hover:text-orange-600 hover:bg-orange-50' : 'text-content-muted hover:text-green-600 hover:bg-green-50'}`}
+          onClick={(e) => { e.stopPropagation(); onToggleStatus(row); }}
+          title={row.is_active ? 'Disable' : 'Enable'}
+        >
+          {row.is_active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+        </button>
+        <button
+          className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          onClick={(e) => { e.stopPropagation(); onDelete(row); }}
+          title="Delete"
+        >
+          <Trash2 size={18} />
+        </button>
+      </div>
+    ),
+  },
+];
 
 function EmailManager({ emails, newEmail, onNewEmailChange, onAddEmail, onRemoveEmail }) {
   return (
@@ -413,7 +404,12 @@ const DistributionListManagement = () => {
       <DLSearchFilter search={search} onSearchChange={setSearch} typeFilter={typeFilter} onTypeFilterChange={setTypeFilter} listTypes={listTypes} />
 
       <div className="card overflow-hidden">
-        <DistributionTable lists={lists} listTypes={listTypes} loading={loading} onEdit={openEditModal} onToggleStatus={handleToggleStatus} onDelete={handleDelete} />
+        <Table
+          columns={getDistributionColumns(listTypes, openEditModal, handleToggleStatus, handleDelete)}
+          data={lists}
+          loading={loading}
+          emptyMessage="No distribution lists found. Click 'Add Distribution List' to create one."
+        />
         <DLPagination pagination={pagination} onPrev={handlePrev} onNext={handleNext} />
       </div>
 

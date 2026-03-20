@@ -18,7 +18,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { scenarioRequestAPI } from '../../services/api';
-import { Modal } from '../../components/shared';
+import { Modal, Table } from '../../components/shared';
 
 // Status config matching backend ScenarioRequestStatusTypes enum values
 const STATUS_CONFIG = {
@@ -123,102 +123,94 @@ const JiraCell = ({ request }) => {
   return <span className="text-content-muted text-sm">-</span>;
 };
 
-const RequestRow = ({ request, basePath, onUpdateStatus }) => (
-  <tr className="hover:bg-surface-hover transition-colors">
-    <td className="px-5 py-4">
-      <span className="font-mono text-sm font-medium text-primary-600">{request.requestId}</span>
-    </td>
-    <td className="px-5 py-4">
-      <p className="font-medium text-content truncate max-w-xs">{request.name}</p>
-      <p className="text-xs text-content-muted truncate max-w-xs mt-0.5">
-        {stripHtml(request.description).slice(0, 50)}...
-      </p>
-    </td>
-    <td className="px-5 py-4">
-      <p className="text-sm text-content">{request.email}</p>
-    </td>
-    <td className="px-5 py-4">
-      <span className="inline-flex px-2.5 py-1 bg-surface-hover text-content-secondary rounded-full text-xs font-medium">
-        {request.dataDomain}
-      </span>
-    </td>
-    <td className="px-5 py-4">{getStatusBadge(request.status)}</td>
-    <td className="px-5 py-4">
-      <span className="text-sm text-content-secondary">{request.team || '-'}</span>
-    </td>
-    <td className="px-5 py-4">
-      <span className="text-sm text-content-secondary">{request.assignee_name || '-'}</span>
-    </td>
-    <td className="px-5 py-4">
-      <JiraCell request={request} />
-    </td>
-    <td className="px-5 py-4 text-sm text-content-muted">{formatDate(request.row_add_stp)}</td>
-    <td className="px-5 py-4">
-      <RequestActions request={request} basePath={basePath} onUpdateStatus={onUpdateStatus} />
-    </td>
-  </tr>
-);
-
 const RequestActions = ({ request, basePath, onUpdateStatus }) => {
   const navigate = useNavigate();
   return (
     <div className="flex items-center justify-center gap-2">
-      <button onClick={() => navigate(`${basePath}/scenario-requests/${request.requestId}`)} className="p-2 rounded-lg hover:bg-surface-hover text-content-muted transition-colors" title="View">
+      <button onClick={(e) => { e.stopPropagation(); navigate(`${basePath}/scenario-requests/${request.requestId}`); }} className="p-2 rounded-lg hover:bg-surface-hover text-content-muted transition-colors" title="View">
         <Eye size={16} />
       </button>
-      <button onClick={() => onUpdateStatus(request)} className="p-2 rounded-lg hover:bg-primary-100 text-primary-600 transition-colors" title="Update Status">
+      <button onClick={(e) => { e.stopPropagation(); onUpdateStatus(request); }} className="p-2 rounded-lg hover:bg-primary-100 text-primary-600 transition-colors" title="Update Status">
         <Edit size={16} />
       </button>
     </div>
   );
 };
 
-const RequestsTable = ({ requests, loading, basePath, onUpdateStatus }) => {
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="animate-spin text-primary-600" size={32} />
+const getRequestColumns = (basePath, onUpdateStatus) => [
+  {
+    key: 'requestId',
+    title: 'Request ID',
+    render: (val) => <span className="font-mono text-sm font-medium text-primary-600">{val}</span>,
+  },
+  {
+    key: 'name',
+    title: 'Name',
+    render: (val, row) => (
+      <div>
+        <p className="font-medium text-content truncate max-w-xs">{val}</p>
+        <p className="text-xs text-content-muted truncate max-w-xs mt-0.5">
+          {stripHtml(row.description).slice(0, 50)}...
+        </p>
       </div>
-    );
-  }
-
-  if (requests.length === 0) {
-    return (
-      <div className="text-center py-16">
-        <div className="w-16 h-16 mx-auto mb-4 bg-surface-hover rounded-full flex items-center justify-center">
-          <FileText className="text-content-muted" size={32} />
-        </div>
-        <p className="text-content-muted">No requests found</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="table-header">
-            <th className="text-left px-5 py-4">Request ID</th>
-            <th className="text-left px-5 py-4">Name</th>
-            <th className="text-left px-5 py-4">Requester</th>
-            <th className="text-left px-5 py-4">Domain</th>
-            <th className="text-left px-5 py-4">Status</th>
-            <th className="text-left px-5 py-4">Team</th>
-            <th className="text-left px-5 py-4">Assignee</th>
-            <th className="text-left px-5 py-4">Jira</th>
-            <th className="text-left px-5 py-4">Created</th>
-            <th className="text-center px-5 py-4">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-edge-light">
-          {requests.map((request) => (
-            <RequestRow key={request.requestId} request={request} basePath={basePath} onUpdateStatus={onUpdateStatus} />
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
+    ),
+    sortValue: (val) => val?.toLowerCase(),
+  },
+  {
+    key: 'email',
+    title: 'Requester',
+    render: (val) => <p className="text-sm text-content">{val}</p>,
+  },
+  {
+    key: 'dataDomain',
+    title: 'Domain',
+    render: (val) => (
+      <span className="inline-flex px-2.5 py-1 bg-surface-hover text-content-secondary rounded-full text-xs font-medium">
+        {val}
+      </span>
+    ),
+  },
+  {
+    key: 'status',
+    title: 'Status',
+    render: (val) => getStatusBadge(val),
+    filterValue: (val) => {
+      const config = STATUS_CONFIG[val] || DEFAULT_STATUS_CONFIG;
+      return config.label;
+    },
+  },
+  {
+    key: 'team',
+    title: 'Team',
+    render: (val) => <span className="text-sm text-content-secondary">{val || '-'}</span>,
+    filterValue: (val) => val || '',
+  },
+  {
+    key: 'assignee_name',
+    title: 'Assignee',
+    render: (val) => <span className="text-sm text-content-secondary">{val || '-'}</span>,
+    filterValue: (val) => val || '',
+  },
+  {
+    key: 'jira',
+    title: 'Jira',
+    sortable: false,
+    filterable: false,
+    render: (_, row) => <JiraCell request={row} />,
+  },
+  {
+    key: 'row_add_stp',
+    title: 'Created',
+    render: (val) => <span className="text-sm text-content-muted">{formatDate(val)}</span>,
+    sortValue: (val) => val ? new Date(val).getTime() : 0,
+    filterValue: (val) => formatDate(val),
+  },
+  {
+    key: 'actions',
+    title: 'Actions',
+    render: (_, row) => <RequestActions request={row} basePath={basePath} onUpdateStatus={onUpdateStatus} />,
+  },
+];
 
 const StatusUpdateModal = ({ isOpen, selectedRequest, statuses, newStatus, setNewStatus, statusComment, setStatusComment, updatingStatus, onClose, onSubmit }) => {
   if (!isOpen || !selectedRequest) return null;
@@ -443,7 +435,12 @@ function ScenarioRequestsManagement() {
       />
 
       <div className="card p-0 overflow-hidden">
-        <RequestsTable requests={filteredRequests} loading={data.loading} basePath={basePath} onUpdateStatus={statusModal.openStatusModal} />
+        <Table
+          columns={getRequestColumns(basePath, statusModal.openStatusModal)}
+          data={filteredRequests}
+          loading={data.loading}
+          emptyMessage="No requests found"
+        />
         {showPagination && (
           <RequestsPagination pagination={data.pagination} totalPages={totalPages} onPageChange={data.handlePageChange} />
         )}

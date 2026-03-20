@@ -33,6 +33,10 @@ module.exports = merge(common, {
     host: '0.0.0.0',
     hot: true,
     historyApiFallback: true,
+    allowedHosts: 'all',
+    client: {
+      webSocketURL: 'auto://0.0.0.0:0/ws',
+    },
     proxy: [
       {
         context: ['/api'],
@@ -42,13 +46,16 @@ module.exports = merge(common, {
         cookieDomainRewrite: '',
         cookiePathRewrite: '/',
       },
-      {
-        context: ['/explorer'],
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        secure: false,
-        pathRewrite: { '^/explorer': '' },
-      },
+      // Note: /explorer routes are handled by React Router (SPA).
+      // Only proxy if the easylife-dashboard runs as a separate MFE.
+      // Uncomment below if the dashboard is deployed on port 3001:
+      // {
+      //   context: (pathname) => pathname.startsWith('/explorer-mfe/'),
+      //   target: 'http://localhost:3001',
+      //   changeOrigin: true,
+      //   secure: false,
+      //   pathRewrite: { '^/explorer-mfe': '' },
+      // },
     ],
   },
 });

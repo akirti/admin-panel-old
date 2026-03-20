@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import ReactDOM from "react-dom";
-import { Filter } from "lucide-react";
+import { Filter, X, Check } from "lucide-react";
 
 const isObj = (val) => val && typeof val === "object";
 
@@ -14,7 +14,7 @@ const getOptionLabel = (option) => {
   return String(option);
 };
 
-const DROPDOWN_HEIGHT = 260;
+const DROPDOWN_HEIGHT = 320;
 
 const computeDropdownStyle = (triggerEl) => {
   const rect = triggerEl.getBoundingClientRect();
@@ -24,7 +24,8 @@ const computeDropdownStyle = (triggerEl) => {
     position: "fixed",
     top: showAbove ? rect.top - DROPDOWN_HEIGHT : rect.bottom + 4,
     left: rect.left,
-    minWidth: 200,
+    minWidth: 220,
+    maxWidth: 280,
     zIndex: 9999,
   };
 };
@@ -40,8 +41,11 @@ const OptionItem = ({ option, idx, isSelected, onToggle }) => (
       onChange={() => onToggle(option)}
       className="mr-2 accent-blue-600 w-3.5 h-3.5"
     />
-    <span className={isSelected ? "font-medium text-content" : "text-content-secondary"}>
-      {getOptionLabel(option)}
+    <span
+      className={`truncate ${isSelected ? "font-medium text-content" : "text-content-secondary"}`}
+      title={getOptionLabel(option)}
+    >
+      {getOptionLabel(option) || "(empty)"}
     </span>
   </label>
 );
@@ -60,11 +64,17 @@ const V1ColumnFilterDropdown = ({
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState({});
   const [localSelected, setLocalSelected] = useState(selectedOptions);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Sync local state when parent changes
   useEffect(() => {
     setLocalSelected(selectedOptions);
   }, [selectedOptions]);
+
+  // Reset search when dropdown closes
+  useEffect(() => {
+    if (!isOpen) setSearchTerm("");
+  }, [isOpen]);
 
   // Close on outside click
   useEffect(() => {
@@ -79,12 +89,33 @@ const V1ColumnFilterDropdown = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen, selectedOptions]);
 
+  // Close on Escape
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEscape = (e) => {
+      if (e.key === "Escape") {
+        setIsOpen(false);
+        setLocalSelected(selectedOptions);
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isOpen, selectedOptions]);
+
   // Position dropdown via portal
   useEffect(() => {
     if (isOpen && triggerRef.current) {
       setDropdownStyle(computeDropdownStyle(triggerRef.current));
     }
   }, [isOpen]);
+
+  const filteredOptions = useMemo(() => {
+    if (!searchTerm) return options;
+    const term = searchTerm.toLowerCase();
+    return options.filter((opt) =>
+      getOptionLabel(opt).toLowerCase().includes(term)
+    );
+  }, [options, searchTerm]);
 
   const handleOptionClick = useCallback((option) => {
     setLocalSelected((prev) =>
@@ -93,6 +124,25 @@ const V1ColumnFilterDropdown = ({
         : [...prev, option]
     );
   }, []);
+
+  const handleSelectAll = () => {
+    setLocalSelected((prev) => {
+      const next = new Set(prev);
+      filteredOptions.forEach((opt) => next.add(opt));
+      return Array.from(next);
+    });
+  };
+
+  const handleClearAll = () => {
+    if (searchTerm) {
+      // Only deselect visible (filtered) options
+      setLocalSelected((prev) =>
+        prev.filter((item) => !filteredOptions.includes(item))
+      );
+    } else {
+      setLocalSelected([]);
+    }
+  };
 
   const handleApply = () => {
     onChange(localSelected);
@@ -113,11 +163,69 @@ const V1ColumnFilterDropdown = ({
       style={dropdownStyle}
       className="bg-surface border border-edge rounded-lg shadow-lg flex flex-col"
     >
+      {/* Header */}
+      <div className="px-3 py-2 border-b border-edge flex items-center justify-between">
+        <span className="text-xs font-semibold text-content uppercase tracking-wider truncate">
+          Filter: {columnLabel}
+        </span>
+        <button
+          type="button"
+          onClick={() => {
+            setIsOpen(false);
+            setLocalSelected(selectedOptions);
+          }}
+          className="text-content-muted hover:text-content p-0.5"
+          aria-label="Close filter"
+        >
+          <X size={14} />
+        </button>
+      </div>
+
+      {/* Search box (shown when more than 8 options) */}
+      {options.length > 8 && (
+        <div className="px-3 py-2 border-b border-edge">
+          <input
+            type="text"
+            placeholder="Search values..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-2 py-1 text-sm border border-edge rounded bg-surface text-content focus:outline-none focus:ring-1 focus:ring-blue-500"
+            autoFocus
+          />
+        </div>
+      )}
+
+      {/* Select All / Clear All */}
+      {filteredOptions.length > 0 && (
+        <div className="px-3 py-1.5 border-b border-edge-light flex items-center justify-between">
+          <button
+            type="button"
+            onClick={handleSelectAll}
+            className="text-xs text-blue-600 hover:underline"
+          >
+            Select All
+          </button>
+          <span className="text-xs text-content-muted">
+            {localSelected.length} of {options.length}
+          </span>
+          <button
+            type="button"
+            onClick={handleClearAll}
+            className="text-xs text-content-muted hover:underline"
+          >
+            Clear All
+          </button>
+        </div>
+      )}
+
+      {/* Options list */}
       <div className="max-h-48 overflow-auto">
-        {options.length === 0 ? (
-          <div className="px-3 py-2 text-content-muted text-sm">No values</div>
+        {filteredOptions.length === 0 ? (
+          <div className="px-3 py-4 text-content-muted text-sm text-center">
+            {searchTerm ? "No matching values" : "No values"}
+          </div>
         ) : (
-          options.map((option, idx) => (
+          filteredOptions.map((option, idx) => (
             <OptionItem
               key={getOptionKey(option, idx)}
               option={option}
@@ -128,21 +236,23 @@ const V1ColumnFilterDropdown = ({
           ))
         )}
       </div>
+
+      {/* Footer with Apply / Clear */}
       {options.length > 0 && (
         <div className="flex items-center justify-between border-t border-edge-light px-3 py-2">
           <button
             type="button"
             onClick={handleClear}
-            className="text-xs text-content-muted hover:text-content-secondary"
+            className="text-xs text-content-muted hover:text-red-600"
           >
-            Clear
+            Clear Filter
           </button>
           <button
             type="button"
             onClick={handleApply}
-            className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+            className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 flex items-center gap-1"
           >
-            Apply
+            <Check size={12} /> Apply
           </button>
         </div>
       )}

@@ -1,102 +1,94 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { scenarioAPI, domainAPI } from '../../services/api';
-import toast from 'react-hot-toast';
-import { FileText, Plus, Edit2, Trash2, Search, Filter } from 'lucide-react';
-import { Modal } from '../../components/shared';
+import { FileText, Plus, Edit2, Trash2, Search, Filter, AlertCircle, CheckCircle } from 'lucide-react';
+import { Modal, Table } from '../../components/shared';
+
+// --- Helper functions ---
 
 function getSubmitLabel(saving, editing) {
   if (saving) return 'Saving...';
   return editing ? 'Update' : 'Create';
 }
 
-// --- Sub-components extracted to reduce cognitive complexity ---
-
-const ScenarioRow = ({ scenario, onEdit, onDelete }) => {
-  const statusClass = scenario.status === 'A'
-    ? 'bg-green-100 text-green-800'
-    : 'bg-surface-hover text-content';
-  const statusLabel = scenario.status === 'A' ? 'Active' : 'Inactive';
-
-  return (
-    <tr className="border-b hover:bg-surface-hover">
-      <td className="py-3 px-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-            <FileText className="text-purple-600" size={20} />
-          </div>
-          <div>
-            <p className="font-medium text-content">{scenario.name}</p>
-            {scenario.description && (
-              <p className="text-sm text-content-muted line-clamp-1">{scenario.description}</p>
-            )}
-          </div>
-        </div>
-      </td>
-      <td className="py-3 px-4">
-        <code className="text-sm bg-surface-hover px-2 py-1 rounded">{scenario.key}</code>
-      </td>
-      <td className="py-3 px-4">
-        <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">{scenario.dataDomain}</span>
-      </td>
-      <td className="py-3 px-4 text-sm text-content-muted">{scenario.order || 0}</td>
-      <td className="py-3 px-4">
-        <span className={`px-2 py-1 text-xs rounded-full ${statusClass}`}>{statusLabel}</span>
-      </td>
-      <td className="py-3 px-4">
-        <div className="flex items-center gap-1">
-          <button onClick={() => onEdit(scenario)} className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
-            <Edit2 size={18} />
-          </button>
-          <button onClick={() => onDelete(scenario)} className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
-            <Trash2 size={18} />
-          </button>
-        </div>
-      </td>
-    </tr>
-  );
+const EMPTY_SCENARIO_FORM = {
+  key: '', name: '', dataDomain: '', description: '', fullDescription: '', path: '', order: 0,
 };
 
-const ScenariosTable = ({ scenarios, loading, onEdit, onDelete }) => {
-  if (loading) {
-    return (
-      <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+function buildScenarioFormData(scenario) {
+  return {
+    key: scenario.key, name: scenario.name, dataDomain: scenario.dataDomain,
+    description: scenario.description || '', fullDescription: scenario.fullDescription || '',
+    path: scenario.path || '', order: scenario.order || 0,
+  };
+}
 
-  if (scenarios.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <FileText className="mx-auto text-content-muted mb-4" size={48} />
-        <p className="text-content-muted">No scenarios found</p>
-      </div>
-    );
-  }
+// --- Sub-components ---
 
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="table-header">
-            <th className="text-left py-3 px-4">Scenario</th>
-            <th className="text-left py-3 px-4">Key</th>
-            <th className="text-left py-3 px-4">Domain</th>
-            <th className="text-left py-3 px-4">Order</th>
-            <th className="text-left py-3 px-4">Status</th>
-            <th className="text-left py-3 px-4">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {scenarios.map((scenario) => (
-            <ScenarioRow key={scenario.key} scenario={scenario} onEdit={onEdit} onDelete={onDelete} />
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
+const getScenariosColumns = (onEdit, onDelete) => [
+  {
+    key: 'name',
+    title: 'Scenario',
+    render: (_, row) => (
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+          <FileText className="text-purple-600" size={20} />
+        </div>
+        <div>
+          <p className="font-medium text-content">{row.name}</p>
+          {row.description && (
+            <p className="text-sm text-content-muted line-clamp-1">{row.description}</p>
+          )}
+        </div>
+      </div>
+    ),
+    filterValue: (val) => val,
+    sortValue: (val) => val?.toLowerCase(),
+  },
+  {
+    key: 'key',
+    title: 'Key',
+    render: (val) => <code className="text-sm bg-surface-hover px-2 py-1 rounded">{val}</code>,
+  },
+  {
+    key: 'dataDomain',
+    title: 'Domain',
+    render: (val) => <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">{val}</span>,
+  },
+  {
+    key: 'order',
+    title: 'Order',
+    render: (val) => <span className="text-sm text-content-muted">{val || 0}</span>,
+    sortValue: (val) => val || 0,
+  },
+  {
+    key: 'status',
+    title: 'Status',
+    render: (val) => {
+      const isActive = val === 'A';
+      return (
+        <span className={`px-2 py-1 text-xs rounded-full ${isActive ? 'bg-green-100 text-green-800' : 'bg-surface-hover text-content'}`}>
+          {isActive ? 'Active' : 'Inactive'}
+        </span>
+      );
+    },
+    filterValue: (val) => val === 'A' ? 'Active' : 'Inactive',
+  },
+  {
+    key: 'actions',
+    title: 'Actions',
+    render: (_, row) => (
+      <div className="flex items-center gap-1">
+        <button onClick={(e) => { e.stopPropagation(); onEdit(row); }} className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+          <Edit2 size={18} />
+        </button>
+        <button onClick={(e) => { e.stopPropagation(); onDelete(row); }} className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+          <Trash2 size={18} />
+        </button>
+      </div>
+    ),
+  },
+];
 
 const ScenarioForm = ({ formData, editingScenario, domains, saving, handleChange, handleSubmit, closeModal }) => (
   <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -144,29 +136,6 @@ const ScenarioForm = ({ formData, editingScenario, domains, saving, handleChange
   </form>
 );
 
-// --- Helper functions outside component ---
-
-const EMPTY_SCENARIO_FORM = {
-  key: '', name: '', dataDomain: '', description: '', fullDescription: '', path: '', order: 0,
-};
-
-function buildScenarioFormData(scenario) {
-  return {
-    key: scenario.key, name: scenario.name, dataDomain: scenario.dataDomain,
-    description: scenario.description || '', fullDescription: scenario.fullDescription || '',
-    path: scenario.path || '', order: scenario.order || 0,
-  };
-}
-
-function filterScenariosList(scenarios, searchTerm, filterDomain) {
-  return scenarios.filter(scenario => {
-    const lowerSearch = searchTerm.toLowerCase();
-    const matchesSearch = scenario.name.toLowerCase().includes(lowerSearch) || scenario.key.toLowerCase().includes(lowerSearch);
-    const matchesDomain = !filterDomain || scenario.dataDomain === filterDomain;
-    return matchesSearch && matchesDomain;
-  });
-}
-
 const ScenariosAccessDenied = () => (
   <div className="text-center py-12">
     <FileText className="mx-auto text-content-muted mb-4" size={48} />
@@ -175,27 +144,149 @@ const ScenariosAccessDenied = () => (
   </div>
 );
 
-const ScenariosFilterBar = ({ searchTerm, onSearchChange, filterDomain, onFilterDomainChange, domains }) => (
-  <div className="flex items-center gap-4">
-    <div className="relative flex-1 max-w-xs">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
-      <input type="text" placeholder="Search scenarios..." value={searchTerm} onChange={(e) => onSearchChange(e.target.value)} className="input-field pl-10" />
+const AlertMessages = ({ error, success }) => (
+  <>
+    {error && (
+      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+        <AlertCircle size={20} /> {error}
+      </div>
+    )}
+    {success && (
+      <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center gap-2">
+        <CheckCircle size={20} /> {success}
+      </div>
+    )}
+  </>
+);
+
+const ScenariosStats = ({ scenarios, searchTerm, filterDomain }) => {
+  if (searchTerm || filterDomain || scenarios.length === 0) return null;
+  const active = scenarios.filter(s => s.status === 'A').length;
+  const byDomain = {};
+  scenarios.forEach(s => { const d = s.dataDomain || 'Unknown'; byDomain[d] = (byDomain[d] || 0) + 1; });
+  const topDomains = Object.entries(byDomain).sort((a, b) => b[1] - a[1]).slice(0, 2);
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="card p-4">
+        <div className="text-sm text-content-muted">Total Scenarios</div>
+        <div className="text-2xl font-bold text-content">{scenarios.length}</div>
+      </div>
+      <div className="card p-4">
+        <div className="text-sm text-content-muted">Active</div>
+        <div className="text-2xl font-bold text-green-600">{active}</div>
+      </div>
+      <div className="card p-4">
+        <div className="text-sm text-content-muted">Inactive</div>
+        <div className="text-2xl font-bold text-red-600">{scenarios.length - active}</div>
+      </div>
+      {topDomains[0] && (
+        <div className="card p-4">
+          <div className="text-sm text-content-muted">{topDomains[0][0]}</div>
+          <div className="text-2xl font-bold text-content">{topDomains[0][1]}</div>
+          <div className="text-xs text-content-muted">scenarios</div>
+        </div>
+      )}
     </div>
-    <div className="relative">
-      <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
-      <select value={filterDomain} onChange={(e) => onFilterDomainChange(e.target.value)} className="input-field pl-10 pr-8">
-        <option value="">All Domains</option>
-        {domains.map((domain) => (
-          <option key={domain.key} value={domain.key}>{domain.name}</option>
-        ))}
-      </select>
+  );
+};
+
+const ScenariosHeader = ({ onCreateClick, scenarioCount }) => (
+  <div className="flex items-center justify-between">
+    <div>
+      <h1 className="text-2xl font-bold text-content">Scenarios Management</h1>
+      <p className="text-content-muted text-sm mt-1">Manage scenario configuration ({scenarioCount} total)</p>
+    </div>
+    <button onClick={onCreateClick} className="btn-primary flex items-center gap-2">
+      <Plus size={18} /> Add Scenario
+    </button>
+  </div>
+);
+
+const ScenariosFilterBar = ({ searchTerm, onSearchChange, filterDomain, onFilterDomainChange, domains }) => (
+  <div className="card !p-4">
+    <div className="flex items-center gap-3">
+      <div className="relative flex-1 min-w-[200px]">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted pointer-events-none" size={18} />
+        <input type="text" placeholder="Search scenarios..." value={searchTerm} onChange={(e) => onSearchChange(e.target.value)} className="input !py-2 pl-10 w-full" />
+      </div>
+      <div className="flex items-center gap-2">
+        <Filter size={16} className="text-content-muted shrink-0" />
+        <select className="input !py-2 min-w-[140px]" value={filterDomain} onChange={(e) => onFilterDomainChange(e.target.value)}>
+          <option value="">All Domains</option>
+          {domains.map((domain) => (
+            <option key={domain.key} value={domain.key}>{domain.name}</option>
+          ))}
+        </select>
+        {filterDomain && (
+          <button className="text-sm text-primary-600 hover:underline whitespace-nowrap" onClick={() => onFilterDomainChange('')}>Clear</button>
+        )}
+      </div>
     </div>
   </div>
 );
 
-// --- Custom hook for CRUD operations ---
+// --- Custom hooks ---
 
-function useScenarioCrud(fetchData) {
+function useScenariosData(isSuperAdmin) {
+  const [scenarios, setScenarios] = useState([]);
+  const [domains, setDomains] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterDomain, setFilterDomain] = useState('');
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [scenariosRes, domainsRes] = await Promise.all([scenarioAPI.getAll(), domainAPI.getAll()]);
+      setScenarios(scenariosRes.data);
+      setDomains(domainsRes.data);
+    } catch {
+      setError('Failed to fetch data');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { if (isSuperAdmin()) fetchData(); }, [fetchData, isSuperAdmin]);
+
+  useEffect(() => {
+    if (!error && !success) return;
+    const timer = setTimeout(() => { setError(''); setSuccess(''); }, 5000);
+    return () => clearTimeout(timer);
+  }, [error, success]);
+
+  const filteredScenarios = scenarios.filter(scenario => {
+    const lowerSearch = searchTerm.toLowerCase();
+    const matchesSearch = scenario.name.toLowerCase().includes(lowerSearch) || scenario.key.toLowerCase().includes(lowerSearch);
+    const matchesDomain = !filterDomain || scenario.dataDomain === filterDomain;
+    return matchesSearch && matchesDomain;
+  });
+
+  return {
+    scenarios, domains, loading, error, success, setError, setSuccess,
+    searchTerm, setSearchTerm, filterDomain, setFilterDomain,
+    filteredScenarios, fetchData,
+  };
+}
+
+function useScenarioActions(data) {
+  const handleDelete = async (scenario) => {
+    if (!confirm(`Are you sure you want to delete "${scenario.name}"?`)) return;
+    try {
+      await scenarioAPI.delete(scenario._id || scenario.key);
+      data.setSuccess('Scenario deleted successfully');
+      data.fetchData();
+    } catch (error) {
+      data.setError(error.response?.data?.error || 'Failed to delete scenario');
+    }
+  };
+
+  return { handleDelete };
+}
+
+function useScenarioFormModal(data) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingScenario, setEditingScenario] = useState(null);
   const [formData, setFormData] = useState({ ...EMPTY_SCENARIO_FORM });
@@ -207,9 +298,9 @@ function useScenarioCrud(fetchData) {
     setFormData(prev => ({ ...prev, [name]: parsedValue }));
   };
 
-  const openCreateModal = (domains) => {
+  const openCreateModal = () => {
     setEditingScenario(null);
-    setFormData({ ...EMPTY_SCENARIO_FORM, dataDomain: domains[0]?.key || '' });
+    setFormData({ ...EMPTY_SCENARIO_FORM, dataDomain: data.domains[0]?.key || '' });
     setModalOpen(true);
   };
 
@@ -227,103 +318,67 @@ function useScenarioCrud(fetchData) {
     try {
       if (editingScenario) {
         await scenarioAPI.update(editingScenario._id, { _id: editingScenario._id, ...formData });
-        toast.success('Scenario updated successfully');
+        data.setSuccess('Scenario updated successfully');
       } else {
         await scenarioAPI.create(formData);
-        toast.success('Scenario created successfully');
+        data.setSuccess('Scenario created successfully');
       }
-      fetchData();
+      data.fetchData();
       closeModal();
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Failed to save scenario');
+      data.setError(error.response?.data?.error || 'Failed to save scenario');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (scenario) => {
-    if (!confirm(`Are you sure you want to delete "${scenario.name}"?`)) return;
-    try {
-      await scenarioAPI.delete(scenario._id || scenario.key);
-      toast.success('Scenario deleted successfully');
-      fetchData();
-    } catch (error) {
-      toast.error(error.response?.data?.error || 'Failed to delete scenario');
-    }
-  };
-
   return {
     modalOpen, editingScenario, formData, saving,
-    handleChange, openCreateModal, openEditModal, closeModal,
-    handleSubmit, handleDelete
+    handleChange, openCreateModal, openEditModal, closeModal, handleSubmit,
   };
 }
 
 // --- Main Component ---
 
-function ScenariosManagement() {
+const ScenariosManagement = () => {
   const { isSuperAdmin } = useAuth();
-  const [scenarios, setScenarios] = useState([]);
-  const [domains, setDomains] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterDomain, setFilterDomain] = useState('');
+  const data = useScenariosData(isSuperAdmin);
+  const actions = useScenarioActions(data);
+  const modal = useScenarioFormModal(data);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [scenariosRes, domainsRes] = await Promise.all([scenarioAPI.getAll(), domainAPI.getAll()]);
-      setScenarios(scenariosRes.data);
-      setDomains(domainsRes.data);
-    } catch {
-      toast.error('Failed to fetch data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { fetchData(); }, []);
-
-  const {
-    modalOpen, editingScenario, formData, saving,
-    handleChange, openCreateModal, openEditModal, closeModal,
-    handleSubmit, handleDelete
-  } = useScenarioCrud(fetchData);
-
-  if (!isSuperAdmin()) {
-    return <ScenariosAccessDenied />;
-  }
-
-  const filteredScenarios = filterScenariosList(scenarios, searchTerm, filterDomain);
-  const modalTitle = editingScenario ? 'Edit Scenario' : 'Create Scenario';
+  if (!isSuperAdmin()) return <ScenariosAccessDenied />;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-content">Scenarios Management</h1>
-        <button onClick={() => openCreateModal(domains)} className="btn-primary flex items-center gap-2">
-          <Plus size={18} /> Add Scenario
-        </button>
-      </div>
+      <ScenariosHeader onCreateClick={modal.openCreateModal} scenarioCount={data.scenarios.length} />
+
+      <AlertMessages error={data.error} success={data.success} />
+
+      <ScenariosStats scenarios={data.scenarios} searchTerm={data.searchTerm} filterDomain={data.filterDomain} />
 
       <ScenariosFilterBar
-        searchTerm={searchTerm} onSearchChange={setSearchTerm}
-        filterDomain={filterDomain} onFilterDomainChange={setFilterDomain}
-        domains={domains}
+        searchTerm={data.searchTerm} onSearchChange={data.setSearchTerm}
+        filterDomain={data.filterDomain} onFilterDomainChange={data.setFilterDomain}
+        domains={data.domains}
       />
 
       <div className="card overflow-hidden">
-        <ScenariosTable scenarios={filteredScenarios} loading={loading} onEdit={openEditModal} onDelete={handleDelete} />
+        <Table
+          columns={getScenariosColumns(modal.openEditModal, actions.handleDelete)}
+          data={data.filteredScenarios}
+          loading={data.loading}
+          emptyMessage="No scenarios found"
+        />
       </div>
 
-      <Modal isOpen={modalOpen} onClose={closeModal} title={modalTitle} size="md">
+      <Modal isOpen={modal.modalOpen} onClose={modal.closeModal} title={modal.editingScenario ? 'Edit Scenario' : 'Create Scenario'} size="md">
         <ScenarioForm
-          formData={formData} editingScenario={editingScenario} domains={domains}
-          saving={saving} handleChange={handleChange} handleSubmit={handleSubmit} closeModal={closeModal}
+          formData={modal.formData} editingScenario={modal.editingScenario} domains={data.domains}
+          saving={modal.saving} handleChange={modal.handleChange} handleSubmit={modal.handleSubmit} closeModal={modal.closeModal}
         />
       </Modal>
     </div>
   );
-}
+};
 
 export default ScenariosManagement;

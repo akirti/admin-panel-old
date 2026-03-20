@@ -8,7 +8,7 @@ module.exports = {
   entry: path.resolve(rootDir, 'src/index.js'),
   output: {
     path: path.resolve(rootDir, 'build/public'),
-    publicPath: 'auto',
+    publicPath: '/',
     clean: true,
   },
   resolve: {

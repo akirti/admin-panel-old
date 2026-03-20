@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { MessageSquare, Star, Search, Mail, Calendar, User, Globe, Eye, X, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { feedbackAPI } from '../../services/api';
-import { Modal } from '../../components/shared';
+import { Modal, Table } from '../../components/shared';
 
 const renderStars = (rating, iconSize = 16) => {
   return (
@@ -79,135 +79,77 @@ function FeedbackStats({ stats }) {
   );
 }
 
-function getSortIndicator(sortBy, sortOrder, field) {
-  if (sortBy !== field) return null;
-  return <span>{sortOrder === 'desc' ? '\u2193' : '\u2191'}</span>;
-}
-
-function FeedbackTypeBadge({ isPublic }) {
-  if (isPublic) {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">
-        <Globe size={12} />
-        Public
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-green-100 text-green-800">
-      <User size={12} />
-      User
-    </span>
-  );
-}
-
-function FeedbackRatingCell({ rating }) {
-  if (rating) return renderStars(rating);
-  return <span className="text-content-muted text-sm">No rating</span>;
-}
-
-function FeedbackRow({ feedback, onViewFeedback }) {
-  return (
-    <tr className="hover:bg-surface-hover">
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-content">
-        {feedback.email}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <FeedbackRatingCell rating={feedback.rating} />
-      </td>
-      <td className="px-6 py-4 text-sm text-content-muted max-w-xs">
-        <div className="truncate" title={feedback.improvements}>
-          {feedback.improvements || '-'}
-        </div>
-      </td>
-      <td className="px-6 py-4 text-sm text-content-muted max-w-xs">
-        <div className="truncate" title={feedback.suggestions}>
-          {feedback.suggestions || '-'}
-        </div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <FeedbackTypeBadge isPublic={feedback.is_public} />
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-content-muted">
-        {feedback.createdAt}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <button
-          onClick={() => onViewFeedback(feedback)}
-          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
-        >
-          <Eye size={16} />
-          View
-        </button>
-      </td>
-    </tr>
-  );
-}
-
-function FeedbackTableHeader({ sortBy, sortOrder, onSort }) {
-  return (
-    <thead>
-      <tr className="table-header">
-        <th className="px-6 py-3 text-left cursor-pointer hover:bg-surface-hover" onClick={() => onSort('email')}>
-          <div className="flex items-center gap-1">
-            <Mail size={16} />
-            Email
-            {getSortIndicator(sortBy, sortOrder, 'email')}
-          </div>
-        </th>
-        <th className="px-6 py-3 text-left cursor-pointer hover:bg-surface-hover" onClick={() => onSort('rating')}>
-          <div className="flex items-center gap-1">
-            <Star size={16} />
-            Rating
-            {getSortIndicator(sortBy, sortOrder, 'rating')}
-          </div>
-        </th>
-        <th className="px-6 py-3 text-left">Improvements</th>
-        <th className="px-6 py-3 text-left">Suggestions</th>
-        <th className="px-6 py-3 text-left">Type</th>
-        <th className="px-6 py-3 text-left cursor-pointer hover:bg-surface-hover" onClick={() => onSort('createdAt')}>
-          <div className="flex items-center gap-1">
-            <Calendar size={16} />
-            Date
-            {getSortIndicator(sortBy, sortOrder, 'createdAt')}
-          </div>
-        </th>
-        <th className="px-6 py-3 text-left">Actions</th>
-      </tr>
-    </thead>
-  );
-}
-
-function FeedbackTable({ feedbackList, loading, sortBy, sortOrder, onSort, onViewFeedback }) {
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-48">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+const getFeedbackColumns = (onViewFeedback) => [
+  {
+    key: 'email',
+    title: 'Email',
+  },
+  {
+    key: 'rating',
+    title: 'Rating',
+    render: (val) => val ? renderStars(val) : <span className="text-content-muted text-sm">No rating</span>,
+    sortValue: (val) => val || 0,
+    filterValue: (val) => val ? `${val} stars` : 'No rating',
+  },
+  {
+    key: 'improvements',
+    title: 'Improvements',
+    sortable: false,
+    render: (val) => (
+      <div className="truncate max-w-xs" title={val}>
+        {val || '-'}
       </div>
-    );
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-edge">
-        <FeedbackTableHeader sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} />
-        <tbody className="bg-surface divide-y divide-edge">
-          {feedbackList.length === 0 ? (
-            <tr>
-              <td colSpan={7} className="px-6 py-8 text-center text-content-muted">
-                No feedback found
-              </td>
-            </tr>
-          ) : (
-            feedbackList.map((feedback) => (
-              <FeedbackRow key={feedback._id} feedback={feedback} onViewFeedback={onViewFeedback} />
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+    ),
+  },
+  {
+    key: 'suggestions',
+    title: 'Suggestions',
+    sortable: false,
+    render: (val) => (
+      <div className="truncate max-w-xs" title={val}>
+        {val || '-'}
+      </div>
+    ),
+  },
+  {
+    key: 'is_public',
+    title: 'Type',
+    render: (val) => {
+      if (val) {
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">
+            <Globe size={12} />
+            Public
+          </span>
+        );
+      }
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-green-100 text-green-800">
+          <User size={12} />
+          User
+        </span>
+      );
+    },
+    filterValue: (val) => val ? 'Public' : 'User',
+  },
+  {
+    key: 'createdAt',
+    title: 'Date',
+  },
+  {
+    key: 'actions',
+    title: 'Actions',
+    render: (_, row) => (
+      <button
+        onClick={(e) => { e.stopPropagation(); onViewFeedback(row); }}
+        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+      >
+        <Eye size={16} />
+        View
+      </button>
+    ),
+  },
+];
 
 function FeedbackDetailModal({ feedback, isOpen, onClose }) {
   if (!feedback) return null;
@@ -505,13 +447,11 @@ const FeedbackManagement = () => {
       />
 
       <div className="card overflow-hidden p-0">
-        <FeedbackTable
-          feedbackList={data.feedbackList}
+        <Table
+          columns={getFeedbackColumns(handleViewFeedback)}
+          data={data.feedbackList}
           loading={data.loading}
-          sortBy={data.sortBy}
-          sortOrder={data.sortOrder}
-          onSort={data.handleSort}
-          onViewFeedback={handleViewFeedback}
+          emptyMessage="No feedback found"
         />
         <FeedbackPagination
           pagination={data.pagination}

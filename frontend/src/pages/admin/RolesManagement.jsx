@@ -17,7 +17,7 @@ import {
   CheckCircle,
   Filter,
 } from 'lucide-react';
-import { Modal } from '../../components/shared';
+import { Modal, Table } from '../../components/shared';
 
 // --- Sub-components extracted to reduce cognitive complexity ---
 
@@ -36,102 +36,6 @@ const TagList = ({ items, colorClass, maxShow = 3 }) => {
           +{safeItems.length - maxShow} more
         </span>
       )}
-    </div>
-  );
-};
-
-const RoleRow = ({ role, onShowUsers, onEdit, onToggleStatus, onDelete }) => {
-  const isActive = role.status === 'active';
-  const typeClass = role.type === 'system'
-    ? 'bg-purple-100 text-purple-700'
-    : 'bg-surface-hover text-content-secondary';
-  const statusClass = isActive
-    ? 'bg-green-100 text-green-700'
-    : 'bg-red-100 text-red-700';
-  const toggleClass = isActive
-    ? 'text-green-600 hover:bg-green-50'
-    : 'text-content-muted hover:bg-surface-hover';
-
-  return (
-    <tr className="hover:bg-surface-hover">
-      <td className="px-4 py-3">
-        <span className="font-mono text-sm text-content-muted">{role.roleId}</span>
-      </td>
-      <td className="px-4 py-3">
-        <div>
-          <div className="font-medium text-content">{role.name}</div>
-          {role.description && (
-            <div className="text-xs text-content-muted truncate max-w-xs">{role.description}</div>
-          )}
-        </div>
-      </td>
-      <td className="px-4 py-3">
-        <span className={`px-2 py-1 text-xs rounded-full ${typeClass}`}>{role.type || 'custom'}</span>
-      </td>
-      <td className="px-4 py-3">
-        <TagList items={role.permissions} colorClass="bg-blue-100 text-blue-700" />
-      </td>
-      <td className="px-4 py-3">
-        <TagList items={role.domains} colorClass="bg-green-100 text-green-700" />
-      </td>
-      <td className="px-4 py-3">
-        <span className="text-sm text-content-muted">{role.priority || 0}</span>
-      </td>
-      <td className="px-4 py-3">
-        <span className={`px-2 py-1 text-xs rounded-full ${statusClass}`}>{role.status || 'active'}</span>
-      </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center justify-end gap-1">
-          <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" onClick={() => onShowUsers(role)} title="View Users">
-            <Users size={18} />
-          </button>
-          <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" onClick={() => onEdit(role)} title="Edit">
-            <Edit2 size={18} />
-          </button>
-          <button className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${toggleClass}`} onClick={() => onToggleStatus(role)} title={isActive ? 'Deactivate' : 'Activate'}>
-            {isActive ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
-          </button>
-          <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" onClick={() => onDelete(role)} title="Delete">
-            <Trash2 size={18} />
-          </button>
-        </div>
-      </td>
-    </tr>
-  );
-};
-
-const RolesTable = ({ roles, loading, onShowUsers, onEdit, onToggleStatus, onDelete }) => {
-  if (loading) {
-    return <div className="p-8 text-center text-content-muted">Loading roles...</div>;
-  }
-  if (roles.length === 0) {
-    return (
-      <div className="p-8 text-center text-content-muted">
-        No roles found. Click &quot;Add Role&quot; to create one.
-      </div>
-    );
-  }
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="table-header">
-            <th className="px-4 py-3 text-left">Role ID</th>
-            <th className="px-4 py-3 text-left">Name</th>
-            <th className="px-4 py-3 text-left">Type</th>
-            <th className="px-4 py-3 text-left">Permissions</th>
-            <th className="px-4 py-3 text-left">Domains</th>
-            <th className="px-4 py-3 text-left">Priority</th>
-            <th className="px-4 py-3 text-left">Status</th>
-            <th className="px-4 py-3 text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {roles.map((role) => (
-            <RoleRow key={role._id || role.roleId} role={role} onShowUsers={onShowUsers} onEdit={onEdit} onToggleStatus={onToggleStatus} onDelete={onDelete} />
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 };
@@ -350,29 +254,55 @@ const RolesHeader = ({ total, onExport, onCreateClick }) => (
   </div>
 );
 
+const RolesStats = ({ roles, total, filterDomain, filterPermission }) => {
+  if (filterDomain || filterPermission || roles.length === 0) return null;
+  const active = roles.filter(r => r.status === 'active').length;
+  const system = roles.filter(r => r.type === 'system').length;
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="card p-4">
+        <div className="text-sm text-content-muted">Total Roles</div>
+        <div className="text-2xl font-bold text-content">{total}</div>
+      </div>
+      <div className="card p-4">
+        <div className="text-sm text-content-muted">Active</div>
+        <div className="text-2xl font-bold text-green-600">{active}</div>
+      </div>
+      <div className="card p-4">
+        <div className="text-sm text-content-muted">Inactive</div>
+        <div className="text-2xl font-bold text-red-600">{total - active}</div>
+      </div>
+      <div className="card p-4">
+        <div className="text-sm text-content-muted">System Roles</div>
+        <div className="text-2xl font-bold text-content">{system}</div>
+      </div>
+    </div>
+  );
+};
+
 const RolesFilterBar = ({ search, onSearchChange, filterDomain, onFilterDomainChange, filterPermission, onFilterPermissionChange, domains, permissions, onClearFilters }) => (
-  <div className="card">
-    <div className="flex flex-wrap gap-4">
+  <div className="card !p-4">
+    <div className="flex items-center gap-3">
       <div className="relative flex-1 min-w-[200px]">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
-        <input type="text" placeholder="Search roles by name or ID..." className="input pl-10 w-full" value={search} onChange={(e) => onSearchChange(e.target.value)} />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted pointer-events-none" size={18} />
+        <input type="text" placeholder="Search roles by name or ID..." className="input !py-2 pl-10 w-full" value={search} onChange={(e) => onSearchChange(e.target.value)} />
       </div>
       <div className="flex items-center gap-2">
-        <Filter size={18} className="text-content-muted" />
-        <select className="input min-w-[150px]" value={filterDomain} onChange={(e) => onFilterDomainChange(e.target.value)}>
+        <Filter size={16} className="text-content-muted shrink-0" />
+        <select className="input !py-2 min-w-[140px]" value={filterDomain} onChange={(e) => onFilterDomainChange(e.target.value)}>
           <option value="">All Domains</option>
           {domains.map((domain) => (
             <option key={domain.key || domain._id} value={domain.key || domain._id}>{domain.name}</option>
           ))}
         </select>
-        <select className="input min-w-[150px]" value={filterPermission} onChange={(e) => onFilterPermissionChange(e.target.value)}>
+        <select className="input !py-2 min-w-[140px]" value={filterPermission} onChange={(e) => onFilterPermissionChange(e.target.value)}>
           <option value="">All Permissions</option>
           {permissions.map((perm) => (
             <option key={perm.key} value={perm.key}>{perm.name || perm.key}</option>
           ))}
         </select>
         {(filterDomain || filterPermission) && (
-          <button className="btn btn-secondary btn-sm" onClick={onClearFilters}>Clear Filters</button>
+          <button className="text-sm text-primary-600 hover:underline whitespace-nowrap" onClick={onClearFilters}>Clear</button>
         )}
       </div>
     </div>
@@ -666,6 +596,47 @@ const RolesManagement = () => {
 
   const onSubmit = (e) => crud.handleSubmit(e, form.editingRole, form.formData, form.closeModal);
 
+  const roleColumns = [
+    { key: 'roleId', title: 'Role ID', render: (val) => <span className="font-mono text-sm text-content-muted">{val}</span> },
+    { key: 'name', title: 'Name', render: (_, role) => (
+      <div>
+        <div className="font-medium text-content">{role.name}</div>
+        {role.description && <div className="text-xs text-content-muted truncate max-w-xs">{role.description}</div>}
+      </div>
+    )},
+    { key: 'type', title: 'Type', render: (val) => {
+      const typeClass = val === 'system' ? 'bg-purple-100 text-purple-700' : 'bg-surface-hover text-content-secondary';
+      return <span className={`px-2 py-1 text-xs rounded-full ${typeClass}`}>{val || 'custom'}</span>;
+    }},
+    { key: 'permissions', title: 'Permissions', render: (val) => <TagList items={val} colorClass="bg-blue-100 text-blue-700" />, filterValue: (val) => (val || []).join(','), sortable: false },
+    { key: 'domains', title: 'Domains', render: (val) => <TagList items={val} colorClass="bg-green-100 text-green-700" />, filterValue: (val) => (val || []).join(','), sortable: false },
+    { key: 'priority', title: 'Priority', render: (val) => <span className="text-sm text-content-muted">{val || 0}</span>, sortValue: (val) => val || 0 },
+    { key: 'status', title: 'Status', render: (val) => {
+      const statusClass = val === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+      return <span className={`px-2 py-1 text-xs rounded-full ${statusClass}`}>{val || 'active'}</span>;
+    }},
+    { key: 'actions', title: 'Actions', render: (_, role) => {
+      const isActive = role.status === 'active';
+      const toggleClass = isActive ? 'text-green-600 hover:bg-green-50' : 'text-content-muted hover:bg-surface-hover';
+      return (
+        <div className="flex items-center justify-end gap-1">
+          <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" onClick={() => usersModal.showUsers(role)} title="View Users" aria-label="View Users">
+            <Users size={18} />
+          </button>
+          <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" onClick={() => form.openEditModal(role)} title="Edit" aria-label="Edit">
+            <Edit2 size={18} />
+          </button>
+          <button className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${toggleClass}`} onClick={() => crud.handleToggleStatus(role)} title={isActive ? 'Deactivate' : 'Activate'} aria-label={isActive ? 'Deactivate' : 'Activate'}>
+            {isActive ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+          </button>
+          <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" onClick={() => crud.handleDelete(role)} title="Delete" aria-label="Delete">
+            <Trash2 size={18} />
+          </button>
+        </div>
+      );
+    }}
+  ];
+
   if (!isSuperAdmin()) {
     return <AccessDeniedView />;
   }
@@ -675,6 +646,8 @@ const RolesManagement = () => {
       <RolesHeader total={data.total} onExport={crud.handleExport} onCreateClick={form.openCreateModal} />
       <AlertMessages error={data.error} success={data.success} />
 
+      <RolesStats roles={data.roles} total={data.total} filterDomain={data.filterDomain} filterPermission={data.filterPermission} />
+
       <RolesFilterBar
         search={data.search} onSearchChange={data.setSearch}
         filterDomain={data.filterDomain} onFilterDomainChange={data.handleFilterDomainChange}
@@ -683,7 +656,7 @@ const RolesManagement = () => {
       />
 
       <div className="card overflow-hidden">
-        <RolesTable roles={data.roles} loading={data.loading} onShowUsers={usersModal.showUsers} onEdit={form.openEditModal} onToggleStatus={crud.handleToggleStatus} onDelete={crud.handleDelete} />
+        <Table columns={roleColumns} data={data.roles} loading={data.loading} />
         <RolesPagination page={data.page} limit={data.limit} total={data.total} totalPages={data.totalPages} onPageChange={data.setPage} />
       </div>
 

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI, clearAccessToken } from '../services/api';
+import { authAPI, clearAccessToken, scheduleProactiveRefresh, clearProactiveRefresh } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -23,31 +23,66 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const initAuth = async () => {
-      try {
-        // Verify session via httpOnly cookie (no localStorage token needed)
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-
+      // Try to restore session from httpOnly cookies
+      const attemptProfile = async () => {
         const response = await authAPI.getProfile();
-        clearTimeout(timeoutId);
+        return response.data;
+      };
 
-        const userData = response.data;
+      try {
+        const userData = await attemptProfile();
         setUser(userData);
+        // Schedule proactive refresh if we got a valid session
+        scheduleProactiveRefresh(900); // default 15 min, will be corrected on next refresh
       } catch (error) {
-        // No valid session - user needs to log in
-        setUser(null);
+        const status = error?.response?.status;
+        const isNetworkError = error?.code === 'ERR_NETWORK' || error?.code === 'ECONNABORTED'
+          || error?.message?.includes('proxy') || error?.message?.includes('Network Error');
+
+        if (isNetworkError) {
+          // Network/proxy error — retry once after short delay
+          try {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            const userData = await attemptProfile();
+            setUser(userData);
+            scheduleProactiveRefresh(900);
+          } catch {
+            // Retry also failed — session unrecoverable
+            setUser(null);
+          }
+        } else if (status === 401 || status === 403) {
+          // Auth failed — interceptor already tried refresh
+          setUser(null);
+        } else if (status === 502 || status === 503 || status === 504) {
+          // Backend down — retry once
+          try {
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            const userData = await attemptProfile();
+            setUser(userData);
+            scheduleProactiveRefresh(900);
+          } catch {
+            setUser(null);
+          }
+        } else {
+          // Unknown error — treat as logged out
+          setUser(null);
+        }
       }
       setLoading(false);
     };
-
     initAuth();
   }, []);
 
   const login = async (email, password) => {
     const response = await authAPI.login(email, password);
-    // access_token is captured automatically by the response interceptor
-    const { access_token: _at, refresh_token: _rt, ...userData } = response.data;
+    const { access_token: _at, refresh_token: _rt, expires_in, ...userData } = response.data;
     setUser(userData);
+    // Schedule proactive refresh
+    if (expires_in) {
+      scheduleProactiveRefresh(expires_in);
+    } else {
+      scheduleProactiveRefresh(900); // default 15 min
+    }
     return userData;
   };
 
@@ -62,9 +97,10 @@ export function AuthProvider({ children }) {
     try {
       await authAPI.logout();
     } catch {
-      // Ignore logout errors - cookies are cleared server-side
+      // Ignore logout errors
     } finally {
       clearAccessToken();
+      clearProactiveRefresh();
       setUser(null);
     }
   };

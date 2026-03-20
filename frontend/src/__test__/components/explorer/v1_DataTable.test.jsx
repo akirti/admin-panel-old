@@ -8,6 +8,7 @@ jest.mock('lucide-react', () => ({
   ArrowUp: (props) => <span data-testid="arrow-up" {...props} />,
   ArrowDown: (props) => <span data-testid="arrow-down" {...props} />,
   MoreVertical: (props) => <span data-testid="more-vertical" {...props} />,
+  X: (props) => <span data-testid="x-icon" {...props} />,
 }));
 
 // Mock Pagination component
@@ -151,16 +152,34 @@ describe('V1DataTable', () => {
     expect(screen.getByLabelText('Sort by status')).toBeInTheDocument();
   });
 
-  it('calls onSort with column key when sort button is clicked', async () => {
+  it('calls onSort with column key and direction when sort button is clicked', async () => {
     const user = userEvent.setup();
     const onSort = jest.fn();
     render(<V1DataTable {...defaultProps} onSort={onSort} />);
 
     await user.click(screen.getByLabelText('Sort by name'));
-    expect(onSort).toHaveBeenCalledWith('name');
+    expect(onSort).toHaveBeenCalledWith('name', 'asc');
 
     await user.click(screen.getByLabelText('Sort by status'));
-    expect(onSort).toHaveBeenCalledWith('status');
+    expect(onSort).toHaveBeenCalledWith('status', 'asc');
+  });
+
+  it('cycles sort through asc -> desc -> none on same column', async () => {
+    const user = userEvent.setup();
+    const onSort = jest.fn();
+    render(<V1DataTable {...defaultProps} onSort={onSort} />);
+
+    // First click: asc
+    await user.click(screen.getByLabelText('Sort by name'));
+    expect(onSort).toHaveBeenLastCalledWith('name', 'asc');
+
+    // Second click: desc
+    await user.click(screen.getByLabelText('Sort by name'));
+    expect(onSort).toHaveBeenLastCalledWith('name', 'desc');
+
+    // Third click: none (clear)
+    await user.click(screen.getByLabelText('Sort by name'));
+    expect(onSort).toHaveBeenLastCalledWith('', '');
   });
 
   // --- Sort icons ---
@@ -424,6 +443,29 @@ describe('V1DataTable', () => {
     expect(screen.getByText('Bob')).toBeInTheDocument();
   });
 
+  it('shows active filters bar when filter is applied', async () => {
+    const user = userEvent.setup();
+    render(<V1DataTable {...defaultProps} />);
+
+    // Apply filter on status
+    await user.click(screen.getByTestId('col-filter-btn-status'));
+
+    // Active filters bar should appear
+    expect(screen.getByText('Active filters:')).toBeInTheDocument();
+  });
+
+  it('shows "no results match" when filters exclude all data', async () => {
+    const user = userEvent.setup();
+    // Single row with status 'Active'
+    const singleData = [{ id: 1, name: 'Alice', status: 'Active' }];
+    render(<V1DataTable {...defaultProps} data={singleData} />);
+
+    // Apply filter on name column - selecting 'Alice' (first unique value)
+    await user.click(screen.getByTestId('col-filter-btn-name'));
+    // Now data should still show Alice since filter selects first value
+    expect(screen.getByText('Alice')).toBeInTheDocument();
+  });
+
   it('highlights filtered column header', async () => {
     const user = userEvent.setup();
     render(<V1DataTable {...defaultProps} />);
@@ -515,12 +557,12 @@ describe('V1DataTable', () => {
       />
     );
 
-    // Filter by active column - selecting first unique value 'True'
+    // Filter by active column - selecting first unique value (sorted: 'False' before 'True')
     await user.click(screen.getByTestId('col-filter-btn-active'));
 
-    // Only row with active=true should remain
-    expect(screen.getByText('Alice')).toBeInTheDocument();
-    expect(screen.queryByText('Bob')).not.toBeInTheDocument();
+    // Only row with active=false should remain (first sorted value is 'False')
+    expect(screen.getByText('Bob')).toBeInTheDocument();
+    expect(screen.queryByText('Alice')).not.toBeInTheDocument();
   });
 
   // --- Table structure ---

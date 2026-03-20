@@ -33,12 +33,12 @@
       "type": "db",
       "db_info": {
         "type": "mongodb",
-        "connection_scheme": "{databases.ui_templates.db_info.connection_scheme}",
-        "username": "{databases.ui_templates.db_info.username}",
-        "password": "{databases.ui_templates.db_info.password}",
-        "host": "{databases.ui_templates.db_info.host}",
-        "database": "{databases.ui_templates.db_info.database}",
-        "collections": "{databases.ui_templates.db_info.collections}"
+        "connection_scheme": "{databases.authentication.db_info.connection_scheme}",
+        "username": "{databases.authentication.db_info.username}",
+        "password": "{databases.authentication.db_info.password}",
+        "host": "{databases.authentication.db_info.host}",
+        "database": "{databases.authentication.db_info.database}",
+        "collections": ["ui_templates"]
       }
     }
   },

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { Modal, Badge } from '../../components/shared';
+import { Modal, Badge, Table } from '../../components/shared';
 import { customersAPI, usersAPI, exportAPI } from '../../services/api';
 import {
   Building2, Plus, Search, Edit2, Trash2, X, Download,
@@ -54,27 +54,59 @@ function ExportButton({ onExport }) {
   );
 }
 
+/* ─── Stat Widgets ─── */
+const CustomersStats = ({ customers, total, filterLocation, filterUnit }) => {
+  if (filterLocation || filterUnit || customers.length === 0) return null;
+  const active = customers.filter(c => c.status === 'active').length;
+  const locations = {};
+  customers.forEach(c => { if (c.location) locations[c.location] = (locations[c.location] || 0) + 1; });
+  const topLoc = Object.entries(locations).sort((a, b) => b[1] - a[1]).slice(0, 2);
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="card p-4 cursor-pointer hover:border-primary-300 transition-colors">
+        <div className="text-sm text-content-muted">Total Customers</div>
+        <div className="text-2xl font-bold text-content">{total}</div>
+      </div>
+      <div className="card p-4 cursor-pointer hover:border-primary-300 transition-colors">
+        <div className="text-sm text-content-muted">Active</div>
+        <div className="text-2xl font-bold text-green-600">{active}</div>
+      </div>
+      <div className="card p-4 cursor-pointer hover:border-primary-300 transition-colors">
+        <div className="text-sm text-content-muted">Inactive</div>
+        <div className="text-2xl font-bold text-red-600">{total - active}</div>
+      </div>
+      {topLoc[0] && (
+        <div className="card p-4 cursor-pointer hover:border-primary-300 transition-colors">
+          <div className="text-sm text-content-muted">{topLoc[0][0]}</div>
+          <div className="text-2xl font-bold text-content">{topLoc[0][1]}</div>
+          <div className="text-xs text-content-muted">customers</div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 /* ─── Search & Filters Bar ─── */
 function SearchFiltersBar({ search, setSearch, filterLocation, setFilterLocation, filterUnit, setFilterUnit, availableLocations, availableUnits, setPage }) {
   return (
-    <div className="card">
-      <div className="flex flex-wrap gap-4">
+    <div className="card !p-4">
+      <div className="flex items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
-          <input type="text" placeholder="Search customers by name or ID..." className="input pl-10 w-full" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted pointer-events-none" size={18} />
+          <input type="text" placeholder="Search customers by name or ID..." className="input !py-2 pl-10 w-full" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
-          <Filter size={18} className="text-content-muted" />
-          <select className="input min-w-[150px]" value={filterLocation} onChange={(e) => { setFilterLocation(e.target.value); setPage(0); }}>
+          <Filter size={16} className="text-content-muted shrink-0" />
+          <select className="input !py-2 min-w-[140px]" value={filterLocation} onChange={(e) => { setFilterLocation(e.target.value); setPage(0); }}>
             <option value="">All Locations</option>
             {availableLocations.map((loc) => <option key={loc} value={loc}>{loc}</option>)}
           </select>
-          <select className="input min-w-[150px]" value={filterUnit} onChange={(e) => { setFilterUnit(e.target.value); setPage(0); }}>
+          <select className="input !py-2 min-w-[140px]" value={filterUnit} onChange={(e) => { setFilterUnit(e.target.value); setPage(0); }}>
             <option value="">All Units</option>
             {availableUnits.map((unit) => <option key={unit} value={unit}>{unit}</option>)}
           </select>
           {(filterLocation || filterUnit) && (
-            <button className="btn btn-secondary btn-sm" onClick={() => { setFilterLocation(''); setFilterUnit(''); setPage(0); }}>Clear Filters</button>
+            <button className="text-sm text-primary-600 hover:underline whitespace-nowrap" onClick={() => { setFilterLocation(''); setFilterUnit(''); setPage(0); }}>Clear Filters</button>
           )}
         </div>
       </div>
@@ -82,42 +114,6 @@ function SearchFiltersBar({ search, setSearch, filterLocation, setFilterLocation
   );
 }
 
-/* ─── Customer Row (single table row) ─── */
-function CustomerRow({ customer, onShowUsers, onEdit, onToggleStatus, onDelete }) {
-  return (
-    <tr key={getCustomerId(customer)} className="hover:bg-surface-hover">
-      <td className="px-4 py-3">
-        <span className="font-mono text-sm text-content-muted">{customer.customerId}</span>
-      </td>
-      <td className="px-4 py-3">
-        <div>
-          <div className="font-medium text-content flex items-center gap-2">
-            <Building2 size={16} className="text-content-muted" />{customer.name}
-          </div>
-          {customer.description && <div className="text-xs text-content-muted truncate max-w-xs">{customer.description}</div>}
-        </div>
-      </td>
-      <td className="px-4 py-3">
-        <CustomerContact customer={customer} />
-      </td>
-      <td className="px-4 py-3">
-        <Badge variant={customer.status === 'active' ? 'success' : 'danger'}>{customer.status || 'active'}</Badge>
-      </td>
-      <td className="px-4 py-3"><span className="text-sm text-content-muted">{customer.unit || '-'}</span></td>
-      <td className="px-4 py-3"><span className="text-sm text-content-muted">{customer.sales || '-'}</span></td>
-      <td className="px-4 py-3"><span className="text-sm text-content-muted">{customer.division || '-'}</span></td>
-      <td className="px-4 py-3"><span className="text-sm text-content-muted">{customer.channel || '-'}</span></td>
-      <td className="px-4 py-3"><span className="text-sm text-content-muted">{customer.location || '-'}</span></td>
-      <td className="px-4 py-3"><CustomerTags tags={customer.tags} /></td>
-      <td className="px-4 py-3">
-        <span className="text-sm text-content-muted">{customer.created_at ? new Date(customer.created_at).toLocaleDateString() : 'N/A'}</span>
-      </td>
-      <td className="px-4 py-3">
-        <CustomerActions customer={customer} onShowUsers={onShowUsers} onEdit={onEdit} onToggleStatus={onToggleStatus} onDelete={onDelete} />
-      </td>
-    </tr>
-  );
-}
 
 function CustomerContact({ customer }) {
   return (
@@ -161,39 +157,83 @@ function CustomerActions({ customer, onShowUsers, onEdit, onToggleStatus, onDele
 
 /* ─── Customers Table ─── */
 function CustomersTable({ loading, customers, onShowUsers, onEdit, onToggleStatus, onDelete, page, limit, total, totalPages, setPage }) {
+  const columns = [
+    {
+      key: 'customerId',
+      title: 'Customer ID',
+      render: (val) => <span className="font-mono text-sm text-content-muted">{val}</span>,
+    },
+    {
+      key: 'name',
+      title: 'Name',
+      render: (_val, row) => (
+        <div>
+          <div className="font-medium text-content flex items-center gap-2">
+            <Building2 size={16} className="text-content-muted" />{row.name}
+          </div>
+          {row.description && <div className="text-xs text-content-muted truncate max-w-xs">{row.description}</div>}
+        </div>
+      ),
+    },
+    {
+      key: 'contactEmail',
+      title: 'Contact',
+      render: (_val, row) => <CustomerContact customer={row} />,
+      filterValue: (val, row) => row.contactEmail || row.contactPhone || '',
+    },
+    {
+      key: 'status',
+      title: 'Status',
+      render: (val) => <Badge variant={val === 'active' ? 'success' : 'danger'}>{val || 'active'}</Badge>,
+    },
+    {
+      key: 'unit',
+      title: 'Unit',
+      render: (val) => <span className="text-sm text-content-muted">{val || '-'}</span>,
+    },
+    {
+      key: 'sales',
+      title: 'Sales',
+      render: (val) => <span className="text-sm text-content-muted">{val || '-'}</span>,
+    },
+    {
+      key: 'division',
+      title: 'Division',
+      render: (val) => <span className="text-sm text-content-muted">{val || '-'}</span>,
+    },
+    {
+      key: 'channel',
+      title: 'Channel',
+      render: (val) => <span className="text-sm text-content-muted">{val || '-'}</span>,
+    },
+    {
+      key: 'location',
+      title: 'Location',
+      render: (val) => <span className="text-sm text-content-muted">{val || '-'}</span>,
+    },
+    {
+      key: 'tags',
+      title: 'Tags',
+      filterable: false,
+      sortable: false,
+      render: (val) => <CustomerTags tags={val} />,
+    },
+    {
+      key: 'created_at',
+      title: 'Created',
+      render: (val) => <span className="text-sm text-content-muted">{val ? new Date(val).toLocaleDateString() : 'N/A'}</span>,
+      sortValue: (val) => val ? new Date(val).getTime() : 0,
+    },
+    {
+      key: 'actions',
+      title: 'Actions',
+      render: (_val, row) => <CustomerActions customer={row} onShowUsers={onShowUsers} onEdit={onEdit} onToggleStatus={onToggleStatus} onDelete={onDelete} />,
+    },
+  ];
+
   return (
     <div className="card overflow-hidden">
-      {loading ? (
-        <div className="p-8 text-center text-content-muted">Loading customers...</div>
-      ) : customers.length === 0 ? (
-        <div className="p-8 text-center text-content-muted">No customers found. Click "Add Customer" to create one.</div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="table-header">
-                <th className="px-4 py-3 text-left">Customer ID</th>
-                <th className="px-4 py-3 text-left">Name</th>
-                <th className="px-4 py-3 text-left">Contact</th>
-                <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3 text-left">Unit</th>
-                <th className="px-4 py-3 text-left">Sales</th>
-                <th className="px-4 py-3 text-left">Division</th>
-                <th className="px-4 py-3 text-left">Channel</th>
-                <th className="px-4 py-3 text-left">Location</th>
-                <th className="px-4 py-3 text-left">Tags</th>
-                <th className="px-4 py-3 text-left">Created</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {customers.map((customer) => (
-                <CustomerRow key={getCustomerId(customer)} customer={customer} onShowUsers={onShowUsers} onEdit={onEdit} onToggleStatus={onToggleStatus} onDelete={onDelete} />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <Table columns={columns} data={customers} loading={loading} />
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-4 py-3 border-t border-edge">
           <p className="text-sm text-content-muted">
@@ -735,6 +775,8 @@ const CustomersManagement = () => {
     <div className="space-y-6">
       <CustomersHeader total={total} onExport={crud.handleExport} onAddNew={form.openCreateModal} />
       <AlertMessages error={error} success={success} />
+
+      <CustomersStats customers={customers} total={total} filterLocation={filters.filterLocation} filterUnit={filters.filterUnit} />
 
       <SearchFiltersBar
         search={filters.search} setSearch={filters.setSearch}

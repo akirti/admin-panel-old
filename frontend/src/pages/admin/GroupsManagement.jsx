@@ -18,55 +18,43 @@ import {
   Shield,
   Filter,
 } from 'lucide-react';
-import { Modal } from '../../components/shared';
+import { Modal, Table } from '../../components/shared';
 
-// --- Sub-components extracted to reduce cognitive complexity ---
+// --- Stat Widgets ---
 
-const GroupsTable = ({ groups, loading, onShowUsers, onEdit, onToggleStatus, onDelete }) => {
-  if (loading) {
-    return <div className="p-8 text-center text-content-muted">Loading groups...</div>;
-  }
-
-  if (groups.length === 0) {
-    return (
-      <div className="p-8 text-center text-content-muted">
-        No groups found. Click &quot;Add Group&quot; to create one.
-      </div>
-    );
-  }
-
+const GroupsStats = ({ groups, total, filterDomain, filterPermission }) => {
+  if (filterDomain || filterPermission || groups.length === 0) return null;
+  const active = groups.filter(g => g.status === 'active').length;
+  const types = {};
+  groups.forEach(g => { const t = g.type || 'default'; types[t] = (types[t] || 0) + 1; });
+  const topType = Object.entries(types).sort((a, b) => b[1] - a[1])[0];
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="table-header">
-            <th className="px-4 py-3 text-left">Group ID</th>
-            <th className="px-4 py-3 text-left">Name</th>
-            <th className="px-4 py-3 text-left">Type</th>
-            <th className="px-4 py-3 text-left">Permissions</th>
-            <th className="px-4 py-3 text-left">Domains</th>
-            <th className="px-4 py-3 text-left">Customers</th>
-            <th className="px-4 py-3 text-left">Priority</th>
-            <th className="px-4 py-3 text-left">Status</th>
-            <th className="px-4 py-3 text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {groups.map((group) => (
-            <GroupRow
-              key={group._id || group.groupId}
-              group={group}
-              onShowUsers={onShowUsers}
-              onEdit={onEdit}
-              onToggleStatus={onToggleStatus}
-              onDelete={onDelete}
-            />
-          ))}
-        </tbody>
-      </table>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="card p-4 cursor-pointer hover:border-primary-300 transition-colors">
+        <div className="text-sm text-content-muted">Total Groups</div>
+        <div className="text-2xl font-bold text-content">{total}</div>
+      </div>
+      <div className="card p-4 cursor-pointer hover:border-primary-300 transition-colors">
+        <div className="text-sm text-content-muted">Active</div>
+        <div className="text-2xl font-bold text-green-600">{active}</div>
+      </div>
+      <div className="card p-4 cursor-pointer hover:border-primary-300 transition-colors">
+        <div className="text-sm text-content-muted">Inactive</div>
+        <div className="text-2xl font-bold text-red-600">{total - active}</div>
+      </div>
+      {topType && (
+        <div className="card p-4 cursor-pointer hover:border-primary-300 transition-colors">
+          <div className="text-sm text-content-muted capitalize">{topType[0]}</div>
+          <div className="text-2xl font-bold text-content">{topType[1]}</div>
+          <div className="text-xs text-content-muted">groups</div>
+        </div>
+      )}
     </div>
   );
 };
+
+// --- Sub-components extracted to reduce cognitive complexity ---
+
 
 const TagList = ({ items, colorClass, maxShow = 3 }) => {
   const safeItems = items || [];
@@ -89,87 +77,6 @@ const TagList = ({ items, colorClass, maxShow = 3 }) => {
   );
 };
 
-const GroupRow = ({ group, onShowUsers, onEdit, onToggleStatus, onDelete }) => {
-  const typeClass = group.type === 'system'
-    ? 'bg-purple-100 text-purple-700'
-    : 'bg-surface-hover text-content-secondary';
-  const statusClass = group.status === 'active'
-    ? 'bg-green-100 text-green-700'
-    : 'bg-red-100 text-red-700';
-  const toggleClass = group.status === 'active'
-    ? 'text-green-600 hover:bg-green-50'
-    : 'text-content-muted hover:bg-surface-hover';
-
-  return (
-    <tr className="hover:bg-surface-hover">
-      <td className="px-4 py-3">
-        <span className="font-mono text-sm text-content-muted">{group.groupId}</span>
-      </td>
-      <td className="px-4 py-3">
-        <div>
-          <div className="font-medium text-content">{group.name}</div>
-          {group.description && (
-            <div className="text-xs text-content-muted truncate max-w-xs">{group.description}</div>
-          )}
-        </div>
-      </td>
-      <td className="px-4 py-3">
-        <span className={`px-2 py-1 text-xs rounded-full ${typeClass}`}>
-          {group.type || 'custom'}
-        </span>
-      </td>
-      <td className="px-4 py-3">
-        <TagList items={group.permissions} colorClass="bg-blue-100 text-blue-700" />
-      </td>
-      <td className="px-4 py-3">
-        <TagList items={group.domains} colorClass="bg-green-100 text-green-700" />
-      </td>
-      <td className="px-4 py-3">
-        <TagList items={group.customers} colorClass="bg-orange-100 text-orange-700" />
-      </td>
-      <td className="px-4 py-3">
-        <span className="text-sm text-content-muted">{group.priority || 0}</span>
-      </td>
-      <td className="px-4 py-3">
-        <span className={`px-2 py-1 text-xs rounded-full ${statusClass}`}>
-          {group.status || 'active'}
-        </span>
-      </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center justify-end gap-1">
-          <button
-            className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            onClick={() => onShowUsers(group)}
-            title="View Users"
-          >
-            <Users size={18} />
-          </button>
-          <button
-            className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            onClick={() => onEdit(group)}
-            title="Edit"
-          >
-            <Edit2 size={18} />
-          </button>
-          <button
-            className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${toggleClass}`}
-            onClick={() => onToggleStatus(group)}
-            title={group.status === 'active' ? 'Deactivate' : 'Activate'}
-          >
-            {group.status === 'active' ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
-          </button>
-          <button
-            className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            onClick={() => onDelete(group)}
-            title="Delete"
-          >
-            <Trash2 size={18} />
-          </button>
-        </div>
-      </td>
-    </tr>
-  );
-};
 
 const PermissionsSection = ({
   formData,
@@ -556,7 +463,14 @@ function useGroupsData(isSuperAdmin) {
   };
 }
 
-function useGroupFormHandlers(formData, setFormData, permissions, domains, groupedPermissions, filteredCustomers) {
+function useGroupFormModal(data) {
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingGroup, setEditingGroup] = useState(null);
+  const [formData, setFormData] = useState(INITIAL_GROUP_FORM);
+
+  const filteredCustomers = filterCustomersBySearch(data.allCustomers, customerSearch);
+
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
     setFormData((prev) => ({ ...prev, [name]: type === 'number' ? parseInt(value, 10) : value }));
@@ -602,7 +516,7 @@ function useGroupFormHandlers(formData, setFormData, permissions, domains, group
   };
 
   const handleSelectAllModule = (module, selected) => {
-    const modulePerms = groupedPermissions[module];
+    const modulePerms = data.groupedPermissions[module];
     const modulePermIds = modulePerms.map((p) => p._id);
     const modulePermKeys = modulePerms.map((p) => p.key);
     setFormData((prev) => ({
@@ -613,33 +527,88 @@ function useGroupFormHandlers(formData, setFormData, permissions, domains, group
     }));
   };
 
-  const handleSelectAllDomains = (selected) => setFormData((prev) => ({ ...prev, domains: selected ? domains.map((d) => d._id) : [] }));
-  const handleSelectAllPermissions = (selected) => setFormData((prev) => ({ ...prev, permissions: selected ? permissions.map((p) => p._id) : [] }));
+  const handleSelectAllDomains = (selected) => setFormData((prev) => ({ ...prev, domains: selected ? data.domains.map((d) => d._id) : [] }));
+  const handleSelectAllPermissions = (selected) => setFormData((prev) => ({ ...prev, permissions: selected ? data.permissions.map((p) => p._id) : [] }));
   const handleSelectAllCustomers = (selected) => setFormData((prev) => ({ ...prev, customers: selected ? filteredCustomers.map((c) => c.customerId) : [] }));
 
+  const openCreateModal = () => {
+    setEditingGroup(null);
+    setFormData(buildCreateFormData(data.groupTypes));
+    setCustomerSearch('');
+    setModalOpen(true);
+  };
+
+  const openEditModal = (group) => {
+    setEditingGroup(group);
+    setFormData(buildEditFormData(group));
+    setCustomerSearch('');
+    setModalOpen(true);
+  };
+
+  const closeModal = () => setModalOpen(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingGroup) {
+        await groupsAPI.update(editingGroup._id || editingGroup.groupId, formData);
+        data.setSuccess('Group updated successfully');
+      } else {
+        await groupsAPI.create(formData);
+        data.setSuccess('Group created successfully');
+      }
+      setModalOpen(false);
+      data.fetchGroups();
+    } catch (err) { data.setError(err.response?.data?.detail || 'Failed to save group'); }
+  };
+
   return {
+    modalOpen, editingGroup, formData, customerSearch, setCustomerSearch, filteredCustomers,
+    openCreateModal, openEditModal, closeModal, handleSubmit,
     handleInputChange, isPermissionSelected, isDomainSelected, isCustomerSelected,
     handlePermissionToggle, handleDomainToggle, handleCustomerToggle,
     handleSelectAllModule, handleSelectAllDomains, handleSelectAllPermissions, handleSelectAllCustomers,
   };
 }
 
-function useGroupActions(setError, setSuccess, fetchGroups) {
+function useGroupUsersModal() {
+  const [usersModalOpen, setUsersModalOpen] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [groupUsers, setGroupUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  const showUsers = async (group) => {
+    setSelectedGroup(group);
+    setUsersModalOpen(true);
+    setLoadingUsers(true);
+    try {
+      const response = await groupsAPI.getUsers(group._id || group.groupId);
+      setGroupUsers(response?.data || []);
+    } catch (err) { setGroupUsers([]); }
+    finally { setLoadingUsers(false); }
+  };
+
+  const closeUsersModal = () => setUsersModalOpen(false);
+
+  return { usersModalOpen, selectedGroup, groupUsers, loadingUsers, showUsers, closeUsersModal };
+}
+
+function useGroupActions(data) {
   const handleDelete = async (group) => {
     if (!window.confirm(`Are you sure you want to delete group "${group.name}"?`)) return;
     try {
       await groupsAPI.delete(group._id || group.groupId);
-      setSuccess('Group deleted successfully');
-      fetchGroups();
-    } catch (err) { setError(err.response?.data?.detail || 'Failed to delete group'); }
+      data.setSuccess('Group deleted successfully');
+      data.fetchGroups();
+    } catch (err) { data.setError(err.response?.data?.detail || 'Failed to delete group'); }
   };
 
   const handleToggleStatus = async (group) => {
     try {
       await groupsAPI.toggleStatus(group._id || group.groupId);
-      setSuccess(`Group ${group.status === 'active' ? 'deactivated' : 'activated'} successfully`);
-      fetchGroups();
-    } catch (err) { setError(err.response?.data?.detail || 'Failed to toggle group status'); }
+      data.setSuccess(`Group ${group.status === 'active' ? 'deactivated' : 'activated'} successfully`);
+      data.fetchGroups();
+    } catch (err) { data.setError(err.response?.data?.detail || 'Failed to toggle group status'); }
   };
 
   const handleExport = async (format) => {
@@ -654,8 +623,8 @@ function useGroupActions(setError, setSuccess, fetchGroups) {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      setSuccess(`Exported groups as ${format.toUpperCase()}`);
-    } catch (err) { setError('Failed to export groups'); }
+      data.setSuccess(`Exported groups as ${format.toUpperCase()}`);
+    } catch (err) { data.setError('Failed to export groups'); }
   };
 
   return { handleDelete, handleToggleStatus, handleExport };
@@ -739,28 +708,28 @@ const GroupsHeader = ({ total, onExportCsv, onExportJson, onCreateClick }) => (
 );
 
 const GroupsFilterBar = ({ data }) => (
-  <div className="card">
-    <div className="flex flex-wrap gap-4">
+  <div className="card !p-4">
+    <div className="flex items-center gap-3">
       <div className="relative flex-1 min-w-[200px]">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
-        <input type="text" placeholder="Search groups by name or ID..." className="input pl-10 w-full" value={data.search} onChange={(e) => data.setSearch(e.target.value)} />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted pointer-events-none" size={18} />
+        <input type="text" placeholder="Search groups by name or ID..." className="input !py-2 pl-10 w-full" value={data.search} onChange={(e) => data.setSearch(e.target.value)} />
       </div>
       <div className="flex items-center gap-2">
-        <Filter size={18} className="text-content-muted" />
-        <select className="input min-w-[150px]" value={data.filterDomain} onChange={(e) => { data.setFilterDomain(e.target.value); data.setPage(0); }}>
+        <Filter size={16} className="text-content-muted shrink-0" />
+        <select className="input !py-2 min-w-[140px]" value={data.filterDomain} onChange={(e) => { data.setFilterDomain(e.target.value); data.setPage(0); }}>
           <option value="">All Domains</option>
           {data.domains.map((domain) => (
             <option key={domain.key || domain._id} value={domain.key || domain._id}>{domain.name}</option>
           ))}
         </select>
-        <select className="input min-w-[150px]" value={data.filterPermission} onChange={(e) => { data.setFilterPermission(e.target.value); data.setPage(0); }}>
+        <select className="input !py-2 min-w-[140px]" value={data.filterPermission} onChange={(e) => { data.setFilterPermission(e.target.value); data.setPage(0); }}>
           <option value="">All Permissions</option>
           {data.permissions.map((perm) => (
             <option key={perm.key} value={perm.key}>{perm.name || perm.key}</option>
           ))}
         </select>
         {(data.filterDomain || data.filterPermission) && (
-          <button className="btn btn-secondary btn-sm" onClick={() => { data.setFilterDomain(''); data.setFilterPermission(''); data.setPage(0); }}>Clear Filters</button>
+          <button className="text-sm text-primary-600 hover:underline whitespace-nowrap" onClick={() => { data.setFilterDomain(''); data.setFilterPermission(''); data.setPage(0); }}>Clear Filters</button>
         )}
       </div>
     </div>
@@ -786,59 +755,9 @@ const GroupsPagination = ({ data }) => {
 const GroupsManagement = () => {
   const { isSuperAdmin } = useAuth();
   const data = useGroupsData(isSuperAdmin);
-  const [customerSearch, setCustomerSearch] = useState('');
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingGroup, setEditingGroup] = useState(null);
-  const [formData, setFormData] = useState(INITIAL_GROUP_FORM);
-  const [usersModalOpen, setUsersModalOpen] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState(null);
-  const [groupUsers, setGroupUsers] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
-
-  const filteredCustomers = filterCustomersBySearch(data.allCustomers, customerSearch);
-
-  const formHandlers = useGroupFormHandlers(formData, setFormData, data.permissions, data.domains, data.groupedPermissions, filteredCustomers);
-  const actions = useGroupActions(data.setError, data.setSuccess, data.fetchGroups);
-
-  const openCreateModal = () => {
-    setEditingGroup(null);
-    setFormData(buildCreateFormData(data.groupTypes));
-    setCustomerSearch('');
-    setModalOpen(true);
-  };
-
-  const openEditModal = (group) => {
-    setEditingGroup(group);
-    setFormData(buildEditFormData(group));
-    setCustomerSearch('');
-    setModalOpen(true);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingGroup) {
-        await groupsAPI.update(editingGroup._id || editingGroup.groupId, formData);
-        data.setSuccess('Group updated successfully');
-      } else {
-        await groupsAPI.create(formData);
-        data.setSuccess('Group created successfully');
-      }
-      setModalOpen(false);
-      data.fetchGroups();
-    } catch (err) { data.setError(err.response?.data?.detail || 'Failed to save group'); }
-  };
-
-  const showUsers = async (group) => {
-    setSelectedGroup(group);
-    setUsersModalOpen(true);
-    setLoadingUsers(true);
-    try {
-      const response = await groupsAPI.getUsers(group._id || group.groupId);
-      setGroupUsers(response?.data || []);
-    } catch (err) { setGroupUsers([]); }
-    finally { setLoadingUsers(false); }
-  };
+  const actions = useGroupActions(data);
+  const modal = useGroupFormModal(data);
+  const usersModal = useGroupUsersModal();
 
   const handleExportCsv = () => { actions.handleExport('csv'); hideExportMenu(); };
   const handleExportJson = () => { actions.handleExport('json'); hideExportMenu(); };
@@ -847,33 +766,113 @@ const GroupsManagement = () => {
 
   return (
     <div className="space-y-6">
-      <GroupsHeader total={data.total} onExportCsv={handleExportCsv} onExportJson={handleExportJson} onCreateClick={openCreateModal} />
+      <GroupsHeader total={data.total} onExportCsv={handleExportCsv} onExportJson={handleExportJson} onCreateClick={modal.openCreateModal} />
 
       <AlertMessages error={data.error} success={data.success} />
+
+      <GroupsStats groups={data.groups} total={data.total} filterDomain={data.filterDomain} filterPermission={data.filterPermission} />
 
       <GroupsFilterBar data={data} />
 
       <div className="card overflow-hidden">
-        <GroupsTable groups={data.groups} loading={data.loading} onShowUsers={showUsers} onEdit={openEditModal} onToggleStatus={actions.handleToggleStatus} onDelete={actions.handleDelete} />
+        <Table
+          columns={[
+            {
+              key: 'groupId',
+              title: 'Group ID',
+              render: (val) => <span className="font-mono text-sm text-content-muted">{val}</span>,
+            },
+            {
+              key: 'name',
+              title: 'Name',
+              render: (val, row) => (
+                <div>
+                  <div className="font-medium text-content">{row.name}</div>
+                  {row.description && <div className="text-xs text-content-muted truncate max-w-xs">{row.description}</div>}
+                </div>
+              ),
+            },
+            {
+              key: 'type',
+              title: 'Type',
+              render: (val) => {
+                const typeClass = val === 'system' ? 'bg-purple-100 text-purple-700' : 'bg-surface-hover text-content-secondary';
+                return <span className={`px-2 py-1 text-xs rounded-full ${typeClass}`}>{val || 'custom'}</span>;
+              },
+            },
+            {
+              key: 'permissions',
+              title: 'Permissions',
+              filterable: false,
+              sortable: false,
+              render: (val) => <TagList items={val} colorClass="bg-blue-100 text-blue-700" />,
+            },
+            {
+              key: 'domains',
+              title: 'Domains',
+              filterable: false,
+              sortable: false,
+              render: (val) => <TagList items={val} colorClass="bg-green-100 text-green-700" />,
+            },
+            {
+              key: 'customers',
+              title: 'Customers',
+              filterable: false,
+              sortable: false,
+              render: (val) => <TagList items={val} colorClass="bg-orange-100 text-orange-700" />,
+            },
+            {
+              key: 'priority',
+              title: 'Priority',
+              render: (val) => <span className="text-sm text-content-muted">{val || 0}</span>,
+              sortValue: (val) => val || 0,
+            },
+            {
+              key: 'status',
+              title: 'Status',
+              render: (val) => {
+                const statusClass = val === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+                return <span className={`px-2 py-1 text-xs rounded-full ${statusClass}`}>{val || 'active'}</span>;
+              },
+            },
+            {
+              key: 'actions',
+              title: 'Actions',
+              render: (_val, row) => {
+                const toggleClass = row.status === 'active' ? 'text-green-600 hover:bg-green-50' : 'text-content-muted hover:bg-surface-hover';
+                return (
+                  <div className="flex items-center justify-end gap-1">
+                    <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" onClick={() => usersModal.showUsers(row)} title="View Users"><Users size={18} /></button>
+                    <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" onClick={() => modal.openEditModal(row)} title="Edit"><Edit2 size={18} /></button>
+                    <button className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${toggleClass}`} onClick={() => actions.handleToggleStatus(row)} title={row.status === 'active' ? 'Deactivate' : 'Activate'}>{row.status === 'active' ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}</button>
+                    <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" onClick={() => actions.handleDelete(row)} title="Delete"><Trash2 size={18} /></button>
+                  </div>
+                );
+              },
+            },
+          ]}
+          data={data.groups}
+          loading={data.loading}
+        />
         <GroupsPagination data={data} />
       </div>
 
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editingGroup ? 'Edit Group' : 'Create Group'} size="xl">
+      <Modal isOpen={modal.modalOpen} onClose={modal.closeModal} title={modal.editingGroup ? 'Edit Group' : 'Create Group'} size="xl">
         <GroupForm
-          formData={formData} editingGroup={editingGroup} groupTypes={data.groupTypes}
-          handleInputChange={formHandlers.handleInputChange} handleSubmit={handleSubmit}
-          groupedPermissions={data.groupedPermissions} isPermissionSelected={formHandlers.isPermissionSelected}
-          handlePermissionToggle={formHandlers.handlePermissionToggle} handleSelectAllPermissions={formHandlers.handleSelectAllPermissions}
-          handleSelectAllModule={formHandlers.handleSelectAllModule} domains={data.domains}
-          isDomainSelected={formHandlers.isDomainSelected} handleDomainToggle={formHandlers.handleDomainToggle}
-          handleSelectAllDomains={formHandlers.handleSelectAllDomains} filteredCustomers={filteredCustomers}
-          allCustomers={data.allCustomers} customerSearch={customerSearch} setCustomerSearch={setCustomerSearch}
-          isCustomerSelected={formHandlers.isCustomerSelected} handleCustomerToggle={formHandlers.handleCustomerToggle}
-          handleSelectAllCustomers={formHandlers.handleSelectAllCustomers} onClose={() => setModalOpen(false)}
+          formData={modal.formData} editingGroup={modal.editingGroup} groupTypes={data.groupTypes}
+          handleInputChange={modal.handleInputChange} handleSubmit={modal.handleSubmit}
+          groupedPermissions={data.groupedPermissions} isPermissionSelected={modal.isPermissionSelected}
+          handlePermissionToggle={modal.handlePermissionToggle} handleSelectAllPermissions={modal.handleSelectAllPermissions}
+          handleSelectAllModule={modal.handleSelectAllModule} domains={data.domains}
+          isDomainSelected={modal.isDomainSelected} handleDomainToggle={modal.handleDomainToggle}
+          handleSelectAllDomains={modal.handleSelectAllDomains} filteredCustomers={modal.filteredCustomers}
+          allCustomers={data.allCustomers} customerSearch={modal.customerSearch} setCustomerSearch={modal.setCustomerSearch}
+          isCustomerSelected={modal.isCustomerSelected} handleCustomerToggle={modal.handleCustomerToggle}
+          handleSelectAllCustomers={modal.handleSelectAllCustomers} onClose={modal.closeModal}
         />
       </Modal>
 
-      <GroupUsersModal isOpen={usersModalOpen} onClose={() => setUsersModalOpen(false)} selectedGroup={selectedGroup} loadingUsers={loadingUsers} groupUsers={groupUsers} />
+      <GroupUsersModal isOpen={usersModal.usersModalOpen} onClose={usersModal.closeUsersModal} selectedGroup={usersModal.selectedGroup} loadingUsers={usersModal.loadingUsers} groupUsers={usersModal.groupUsers} />
     </div>
   );
 };

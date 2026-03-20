@@ -18,17 +18,29 @@ class TokenManager:
         algorithm: str = 'HS256',
         db: Optional[DatabaseManager] = None,
         issuer: str = "easylife-auth",
-        audience: str = "easylife-api"
+        audience: str = "easylife-api",
+        access_token_expiry_minutes: Optional[int] = None,
+        refresh_token_expiry_minutes: Optional[int] = None,
     ):
         self.secret_key = secret_key
         self.algorithm = algorithm
         self.db = db
         self.issuer = issuer
         self.audience = audience
-        
-        timeout = int(os.environ.get("EASYLIFE.SPECS.AUTH.TOKEN_TIMEOUT", 15))
+
+        # Priority: explicit param > env var > default (30 min)
+        if access_token_expiry_minutes:
+            timeout = access_token_expiry_minutes
+        else:
+            timeout = int(os.environ.get("EASYLIFE.SPECS.AUTH.TOKEN_TIMEOUT", 30))
+
+        if refresh_token_expiry_minutes:
+            refresh_timeout = refresh_token_expiry_minutes
+        else:
+            refresh_timeout = timeout * 4
+
         self.access_token_expires = timedelta(minutes=timeout)
-        self.refresh_token_expires = timedelta(minutes=timeout * 4)
+        self.refresh_token_expires = timedelta(minutes=refresh_timeout)
 
     async def sync_access_token(
         self,

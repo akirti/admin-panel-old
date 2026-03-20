@@ -5,47 +5,9 @@ import {
   Search, ChevronLeft, ChevronRight, Plus, Edit2,
   Power, Trash2, Key, Download, FileDown, Filter
 } from 'lucide-react';
-import { Badge, Modal } from '../../components/shared';
+import { Badge, Modal, Table } from '../../components/shared';
 
 // --- Sub-components extracted to reduce cognitive complexity ---
-
-const UserRow = ({ user, onEdit, onToggleStatus, onSendPasswordReset, onDelete }) => {
-  const toggleClass = user.is_active
-    ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50'
-    : 'text-green-500 hover:text-green-600 hover:bg-green-50';
-
-  return (
-    <tr className="table-row">
-      <td className="py-3 px-4">{user.email}</td>
-      <td className="py-3 px-4">{user.username}</td>
-      <td className="py-3 px-4">{user.full_name}</td>
-      <td className="py-3 px-4">
-        <UserBadges items={user.roles} maxShow={2} variant="primary" />
-      </td>
-      <td className="py-3 px-4">
-        <Badge variant={user.is_active ? 'success' : 'danger'}>
-          {user.is_active ? 'Active' : 'Inactive'}
-        </Badge>
-      </td>
-      <td className="py-3 px-4">
-        <div className="flex items-center gap-1">
-          <button onClick={() => onEdit(user)} className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
-            <Edit2 size={18} />
-          </button>
-          <button onClick={() => onToggleStatus(user)} className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${toggleClass}`} title={user.is_active ? 'Disable' : 'Enable'}>
-            <Power size={18} />
-          </button>
-          <button onClick={() => onSendPasswordReset(user)} className="w-9 h-9 flex items-center justify-center text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Send Password Reset">
-            <Key size={18} />
-          </button>
-          <button onClick={() => onDelete(user)} className="w-9 h-9 flex items-center justify-center text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
-            <Trash2 size={18} />
-          </button>
-        </div>
-      </td>
-    </tr>
-  );
-};
 
 const UserBadges = ({ items, maxShow = 2, variant = 'primary' }) => {
   const safeItems = items || [];
@@ -57,45 +19,6 @@ const UserBadges = ({ items, maxShow = 2, variant = 'primary' }) => {
       {safeItems.length > maxShow && (
         <Badge variant="default">+{safeItems.length - maxShow}</Badge>
       )}
-    </div>
-  );
-};
-
-const UsersTable = ({ users, loading, onEdit, onToggleStatus, onSendPasswordReset, onDelete }) => {
-  if (loading) {
-    return (
-      <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="table-header">
-            <th className="text-left py-3 px-4">Email</th>
-            <th className="text-left py-3 px-4">Username</th>
-            <th className="text-left py-3 px-4">Full Name</th>
-            <th className="text-left py-3 px-4">Roles</th>
-            <th className="text-left py-3 px-4">Status</th>
-            <th className="text-left py-3 px-4">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <UserRow
-              key={user._id || user.email}
-              user={user}
-              onEdit={onEdit}
-              onToggleStatus={onToggleStatus}
-              onSendPasswordReset={onSendPasswordReset}
-              onDelete={onDelete}
-            />
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 };
@@ -276,13 +199,41 @@ async function downloadUserExport(exportFn, format, filename) {
   document.body.removeChild(a);
 }
 
-const UsersHeader = ({ onExportCsv, onExportJson, onAddUser }) => (
-  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+const UsersStats = ({ stats, filterRole, onFilterRole }) => {
+  if (filterRole || !stats) return null;
+  const topRoles = Object.entries(stats.byRole).sort((a, b) => b[1] - a[1]).slice(0, 2);
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="card p-4">
+        <div className="text-sm text-content-muted">Total Users</div>
+        <div className="text-2xl font-bold text-content">{stats.total}</div>
+      </div>
+      <div className="card p-4 cursor-pointer hover:border-green-300 transition-colors" onClick={() => {}}>
+        <div className="text-sm text-content-muted">Active</div>
+        <div className="text-2xl font-bold text-green-600">{stats.active}</div>
+      </div>
+      <div className="card p-4 cursor-pointer hover:border-red-300 transition-colors" onClick={() => {}}>
+        <div className="text-sm text-content-muted">Inactive</div>
+        <div className="text-2xl font-bold text-red-600">{stats.inactive}</div>
+      </div>
+      {topRoles[0] && (
+        <div className="card p-4 cursor-pointer hover:border-primary-300 transition-colors" onClick={() => onFilterRole(topRoles[0][0])}>
+          <div className="text-sm text-content-muted">{topRoles[0][0]}</div>
+          <div className="text-2xl font-bold text-content">{topRoles[0][1]}</div>
+          <div className="text-xs text-content-muted">users</div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const UsersHeader = ({ total, onExportCsv, onExportJson, onAddUser }) => (
+  <div className="flex items-center justify-between">
     <div>
       <h1 className="text-2xl font-bold text-content">Users</h1>
-      <p className="text-content-muted mt-1">Manage user accounts and access</p>
+      <p className="text-content-muted text-sm mt-1">Manage user accounts and access ({total} total)</p>
     </div>
-    <div className="flex items-center gap-2">
+    <div className="flex gap-2">
       <button onClick={onExportCsv} className="btn-secondary flex items-center gap-2">
         <FileDown size={16} /> CSV
       </button>
@@ -297,30 +248,28 @@ const UsersHeader = ({ onExportCsv, onExportJson, onAddUser }) => (
 );
 
 const UsersFilterBar = ({ search, onSearchChange, filterRole, onFilterRoleChange, filterGroup, onFilterGroupChange, roles, groups, onClearFilters }) => (
-  <div className="card p-4">
-    <div className="flex flex-wrap gap-4">
+  <div className="card !p-4">
+    <div className="flex items-center gap-3">
       <div className="relative flex-1 min-w-[200px]">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
-        <input type="text" value={search} onChange={(e) => onSearchChange(e.target.value)} placeholder="Search by email, username, or name..." className="input-field pl-10 w-full" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted pointer-events-none" size={18} />
+        <input type="text" value={search} onChange={(e) => onSearchChange(e.target.value)} placeholder="Search by email, username, or name..." className="input !py-2 pl-10 w-full" />
       </div>
       <div className="flex items-center gap-2">
-        <Filter size={18} className="text-content-muted" />
-        <select className="input-field min-w-[150px]" value={filterRole} onChange={(e) => onFilterRoleChange(e.target.value)}>
+        <Filter size={16} className="text-content-muted shrink-0" />
+        <select className="input !py-2 min-w-[140px]" value={filterRole} onChange={(e) => onFilterRoleChange(e.target.value)}>
           <option value="">All Roles</option>
           {roles.map((role) => (
             <option key={role.roleId} value={role.roleId}>{role.name}</option>
           ))}
         </select>
-        <select className="input-field min-w-[150px]" value={filterGroup} onChange={(e) => onFilterGroupChange(e.target.value)}>
+        <select className="input !py-2 min-w-[140px]" value={filterGroup} onChange={(e) => onFilterGroupChange(e.target.value)}>
           <option value="">All Groups</option>
           {groups.map((group) => (
             <option key={group.groupId} value={group.groupId}>{group.name}</option>
           ))}
         </select>
         {(filterRole || filterGroup) && (
-          <button className="btn-secondary text-sm py-2 px-3" onClick={onClearFilters}>
-            Clear Filters
-          </button>
+          <button className="text-sm text-primary-600 hover:underline whitespace-nowrap" onClick={onClearFilters}>Clear</button>
         )}
       </div>
     </div>
@@ -387,9 +336,19 @@ function useUsersData() {
 
   const totalPages = pagination.pages || Math.ceil(pagination.total / pagination.limit);
 
+  const stats = {
+    total: pagination.total,
+    active: users.filter(u => u.is_active === true).length,
+    inactive: users.filter(u => u.is_active === false).length,
+    byRole: users.reduce((acc, u) => {
+      (u.roles || []).forEach(role => { acc[role] = (acc[role] || 0) + 1; });
+      return acc;
+    }, {}),
+  };
+
   return {
     users, roles, groups, customers, loading, search, filterRole, filterGroup,
-    pagination, totalPages, fetchData,
+    pagination, totalPages, fetchData, stats,
     handlePageChange, handleSearchChange, handleFilterRoleChange, handleFilterGroupChange, handleClearFilters,
   };
 }
@@ -492,9 +451,44 @@ const UsersManagement = () => {
   const actions = useUserActions(data.fetchData);
   const form = useUserFormModal(data.roles, data.groups, data.customers, data.fetchData);
 
+  const userColumns = [
+    { key: 'email', title: 'Email' },
+    { key: 'username', title: 'Username' },
+    { key: 'full_name', title: 'Full Name' },
+    { key: 'roles', title: 'Roles', render: (_, user) => <UserBadges items={user.roles} maxShow={2} variant="primary" />, filterValue: (_, user) => (user.roles || []).join(','), sortable: false },
+    { key: 'is_active', title: 'Status', render: (val) => (
+      <Badge variant={val ? 'success' : 'danger'}>
+        {val ? 'Active' : 'Inactive'}
+      </Badge>
+    ), filterValue: (val) => val ? 'Active' : 'Inactive', sortValue: (val) => val ? 1 : 0 },
+    { key: 'actions', title: 'Actions', render: (_, user) => {
+      const toggleClass = user.is_active
+        ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50'
+        : 'text-green-500 hover:text-green-600 hover:bg-green-50';
+      return (
+        <div className="flex items-center gap-1">
+          <button onClick={() => form.openEditModal(user)} className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit" aria-label="Edit">
+            <Edit2 size={18} />
+          </button>
+          <button onClick={() => actions.handleToggleStatus(user)} className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${toggleClass}`} title={user.is_active ? 'Disable' : 'Enable'} aria-label={user.is_active ? 'Disable' : 'Enable'}>
+            <Power size={18} />
+          </button>
+          <button onClick={() => actions.handleSendPasswordReset(user)} className="w-9 h-9 flex items-center justify-center text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Send Password Reset" aria-label="Send Password Reset">
+            <Key size={18} />
+          </button>
+          <button onClick={() => actions.handleDelete(user)} className="w-9 h-9 flex items-center justify-center text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete" aria-label="Delete">
+            <Trash2 size={18} />
+          </button>
+        </div>
+      );
+    }}
+  ];
+
   return (
     <div className="space-y-6">
-      <UsersHeader onExportCsv={() => actions.handleExport('csv')} onExportJson={() => actions.handleExport('json')} onAddUser={form.openAddModal} />
+      <UsersHeader total={data.pagination.total} onExportCsv={() => actions.handleExport('csv')} onExportJson={() => actions.handleExport('json')} onAddUser={form.openAddModal} />
+
+      <UsersStats stats={data.stats} filterRole={data.filterRole} onFilterRole={data.handleFilterRoleChange} />
 
       <UsersFilterBar
         search={data.search} onSearchChange={data.handleSearchChange}
@@ -504,7 +498,7 @@ const UsersManagement = () => {
       />
 
       <div className="card overflow-hidden p-0">
-        <UsersTable users={data.users} loading={data.loading} onEdit={form.openEditModal} onToggleStatus={actions.handleToggleStatus} onSendPasswordReset={actions.handleSendPasswordReset} onDelete={actions.handleDelete} />
+        <Table columns={userColumns} data={data.users} loading={data.loading} />
         <UsersPagination pagination={data.pagination} totalPages={data.totalPages} onPageChange={data.handlePageChange} loading={data.loading} />
       </div>
 

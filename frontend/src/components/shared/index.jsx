@@ -1,3 +1,4 @@
+import { useEffect, useCallback } from 'react';
 import { X, Search, Upload, Loader2 } from 'lucide-react';
 
 // Button Component
@@ -43,22 +44,30 @@ export const Input = ({
   label,
   error,
   className = '',
+  required = false,
+  id: externalId,
   ...props
 }) => {
+  const inputId = externalId || (label ? `input-${label.toLowerCase().replace(/\s+/g, '-')}` : undefined);
+  const errorId = error && inputId ? `${inputId}-error` : undefined;
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-content-secondary mb-1">
-          {label}
+        <label htmlFor={inputId} className="block text-sm font-medium text-content-secondary mb-1">
+          {label}{required && <span className="text-red-500 ml-1" aria-hidden="true">*</span>}
         </label>
       )}
       <input
+        id={inputId}
         className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface-input text-content transition-all ${
           error ? 'border-red-500' : 'border-edge'
         } ${className}`}
+        aria-invalid={error ? 'true' : undefined}
+        aria-describedby={errorId}
+        aria-required={required || undefined}
         {...props}
       />
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {error && <p id={errorId} className="mt-1 text-sm text-red-600" role="alert">{error}</p>}
     </div>
   );
 };
@@ -69,19 +78,27 @@ export const Select = ({
   options = [],
   error,
   className = '',
+  required = false,
+  id: externalId,
   ...props
 }) => {
+  const selectId = externalId || (label ? `select-${label.toLowerCase().replace(/\s+/g, '-')}` : undefined);
+  const errorId = error && selectId ? `${selectId}-error` : undefined;
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-content-secondary mb-1">
-          {label}
+        <label htmlFor={selectId} className="block text-sm font-medium text-content-secondary mb-1">
+          {label}{required && <span className="text-red-500 ml-1" aria-hidden="true">*</span>}
         </label>
       )}
       <select
+        id={selectId}
         className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface-input text-content transition-all ${
           error ? 'border-red-500' : 'border-edge'
         } ${className}`}
+        aria-invalid={error ? 'true' : undefined}
+        aria-describedby={errorId}
+        aria-required={required || undefined}
         {...props}
       >
         {options.map((option) => (
@@ -90,7 +107,7 @@ export const Select = ({
           </option>
         ))}
       </select>
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {error && <p id={errorId} className="mt-1 text-sm text-red-600" role="alert">{error}</p>}
     </div>
   );
 };
@@ -127,6 +144,19 @@ export const Badge = ({ children, variant = 'default', className = '' }) => {
 
 // Modal Component
 export const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Escape') {
+      onClose();
+    }
+  }, [onClose]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isOpen, handleKeyDown]);
+
   if (!isOpen) return null;
 
   const sizes = {
@@ -140,12 +170,18 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-        <div className="fixed inset-0 transition-opacity bg-black/50" onClick={onClose} />
-        <div className={`relative inline-block w-full ${sizes[size]} p-6 my-8 text-left align-middle transition-all transform bg-surface shadow-xl rounded-xl`}>
+        <div className="fixed inset-0 transition-opacity bg-black/50" onClick={onClose} aria-hidden="true" />
+        <div
+          className={`relative inline-block w-full ${sizes[size]} p-6 my-8 text-left align-middle transition-all transform bg-surface shadow-xl rounded-xl`}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
+        >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-content">{title}</h3>
+            <h3 id="modal-title" className="text-lg font-semibold text-content">{title}</h3>
             <button
               onClick={onClose}
+              aria-label="Close dialog"
               className="text-content-muted hover:text-content-secondary focus:outline-none"
             >
               <X size={20} />
@@ -158,58 +194,10 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
   );
 };
 
-// Table Component
-export const Table = ({ columns, data, onRowClick, loading = false }) => {
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 size={32} className="animate-spin text-primary-600" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-edge">
-        <thead>
-          <tr className="table-header">
-            {columns.map((column) => (
-              <th
-                key={column.key}
-                className="px-6 py-3 text-left"
-              >
-                {column.title}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="bg-surface divide-y divide-edge">
-          {data.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length} className="px-6 py-12 text-center text-content-muted">
-                No data available
-              </td>
-            </tr>
-          ) : (
-            data.map((row, index) => (
-              <tr
-                key={row._id || row.id || index}
-                className={`${onRowClick ? 'cursor-pointer hover:bg-surface-hover' : ''}`}
-                onClick={() => onRowClick && onRowClick(row)}
-              >
-                {columns.map((column) => (
-                  <td key={column.key} className="px-6 py-4 whitespace-nowrap text-sm text-content">
-                    {column.render ? column.render(row[column.key], row) : row[column.key]}
-                  </td>
-                ))}
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
-};
+// Table Component — now powered by DataGrid with sort + Excel-like filters
+// Columns support: { key, title, render, sortable, filterable, filterValue, sortValue }
+// Set sortable/filterable to false on a column to disable. Actions columns auto-disabled.
+export { DataGrid as Table } from './DataGrid';
 
 // Toggle Component
 export const Toggle = ({ enabled, onChange, label }) => {
@@ -218,6 +206,9 @@ export const Toggle = ({ enabled, onChange, label }) => {
     <div className="flex items-center">
       <button
         type="button"
+        role="switch"
+        aria-checked={isEnabled}
+        aria-label={label}
         onClick={() => onChange(!isEnabled)}
         className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
           isEnabled ? 'bg-primary-600' : 'bg-neutral-200'
@@ -261,7 +252,7 @@ export const StatCard = ({ title, value, icon, trend, trendValue }) => {
 // Search Input Component
 export const SearchInput = ({ value, onChange, placeholder = 'Search...' }) => {
   return (
-    <div className="relative">
+    <div className="relative" role="search">
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
         <Search size={20} className="text-content-muted" />
       </div>
@@ -271,6 +262,7 @@ export const SearchInput = ({ value, onChange, placeholder = 'Search...' }) => {
         onChange={(e) => onChange(e.target.value)}
         className="block w-full pl-10 pr-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface-input text-content text-sm"
         placeholder={placeholder}
+        aria-label={placeholder || 'Search'}
       />
     </div>
   );
@@ -305,7 +297,7 @@ export const Pagination = ({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between border-t border-edge bg-surface px-4 py-3 sm:px-6">
+    <nav aria-label="Pagination" className="flex items-center justify-between border-t border-edge bg-surface px-4 py-3 sm:px-6">
       {showInfo && (
         <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
           <div>
@@ -323,6 +315,7 @@ export const Pagination = ({
           size="sm"
           disabled={currentPage === 0}
           onClick={() => onPageChange(currentPage - 1)}
+          aria-label="Go to previous page"
         >
           Previous
         </Button>
@@ -343,6 +336,8 @@ export const Pagination = ({
           <button
             key={page}
             onClick={() => onPageChange(page - 1)}
+            aria-current={displayPage === page ? 'page' : undefined}
+            aria-label={`Page ${page}`}
             className={`px-3 py-1 rounded-lg text-sm ${
               displayPage === page
                 ? 'bg-primary-600 text-white'
@@ -370,11 +365,12 @@ export const Pagination = ({
           size="sm"
           disabled={currentPage >= totalPages - 1}
           onClick={() => onPageChange(currentPage + 1)}
+          aria-label="Go to next page"
         >
           Next
         </Button>
       </div>
-    </div>
+    </nav>
   );
 };
 
@@ -395,7 +391,7 @@ export const FileUpload = ({ onFileSelect, accept = '*', label = 'Upload File' }
           <p className="mb-1 text-sm text-content-muted">{label}</p>
           <p className="text-xs text-content-muted">CSV, XLS, or XLSX files</p>
         </div>
-        <input type="file" className="hidden" accept={accept} onChange={handleChange} />
+        <input type="file" className="hidden" accept={accept} onChange={handleChange} aria-label={label} />
       </label>
     </div>
   );
@@ -403,3 +399,6 @@ export const FileUpload = ({ onFileSelect, accept = '*', label = 'Upload File' }
 
 // Export ExportButton
 export { default as ExportButton } from './ExportButton';
+
+// Export DataGrid and its hook for direct use
+export { DataGrid, useDataGrid } from './DataGrid';

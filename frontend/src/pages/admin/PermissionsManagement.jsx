@@ -15,110 +15,9 @@ import {
   Link2,
   Filter,
 } from 'lucide-react';
-import { Modal } from '../../components/shared';
+import { Modal, Table } from '../../components/shared';
 
 // --- Sub-components extracted to reduce cognitive complexity ---
-
-const PermissionsTable = ({ permissions, loading, onShowRelationships, onEdit, onDelete }) => {
-  if (loading) {
-    return <div className="p-8 text-center text-content-muted">Loading permissions...</div>;
-  }
-
-  if (permissions.length === 0) {
-    return (
-      <div className="p-8 text-center text-content-muted">
-        No permissions found. Click &quot;Add Permission&quot; to create one.
-      </div>
-    );
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="table-header">
-            <th className="px-4 py-3 text-left">Key</th>
-            <th className="px-4 py-3 text-left">Name</th>
-            <th className="px-4 py-3 text-left">Module</th>
-            <th className="px-4 py-3 text-left">Actions</th>
-            <th className="px-4 py-3 text-left">Created</th>
-            <th className="px-4 py-3 text-right">Manage</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {permissions.map((permission) => (
-            <PermissionRow
-              key={permission._id || permission.key}
-              permission={permission}
-              onShowRelationships={onShowRelationships}
-              onEdit={onEdit}
-              onDelete={onDelete}
-            />
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
-
-const PermissionRow = ({ permission, onShowRelationships, onEdit, onDelete }) => {
-  const actions = permission.actions || [];
-  const createdDate = permission.created_at
-    ? new Date(permission.created_at).toLocaleDateString()
-    : 'N/A';
-
-  return (
-    <tr className="hover:bg-surface-hover">
-      <td className="px-4 py-3">
-        <span className="font-mono text-sm text-content-muted">{permission.key}</span>
-      </td>
-      <td className="px-4 py-3">
-        <div>
-          <div className="font-medium text-content">{permission.name}</div>
-          {permission.description && (
-            <div className="text-xs text-content-muted truncate max-w-xs">{permission.description}</div>
-          )}
-        </div>
-      </td>
-      <td className="px-4 py-3">
-        <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
-          {permission.module || 'Other'}
-        </span>
-      </td>
-      <td className="px-4 py-3">
-        <ActionTagList actions={actions} />
-      </td>
-      <td className="px-4 py-3">
-        <span className="text-sm text-content-muted">{createdDate}</span>
-      </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center justify-end gap-1">
-          <button
-            className="w-9 h-9 flex items-center justify-center text-purple-500 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
-            onClick={() => onShowRelationships(permission)}
-            title="View Roles & Groups"
-          >
-            <Link2 size={18} />
-          </button>
-          <button
-            className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            onClick={() => onEdit(permission)}
-            title="Edit"
-          >
-            <Edit2 size={18} />
-          </button>
-          <button
-            className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            onClick={() => onDelete(permission)}
-            title="Delete"
-          >
-            <Trash2 size={18} />
-          </button>
-        </div>
-      </td>
-    </tr>
-  );
-};
 
 const ActionTagList = ({ actions }) => (
   <div className="flex flex-wrap gap-1 max-w-xs">
@@ -468,19 +367,19 @@ const PermsHeader = ({ total, onExportCsv, onExportJson, onCreateClick }) => (
 );
 
 const PermsFilterBar = ({ data }) => (
-  <div className="card">
-    <div className="flex flex-col md:flex-row gap-4">
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={20} />
-        <input type="text" placeholder="Search permissions by key or name..." className="input pl-10 w-full" value={data.search} onChange={(e) => data.setSearch(e.target.value)} />
+  <div className="card !p-4">
+    <div className="flex items-center gap-3">
+      <div className="relative flex-1 min-w-[200px]">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted pointer-events-none" size={18} />
+        <input type="text" placeholder="Search permissions by key or name..." className="input !py-2 pl-10 w-full" value={data.search} onChange={(e) => data.setSearch(e.target.value)} />
       </div>
-      <div className="relative flex items-center gap-2">
-        <Filter size={16} className="text-content-muted" />
-        <select className="input" value={data.moduleFilter} onChange={(e) => { data.setModuleFilter(e.target.value); data.setPage(0); }}>
+      <div className="flex items-center gap-2">
+        <Filter size={16} className="text-content-muted shrink-0" />
+        <select className="input !py-2 min-w-[140px]" value={data.moduleFilter} onChange={(e) => { data.setModuleFilter(e.target.value); data.setPage(0); }}>
           <option value="">All Modules</option>
           {data.modules.map((m) => (<option key={m} value={m}>{m}</option>))}
         </select>
-        {data.moduleFilter && (<button className="text-sm text-blue-600 hover:underline" onClick={() => data.setModuleFilter('')}>Clear</button>)}
+        {data.moduleFilter && (<button className="text-sm text-primary-600 hover:underline whitespace-nowrap" onClick={() => data.setModuleFilter('')}>Clear</button>)}
       </div>
     </div>
   </div>
@@ -581,6 +480,26 @@ const PermissionsManagement = () => {
   const handleExportCsv = () => { actions.handleExport('csv'); hidePermsExportMenu(); };
   const handleExportJson = () => { actions.handleExport('json'); hidePermsExportMenu(); };
 
+  const permissionColumns = [
+    { key: 'key', title: 'Key', render: (val) => <span className="font-mono text-sm text-content-muted">{val}</span> },
+    { key: 'name', title: 'Name', render: (_, perm) => (
+      <div>
+        <div className="font-medium text-content">{perm.name}</div>
+        {perm.description && <div className="text-xs text-content-muted truncate max-w-xs">{perm.description}</div>}
+      </div>
+    )},
+    { key: 'module', title: 'Module', render: (val) => <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">{val || 'Other'}</span> },
+    { key: 'actions_list', title: 'Actions', render: (_, perm) => <ActionTagList actions={perm.actions || []} />, filterValue: (_, perm) => (perm.actions || []).join(','), filterable: false },
+    { key: 'created_at', title: 'Created', render: (val) => <span className="text-sm text-content-muted">{val ? new Date(val).toLocaleDateString() : 'N/A'}</span>, sortValue: (val) => val ? new Date(val).getTime() : 0 },
+    { key: 'manage', title: 'Manage', render: (_, perm) => (
+      <div className="flex items-center justify-end gap-1">
+        <button className="w-9 h-9 flex items-center justify-center text-purple-500 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors" onClick={() => relModal.showRelationships(perm)} title="View Roles & Groups" aria-label="View relationships"><Link2 size={18} /></button>
+        <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" onClick={() => modal.openEditModal(perm)} title="Edit" aria-label="Edit"><Edit2 size={18} /></button>
+        <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" onClick={() => actions.handleDelete(perm)} title="Delete" aria-label="Delete"><Trash2 size={18} /></button>
+      </div>
+    )}
+  ];
+
   if (!isSuperAdmin()) return <PermAccessDenied />;
 
   return (
@@ -593,7 +512,7 @@ const PermissionsManagement = () => {
       <PermsFilterBar data={data} />
 
       <div className="card overflow-hidden">
-        <PermissionsTable permissions={data.permissions} loading={data.loading} onShowRelationships={relModal.showRelationships} onEdit={modal.openEditModal} onDelete={actions.handleDelete} />
+        <Table columns={permissionColumns} data={data.permissions} loading={data.loading} />
         <PermsPagination data={data} />
       </div>
 

@@ -186,7 +186,10 @@ def bootstrap():
     config_path = resolve_config_path()
     environment = resolve_environment()
     config_loader = ConfigurationLoader(config_path=config_path, environment=environment)
-
+    # In bootstrap(), after config_loader is created:
+    print("AUTH DB user:", config_loader.get_config_by_path("databases.authentication.db_info.username"))
+    print("UI_TPL DB user:", config_loader.get_config_by_path("databases.ui_templates.db_info.username"))
+    print("Unresolved:", config_loader.unresolved_properties)
     db_config = build_db_config(config_loader)
     token_secret = config_loader.get_config_by_path("environment.app_secrets.auth_secret_key")
     jwt_issuer = (
@@ -213,7 +216,7 @@ def bootstrap():
     )
 
     root_path = (
-        os.environ.get("ROOT_PATH")
+        os.environ.get("API_ROOT_PATH")
         or config_loader.get_config_by_path("environment.root_path")
         or ""
     )
@@ -221,6 +224,10 @@ def bootstrap():
     # Build separate DB config for ui_templates
     ui_templates_db_config = build_db_config(config_loader, db_token="ui_templates")
 
+    print("AUTH DB user:", config_loader.get_config_by_path("databases.authentication.db_info.username"))
+    print("UI_TPL DB user:", config_loader.get_config_by_path("databases.ui_templates.db_info.username"))
+    print("Unresolved:", config_loader.unresolved_properties)
+    print(ui_templates_db_config)
     kw = {}
     kw["db_config"] = db_config
     kw["ui_templates_db_config"] = ui_templates_db_config
@@ -238,6 +245,13 @@ def bootstrap():
     kw["description"] = "Authentication, Authorization, and Administration API"
     kw["root_path"] = root_path
     kw["handshake_secret"] = handshake_secret
+
+    auth_config = config_loader.get_config_by_path("environment.authentication") or {}
+    access_token_expiry = _safe_int(auth_config.get("access_token_expiry_minutes"), 30)
+    refresh_token_expiry = _safe_int(auth_config.get("refresh_token_expiry_minutes"), 120)
+    kw["access_token_expiry_minutes"] = access_token_expiry
+    kw["refresh_token_expiry_minutes"] = refresh_token_expiry
+
     return create_app(**kw)
 
 

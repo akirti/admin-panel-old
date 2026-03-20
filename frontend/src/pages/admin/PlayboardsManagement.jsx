@@ -1254,13 +1254,13 @@ function useFormExtras(formData, setFormData) {
 function buildPlayboardColumns(crud) {
   return [
     { key: 'name', title: 'Name' },
-    { key: 'data', title: 'Key', render: (val) => val?.key || '-' },
+    { key: 'dataKey', title: 'Key', render: (_, item) => item.data?.key || '-', filterValue: (_, item) => item.data?.key || '', sortValue: (_, item) => item.data?.key || '' },
     { key: 'scenarioKey', title: 'Scenario' },
-    { key: 'data', title: 'Data Domain', render: (val) => val?.dataDomain || '-' },
-    { key: 'data', title: 'Filters', render: (val) => <Badge variant="primary">{val?.widgets?.filters?.length || 0}</Badge> },
-    { key: 'data', title: 'Actions', render: (val) => <Badge variant="success">{val?.widgets?.grid?.actions?.rowActions?.events?.length || 0}</Badge> },
+    { key: 'dataDomain', title: 'Data Domain', render: (_, item) => item.data?.dataDomain || '-', filterValue: (_, item) => item.data?.dataDomain || '', sortValue: (_, item) => item.data?.dataDomain || '' },
+    { key: 'dataFilters', title: 'Filters', render: (_, item) => <Badge variant="primary">{item.data?.widgets?.filters?.length || 0}</Badge>, sortValue: (_, item) => item.data?.widgets?.filters?.length || 0, filterable: false },
+    { key: 'dataActions', title: 'Row Actions', render: (_, item) => <Badge variant="success">{item.data?.widgets?.grid?.actions?.rowActions?.events?.length || 0}</Badge>, sortValue: (_, item) => item.data?.widgets?.grid?.actions?.rowActions?.events?.length || 0, filterable: false },
     { key: 'status', title: 'Status', render: (val) => { const isActive = val === 'active'; return <Badge variant={isActive ? 'success' : 'danger'}>{isActive ? 'Active' : 'Inactive'}</Badge>; } },
-    { key: 'actions', title: 'Actions', render: (_, item) => (
+    { key: 'actions', title: '', render: (_, item) => (
       <PlayboardActionsCell item={item} onView={crud.handleViewDetails} onDownload={crud.handleDownload} onEdit={crud.openEditModal} onDelete={crud.handleDelete} />
     )}
   ];

@@ -5,6 +5,7 @@ import {
   ArrowUp,
   ArrowDown,
   MoreVertical,
+  X,
 } from "lucide-react";
 import V1Pagination from "./v1_Pagination";
 import V1ColumnFilterDropdown from "./v1_ColumnFilterDropdown";
@@ -271,9 +272,42 @@ const buildColumnUniqueValues = (columns, data) => {
         values.push(val);
       }
     });
+    // Sort values for consistent display
+    values.sort((a, b) => {
+      const aStr = String(a);
+      const bStr = String(b);
+      return aStr.localeCompare(bStr, undefined, { numeric: true });
+    });
     map[col.key] = values;
   });
   return map;
+};
+
+// --- Local sort comparator ---
+
+const compareValues = (a, b, order) => {
+  // Handle nulls
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+
+  // Numeric comparison
+  if (typeof a === "number" && typeof b === "number") {
+    return order === "asc" ? a - b : b - a;
+  }
+
+  // Boolean comparison
+  if (typeof a === "boolean" && typeof b === "boolean") {
+    const aNum = a ? 1 : 0;
+    const bNum = b ? 1 : 0;
+    return order === "asc" ? aNum - bNum : bNum - aNum;
+  }
+
+  // String comparison
+  const aStr = String(a).toLowerCase();
+  const bStr = String(b).toLowerCase();
+  const cmp = aStr.localeCompare(bStr, undefined, { numeric: true });
+  return order === "asc" ? cmp : -cmp;
 };
 
 // --- Hook: close action menu on outside click ---
@@ -292,7 +326,7 @@ const useCloseMenuOnOutsideClick = (menuRef, openMenuIdx, setOpenMenuIdx) => {
 };
 
 // Empty state placeholder
-const EmptyState = () => (
+const EmptyState = ({ hasOriginalData }) => (
   <div className="flex flex-col items-center justify-center py-16 text-content-muted">
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -309,9 +343,52 @@ const EmptyState = () => (
         d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
       />
     </svg>
-    <p className="text-base font-medium">No data found</p>
+    <p className="text-base font-medium">
+      {hasOriginalData ? "No results match the current filters" : "No data found"}
+    </p>
   </div>
 );
+
+// Active filters bar - shows chips for each active column filter
+const ActiveFiltersBar = ({ columns, columnFilters, onClearFilter, onClearAll }) => {
+  const filterEntries = Object.entries(columnFilters).filter(
+    ([, values]) => Array.isArray(values) && values.length > 0
+  );
+  if (filterEntries.length === 0) return null;
+
+  return (
+    <div className="px-4 py-2 bg-blue-50 border-b border-blue-100 flex items-center gap-2 flex-wrap">
+      <span className="text-xs font-medium text-blue-700">Active filters:</span>
+      {filterEntries.map(([key, values]) => {
+        const col = columns.find((c) => c.key === key);
+        const label = col ? formatHeaderLabel(col.label) : key;
+        return (
+          <span
+            key={key}
+            className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full"
+          >
+            {label}: {values.length === 1 ? String(values[0]) : `${values.length} selected`}
+            <button
+              type="button"
+              onClick={() => onClearFilter(key)}
+              className="hover:text-red-600"
+              aria-label={`Remove ${label} filter`}
+            >
+              <X size={12} />
+            </button>
+          </span>
+        );
+      })}
+      <button
+        type="button"
+        onClick={onClearAll}
+        className="text-xs text-blue-600 hover:underline ml-auto"
+      >
+        Clear all
+      </button>
+    </div>
+  );
+};
 
 // Column header with sort and filter controls
 const ColumnHeader = ({ col, sortBy, sortOrder, onSort, isFiltered, uniqueValues, filterValues, onFilterChange }) => (
@@ -343,8 +420,8 @@ const V1DataTable = ({
   pages = 1,
   totalRecords,
   onSort = Function.prototype,
-  sortBy = "",
-  sortOrder = "",
+  sortBy: externalSortBy = "",
+  sortOrder: externalSortOrder = "",
   onPageChange = Function.prototype,
   onPageSizeChange = Function.prototype,
   paginationOptions = [10, 25, 50, 100],
@@ -357,6 +434,16 @@ const V1DataTable = ({
   // Column filters state
   const [columnFilters, setColumnFilters] = useState({});
 
+  // Local sort state with 3-state cycle (asc -> desc -> none)
+  const [localSortBy, setLocalSortBy] = useState(externalSortBy);
+  const [localSortOrder, setLocalSortOrder] = useState(externalSortOrder);
+
+  // Sync local sort state when external props change
+  useEffect(() => {
+    setLocalSortBy(externalSortBy);
+    setLocalSortOrder(externalSortOrder);
+  }, [externalSortBy, externalSortOrder]);
+
   // Action menu state
   const [openMenuIdx, setOpenMenuIdx] = useState(null);
   const [menuPosition, setMenuPosition] = useState(null);
@@ -365,10 +452,41 @@ const V1DataTable = ({
 
   useCloseMenuOnOutsideClick(menuRef, openMenuIdx, setOpenMenuIdx);
 
+  // 3-state sort cycle: none -> asc -> desc -> none
+  const handleSort = useCallback(
+    (key) => {
+      let newOrder;
+      if (localSortBy !== key) {
+        newOrder = "asc";
+      } else if (localSortOrder === "asc") {
+        newOrder = "desc";
+      } else {
+        // desc -> none (clear sort)
+        newOrder = "";
+      }
+
+      setLocalSortBy(newOrder ? key : "");
+      setLocalSortOrder(newOrder);
+
+      // Notify parent for server-side sort if needed
+      onSort(newOrder ? key : "", newOrder);
+    },
+    [localSortBy, localSortOrder, onSort]
+  );
+
+  // Apply column filters
   const filteredData = useMemo(
     () => applyColumnFilters(data, columnFilters),
     [data, columnFilters]
   );
+
+  // Apply local sort to filtered data
+  const processedData = useMemo(() => {
+    if (!localSortBy || !localSortOrder) return filteredData;
+    return [...filteredData].sort((a, b) =>
+      compareValues(a[localSortBy], b[localSortBy], localSortOrder)
+    );
+  }, [filteredData, localSortBy, localSortOrder]);
 
   const columnUniqueValues = useMemo(
     () => buildColumnUniqueValues(columns, data),
@@ -379,8 +497,24 @@ const V1DataTable = ({
     setColumnFilters((prev) => ({ ...prev, [colKey]: selected }));
   };
 
+  const handleClearFilter = (colKey) => {
+    setColumnFilters((prev) => {
+      const next = { ...prev };
+      delete next[colKey];
+      return next;
+    });
+  };
+
+  const handleClearAllFilters = () => {
+    setColumnFilters({});
+  };
+
   const isColumnFiltered = (colKey) =>
     columnFilters[colKey] && columnFilters[colKey].length > 0;
+
+  const hasActiveFilters = Object.values(columnFilters).some(
+    (v) => Array.isArray(v) && v.length > 0
+  );
 
   // Action menu toggle with portal positioning
   const toggleActionMenu = createToggleActionMenu(openMenuIdx, setOpenMenuIdx, setMenuPosition, buttonRefs, actionGrid);
@@ -397,10 +531,25 @@ const V1DataTable = ({
 
   return (
     <div className="mt-4">
-      {filteredData.length === 0 ? (
-        <EmptyState />
+      {/* Active filters bar */}
+      <ActiveFiltersBar
+        columns={columns}
+        columnFilters={columnFilters}
+        onClearFilter={handleClearFilter}
+        onClearAll={handleClearAllFilters}
+      />
+
+      {processedData.length === 0 ? (
+        <EmptyState hasOriginalData={data.length > 0} />
       ) : (
         <div className="card p-0 overflow-auto">
+          {/* Result count when filters are active */}
+          {hasActiveFilters && data.length > 0 && (
+            <div className="px-4 py-1.5 border-b border-edge text-xs text-content-muted bg-surface-secondary">
+              Showing {processedData.length} of {data.length} records
+            </div>
+          )}
+
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10">
               <tr className="bg-surface-secondary border-b border-edge">
@@ -413,9 +562,9 @@ const V1DataTable = ({
                   <ColumnHeader
                     key={col.key}
                     col={col}
-                    sortBy={sortBy}
-                    sortOrder={sortOrder}
-                    onSort={onSort}
+                    sortBy={localSortBy}
+                    sortOrder={localSortOrder}
+                    onSort={handleSort}
                     isFiltered={isColumnFiltered(col.key)}
                     uniqueValues={columnUniqueValues[col.key] || []}
                     filterValues={columnFilters[col.key] || []}
@@ -425,7 +574,7 @@ const V1DataTable = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-edge-light">
-              {filteredData.map((row, idx) => (
+              {processedData.map((row, idx) => (
                 <DataRow
                   key={row.id ?? idx}
                   row={row}
@@ -445,7 +594,7 @@ const V1DataTable = ({
         </div>
       )}
 
-      {filteredData.length > 0 && (
+      {processedData.length > 0 && (
         <V1Pagination
           page={page}
           totalPages={totalPages}

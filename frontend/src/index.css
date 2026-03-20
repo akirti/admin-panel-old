@@ -258,8 +258,24 @@ body {
   @apply w-full px-4 py-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface-input text-content placeholder-content-muted transition-all;
 }
 
+/* Inputs with left icons — ensures text starts after the icon */
+.input[class*="pl-10"],
+.input-field[class*="pl-10"] {
+  padding-left: 2.5rem !important;
+}
+
+/* Inputs with right icons (e.g. password toggle) */
+.input[class*="pr-10"],
+.input-field[class*="pr-10"] {
+  padding-right: 2.5rem !important;
+}
+
 .input-sm {
   @apply w-full px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-surface-input text-content placeholder-content-muted text-sm;
+}
+
+.input-sm.pl-10 {
+  padding-left: 2.5rem !important;
 }
 
 .input-label {
@@ -424,4 +440,71 @@ select.input {
 
 .description-content blockquote {
   @apply border-l-4 border-edge pl-3 italic text-content-muted mb-2;
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+/* Screen reader only - visible when focused */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.sr-only.focus\:not-sr-only:focus,
+.focus\:not-sr-only:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* Focus visible rings for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Remove focus ring for mouse clicks */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Ensure focus is visible on all interactive elements */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[role="switch"]:focus-visible,
+[role="menuitem"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

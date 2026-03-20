@@ -646,14 +646,20 @@ function V1ExplorerReportPage() {
   );
 
   const handleSort = useCallback(
-    (key) => {
-      const order = (sortBy === key && sortOrder === 'asc') ? 'desc' : 'asc';
-      setSortBy(key);
-      setSortOrder(order);
+    (key, order) => {
+      // Support 2-arg call from DataTable (key, order) and 1-arg legacy call
+      if (order === undefined) {
+        order = (sortBy === key && sortOrder === 'asc') ? 'desc' : 'asc';
+      }
+      setSortBy(key || '');
+      setSortOrder(order || '');
 
-      setData((prevData) =>
-        [...prevData].sort((a, b) => compareValues(a[key], b[key], order))
-      );
+      // Only sort locally if a key is provided (clear means unsorted)
+      if (key && order) {
+        setData((prevData) =>
+          [...prevData].sort((a, b) => compareValues(a[key], b[key], order))
+        );
+      }
     },
     [sortBy, sortOrder]
   );

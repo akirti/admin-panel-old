@@ -64,6 +64,8 @@ def create_app(
     gcs_config: Optional[Dict[str, Any]] = None,
     cors_origins: list = None,
     app_name: str = "easylife-admin-panel",
+    access_token_expiry_minutes: Optional[int] = None,
+    refresh_token_expiry_minutes: Optional[int] = None,
     title: str = "EasyLife Auth API",
     description: str = "Authentication and Authorization API for EasyLife",
     root_path: str = "",
@@ -123,7 +125,9 @@ def create_app(
                 secret_key=token_secret,
                 db=db_manager,
                 issuer=jwt_issuer,
-                audience=jwt_audience
+                audience=jwt_audience,
+                access_token_expiry_minutes=access_token_expiry_minutes,
+                refresh_token_expiry_minutes=refresh_token_expiry_minutes,
             )
 
             # Initialize email service (optional)
