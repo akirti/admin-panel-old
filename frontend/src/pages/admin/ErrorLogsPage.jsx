@@ -5,7 +5,7 @@ import {
   ChevronDown, ChevronUp, HardDrive, Clock
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { errorLogsAPI } from '../../services/api';
+import { errorLogsAPI, systemLogsAPI } from '../../services/api';
 
 /* ─── helpers (outside component) ─── */
 
@@ -392,6 +392,9 @@ function ErrorLogsTabs({ activeTab, onTabChange }) {
         <button onClick={() => onTabChange('current')} className={getTabClass('current')}>
           <AlertCircle size={16} className="inline mr-2" />Current Logs
         </button>
+        <button onClick={() => onTabChange('system')} className={getTabClass('system')}>
+          <HardDrive size={16} className="inline mr-2" />System Log
+        </button>
         <button onClick={() => onTabChange('archives')} className={getTabClass('archives')}>
           <Archive size={16} className="inline mr-2" />Archives
         </button>
@@ -456,6 +459,196 @@ function toggleExpandedRow(expandedRows, id, setExpandedRows) {
   if (newExpanded.has(id)) { newExpanded.delete(id); }
   else { newExpanded.add(id); }
   setExpandedRows(newExpanded);
+}
+
+/* ─── System Log Tab ─── */
+function useSystemLogData() {
+  const [entries, setEntries] = useState([]);
+  const [files, setFiles] = useState([]);
+  const [config, setConfig] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState('');
+  const [levelFilter, setLevelFilter] = useState('');
+  const [searchFilter, setSearchFilter] = useState('');
+
+  const fetchLogs = useCallback(async () => {
+    try {
+      setLoading(true);
+      const params = { lines: 500 };
+      if (selectedFile) params.filename = selectedFile;
+      if (levelFilter) params.level = levelFilter;
+      if (searchFilter) params.search = searchFilter;
+      const res = await systemLogsAPI.list(params);
+      setEntries(res.data.entries || []);
+    } catch { toast.error('Failed to load system logs'); }
+    finally { setLoading(false); }
+  }, [selectedFile, levelFilter, searchFilter]);
+
+  const fetchMeta = useCallback(async () => {
+    try {
+      const [filesRes, configRes] = await Promise.all([
+        systemLogsAPI.listFiles(),
+        systemLogsAPI.getConfig(),
+      ]);
+      setFiles(filesRes.data.files || []);
+      setConfig(configRes.data);
+    } catch { /* silent */ }
+  }, []);
+
+  return { entries, files, config, loading, selectedFile, setSelectedFile,
+           levelFilter, setLevelFilter, searchFilter, setSearchFilter,
+           fetchLogs, fetchMeta };
+}
+
+function SystemLogConfigBar({ config }) {
+  if (!config) return null;
+  return (
+    <div className="card">
+      <div className="flex flex-wrap items-center gap-4 text-sm">
+        <span className="text-content-muted">Level: <strong className="text-content">{config.log_level}</strong></span>
+        <span className="text-content-muted">Dir: <strong className="text-content font-mono text-xs">{config.log_dir}</strong></span>
+        <span className="text-content-muted">Max: <strong className="text-content">{config.max_file_size_mb} MB</strong></span>
+        <span className="text-content-muted">Backups: <strong className="text-content">{config.backup_count}</strong></span>
+        <span className="text-content-muted">Format: <strong className="text-content">{config.json_format ? 'JSON' : 'Text'}</strong></span>
+      </div>
+    </div>
+  );
+}
+
+function SystemLogFilters({ files, selectedFile, setSelectedFile, levelFilter, setLevelFilter,
+                            searchFilter, setSearchFilter, onRefresh, onDownload, onPushGcs, loading }) {
+  return (
+    <div className="card">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <select value={selectedFile} onChange={(e) => setSelectedFile(e.target.value)}
+                className="px-3 py-2 border border-edge rounded-md text-sm">
+          <option value="">Current Log</option>
+          {files.map(f => <option key={f.name} value={f.name}>{f.name} ({formatBytes(f.size_bytes)})</option>)}
+        </select>
+        <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}
+                className="px-3 py-2 border border-edge rounded-md text-sm">
+          <option value="">All Levels</option>
+          {['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'].map(l =>
+            <option key={l} value={l}>{l}</option>)}
+        </select>
+        <input type="text" value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)}
+               placeholder="Search logs..." className="px-3 py-2 border border-edge rounded-md text-sm" />
+        <div className="flex items-center gap-2">
+          <button onClick={onRefresh} className="p-2 border border-edge rounded-md hover:bg-surface-hover" title="Refresh">
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          </button>
+          <button onClick={onDownload} className="p-2 border border-edge rounded-md hover:bg-surface-hover text-blue-600" title="Download">
+            <Download size={16} />
+          </button>
+          <button onClick={onPushGcs} className="flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+            <Archive size={14} />Push to GCS
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const SYSTEM_LOG_LEVEL_COLORS = {
+  DEBUG: 'text-neutral-500',
+  INFO: 'text-blue-600',
+  WARNING: 'text-amber-600',
+  ERROR: 'text-red-600',
+  CRITICAL: 'text-purple-600',
+};
+
+function SystemLogEntries({ entries, loading }) {
+  if (loading) {
+    return <div className="card flex items-center justify-center h-48">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+    </div>;
+  }
+  return (
+    <div className="card overflow-hidden p-0">
+      <div className="overflow-x-auto max-h-[600px] overflow-y-auto font-mono text-xs bg-neutral-900 text-neutral-100">
+        {entries.length === 0 ? (
+          <div className="p-8 text-center text-neutral-400">No log entries found</div>
+        ) : (
+          <table className="min-w-full">
+            <thead className="sticky top-0 bg-neutral-800">
+              <tr>
+                <th className="px-3 py-2 text-left text-neutral-400">Time</th>
+                <th className="px-3 py-2 text-left text-neutral-400 w-20">Level</th>
+                <th className="px-3 py-2 text-left text-neutral-400">Logger</th>
+                <th className="px-3 py-2 text-left text-neutral-400">Message</th>
+                <th className="px-3 py-2 text-left text-neutral-400">Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((entry, i) => (
+                <tr key={i} className="border-t border-neutral-800 hover:bg-neutral-800/50">
+                  <td className="px-3 py-1.5 whitespace-nowrap text-neutral-400">
+                    {entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString() : '-'}
+                  </td>
+                  <td className={`px-3 py-1.5 font-bold ${SYSTEM_LOG_LEVEL_COLORS[entry.level] || ''}`}>
+                    {entry.level}
+                  </td>
+                  <td className="px-3 py-1.5 text-neutral-500 truncate max-w-[150px]">{entry.logger || '-'}</td>
+                  <td className="px-3 py-1.5 text-neutral-200 max-w-md">
+                    <div className="truncate">{entry.message}</div>
+                    {entry.exception && (
+                      <pre className="mt-1 text-red-400 whitespace-pre-wrap text-[10px] max-h-24 overflow-y-auto">{entry.exception}</pre>
+                    )}
+                  </td>
+                  <td className="px-3 py-1.5 text-neutral-500 whitespace-nowrap">
+                    {entry.request_method && <span>{entry.request_method} {entry.request_path}</span>}
+                    {entry.duration_ms != null && <span className="ml-2 text-neutral-600">{entry.duration_ms}ms</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SystemLogTab() {
+  const data = useSystemLogData();
+
+  useEffect(() => { data.fetchMeta(); }, [data.fetchMeta]);
+  useEffect(() => { data.fetchLogs(); }, [data.fetchLogs]);
+
+  const handleDownload = async () => {
+    try {
+      const filename = data.selectedFile || data.config?.log_filename || 'system.log';
+      const res = await systemLogsAPI.download(filename);
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+    } catch { toast.error('Failed to download log file'); }
+  };
+
+  const handlePushGcs = async () => {
+    if (!confirm('Push current log file to GCS errors/ folder?')) return;
+    try {
+      const filename = data.selectedFile || undefined;
+      const res = await systemLogsAPI.pushToGcs(filename);
+      if (res.data.pushed) toast.success(`Pushed to GCS: ${res.data.gcs_path}`);
+      else toast(res.data.message || 'GCS not configured');
+    } catch { toast.error('Failed to push to GCS'); }
+  };
+
+  return (
+    <>
+      <SystemLogConfigBar config={data.config} />
+      <SystemLogFilters
+        files={data.files} selectedFile={data.selectedFile} setSelectedFile={data.setSelectedFile}
+        levelFilter={data.levelFilter} setLevelFilter={data.setLevelFilter}
+        searchFilter={data.searchFilter} setSearchFilter={data.setSearchFilter}
+        onRefresh={data.fetchLogs} onDownload={handleDownload} onPushGcs={handlePushGcs}
+        loading={data.loading}
+      />
+      <SystemLogEntries entries={data.entries} loading={data.loading} />
+    </>
+  );
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -529,7 +722,8 @@ const ErrorLogsPage = () => {
 
   useEffect(() => {
     if (activeTab === 'current') { currentLogs.fetchCurrentLogs(); }
-    else { archivesData.fetchArchives(); }
+    else if (activeTab === 'archives') { archivesData.fetchArchives(); }
+    // system tab manages its own data fetching via SystemLogTab component
   }, [activeTab, currentLogs.fetchCurrentLogs, archivesData.fetchArchives]);
 
   const handlePageChange = (newPage) => setPagination(prev => ({ ...prev, page: newPage }));
@@ -558,6 +752,8 @@ const ErrorLogsPage = () => {
           expandedRows={expandedRows} toggleRow={toggleRow}
           pagination={pagination} handlePageChange={handlePageChange}
         />
+      ) : activeTab === 'system' ? (
+        <SystemLogTab />
       ) : (
         <ArchivesContent
           fileInfo={archivesData.fileInfo} archives={archivesData.archives} archiveLoading={archivesData.archiveLoading}

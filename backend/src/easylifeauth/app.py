@@ -11,6 +11,8 @@ from pydantic import ValidationError
 from contextlib import asynccontextmanager
 
 from . import API_VERSION, API_BASE_ROUTE
+import logging
+
 from .api import (
     auth_router,
     admin_router,
@@ -39,6 +41,7 @@ from .api import (
     ui_template_router,
     atlassian_lookup_router,
 )
+from .api.system_log_routes import router as system_log_router
 from .api.dependencies import init_dependencies
 from .db.db_manager import DatabaseManager
 from .services.token_manager import TokenManager
@@ -70,6 +73,7 @@ def create_app(
     description: str = "Authentication and Authorization API for EasyLife",
     root_path: str = "",
     handshake_secret: Optional[str] = None,
+    logging_config: Optional[Dict[str, Any]] = None,
 ) -> FastAPI:
     """Create and configure FastAPI application
 
@@ -146,7 +150,8 @@ def create_app(
                 file_storage_config=file_storage_config,
                 gcs_config=gcs_config,
                 handshake_secret=handshake_secret,
-                ui_templates_db=ui_templates_db_manager
+                ui_templates_db=ui_templates_db_manager,
+                logging_config=logging_config
             )
             print("✓ Services initialized")
 
@@ -260,6 +265,29 @@ def create_app(
 
     # Apigee identity headers (app name + hostname for proxy verification)
     app.add_middleware(ApigeeIdentityMiddleware, app_name=app_name)
+
+    import time as _time
+
+    @app.middleware("http")
+    async def system_log_middleware(request: Request, call_next):
+        """Log all HTTP requests to system log (file-based)."""
+        route_logger = logging.getLogger("easylife.http")
+        start = _time.perf_counter()
+        response = await call_next(request)
+        duration_ms = round((_time.perf_counter() - start) * 1000, 2)
+        route_logger.info(
+            "%s %s → %d (%.1fms)",
+            request.method, request.url.path, response.status_code, duration_ms,
+            extra={
+                "request_method": request.method,
+                "request_path": str(request.url.path),
+                "request_ip": request.client.host if request.client else None,
+                "response_status": response.status_code,
+                "duration_ms": duration_ms,
+                "user_email": getattr(request.state, "user_email", None) if hasattr(request, "state") else None,
+            },
+        )
+        return response
 
     # Exception handlers
     @app.exception_handler(AuthError)
@@ -376,6 +404,7 @@ def create_app(
     app.include_router(api_config_router, prefix=API_BASE_ROUTE)
     app.include_router(distribution_list_router, prefix=API_BASE_ROUTE)
     app.include_router(error_log_router, prefix=API_BASE_ROUTE)
+    app.include_router(system_log_router, prefix=API_BASE_ROUTE)
     app.include_router(prevail_router, prefix=API_BASE_ROUTE)
     app.include_router(ui_template_router, prefix=API_BASE_ROUTE)
     app.include_router(atlassian_lookup_router, prefix=API_BASE_ROUTE)

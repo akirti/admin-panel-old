@@ -18,6 +18,7 @@ from ..services.atlassian_lookup_service import AtlassianLookupService
 from ..services.file_storage_service import FileStorageService
 from ..services.activity_log_service import ActivityLogService, init_activity_log_service
 from ..services.error_log_service import ErrorLogService, init_error_log_service
+from ..services.system_log_service import SystemLogService, init_system_log_service
 from ..services.gcs_service import GCSService
 from ..services.ui_template_service import UITemplateService
 from ..security.access_control import CurrentUser, get_current_user, set_token_manager
@@ -40,6 +41,7 @@ _atlassian_lookup_service: Optional[AtlassianLookupService] = None
 _file_storage_service: Optional[FileStorageService] = None
 _activity_log_service: Optional[ActivityLogService] = None
 _error_log_service: Optional[ErrorLogService] = None
+_system_log_service: Optional[SystemLogService] = None
 _gcs_service: Optional[GCSService] = None
 _ui_template_service: Optional[UITemplateService] = None
 _handshake_secret: Optional[str] = None
@@ -54,7 +56,8 @@ def init_dependencies(
     file_storage_config: Optional[Dict[str, Any]] = None,
     gcs_config: Optional[Dict[str, Any]] = None,
     handshake_secret: Optional[str] = None,
-    ui_templates_db: Optional[DatabaseManager] = None
+    ui_templates_db: Optional[DatabaseManager] = None,
+    logging_config: Optional[Dict[str, Any]] = None
 ) -> None:
     """Initialize all dependencies"""
     global _db, _token_manager, _user_service, _admin_service
@@ -63,6 +66,7 @@ def init_dependencies(
     global _scenario_request_service, _jira_service, _atlassian_lookup_service
     global _file_storage_service
     global _activity_log_service, _error_log_service, _gcs_service
+    global _system_log_service
     global _ui_template_service, _handshake_secret
 
     _db = db
@@ -149,6 +153,14 @@ def init_dependencies(
         }
     )
     print("✓ Error logging service initialized")
+
+    # Initialize system log service (file-based centralized logging)
+    global _system_log_service
+    _system_log_service = init_system_log_service(
+        config=logging_config,
+        gcs_service=_gcs_service,
+    )
+    print("✓ System logging service initialized")
 
 
 def get_db() -> DatabaseManager:
@@ -273,6 +285,11 @@ def get_error_log_service() -> Optional[ErrorLogService]:
     return _error_log_service
 
 
+def get_system_log_service() -> Optional[SystemLogService]:
+    """Get system log service"""
+    return _system_log_service
+
+
 def get_handshake_secret() -> Optional[str]:
     """Get private handshake secret for service-to-service auth"""
     return _handshake_secret
@@ -306,6 +323,7 @@ __all__ = [
     "get_activity_log_service",
     "get_gcs_service",
     "get_error_log_service",
+    "get_system_log_service",
     "get_handshake_secret",
     "get_ui_template_service",
     "get_current_user",

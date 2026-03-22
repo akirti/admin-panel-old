@@ -499,6 +499,14 @@ export const errorLogsAPI = {
   cleanup: (days = 90) => api.delete('/error-logs/cleanup', { params: { days } }),
 };
 
+export const systemLogsAPI = {
+  list: (params = {}) => api.get('/system-logs', { params }),
+  listFiles: () => api.get('/system-logs/files'),
+  getConfig: () => api.get('/system-logs/config'),
+  download: (filename) => api.get(`/system-logs/download/${filename}`, { responseType: 'blob' }),
+  pushToGcs: (filename) => api.post('/system-logs/push-gcs', null, { params: { filename } }),
+};
+
 // Bulk Upload API
 export const bulkAPI = {
   upload: (entityType, formData, sendPasswordEmails = true) =>

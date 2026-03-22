@@ -258,6 +258,21 @@ def bootstrap():
     kw["access_token_expiry_minutes"] = access_token_expiry
     kw["refresh_token_expiry_minutes"] = refresh_token_expiry
 
+    # Logging configuration
+    logging_config_raw = config_loader.get_config_by_path("environment.logging") or {}
+    log_level = os.environ.get("LOG_LEVEL", logging_config_raw.get("log_level", "INFO"))
+    log_dir = os.environ.get("LOG_DIR", logging_config_raw.get("log_dir", "./logs/system"))
+    system_logging_config = {
+        "log_level": log_level,
+        "log_dir": log_dir,
+        "log_filename": logging_config_raw.get("log_filename", "system.log"),
+        "max_file_size_mb": int(logging_config_raw.get("max_file_size_mb", 10)),
+        "backup_count": int(logging_config_raw.get("backup_count", 5)),
+        "gcs_prefix": logging_config_raw.get("gcs_prefix", "system_logs"),
+        "json_format": logging_config_raw.get("json_format", True),
+    }
+    kw["logging_config"] = system_logging_config
+
     return create_app(**kw)
 
 
