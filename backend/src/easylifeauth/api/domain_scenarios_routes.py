@@ -96,7 +96,7 @@ async def list_scenarios(
         query["status"] = status_filter
     elif "super-administrator" not in current_user.roles:
         # Non-admins only see active scenarios
-        query["status"] = "active"
+        query["status"] = {"$in": ["A", "active"]}
 
     if domain_key:
         # Verify user has access to this domain
@@ -151,7 +151,7 @@ async def count_scenarios(
     if status_filter:
         query["status"] = status_filter
     elif "super-administrator" not in current_user.roles:
-        query["status"] = "active"
+        query["status"] = {"$in": ["A", "active"]}
 
     if domain_key:
         if not check_domain_access(user_domains, domain_key):
@@ -320,7 +320,7 @@ async def toggle_scenario_status(
             detail="Domain scenario not found"
         )
 
-    new_status = "inactive" if scenario.get("status") == "active" else "active"
+    new_status = "I" if scenario.get("status") in ["A", "active", True] else "A"
     await db.domain_scenarios.update_one(
         {"_id": scenario["_id"]},
         {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}}
@@ -429,7 +429,7 @@ async def get_scenario_playboards(
     # Non-admins only see active playboards
     query = {"scenarioKey": scenario["key"]}
     if "super-administrator" not in current_user.roles:
-        query["status"] = "active"
+        query["status"] = {"$in": ["A", "active"]}
 
     cursor = db.playboards.find(query)
 

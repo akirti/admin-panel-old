@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Modal, Badge, Table } from '../../components/shared';
+import { isActive } from '../../utils/status';
 import { domainAPI } from '../../services/api';
 import { Layers, Plus, Edit2, Trash2, X, Search, Image, AlertCircle, CheckCircle } from 'lucide-react';
 import LucideIconPicker from '../../components/shared/LucideIconPicker';
@@ -20,7 +21,7 @@ function getDefaultDomainFormData(domainTypes) {
   return {
     key: '', name: '', description: '', path: '', icon: '', order: 0,
     type: domainTypes.length > 0 ? domainTypes[0].value : 'custom',
-    dataDomain: '', status: 'active', defaultSelected: false, subDomains: [],
+    dataDomain: '', status: 'A', defaultSelected: false, subDomains: [],
   };
 }
 
@@ -30,7 +31,7 @@ function buildDomainFormData(domain) {
     key: domain.key, name: domain.name, description: domain.description || '',
     path: domain.path || '', icon: domain.icon || '', order: domain.order || 0,
     type: domain.type || 'custom', dataDomain: domain.dataDomain || '',
-    status: domain.status === 'active' ? 'active' : (domain.status || 'active'),
+    status: domain.status || 'A',
     defaultSelected: domain.defaultSelected || false, subDomains: domain.subDomains || [],
   };
 }
@@ -194,8 +195,8 @@ function DomainForm({ formData, handleChange, setFormData, editingDomain, saving
         <div>
           <label className="block text-sm font-medium text-content-secondary mb-1">Status</label>
           <select name="status" value={formData.status} onChange={handleChange} className="input-field">
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="A">Active</option>
+            <option value="I">Inactive</option>
           </select>
         </div>
         <div className="flex items-center pt-6">
@@ -246,7 +247,7 @@ const AlertMessages = ({ error, success }) => (
 /* ─── Stats Widget ─── */
 const DomainsStats = ({ domains, search }) => {
   if (search || domains.length === 0) return null;
-  const active = domains.filter(d => d.status === 'active').length;
+  const active = domains.filter(d => isActive(d.status)).length;
   const withSubs = domains.filter(d => d.subDomains && d.subDomains.length > 0).length;
   const types = {};
   domains.forEach(d => { const t = d.type || 'default'; types[t] = (types[t] || 0) + 1; });
@@ -369,7 +370,7 @@ function useDomainFormModal(data) {
   const [editingDomain, setEditingDomain] = useState(null);
   const [formData, setFormData] = useState({
     key: '', name: '', description: '', path: '', icon: '', order: 0,
-    type: 'custom', dataDomain: '', status: 'active', defaultSelected: false, subDomains: [],
+    type: 'custom', dataDomain: '', status: 'A', defaultSelected: false, subDomains: [],
   });
   const [newSubDomain, setNewSubDomain] = useState({ ...EMPTY_SUBDOMAIN });
   const [saving, setSaving] = useState(false);
@@ -400,7 +401,7 @@ function useDomainFormModal(data) {
 
   const addSubDomain = () => {
     if (!newSubDomain.key || !newSubDomain.name || !newSubDomain.path) return;
-    setFormData(prev => ({ ...prev, subDomains: [...prev.subDomains, { ...newSubDomain, status: 'active', order: prev.subDomains.length }] }));
+    setFormData(prev => ({ ...prev, subDomains: [...prev.subDomains, { ...newSubDomain, status: 'A', order: prev.subDomains.length }] }));
     setNewSubDomain({ ...EMPTY_SUBDOMAIN });
   };
 
@@ -490,11 +491,14 @@ function DomainsManagement() {
             {
               key: 'status',
               title: 'Status',
-              render: (val) => (
-                <Badge variant={val === 'active' ? 'success' : 'default'}>
-                  {val === 'active' ? 'Active' : 'Inactive'}
-                </Badge>
-              ),
+              render: (val) => {
+                const active = isActive(val);
+                return (
+                  <Badge variant={active ? 'success' : 'default'}>
+                    {active ? 'Active' : 'Inactive'}
+                  </Badge>
+                );
+              },
             },
             {
               key: 'actions',

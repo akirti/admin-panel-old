@@ -83,7 +83,7 @@ async def get_all_domains(
 
     if is_super_admin:
         # Super admin sees all domains
-        cursor = db.domains.find({"status": "active"}).sort("order", 1)
+        cursor = db.domains.find({"status": {"$in": ["A", "active"]}}).sort("order", 1)
     else:
         # Regular user - get their resolved domains from roles/groups
         user = await db.users.find_one({"email": current_user.email})
@@ -97,12 +97,12 @@ async def get_all_domains(
 
         # If user has 'all' in their domains, show all active domains
         if "all" in resolved_domains:
-            cursor = db.domains.find({"status": "active"}).sort("order", 1)
+            cursor = db.domains.find({"status": {"$in": ["A", "active"]}}).sort("order", 1)
         else:
             # Filter domains by user's resolved domain keys
             cursor = db.domains.find({
                 "key": {"$in": resolved_domains},
-                "status": "active"
+                "status": {"$in": ["A", "active"]}
             }).sort("order", 1)
 
     domains = []
@@ -239,7 +239,7 @@ async def create_domain(
         domain_dict["type"] = "custom"
     # Ensure status has a default value if None
     if domain_dict.get("status") is None:
-        domain_dict["status"] = "active"
+        domain_dict["status"] = "A"
     # Ensure path has a default value if None
     if domain_dict.get("path") is None:
         domain_dict["path"] = f"/{domain_dict['key']}"
@@ -353,7 +353,7 @@ async def toggle_domain_status(
             detail="Domain not found"
         )
 
-    new_status = "inactive" if domain.get("status") == "active" else "active"
+    new_status = "I" if domain.get("status") in ["A", "active", True] else "A"
     await db.domains.update_one(
         {"_id": domain["_id"]},
         {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}}

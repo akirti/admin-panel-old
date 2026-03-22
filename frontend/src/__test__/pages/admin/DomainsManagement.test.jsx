@@ -64,7 +64,7 @@ const mockDomains = [
     description: 'Financial data',
     path: '/finance',
     order: 1,
-    status: 'active',
+    status: 'A',
     icon: '',
     subDomains: [],
   },
@@ -75,7 +75,7 @@ const mockDomains = [
     description: 'HR data',
     path: '/hr',
     order: 2,
-    status: 'inactive',
+    status: 'I',
     icon: '',
     subDomains: [],
   },
@@ -525,7 +525,7 @@ describe('DomainsManagement', () => {
     await waitFor(() => { expect(screen.getByText('Create Domain')).toBeInTheDocument(); });
 
     const statusSelect = screen.getByDisplayValue('Active');
-    await user.selectOptions(statusSelect, 'inactive');
-    expect(statusSelect.value).toBe('inactive');
+    await user.selectOptions(statusSelect, 'I');
+    expect(statusSelect.value).toBe('I');
   });
 });

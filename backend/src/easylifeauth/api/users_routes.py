@@ -194,7 +194,7 @@ async def get_assigned_customers(
         cursor = db.groups.find({
             "groupId": {"$in": user_groups},
             "type": "customers",
-            "status": "active"
+            "status": {"$in": ["A", "active"]}
         })
         async for group in cursor:
             group_name = group.get("name", group.get("groupId", "Group"))
@@ -207,7 +207,7 @@ async def get_assigned_customers(
 
     # Build query to fetch customer details
     customer_ids = list(customer_source_map.keys())
-    base_filter = {"customerId": {"$in": customer_ids}, "status": "active"}
+    base_filter = {"customerId": {"$in": customer_ids}, "status": {"$in": ["A", "active"]}}
 
     if search:
         search_regex = {"$regex": re.escape(search), "$options": "i"}
@@ -215,7 +215,7 @@ async def get_assigned_customers(
         base_filter = {
             "$and": [
                 {"customerId": {"$in": customer_ids}},
-                {"status": "active"},
+                {"status": {"$in": ["A", "active"]}},
                 {"$or": [
                     {"customerId": search_regex},
                     {"name": search_regex}
@@ -257,7 +257,7 @@ async def get_customer_tags(
         cursor = db.groups.find({
             "groupId": {"$in": user_groups},
             "type": "customers",
-            "status": "active"
+            "status": {"$in": ["A", "active"]}
         })
         async for group in cursor:
             for cid in group.get("customers", []):
@@ -269,7 +269,7 @@ async def get_customer_tags(
 
     # Get distinct tags from these customers
     pipeline = [
-        {"$match": {"customerId": {"$in": customer_ids}, "status": "active"}},
+        {"$match": {"customerId": {"$in": customer_ids}, "status": {"$in": ["A", "active"]}}},
         {"$unwind": "$tags"},
         {"$group": {"_id": "$tags"}},
         {"$sort": {"_id": 1}}

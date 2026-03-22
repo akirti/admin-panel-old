@@ -319,7 +319,7 @@ async def toggle_role_status(
             detail="Role not found"
         )
 
-    new_status = "inactive" if role.get("status") == "active" else "active"
+    new_status = "I" if role.get("status") in ["A", "active", True] else "A"
     await db.roles.update_one(
         {"_id": role["_id"]},
         {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}}

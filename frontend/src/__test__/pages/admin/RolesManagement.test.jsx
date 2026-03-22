@@ -56,7 +56,7 @@ const mockRoles = [
     type: 'system',
     permissions: ['perm1', 'perm2'],
     domains: ['dom1'],
-    status: 'active',
+    status: 'A',
     priority: 1,
   },
   {
@@ -66,7 +66,7 @@ const mockRoles = [
     type: 'custom',
     permissions: [],
     domains: [],
-    status: 'inactive',
+    status: 'I',
     priority: 5,
   },
 ];
@@ -117,8 +117,8 @@ describe('RolesManagement', () => {
     render(<RolesManagement />);
 
     await waitFor(() => {
-      expect(screen.getByText('active')).toBeInTheDocument();
-      expect(screen.getByText('inactive')).toBeInTheDocument();
+      expect(screen.getAllByText('Active').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Inactive').length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -641,10 +641,10 @@ describe('RolesManagement', () => {
     await user.selectOptions(typeSelect, 'system');
     expect(typeSelect.value).toBe('system');
 
-    // Change status (default is 'active' = "Active")
+    // Change status (default is 'A' = "Active")
     const statusSelect = screen.getByDisplayValue('Active');
-    await user.selectOptions(statusSelect, 'inactive');
-    expect(statusSelect.value).toBe('inactive');
+    await user.selectOptions(statusSelect, 'I');
+    expect(statusSelect.value).toBe('I');
   });
 
   it('shows domain and permission filter dropdowns', async () => {
@@ -942,7 +942,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: ['p1', 'p2', 'p3', 'p4', 'p5'],
             domains: ['d1', 'd2', 'd3', 'd4'],
-            status: 'active',
+            status: 'A',
             priority: 1,
           },
         ],
@@ -974,7 +974,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: [],
             domains: [],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],
@@ -1006,7 +1006,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: [],
             domains: [],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],
@@ -1037,7 +1037,7 @@ describe('RolesManagement', () => {
             name: 'No Type Role',
             permissions: [],
             domains: [],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],
@@ -1084,8 +1084,8 @@ describe('RolesManagement', () => {
       expect(screen.getByText('No Status Role')).toBeInTheDocument();
     });
 
-    // Status defaults to 'active'
-    expect(screen.getByText('active')).toBeInTheDocument();
+    // Status defaults to 'A'
+    expect(screen.getByText('Active')).toBeInTheDocument();
   });
 
   it('renders role with priority fallback to 0', async () => {
@@ -1100,7 +1100,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: [],
             domains: [],
-            status: 'active',
+            status: 'A',
           },
         ],
         pagination: { total: 1, pages: 1, page: 0, limit: 25 },
@@ -1432,7 +1432,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: [],
             domains: [],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],
@@ -1472,7 +1472,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: [],
             domains: [],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],
@@ -1509,7 +1509,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: [],
             domains: [],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],
@@ -1553,7 +1553,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: [],
             domains: [],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],
@@ -1883,7 +1883,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: ['read', 'write', 'delete'],
             domains: ['dom1', 'dom2', 'dom3'],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],
@@ -1916,7 +1916,7 @@ describe('RolesManagement', () => {
             roleId: 'undef-arrays',
             name: 'Undef Arrays',
             type: 'custom',
-            status: 'active',
+            status: 'A',
             priority: 0,
             // permissions and domains not defined
           },
@@ -2008,7 +2008,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: ['perm-id-1'],
             domains: [],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],
@@ -2058,7 +2058,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: ['users.read'],
             domains: [],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],
@@ -2106,7 +2106,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: [],
             domains: ['domain-id-1'],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],
@@ -2154,7 +2154,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: [],
             domains: ['sales-key'],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],
@@ -2202,7 +2202,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: [],
             domains: ['sales'],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],
@@ -2250,7 +2250,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: ['perm-id-1'],
             domains: [],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],
@@ -2302,7 +2302,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: [],
             domains: ['domain-id-1'],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],
@@ -2622,7 +2622,7 @@ describe('RolesManagement', () => {
         type: 'custom',
         permissions: [],
         domains: [],
-        status: 'active',
+        status: 'A',
         priority: 0,
       }));
     });
@@ -2754,7 +2754,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: [],
             domains: [],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],
@@ -2786,7 +2786,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: [],
             domains: ['sales-key'],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],
@@ -2838,7 +2838,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: [],
             domains: ['sales'],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],
@@ -2890,7 +2890,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: ['users.read'],
             domains: [],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],
@@ -2942,7 +2942,7 @@ describe('RolesManagement', () => {
             type: 'custom',
             permissions: ['users.read', 'users.write'],
             domains: [],
-            status: 'active',
+            status: 'A',
             priority: 0,
           },
         ],

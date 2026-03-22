@@ -120,7 +120,7 @@ class ScenarioService:
             raise ScenarioBadError("Bad data provided")
         
         insertable = {k: v for k, v in document.items() if k in INSERT_ATTRS}
-        insertable["status"] = "active"
+        insertable["status"] = "A"
         insertable["row_add_userid"] = user_id
         insertable["row_add_stp"] = datetime.now(timezone.utc)
         insertable["row_update_user_id"] = user_id

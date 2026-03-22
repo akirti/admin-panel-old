@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useId } from 'react';
 import { Card, Button, Input, Table, Modal, Badge, SearchInput, Select, Pagination } from '../../components/shared';
+import { isActive as isStatusActive } from '../../utils/status';
 import { uiTemplatesAPI } from '../../services/api';
 import UITemplatePreview from '../../components/admin/UITemplatePreview';
 import { Eye, Pencil, Plus, ToggleLeft, ToggleRight, GitBranch, ArrowUp, ArrowDown, Trash2, MessageSquarePlus, Code, ChevronDown, ChevronRight } from 'lucide-react';
@@ -9,7 +10,7 @@ import toast from 'react-hot-toast';
 const JIRA_KEY_REGEX = /^[A-Z]+-\d+$/;
 const DEFAULT_FORM = {
   name: '', description: '', page: '', component: '', componentType: 'grid',
-  version: '1.0.0', accessLevel: 'USR', usage: [], widgets: [], status: 'Y',
+  version: '1.0.0', accessLevel: 'USR', usage: [], widgets: [], status: 'A',
 };
 const DEFAULT_WIDGET_ATTRIBUTES = [
   { key: 'width', value: '60' },
@@ -343,7 +344,7 @@ function buildColumns({ onView, onEdit, onPreview, onBumpVersion, onToggle, onAd
     { key: 'componentType', title: 'Type', render: (v) => v || 'grid' },
     {
       key: 'status', title: 'Status',
-      render: (v) => <Badge variant={v === 'Y' ? 'success' : 'default'}>{v === 'Y' ? 'Active' : 'Inactive'}</Badge>,
+      render: (v) => { const active = isStatusActive(v); return <Badge variant={active ? 'success' : 'default'}>{active ? 'Active' : 'Inactive'}</Badge>; },
     },
     {
       key: 'actions', title: 'Actions',
@@ -355,7 +356,7 @@ function buildColumns({ onView, onEdit, onPreview, onBumpVersion, onToggle, onAd
           <button onClick={(e) => { e.stopPropagation(); onBumpVersion(item); }} className="p-1 text-content-muted hover:text-purple-600" title="Bump Version"><GitBranch size={15} /></button>
           <button onClick={(e) => { e.stopPropagation(); onAddComment(item); }} className="p-1 text-content-muted hover:text-green-600" title="Add Comment"><MessageSquarePlus size={15} /></button>
           <button onClick={(e) => { e.stopPropagation(); onToggle(item); }} className="p-1 text-content-muted hover:text-yellow-600" title="Toggle Status">
-            {item.status === 'Y' ? <ToggleRight size={15} /> : <ToggleLeft size={15} />}
+            {isStatusActive(item.status) ? <ToggleRight size={15} /> : <ToggleLeft size={15} />}
           </button>
           <button onClick={(e) => { e.stopPropagation(); onDelete(item); }} className="p-1 text-red-500 hover:text-red-600" title="Delete"><Trash2 size={15} /></button>
         </div>
@@ -411,7 +412,7 @@ const UISchemaManagement = () => {
   const handleToggle = async (item) => {
     try {
       await uiTemplatesAPI.toggleStatus(item._id);
-      toast.success(`Status toggled to ${item.status === 'Y' ? 'Inactive' : 'Active'}`);
+      toast.success(`Status toggled to ${isStatusActive(item.status) ? 'Inactive' : 'Active'}`);
       fetchData();
     } catch { toast.error('Failed to toggle status'); }
   };
@@ -438,7 +439,7 @@ const UISchemaManagement = () => {
       accessLevel: item.accessLevel || 'USR',
       usage: item.usage || [],
       widgets: item.widgets || [],
-      status: item.status || 'Y',
+      status: item.status || 'A',
     });
     setFormModalOpen(true);
   };
@@ -480,7 +481,7 @@ const UISchemaManagement = () => {
           </div>
           <div className="w-40">
             <Select value={filterStatus} onChange={handleStatusChange}
-              options={[{ value: '', label: 'All Status' }, { value: 'Y', label: 'Active' }, { value: 'N', label: 'Inactive' }]} />
+              options={[{ value: '', label: 'All Status' }, { value: 'A', label: 'Active' }, { value: 'I', label: 'Inactive' }]} />
           </div>
           <div className="w-48">
             <Input placeholder="Filter by page code" value={filterPage} onChange={handlePageFilterChange} />

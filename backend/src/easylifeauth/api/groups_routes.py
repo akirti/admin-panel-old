@@ -365,7 +365,7 @@ async def toggle_group_status(
             detail="Group not found"
         )
 
-    new_status = "inactive" if group.get("status") == "active" else "active"
+    new_status = "I" if group.get("status") in ["A", "active", True] else "A"
     await db.groups.update_one(
         {"_id": group["_id"]},
         {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}}

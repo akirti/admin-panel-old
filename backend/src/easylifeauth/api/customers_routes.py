@@ -21,7 +21,7 @@ class CustomerCreate(BaseModel):
     customerId: str = Field(..., min_length=1)
     name: str = Field(..., min_length=1)
     description: Optional[str] = None
-    status: str = Field(default="active")
+    status: str = Field(default="A")
     metadata: Optional[dict] = Field(default_factory=dict)
 
 
@@ -37,7 +37,7 @@ class CustomerInDB(BaseModel):
     customerId: str
     name: str
     description: Optional[str] = None
-    status: str = "active"
+    status: str = "A"
     metadata: Optional[dict] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -307,7 +307,7 @@ async def toggle_customer_status(
             detail="Customer not found"
         )
 
-    new_status = "inactive" if customer.get("status") == "active" else "active"
+    new_status = "I" if customer.get("status") in ["A", "active", True] else "A"
     await db.customers.update_one(
         {"_id": customer["_id"]},
         {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}}

@@ -106,7 +106,7 @@ class UITemplateService:
         self, page: str, component: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
         collection = self._get_collection()
-        query: Dict[str, Any] = {"page": page, "status": "Y"}
+        query: Dict[str, Any] = {"page": page, "status": {"$in": ["A", "Y"]}}
         if component:
             query["component"] = component
 
@@ -185,7 +185,7 @@ class UITemplateService:
             {"_id": ObjectId(template_id)},
             {
                 "$set": {
-                    "status": "N",
+                    "status": "I",
                     "rowDeleteUserId": user_email,
                     "rowDeleteStp": now,
                 }
@@ -195,7 +195,7 @@ class UITemplateService:
         # Build new doc from old
         new_doc = {k: v for k, v in old_doc.items() if k != "_id"}
         new_doc["version"] = version_data["version"]
-        new_doc["status"] = "Y"
+        new_doc["status"] = "A"
         new_doc["rowAddUserId"] = user_email
         new_doc["rowAddStp"] = now
         new_doc["rowUpdateUserId"] = user_email
@@ -223,7 +223,7 @@ class UITemplateService:
             {"_id": ObjectId(template_id)},
             {
                 "$set": {
-                    "status": "N",
+                    "status": "I",
                     "rowDeleteUserId": user_email,
                     "rowDeleteStp": now,
                 }
@@ -240,7 +240,7 @@ class UITemplateService:
         if not doc:
             return None
 
-        new_status = "N" if doc.get("status") == "Y" else "Y"
+        new_status = "I" if doc.get("status") in ["A", "Y", "active", True] else "A"
         return await self.update_template(
             template_id, {"status": new_status}, user_email
         )

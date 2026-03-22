@@ -44,7 +44,7 @@ async def execute_prevail_query(
             detail="Prevail service is not configured. Create an api_config with key='prevail'.",
         )
 
-    if config.get("status") != "active":
+    if config.get("status") not in ["A", "active"]:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Prevail service configuration is inactive.",

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Input, Table, Modal, Badge, SearchInput, Select, Toggle, FileUpload, Pagination } from '../../components/shared';
+import { isActive } from '../../utils/status';
 import { playboardsAPI, scenariosAPI, domainsAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 import { Eye, Download, Pencil, Trash2, X, Plus, Upload, ChevronUp, ChevronDown, Copy, ChevronRight, Search, Filter } from 'lucide-react';
@@ -107,7 +108,7 @@ const BasicInfoTab = ({ formData, setFormData, scenarios, domains, addonInput, s
       <Input label="Order" type="number" value={formData.order} onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })} />
     </div>
     <div className="grid grid-cols-2 gap-4">
-      <Select label="Status" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
+      <Select label="Status" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} options={[{ value: 'A', label: 'Active' }, { value: 'I', label: 'Inactive' }]} />
     </div>
     <div>
       <label className="block text-sm font-medium text-content-secondary mb-1">Description</label>
@@ -309,7 +310,7 @@ const FilterAttributesSection = ({ currentFilter, filterAttributeInput, setFilte
 
 const RowActionCard = ({ action, idx, editingRowActionIndex, eventsLength, onEdit, onMoveRowAction, onRemoveRowAction }) => {
   const isEditing = editingRowActionIndex === idx;
-  const isActive = action.status === 'active';
+  const active = isActive(action.status);
   return (
     <div
       className={`bg-surface p-3 rounded border cursor-pointer hover:bg-surface-secondary ${isEditing ? 'ring-2 ring-blue-500' : ''}`}
@@ -320,7 +321,7 @@ const RowActionCard = ({ action, idx, editingRowActionIndex, eventsLength, onEdi
           <span className="font-medium">{action.name}</span>
           <span className="text-content-muted text-xs">({action.key})</span>
           <span className="text-content-muted text-xs">-&gt; {action.path}</span>
-          <Badge variant={isActive ? 'success' : 'danger'} className="text-xs">{isActive ? 'Active' : 'Inactive'}</Badge>
+          <Badge variant={active ? 'success' : 'danger'} className="text-xs">{active ? 'Active' : 'Inactive'}</Badge>
           {action.filters && action.filters.length > 0 && <Badge variant="primary" className="text-xs">{action.filters.length} filters</Badge>}
           {isEditing && <Badge variant="warning" className="text-xs">Editing</Badge>}
         </div>
@@ -539,7 +540,7 @@ const UploadModal = ({ isOpen, onClose, scenarios, uploadFile, uploadScenarioKey
 );
 
 const JsonPreviewPanel = ({ jsonPreview }) => {
-  const isActive = jsonPreview.status === 'active';
+  const active = isActive(jsonPreview.status);
   return (
   <div>
     <label className="block text-sm font-medium text-content-secondary mb-2">JSON Preview</label>
@@ -548,7 +549,7 @@ const JsonPreviewPanel = ({ jsonPreview }) => {
         <div><span className="text-content-muted">Key:</span> <span className="font-medium">{jsonPreview.key || '-'}</span></div>
         <div><span className="text-content-muted">Scenario:</span> <span className="font-medium">{jsonPreview.scenarioKey || '-'}</span></div>
         <div><span className="text-content-muted">Data Domain:</span> <span className="font-medium">{jsonPreview.dataDomain || '-'}</span></div>
-        <div><span className="text-content-muted">Status:</span> <Badge variant={isActive ? 'success' : 'danger'}>{isActive ? 'Active' : 'Inactive'}</Badge></div>
+        <div><span className="text-content-muted">Status:</span> <Badge variant={active ? 'success' : 'danger'}>{active ? 'Active' : 'Inactive'}</Badge></div>
         <div><span className="text-content-muted">Filters:</span> <Badge variant="primary">{jsonPreview.widgets?.filters?.length || 0}</Badge></div>
         <div><span className="text-content-muted">Row Actions:</span> <Badge variant="success">{jsonPreview.widgets?.grid?.actions?.rowActions?.events?.length || 0}</Badge></div>
       </div>
@@ -589,7 +590,7 @@ const DEFAULT_WIDGETS = {
 };
 
 const DEFAULT_FORM = {
-  key: '', name: '', description: '', scenarioKey: '', dataDomain: '', status: 'active', order: 0,
+  key: '', name: '', description: '', scenarioKey: '', dataDomain: '', status: 'A', order: 0,
   program_key: '', config_type: 'db', addon_configurations: [],
   widgets: { ...DEFAULT_WIDGETS },
   scenarioDescription: []
@@ -803,7 +804,7 @@ function useFilterBuilder(formData, setFormData) {
 }
 
 function useRowActionBuilder(formData, setFormData) {
-  const [currentRowAction, setCurrentRowAction] = useState({ key: '', name: '', path: '', dataDomain: '', status: 'active', order: 0, filters: [] });
+  const [currentRowAction, setCurrentRowAction] = useState({ key: '', name: '', path: '', dataDomain: '', status: 'A', order: 0, filters: [] });
   const [actionFilterInput, setActionFilterInput] = useState({ inputKey: '', dataKey: '' });
   const [editingRowActionIndex, setEditingRowActionIndex] = useState(null);
 
@@ -816,7 +817,7 @@ function useRowActionBuilder(formData, setFormData) {
   };
 
   const resetCurrentRowAction = () => {
-    setCurrentRowAction({ key: '', name: '', path: '', dataDomain: '', status: 'active', order: 0, filters: [] });
+    setCurrentRowAction({ key: '', name: '', path: '', dataDomain: '', status: 'A', order: 0, filters: [] });
     setEditingRowActionIndex(null);
     setActionFilterInput({ inputKey: '', dataKey: '' });
   };
@@ -838,7 +839,7 @@ function useRowActionBuilder(formData, setFormData) {
   const editRowAction = (index) => {
     const action = formData.widgets?.grid?.actions?.rowActions?.events?.[index];
     if (!action) return;
-    setCurrentRowAction({ key: action.key || '', name: action.name || '', path: action.path || '', dataDomain: action.dataDomain || '', status: action.status || 'active', order: action.order || index, filters: action.filters || [] });
+    setCurrentRowAction({ key: action.key || '', name: action.name || '', path: action.path || '', dataDomain: action.dataDomain || '', status: action.status || 'A', order: action.order || index, filters: action.filters || [] });
     setEditingRowActionIndex(index);
   };
 
@@ -916,7 +917,7 @@ function buildEditFormDataFromItem(item) {
   return {
     key: item.key || itemData.key || item.name || '', name: item.name || '', description: item.description || '',
     scenarioKey: item.scenarioKey || itemData.scenarioKey || '', dataDomain: item.dataDomain || itemData.dataDomain || '',
-    status: itemData.status || (item.status === 'active' ? 'active' : 'inactive'), order: item.order || itemData.order || 0,
+    status: itemData.status || item.status || 'A', order: item.order || itemData.order || 0,
     program_key: item.program_key || itemData.program_key || '', config_type: item.config_type || itemData.config_type || 'db',
     addon_configurations: item.addon_configurations || itemData.addon_configurations || [], widgets,
     scenarioDescription: item.scenarioDescription || itemData.scenarioDescription || [],
@@ -948,7 +949,7 @@ const PlayboardsHeader = ({ total, onUploadClick, onBuildClick }) => (
 
 const PlayboardsStats = ({ playboards, total, search }) => {
   if (search || playboards.length === 0) return null;
-  const active = playboards.filter(p => p.status === 'active').length;
+  const active = playboards.filter(p => isActive(p.status)).length;
   const byScenario = {};
   playboards.forEach(p => { const s = p.scenarioKey || 'Unknown'; byScenario[s] = (byScenario[s] || 0) + 1; });
   const topScenario = Object.entries(byScenario).sort((a, b) => b[1] - a[1])[0];
@@ -977,8 +978,8 @@ const PlayboardsFilterBar = ({ search, onSearchChange, domains, filterDomain, on
         </select>
         <select className="input !py-2 min-w-[140px]" value={filterStatus || ''} onChange={(e) => onFilterStatus(e.target.value)}>
           <option value="">All Status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="A">Active</option>
+          <option value="I">Inactive</option>
         </select>
         {(filterDomain || filterStatus) && <button className="text-sm text-primary-600 hover:underline whitespace-nowrap" onClick={onClear}>Clear</button>}
       </div>
@@ -1065,7 +1066,7 @@ const RowActionsFormSection = ({ rowActionBuilder, domains }) => {
       <Select label="Data Domain" value={rowActionBuilder.currentRowAction.dataDomain} onChange={(e) => rowActionBuilder.setCurrentRowAction({ ...rowActionBuilder.currentRowAction, dataDomain: e.target.value })} options={[{ value: '', label: 'Select Domain' }, ...domains.map(d => ({ value: d.key, label: d.name }))]} />
     </div>
     <div className="grid grid-cols-2 gap-4 mt-4">
-      <Select label="Status" value={rowActionBuilder.currentRowAction.status} onChange={(e) => rowActionBuilder.setCurrentRowAction({ ...rowActionBuilder.currentRowAction, status: e.target.value })} options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
+      <Select label="Status" value={rowActionBuilder.currentRowAction.status} onChange={(e) => rowActionBuilder.setCurrentRowAction({ ...rowActionBuilder.currentRowAction, status: e.target.value })} options={[{ value: 'A', label: 'Active' }, { value: 'I', label: 'Inactive' }]} />
     </div>
     <div className="mt-4 border-t pt-4">
       <label className="block text-sm font-medium text-content-secondary mb-2">Filters (maps row data to navigation params)</label>
@@ -1299,7 +1300,7 @@ function buildPlayboardColumns(crud) {
     { key: 'dataDomain', title: 'Data Domain', render: (_, item) => item.data?.dataDomain || '-', filterValue: (_, item) => item.data?.dataDomain || '', sortValue: (_, item) => item.data?.dataDomain || '' },
     { key: 'dataFilters', title: 'Filters', render: (_, item) => <Badge variant="primary">{item.data?.widgets?.filters?.length || 0}</Badge>, sortValue: (_, item) => item.data?.widgets?.filters?.length || 0, filterable: false },
     { key: 'dataActions', title: 'Row Actions', render: (_, item) => <Badge variant="success">{item.data?.widgets?.grid?.actions?.rowActions?.events?.length || 0}</Badge>, sortValue: (_, item) => item.data?.widgets?.grid?.actions?.rowActions?.events?.length || 0, filterable: false },
-    { key: 'status', title: 'Status', render: (val) => { const isActive = val === 'active'; return <Badge variant={isActive ? 'success' : 'danger'}>{isActive ? 'Active' : 'Inactive'}</Badge>; } },
+    { key: 'status', title: 'Status', render: (val) => { const active = isActive(val); return <Badge variant={active ? 'success' : 'danger'}>{active ? 'Active' : 'Inactive'}</Badge>; } },
     { key: 'actions', title: '', render: (_, item) => (
       <PlayboardActionsCell item={item} onView={crud.handleViewDetails} onDownload={crud.handleDownload} onEdit={crud.openEditModal} onDelete={crud.handleDelete} />
     )}

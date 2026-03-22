@@ -128,7 +128,7 @@ class UserService:
                     {"roleId": {"$in": user_roles}},
                     {"_id": {"$in": [ObjectId(r) if ObjectId.is_valid(r) else None for r in user_roles]}}
                 ],
-                "status": "active"
+                "status": {"$in": ["A", "active"]}
             })
             async for role in roles_cursor:
                 role_domains = role.get("domains", [])
@@ -142,7 +142,7 @@ class UserService:
                     {"groupId": {"$in": user_groups}},
                     {"_id": {"$in": [ObjectId(g) if ObjectId.is_valid(g) else None for g in user_groups]}}
                 ],
-                "status": "active"
+                "status": {"$in": ["A", "active"]}
             })
             async for group in groups_cursor:
                 group_domains = group.get("domains", [])
@@ -188,7 +188,7 @@ class UserService:
                     {"roleId": {"$in": user_roles}},
                     {"_id": {"$in": [ObjectId(r) if ObjectId.is_valid(r) else None for r in user_roles]}}
                 ],
-                "status": "active"
+                "status": {"$in": ["A", "active"]}
             })
             async for role in roles_cursor:
                 role_permissions = role.get("permissions", [])
@@ -202,7 +202,7 @@ class UserService:
                     {"groupId": {"$in": user_groups}},
                     {"_id": {"$in": [ObjectId(g) if ObjectId.is_valid(g) else None for g in user_groups]}}
                 ],
-                "status": "active"
+                "status": {"$in": ["A", "active"]}
             })
             async for group in groups_cursor:
                 group_permissions = group.get("permissions", [])

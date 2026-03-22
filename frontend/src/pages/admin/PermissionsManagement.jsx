@@ -16,6 +16,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { Modal, Table } from '../../components/shared';
+import { isActive } from '../../utils/status';
 
 // --- Sub-components extracted to reduce cognitive complexity ---
 
@@ -135,10 +136,11 @@ const PermissionForm = ({ formData, editingPermission, modules, commonActions, h
 );
 
 const StatusBadge = ({ status }) => {
-  const className = status === 'active'
+  const active = isActive(status);
+  const className = active
     ? 'bg-green-100 text-green-700'
     : 'bg-red-100 text-red-700';
-  return <span className={`px-2 py-1 text-xs rounded-full ${className}`}>{status}</span>;
+  return <span className={`px-2 py-1 text-xs rounded-full ${className}`}>{active ? 'Active' : 'Inactive'}</span>;
 };
 
 const RelationshipList = ({ title, items, emptyText }) => (

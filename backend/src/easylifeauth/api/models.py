@@ -102,7 +102,7 @@ class DomainCreate(BaseModel):
     defaultSelected: Optional[bool] = False
     actions: Optional[List[str]] = []
     type: Optional[str] = None
-    status: Optional[str] = "active"
+    status: Optional[str] = "A"
     dataDomain: Optional[str] = None
     subDomains: Optional[List[Dict[str, Any]]] = []
 
@@ -210,7 +210,7 @@ class PlayboardCreate(BaseModel):
     addon_configurations: Optional[List[str]] = None
     scenarioDescription: Optional[List[Dict[str, Any]]] = None
     data: Optional[Dict[str, Any]] = None  # Full JSON data (may contain key, scenarioKey, etc.)
-    status: str = "active"
+    status: str = "A"
 
     model_config = {"extra": "allow"}
 
@@ -251,7 +251,7 @@ class PlayboardResponse(BaseModel):
     addon_configurations: Optional[List[str]] = None
     scenarioDescription: Optional[List[Dict[str, Any]]] = None
     data: Optional[Dict[str, Any]] = None
-    status: Optional[str] = "active"
+    status: Optional[str] = "A"
     created_at: Optional[datetime] = None
     created_by: Optional[str] = None
     updated_at: Optional[datetime] = None
@@ -431,8 +431,8 @@ from enum import Enum
 
 
 class StatusEnum(str, Enum):
-    ACTIVE = "active"
-    INACTIVE = "inactive"
+    ACTIVE = "A"
+    INACTIVE = "I"
     PENDING = "pending"
 
 
@@ -490,7 +490,7 @@ class RoleBase(BaseModel):
     description: Optional[str] = None
     permissions: List[str] = []
     domains: List[str] = []
-    status: str = "active"
+    status: str = "A"
     priority: int = 0
 
 
@@ -526,7 +526,7 @@ class GroupBase(BaseModel):
     permissions: List[str] = []
     domains: List[str] = []
     customers: List[str] = []
-    status: str = "active"
+    status: str = "A"
     priority: int = 0
 
 
@@ -559,7 +559,7 @@ class CustomerBase(BaseModel):
     customerId: str
     name: str
     description: Optional[str] = None
-    status: str = "active"
+    status: str = "A"
     settings: Dict[str, Any] = {}
     tags: List[str] = []
     unit: Optional[str] = None
@@ -661,7 +661,7 @@ class SubDomain(BaseModel):
     name: str
     description: Optional[str] = None
     path: str
-    status: str = "active"
+    status: str = "A"
     order: int = 0
     icon: Optional[str] = None
 
@@ -674,7 +674,7 @@ class DomainInDB(BaseModel):
     description: Optional[str] = None
     path: str
     dataDomain: Optional[str] = None
-    status: str = "active"
+    status: str = "A"
     defaultSelected: bool = False
     order: int = 0
     icon: Optional[str] = None
@@ -694,7 +694,7 @@ class DomainScenarioCreate(BaseModel):
     description: Optional[str] = None
     path: str
     dataDomain: Optional[str] = None
-    status: str = "active"
+    status: str = "A"
     defaultSelected: bool = False
     order: int = 0
     icon: Optional[str] = None
@@ -724,7 +724,7 @@ class DomainScenarioInDB(BaseModel):
     description: Optional[str] = None
     path: str = ""
     dataDomain: Optional[str] = None
-    status: str = "active"
+    status: str = "A"
     defaultSelected: bool = False
     order: int = 0
     icon: Optional[str] = None
@@ -790,11 +790,11 @@ class WidgetDescriptionBase(BaseModel):
     text: Optional[str] = None
     index: Optional[int] = None
     styleClasses: Optional[Union[List[str], str]] = None
-    status:Optional[str] = "active"
+    status:Optional[str] = "A"
     model_config = {
             "extra": "allow"
         }
-    
+
 class WidgetDescription(WidgetDescriptionBase):
     nodes: Optional[List[WidgetDescriptionBase]] = None
 
@@ -822,7 +822,7 @@ class ApiConfig(BaseModel):
     args_mapping: Optional[Dict[str, str]] = None
     response_mapping: Optional[Dict[str, str]] = None
     cached: Optional[bool] = False
-    state: str = "active"
+    state: str = "A"
     timeout: Optional[int] = 30
     retry: Optional[int] = 0
     retry_delay: Optional[int] = 0   
@@ -877,7 +877,7 @@ class WidgetFilter(BaseModel):
     index:int
     visible: bool = True
     type: str
-    status: str = "active"
+    status: str = "A"
     inputHint: Optional[str] = None
     title: Optional[str] = None    
     attributes: Optional[list[FilterAttribute]] = None
@@ -894,7 +894,7 @@ class WidgetFilterGroup(BaseModel):
     index:int
     displayName: str
     visible: bool = True
-    status: str = "active"
+    status: str = "A"
     filters: Optional[list[WidgetFilter]] = None
     model_config = {
             "extra": "allow"
@@ -920,7 +920,7 @@ class PlayboardInDB(BaseModel):
     addon_configurations: Optional[Union[List[str], str]] = None
     scenarioDescription: Optional[list[WidgetDescription]] = None
     data: Optional[Dict[str, Any]] = None
-    status: str = "active"
+    status: str = "A"
     created_at: Optional[datetime] = None
     created_by: Optional[str] = None
     updated_at: Optional[datetime] = None
@@ -1214,7 +1214,7 @@ class ApiConfigCreate(BaseModel):
     cache_ttl: int = Field(default=300, description="Cache TTL in seconds")
 
     # Status
-    status: str = "active"
+    status: str = "A"
 
     # Tags for categorization
     tags: List[str] = []
@@ -1302,7 +1302,7 @@ class ApiConfigInDB(BaseModel):
     cache_enabled: bool = False
     cache_ttl: int = 300
 
-    status: str = "active"
+    status: str = "A"
     tags: List[str] = []
 
     created_at: Optional[datetime] = None
@@ -1394,6 +1394,7 @@ class DistributionListInDB(BaseModel):
     type: str = "custom"
     emails: List[str] = []
     is_active: bool = True
+    status: str = "A"
     created_at: Optional[datetime] = None
     created_by: Optional[str] = None
     updated_at: Optional[datetime] = None

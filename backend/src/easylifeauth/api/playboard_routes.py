@@ -115,7 +115,7 @@ async def list_playboards(
     if status_filter:
         query["status"] = status_filter
     elif "super-administrator" not in current_user.roles:
-        query["status"] = "active"
+        query["status"] = {"$in": ["A", "active"]}
 
     if scenario_key:
         # Verify user has access to this scenario's domain
@@ -178,7 +178,7 @@ async def count_playboards(
     if status_filter:
         query["status"] = status_filter
     elif "super-administrator" not in current_user.roles:
-        query["status"] = "active"
+        query["status"] = {"$in": ["A", "active"]}
 
     if scenario_key:
         domain_key = await get_scenario_domain_key(db, scenario_key)
@@ -307,7 +307,7 @@ async def create_playboard(
         "addon_configurations": playboard_data.addon_configurations or data_obj.get("addon_configurations"),
         "scenarioDescription": playboard_data.scenarioDescription or data_obj.get("scenarioDescription"),
         "data": data_obj,  # Store the full data object
-        "status": playboard_data.status if playboard_data.status != "active" else data_obj.get("status", "active"),
+        "status": playboard_data.status if playboard_data.status != "A" else data_obj.get("status", "A"),
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc),
         "created_by": current_user.email,
@@ -406,7 +406,7 @@ async def upload_playboard_json(
         "addon_configurations": json_data.get("addon_configurations"),
         "scenarioDescription": json_data.get("scenarioDescription"),
         "data": json_data,  # Store the full JSON data
-        "status": "active",
+        "status": "A",
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc),
         "created_by": current_user.email,
@@ -606,7 +606,7 @@ async def toggle_playboard_status(
             detail="Playboard not found"
         )
 
-    new_status = "inactive" if playboard.get("status") == "active" else "active"
+    new_status = "I" if playboard.get("status") in ["A", "active", True] else "A"
     await db.playboards.update_one(
         {"_id": playboard["_id"]},
         {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}}

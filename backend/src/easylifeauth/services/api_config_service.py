@@ -664,7 +664,7 @@ class ApiConfigService:
         if not config:
             return None
 
-        new_status = "inactive" if config.get("status") == "active" else "active"
+        new_status = "I" if config.get("status") in ["A", "active", True] else "A"
         return await self.update_config(config_id, {"status": new_status}, user_email)
 
     async def get_tags(self) -> List[str]:

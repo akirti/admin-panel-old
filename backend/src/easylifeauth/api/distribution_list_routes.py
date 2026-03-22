@@ -62,7 +62,7 @@ async def list_distribution_lists(
     query = {}
 
     if not include_inactive:
-        query["is_active"] = True
+        query["$or"] = [{"status": {"$in": ["A", "active"]}}, {"is_active": True}]
 
     if list_type:
         query["type"] = list_type
@@ -292,14 +292,18 @@ async def toggle_distribution_list_status(
             detail="Distribution list not found"
         )
 
-    new_status = not dist_list.get("is_active", True)
+    current_status = dist_list.get("status", dist_list.get("is_active", True))
+    is_currently_active = current_status in ["A", "active", "Y", True]
+    new_status = "I" if is_currently_active else "A"
+    new_is_active = not is_currently_active
     result = await service.update(
         list_id=list_id,
-        data={"is_active": new_status},
+        data={"status": new_status, "is_active": new_is_active},
         user_id=current_user.email
     )
 
     return {
-        "message": f"Distribution list {'activated' if new_status else 'deactivated'} successfully",
-        "is_active": new_status
+        "message": f"Distribution list {'activated' if new_is_active else 'deactivated'} successfully",
+        "is_active": new_is_active,
+        "status": new_status
     }

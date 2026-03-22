@@ -59,7 +59,7 @@ const mockGroups = [
     permissions: ['perm1', 'perm2', 'perm3', 'perm4'],
     domains: ['sales'],
     customers: ['cust1'],
-    status: 'active',
+    status: 'A',
     priority: 1,
   },
   {
@@ -70,7 +70,7 @@ const mockGroups = [
     permissions: [],
     domains: [],
     customers: [],
-    status: 'inactive',
+    status: 'I',
     priority: 10,
   },
 ];
@@ -127,8 +127,8 @@ describe('GroupsManagement', () => {
     render(<GroupsManagement />);
 
     await waitFor(() => {
-      expect(screen.getByText('active')).toBeInTheDocument();
-      expect(screen.getByText('inactive')).toBeInTheDocument();
+      expect(screen.getAllByText('Active').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Inactive').length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -672,8 +672,8 @@ describe('GroupsManagement', () => {
 
     // Find status select
     const statusSelect = screen.getByDisplayValue('Active');
-    await user.selectOptions(statusSelect, 'inactive');
-    expect(statusSelect.value).toBe('inactive');
+    await user.selectOptions(statusSelect, 'I');
+    expect(statusSelect.value).toBe('I');
   });
 
   it('shows domain filter dropdown', async () => {
@@ -1162,7 +1162,7 @@ describe('GroupsManagement', () => {
   it('uses groupId fallback when _id is missing for delete', async () => {
     const { groupsAPI, permissionsAPI, domainsAPI, customersAPI } = await import('../../../services/api');
     const groupsWithoutId = [
-      { groupId: 'no-id-group', name: 'No ID Group', type: 'domain', permissions: [], domains: [], customers: [], status: 'active', priority: 0 },
+      { groupId: 'no-id-group', name: 'No ID Group', type: 'domain', permissions: [], domains: [], customers: [], status: 'A', priority: 0 },
     ];
     groupsAPI.list.mockResolvedValue({
       data: { data: groupsWithoutId, pagination: { total: 1, pages: 1 } },
@@ -1193,7 +1193,7 @@ describe('GroupsManagement', () => {
   it('uses groupId fallback when _id is missing for toggleStatus', async () => {
     const { groupsAPI, permissionsAPI, domainsAPI, customersAPI } = await import('../../../services/api');
     const groupsWithoutId = [
-      { groupId: 'no-id-group', name: 'No ID Group', type: 'domain', permissions: [], domains: [], customers: [], status: 'active', priority: 0 },
+      { groupId: 'no-id-group', name: 'No ID Group', type: 'domain', permissions: [], domains: [], customers: [], status: 'A', priority: 0 },
     ];
     groupsAPI.list.mockResolvedValue({
       data: { data: groupsWithoutId, pagination: { total: 1, pages: 1 } },
@@ -1221,7 +1221,7 @@ describe('GroupsManagement', () => {
   it('uses groupId fallback when _id is missing for showUsers', async () => {
     const { groupsAPI, permissionsAPI, domainsAPI, customersAPI } = await import('../../../services/api');
     const groupsWithoutId = [
-      { groupId: 'no-id-group', name: 'No ID Group', type: 'domain', permissions: [], domains: [], customers: [], status: 'active', priority: 0 },
+      { groupId: 'no-id-group', name: 'No ID Group', type: 'domain', permissions: [], domains: [], customers: [], status: 'A', priority: 0 },
     ];
     groupsAPI.list.mockResolvedValue({
       data: { data: groupsWithoutId, pagination: { total: 1, pages: 1 } },
@@ -1249,7 +1249,7 @@ describe('GroupsManagement', () => {
   it('uses groupId fallback when _id is missing for update', async () => {
     const { groupsAPI, permissionsAPI, domainsAPI, customersAPI } = await import('../../../services/api');
     const groupsWithoutId = [
-      { groupId: 'no-id-group', name: 'No ID Group', type: 'domain', permissions: [], domains: [], customers: [], status: 'active', priority: 0 },
+      { groupId: 'no-id-group', name: 'No ID Group', type: 'domain', permissions: [], domains: [], customers: [], status: 'A', priority: 0 },
     ];
     groupsAPI.list.mockResolvedValue({
       data: { data: groupsWithoutId, pagination: { total: 1, pages: 1 } },
@@ -1347,7 +1347,7 @@ describe('GroupsManagement', () => {
     const groupWithManyDomains = [
       {
         _id: 'g3', groupId: 'many-domains', name: 'Many Domains', type: 'domain',
-        permissions: [], domains: ['dom1', 'dom2', 'dom3', 'dom4', 'dom5'], customers: [], status: 'active', priority: 0,
+        permissions: [], domains: ['dom1', 'dom2', 'dom3', 'dom4', 'dom5'], customers: [], status: 'A', priority: 0,
       },
     ];
     groupsAPI.list.mockResolvedValue({
@@ -1373,7 +1373,7 @@ describe('GroupsManagement', () => {
     const groupWithManyCustomers = [
       {
         _id: 'g4', groupId: 'many-custs', name: 'Many Customers', type: 'domain',
-        permissions: [], domains: [], customers: ['c1', 'c2', 'c3', 'c4'], status: 'active', priority: 0,
+        permissions: [], domains: [], customers: ['c1', 'c2', 'c3', 'c4'], status: 'A', priority: 0,
       },
     ];
     groupsAPI.list.mockResolvedValue({
@@ -1399,7 +1399,7 @@ describe('GroupsManagement', () => {
     const groupsNoDesc = [
       {
         _id: 'g5', groupId: 'no-desc', name: 'No Description Group', type: 'custom',
-        permissions: [], domains: [], customers: [], status: 'active', priority: 0,
+        permissions: [], domains: [], customers: [], status: 'A', priority: 0,
       },
     ];
     groupsAPI.list.mockResolvedValue({
@@ -1562,7 +1562,7 @@ describe('GroupsManagement', () => {
   it('opens edit modal with missing optional fields (defaults)', async () => {
     const { groupsAPI, permissionsAPI, domainsAPI, customersAPI } = await import('../../../services/api');
     const sparseGroup = [
-      { _id: 'g6', name: 'Sparse Group', status: 'active' },
+      { _id: 'g6', name: 'Sparse Group', status: 'A' },
     ];
     groupsAPI.list.mockResolvedValue({
       data: { data: sparseGroup, pagination: { total: 1, pages: 1 } },
@@ -1761,7 +1761,7 @@ describe('GroupsManagement', () => {
     const groupWithPermId = [
       {
         _id: 'g7', groupId: 'perm-test', name: 'Perm Test', type: 'domain',
-        permissions: ['users.read'], domains: [], customers: [], status: 'active', priority: 0,
+        permissions: ['users.read'], domains: [], customers: [], status: 'A', priority: 0,
       },
     ];
     groupsAPI.list.mockResolvedValue({
@@ -1805,7 +1805,7 @@ describe('GroupsManagement', () => {
     const groupWithDomKey = [
       {
         _id: 'g8', groupId: 'dom-test', name: 'Dom Test', type: 'domain',
-        permissions: [], domains: ['sales-key'], customers: [], status: 'active', priority: 0,
+        permissions: [], domains: ['sales-key'], customers: [], status: 'A', priority: 0,
       },
     ];
     groupsAPI.list.mockResolvedValue({
@@ -2041,7 +2041,7 @@ describe('GroupsManagement', () => {
   it('shows group without priority displays 0', async () => {
     const { groupsAPI, permissionsAPI, domainsAPI, customersAPI } = await import('../../../services/api');
     const groupNoPriority = [
-      { _id: 'g9', groupId: 'no-pri', name: 'No Priority', type: 'domain', permissions: [], domains: [], customers: [], status: 'active' },
+      { _id: 'g9', groupId: 'no-pri', name: 'No Priority', type: 'domain', permissions: [], domains: [], customers: [], status: 'A' },
     ];
     groupsAPI.list.mockResolvedValue({
       data: { data: groupNoPriority, pagination: { total: 1, pages: 1 } },
@@ -2080,14 +2080,14 @@ describe('GroupsManagement', () => {
       expect(screen.getByText('No Status')).toBeInTheDocument();
     });
 
-    // Status should fall back to 'active'
-    expect(screen.getByText('active')).toBeInTheDocument();
+    // Status should fall back to 'A'
+    expect(screen.getByText('Active')).toBeInTheDocument();
   });
 
   it('shows group without type displays "custom" text', async () => {
     const { groupsAPI, permissionsAPI, domainsAPI, customersAPI } = await import('../../../services/api');
     const groupNoType = [
-      { _id: 'g11', groupId: 'no-type', name: 'No Type', permissions: [], domains: [], customers: [], status: 'active', priority: 0 },
+      { _id: 'g11', groupId: 'no-type', name: 'No Type', permissions: [], domains: [], customers: [], status: 'A', priority: 0 },
     ];
     groupsAPI.list.mockResolvedValue({
       data: { data: groupNoType, pagination: { total: 1, pages: 1 } },
@@ -2291,7 +2291,7 @@ describe('GroupsManagement', () => {
     const groupWithCustById = [
       {
         _id: 'g12', groupId: 'cust-id-test', name: 'Cust ID Test', type: 'customers',
-        permissions: [], domains: [], customers: ['c1'], status: 'active', priority: 0,
+        permissions: [], domains: [], customers: ['c1'], status: 'A', priority: 0,
       },
     ];
     groupsAPI.list.mockResolvedValue({
@@ -2331,7 +2331,7 @@ describe('GroupsManagement', () => {
     const groupWithDomId = [
       {
         _id: 'g13', groupId: 'dom-id-test', name: 'Dom ID Test', type: 'domain',
-        permissions: [], domains: ['dom-001'], customers: [], status: 'active', priority: 0,
+        permissions: [], domains: ['dom-001'], customers: [], status: 'A', priority: 0,
       },
     ];
     groupsAPI.list.mockResolvedValue({
@@ -2367,7 +2367,7 @@ describe('GroupsManagement', () => {
     const groupWithPermId = [
       {
         _id: 'g14', groupId: 'permid-test', name: 'PermId Test', type: 'domain',
-        permissions: ['perm-001'], domains: [], customers: [], status: 'active', priority: 0,
+        permissions: ['perm-001'], domains: [], customers: [], status: 'A', priority: 0,
       },
     ];
     groupsAPI.list.mockResolvedValue({
@@ -2453,7 +2453,7 @@ describe('GroupsManagement', () => {
     const groupWithNulls = [
       {
         _id: 'g15', groupId: 'null-arrays', name: 'Null Arrays Group', type: 'domain',
-        status: 'active', priority: 0,
+        status: 'A', priority: 0,
         // permissions, domains, customers all missing (not even empty arrays)
       },
     ];
@@ -2567,11 +2567,12 @@ describe('GroupsManagement', () => {
     render(<GroupsManagement />);
 
     await waitFor(() => {
-      expect(screen.getByText('inactive')).toBeInTheDocument();
+      expect(screen.getAllByText('Inactive').length).toBeGreaterThanOrEqual(1);
     });
 
-    const inactiveBadge = screen.getByText('inactive');
-    expect(inactiveBadge.className).toContain('bg-red-100');
+    const inactiveBadges = screen.getAllByText('Inactive');
+    const inactiveBadge = inactiveBadges.find(el => el.className.includes('bg-red-100'));
+    expect(inactiveBadge).toBeTruthy();
     expect(inactiveBadge.className).toContain('text-red-700');
   });
 
@@ -2580,11 +2581,12 @@ describe('GroupsManagement', () => {
     render(<GroupsManagement />);
 
     await waitFor(() => {
-      expect(screen.getByText('active')).toBeInTheDocument();
+      expect(screen.getAllByText('Active').length).toBeGreaterThanOrEqual(1);
     });
 
-    const activeBadge = screen.getByText('active');
-    expect(activeBadge.className).toContain('bg-green-100');
+    const activeBadges = screen.getAllByText('Active');
+    const activeBadge = activeBadges.find(el => el.className.includes('bg-green-100'));
+    expect(activeBadge).toBeTruthy();
     expect(activeBadge.className).toContain('text-green-700');
   });
 

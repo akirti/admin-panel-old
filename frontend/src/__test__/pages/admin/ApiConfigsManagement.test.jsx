@@ -74,7 +74,7 @@ const mockConfigs = [
     params: {},
     body: {},
     tags: ['users'],
-    status: 'active',
+    status: 'A',
     ssl_verify: true,
     timeout: 30,
     retry_count: 0,
@@ -96,7 +96,7 @@ const mockConfigs = [
     params: {},
     body: {},
     tags: ['payments'],
-    status: 'inactive',
+    status: 'I',
     ssl_verify: true,
     timeout: 30,
     retry_count: 0,
@@ -649,11 +649,11 @@ describe('ApiConfigsManagement', () => {
     });
 
     const statusSelect = screen.getByDisplayValue('All Status');
-    await user.selectOptions(statusSelect, 'active');
+    await user.selectOptions(statusSelect, 'A');
 
     await waitFor(() => {
       expect(apiConfigsAPI.list).toHaveBeenCalledWith(expect.objectContaining({
-        status: 'active',
+        status: 'A',
       }));
     });
   });
@@ -969,7 +969,7 @@ describe('ApiConfigsManagement', () => {
     await waitFor(() => { expect(screen.getByText('User Service')).toBeInTheDocument(); });
 
     const statusFilter = screen.getByDisplayValue('All Status');
-    await user.selectOptions(statusFilter, 'active');
+    await user.selectOptions(statusFilter, 'A');
 
     await waitFor(() => {
       expect(apiConfigsAPI.list).toHaveBeenCalled();
@@ -1532,8 +1532,8 @@ describe('ApiConfigsManagement', () => {
     const statusLabelElem = Array.from(formStatusLabels).find(l => l.textContent === 'Status');
     const statusSelect = statusLabelElem?.parentElement?.querySelector('select');
     if (statusSelect) {
-      await user.selectOptions(statusSelect, 'inactive');
-      expect(statusSelect.value).toBe('inactive');
+      await user.selectOptions(statusSelect, 'I');
+      expect(statusSelect.value).toBe('I');
     }
   });
 

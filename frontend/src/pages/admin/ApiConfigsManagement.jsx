@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Input, Table, Modal, Badge, SearchInput, Select, Pagination } from '../../components/shared';
+import { isActive } from '../../utils/status';
 import { apiConfigsAPI } from '../../services/api';
 import { PlayCircle, Eye, Pencil, ShieldCheck, ToggleLeft, Trash2, Plus, Check, X, Search, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -14,7 +15,8 @@ function getMethodVariant(method) {
 }
 
 function getStatusBadge(status) {
-  return status === 'active' ? (
+  const active = isActive(status);
+  return active ? (
     <Badge variant="success">Active</Badge>
   ) : (
     <Badge variant="default">Inactive</Badge>
@@ -117,8 +119,8 @@ function buildColumns({ handleTest, handleViewDetails, openEditModal, gcsStatus,
           )}
           <button
             onClick={(e) => { e.stopPropagation(); handleToggleStatus(item); }}
-            className={`p-1 ${item.status === 'active' ? 'text-yellow-500 hover:text-yellow-600' : 'text-green-500 hover:text-green-600'}`}
-            title={item.status === 'active' ? 'Deactivate' : 'Activate'}
+            className={`p-1 ${isActive(item.status) ? 'text-yellow-500 hover:text-yellow-600' : 'text-green-500 hover:text-green-600'}`}
+            title={isActive(item.status) ? 'Deactivate' : 'Activate'}
           ><ToggleLeft size={16} /></button>
           <button onClick={(e) => { e.stopPropagation(); handleDelete(item); }} className="p-1 text-red-500 hover:text-red-600" title="Delete"><Trash2 size={16} /></button>
         </div>
@@ -318,7 +320,7 @@ function ApiConfigForm({ formData, setFormData, editingItem, headersJson, setHea
       <Input label="Tags (comma-separated)" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder="production, internal, payment" />
 
       {/* Status */}
-      <Select label="Status" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
+      <Select label="Status" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} options={[{ value: 'A', label: 'Active' }, { value: 'I', label: 'Inactive' }]} />
 
       <div className="flex justify-end space-x-3 pt-4 border-t">
         <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
@@ -532,7 +534,7 @@ function getDefaultFormData() {
     retry_delay: DEFAULT_RETRY_DELAY, use_proxy: false, proxy_url: '',
     ping_endpoint: '', ping_method: 'GET', ping_expected_status: DEFAULT_PING_EXPECTED_STATUS,
     ping_timeout: DEFAULT_PING_TIMEOUT, cache_enabled: false, cache_ttl: DEFAULT_CACHE_TTL,
-    status: 'active', tags: [],
+    status: 'A', tags: [],
   };
 }
 
@@ -540,7 +542,7 @@ function getDefaultFormData() {
 const FORM_FIELD_DEFAULTS = {
   description: '', method: 'GET', headers: {}, params: {}, body: {},
   auth_type: 'none', auth_config: {}, use_proxy: false, proxy_url: '',
-  ping_endpoint: '', ping_method: 'GET', cache_enabled: false, status: 'active', tags: [],
+  ping_endpoint: '', ping_method: 'GET', cache_enabled: false, status: 'A', tags: [],
 };
 
 const FORM_NUMERIC_DEFAULTS = {
@@ -583,7 +585,7 @@ function ApiConfigsHeader({ total, gcsStatus, onAddNew }) {
 /* ─── Stats Section ─── */
 function ApiConfigsStats({ configs, total, filterStatus, filterTag }) {
   if (filterStatus || filterTag || configs.length === 0) return null;
-  const active = configs.filter(c => c.status === 'active').length;
+  const active = configs.filter(c => isActive(c.status)).length;
   const byMethod = {};
   configs.forEach(c => { const m = (c.method || 'GET').toUpperCase(); byMethod[m] = (byMethod[m] || 0) + 1; });
   const topMethod = Object.entries(byMethod).sort((a, b) => b[1] - a[1])[0];
@@ -610,8 +612,8 @@ function ApiConfigsFilters({ search, onSearchChange, filterStatus, onFilterStatu
           <Filter size={16} className="text-content-muted shrink-0" />
           <select className="input !py-2 min-w-[140px]" value={filterStatus} onChange={onFilterStatusChange}>
             <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="A">Active</option>
+            <option value="I">Inactive</option>
           </select>
           <select className="input !py-2 min-w-[140px]" value={filterTag} onChange={onFilterTagChange}>
             <option value="">All Tags</option>
@@ -764,7 +766,7 @@ function useApiConfigsCrud(fetchData, editingItem, formData, headersJson, params
   const handleToggleStatus = async (item) => {
     try {
       await apiConfigsAPI.toggleStatus(item._id);
-      toast.success(`Configuration ${item.status === 'active' ? 'deactivated' : 'activated'}`);
+      toast.success(`Configuration ${isActive(item.status) ? 'deactivated' : 'activated'}`);
       fetchData();
     } catch { toast.error('Failed to toggle status'); }
   };

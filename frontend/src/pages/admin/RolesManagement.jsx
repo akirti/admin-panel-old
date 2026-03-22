@@ -18,6 +18,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { Modal, Table } from '../../components/shared';
+import { isActive } from '../../utils/status';
 
 // --- Sub-components extracted to reduce cognitive complexity ---
 
@@ -147,8 +148,8 @@ const RoleForm = ({
       <div>
         <label className="block text-sm font-medium text-content-secondary mb-1">Status</label>
         <select name="status" className="input w-full" value={formData.status} onChange={handleInputChange}>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="A">Active</option>
+          <option value="I">Inactive</option>
         </select>
       </div>
     </div>
@@ -256,7 +257,7 @@ const RolesHeader = ({ total, onExport, onCreateClick }) => (
 
 const RolesStats = ({ roles, total, filterDomain, filterPermission }) => {
   if (filterDomain || filterPermission || roles.length === 0) return null;
-  const active = roles.filter(r => r.status === 'active').length;
+  const active = roles.filter(r => isActive(r.status)).length;
   const system = roles.filter(r => r.type === 'system').length;
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -331,7 +332,7 @@ const RolesPagination = ({ page, limit, total, totalPages, onPageChange }) => {
 
 // --- Helper functions outside component ---
 
-const EMPTY_FORM = { roleId: '', name: '', description: '', type: 'custom', permissions: [], domains: [], status: 'active', priority: 0 };
+const EMPTY_FORM = { roleId: '', name: '', description: '', type: 'custom', permissions: [], domains: [], status: 'A', priority: 0 };
 
 function groupPermissionsByModule(permissions) {
   return permissions.reduce((acc, perm) => {
@@ -354,7 +355,7 @@ function buildFormDataFromRole(role) {
   return {
     roleId: role.roleId || '', name: role.name || '', description: role.description || '',
     type: role.type || 'custom', permissions: role.permissions || [], domains: role.domains || [],
-    status: role.status || 'active', priority: role.priority || 0,
+    status: role.status || 'A', priority: role.priority || 0,
   };
 }
 
@@ -535,7 +536,7 @@ function useRoleActions(setError, setSuccess, fetchRoles) {
   const handleToggleStatus = async (role) => {
     try {
       await rolesAPI.toggleStatus(role._id || role.roleId);
-      setSuccess(`Role ${role.status === 'active' ? 'deactivated' : 'activated'} successfully`);
+      setSuccess(`Role ${isActive(role.status) ? 'deactivated' : 'activated'} successfully`);
       fetchRoles();
     } catch (err) { setError(err.response?.data?.detail || 'Failed to toggle role status'); }
   };
@@ -612,12 +613,13 @@ const RolesManagement = () => {
     { key: 'domains', title: 'Domains', render: (val) => <TagList items={val} colorClass="bg-green-100 text-green-700" />, filterValue: (val) => (val || []).join(','), sortable: false },
     { key: 'priority', title: 'Priority', render: (val) => <span className="text-sm text-content-muted">{val || 0}</span>, sortValue: (val) => val || 0 },
     { key: 'status', title: 'Status', render: (val) => {
-      const statusClass = val === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
-      return <span className={`px-2 py-1 text-xs rounded-full ${statusClass}`}>{val || 'active'}</span>;
+      const active = isActive(val);
+      const statusClass = active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+      return <span className={`px-2 py-1 text-xs rounded-full ${statusClass}`}>{active ? 'Active' : 'Inactive'}</span>;
     }},
     { key: 'actions', title: 'Actions', render: (_, role) => {
-      const isActive = role.status === 'active';
-      const toggleClass = isActive ? 'text-green-600 hover:bg-green-50' : 'text-content-muted hover:bg-surface-hover';
+      const active = isActive(role.status);
+      const toggleClass = active ? 'text-green-600 hover:bg-green-50' : 'text-content-muted hover:bg-surface-hover';
       return (
         <div className="flex items-center justify-end gap-1">
           <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" onClick={() => usersModal.showUsers(role)} title="View Users" aria-label="View Users">
@@ -626,8 +628,8 @@ const RolesManagement = () => {
           <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" onClick={() => form.openEditModal(role)} title="Edit" aria-label="Edit">
             <Edit2 size={18} />
           </button>
-          <button className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${toggleClass}`} onClick={() => crud.handleToggleStatus(role)} title={isActive ? 'Deactivate' : 'Activate'} aria-label={isActive ? 'Deactivate' : 'Activate'}>
-            {isActive ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+          <button className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${toggleClass}`} onClick={() => crud.handleToggleStatus(role)} title={active ? 'Deactivate' : 'Activate'} aria-label={active ? 'Deactivate' : 'Activate'}>
+            {active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
           </button>
           <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" onClick={() => crud.handleDelete(role)} title="Delete" aria-label="Delete">
             <Trash2 size={18} />

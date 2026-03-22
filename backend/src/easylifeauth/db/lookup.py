@@ -15,8 +15,8 @@ class DomainTypes(str, Enum):
     system = "system"
 
 class StatusTypes(str, Enum):
-    active = "active"
-    inactive = "inactive"
+    active = "A"
+    inactive = "I"
 
 
 class SharingTypes(str, Enum):

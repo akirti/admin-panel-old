@@ -226,7 +226,7 @@ class TokenManager:
                     {"roleId": {"$in": user_roles}},
                     {"_id": {"$in": [ObjectId(r) for r in user_roles if ObjectId.is_valid(r)]}}
                 ],
-                "status": "active"
+                "status": {"$in": ["A", "active"]}
             })
             async for role in roles_cursor:
                 all_domains.update(role.get("domains", []))
@@ -237,7 +237,7 @@ class TokenManager:
                     {"groupId": {"$in": user_groups}},
                     {"_id": {"$in": [ObjectId(g) for g in user_groups if ObjectId.is_valid(g)]}}
                 ],
-                "status": "active"
+                "status": {"$in": ["A", "active"]}
             })
             async for group in groups_cursor:
                 all_domains.update(group.get("domains", []))

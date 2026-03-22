@@ -19,12 +19,13 @@ import {
   Filter,
 } from 'lucide-react';
 import { Modal, Table } from '../../components/shared';
+import { isActive } from '../../utils/status';
 
 // --- Stat Widgets ---
 
 const GroupsStats = ({ groups, total, filterDomain, filterPermission }) => {
   if (filterDomain || filterPermission || groups.length === 0) return null;
-  const active = groups.filter(g => g.status === 'active').length;
+  const active = groups.filter(g => isActive(g.status)).length;
   const types = {};
   groups.forEach(g => { const t = g.type || 'default'; types[t] = (types[t] || 0) + 1; });
   const topType = Object.entries(types).sort((a, b) => b[1] - a[1])[0];
@@ -305,8 +306,8 @@ const GroupForm = ({
       <div>
         <label className="block text-sm font-medium text-content-secondary mb-1">Status</label>
         <select name="status" className="input w-full" value={formData.status} onChange={handleInputChange}>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="A">Active</option>
+          <option value="I">Inactive</option>
         </select>
       </div>
     </div>
@@ -606,7 +607,7 @@ function useGroupActions(data) {
   const handleToggleStatus = async (group) => {
     try {
       await groupsAPI.toggleStatus(group._id || group.groupId);
-      data.setSuccess(`Group ${group.status === 'active' ? 'deactivated' : 'activated'} successfully`);
+      data.setSuccess(`Group ${isActive(group.status) ? 'deactivated' : 'activated'} successfully`);
       data.fetchGroups();
     } catch (err) { data.setError(err.response?.data?.detail || 'Failed to toggle group status'); }
   };
@@ -659,7 +660,7 @@ const AlertMessages = ({ error, success }) => (
 
 const INITIAL_GROUP_FORM = {
   groupId: '', name: '', description: '', type: 'domain',
-  permissions: [], domains: [], customers: [], status: 'active', priority: 0,
+  permissions: [], domains: [], customers: [], status: 'A', priority: 0,
 };
 
 const buildCreateFormData = (groupTypes) => ({
@@ -670,7 +671,7 @@ const buildCreateFormData = (groupTypes) => ({
 const buildEditFormData = (group) => ({
   groupId: group.groupId || '', name: group.name || '', description: group.description || '',
   type: group.type || 'custom', permissions: group.permissions || [], domains: group.domains || [],
-  customers: group.customers || [], status: group.status || 'active', priority: group.priority || 0,
+  customers: group.customers || [], status: group.status || 'A', priority: group.priority || 0,
 });
 
 const filterCustomersBySearch = (customers, searchTerm) => {
@@ -831,20 +832,22 @@ const GroupsManagement = () => {
               key: 'status',
               title: 'Status',
               render: (val) => {
-                const statusClass = val === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
-                return <span className={`px-2 py-1 text-xs rounded-full ${statusClass}`}>{val || 'active'}</span>;
+                const active = isActive(val);
+                const statusClass = active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+                return <span className={`px-2 py-1 text-xs rounded-full ${statusClass}`}>{active ? 'Active' : 'Inactive'}</span>;
               },
             },
             {
               key: 'actions',
               title: 'Actions',
               render: (_val, row) => {
-                const toggleClass = row.status === 'active' ? 'text-green-600 hover:bg-green-50' : 'text-content-muted hover:bg-surface-hover';
+                const active = isActive(row.status);
+                const toggleClass = active ? 'text-green-600 hover:bg-green-50' : 'text-content-muted hover:bg-surface-hover';
                 return (
                   <div className="flex items-center justify-end gap-1">
                     <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" onClick={() => usersModal.showUsers(row)} title="View Users"><Users size={18} /></button>
                     <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" onClick={() => modal.openEditModal(row)} title="Edit"><Edit2 size={18} /></button>
-                    <button className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${toggleClass}`} onClick={() => actions.handleToggleStatus(row)} title={row.status === 'active' ? 'Deactivate' : 'Activate'}>{row.status === 'active' ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}</button>
+                    <button className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${toggleClass}`} onClick={() => actions.handleToggleStatus(row)} title={active ? 'Deactivate' : 'Activate'}>{active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}</button>
                     <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" onClick={() => actions.handleDelete(row)} title="Delete"><Trash2 size={18} /></button>
                   </div>
                 );

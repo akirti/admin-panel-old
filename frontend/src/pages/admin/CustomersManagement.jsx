@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Modal, Badge, Table } from '../../components/shared';
+import { isActive } from '../../utils/status';
 import { customersAPI, usersAPI, exportAPI } from '../../services/api';
 import {
   Building2, Plus, Search, Edit2, Trash2, X, Download,
@@ -57,7 +58,7 @@ function ExportButton({ onExport }) {
 /* ─── Stat Widgets ─── */
 const CustomersStats = ({ customers, total, filterLocation, filterUnit }) => {
   if (filterLocation || filterUnit || customers.length === 0) return null;
-  const active = customers.filter(c => c.status === 'active').length;
+  const active = customers.filter(c => isActive(c.status)).length;
   const locations = {};
   customers.forEach(c => { if (c.location) locations[c.location] = (locations[c.location] || 0) + 1; });
   const topLoc = Object.entries(locations).sort((a, b) => b[1] - a[1]).slice(0, 2);
@@ -139,16 +140,17 @@ function CustomerTags({ tags }) {
 }
 
 function CustomerActions({ customer, onShowUsers, onEdit, onToggleStatus, onDelete }) {
+  const active = isActive(customer.status);
   return (
     <div className="flex items-center justify-end gap-1">
       <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" onClick={() => onShowUsers(customer)} title="Manage Users"><Users size={18} /></button>
       <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" onClick={() => onEdit(customer)} title="Edit"><Edit2 size={18} /></button>
       <button
-        className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${customer.status === 'active' ? 'text-green-600 hover:bg-green-50' : 'text-neutral-400 hover:bg-surface-hover'}`}
+        className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${active ? 'text-green-600 hover:bg-green-50' : 'text-neutral-400 hover:bg-surface-hover'}`}
         onClick={() => onToggleStatus(customer)}
-        title={customer.status === 'active' ? 'Deactivate' : 'Activate'}
+        title={active ? 'Deactivate' : 'Activate'}
       >
-        {customer.status === 'active' ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+        {active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
       </button>
       <button className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" onClick={() => onDelete(customer)} title="Delete"><Trash2 size={18} /></button>
     </div>
@@ -184,7 +186,7 @@ function CustomersTable({ loading, customers, onShowUsers, onEdit, onToggleStatu
     {
       key: 'status',
       title: 'Status',
-      render: (val) => <Badge variant={val === 'active' ? 'success' : 'danger'}>{val || 'active'}</Badge>,
+      render: (val) => { const active = isActive(val); return <Badge variant={active ? 'success' : 'danger'}>{active ? 'Active' : 'Inactive'}</Badge>; },
     },
     {
       key: 'unit',
@@ -286,8 +288,8 @@ function CustomerForm({ formData, handleInputChange, editingCustomer, newTag, se
         <div>
           <label className="block text-sm font-medium text-content-secondary mb-1">Status</label>
           <select name="status" className="input w-full" value={formData.status} onChange={handleInputChange}>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="A">Active</option>
+            <option value="I">Inactive</option>
           </select>
         </div>
         <div className="grid grid-cols-2 gap-4">
@@ -414,7 +416,7 @@ function UsersManagementContent({ loadingUsers, customerUsers, userSearch, setUs
 /* ─── Default form data ─── */
 const DEFAULT_CUSTOMER_FORM = {
   customerId: '', name: '', description: '', contactEmail: '', contactPhone: '',
-  address: '', status: 'active', tags: [], unit: '', sales: '', division: '', channel: '', location: '',
+  address: '', status: 'A', tags: [], unit: '', sales: '', division: '', channel: '', location: '',
 };
 
 /* ─── Build form data from existing customer ─── */
@@ -422,7 +424,7 @@ function buildCustomerFormData(customer) {
   return {
     customerId: customer.customerId || '', name: customer.name || '', description: customer.description || '',
     contactEmail: customer.contactEmail || '', contactPhone: customer.contactPhone || '', address: customer.address || '',
-    status: customer.status || 'active', tags: customer.tags || [], unit: customer.unit || '', sales: customer.sales || '',
+    status: customer.status || 'A', tags: customer.tags || [], unit: customer.unit || '', sales: customer.sales || '',
     division: customer.division || '', channel: customer.channel || '', location: customer.location || '',
   };
 }
@@ -662,7 +664,7 @@ function useCustomersCrud(form, fetchCustomers, setSuccess, setError) {
   const handleToggleStatus = async (customer) => {
     try {
       await customersAPI.toggleStatus(getCustomerId(customer));
-      setSuccess(`Customer ${customer.status === 'active' ? 'deactivated' : 'activated'} successfully`);
+      setSuccess(`Customer ${isActive(customer.status) ? 'deactivated' : 'activated'} successfully`);
       fetchCustomers();
     } catch (err) { setError(err.response?.data?.detail || 'Failed to toggle customer status'); }
   };

@@ -58,7 +58,7 @@ const mockCustomers = [
     description: 'Major enterprise client',
     contactEmail: 'info@acme.com',
     contactPhone: '+1-555-1234',
-    status: 'active',
+    status: 'A',
     unit: 'SMB',
     sales: 'West Coast',
     division: 'Engineering',
@@ -71,7 +71,7 @@ const mockCustomers = [
     _id: 'c2',
     customerId: 'beta-inc',
     name: 'Beta Inc',
-    status: 'inactive',
+    status: 'I',
     tags: [],
     created_at: '2024-03-01T00:00:00Z',
   },
@@ -555,8 +555,8 @@ describe('CustomersManagement', () => {
     render(<CustomersManagement />);
 
     await waitFor(() => {
-      expect(screen.getByText('active')).toBeInTheDocument();
-      expect(screen.getByText('inactive')).toBeInTheDocument();
+      expect(screen.getAllByText('Active').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Inactive').length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -1038,7 +1038,7 @@ describe('CustomersManagement', () => {
         _id: 'c3',
         customerId: 'no-date',
         name: 'No Date Corp',
-        status: 'active',
+        status: 'A',
         tags: [],
       },
     ];
@@ -1064,7 +1064,7 @@ describe('CustomersManagement', () => {
         customerId: 'email-only',
         name: 'Email Only Corp',
         contactEmail: 'test@email.com',
-        status: 'active',
+        status: 'A',
         tags: ['tag1'],
       },
     ];
@@ -1091,7 +1091,7 @@ describe('CustomersManagement', () => {
         customerId: 'phone-only',
         name: 'Phone Only Corp',
         contactPhone: '+1-999-0000',
-        status: 'active',
+        status: 'A',
         tags: null,
       },
     ];
@@ -1116,7 +1116,7 @@ describe('CustomersManagement', () => {
         _id: 'c6',
         customerId: 'three-tags',
         name: 'Three Tags Corp',
-        status: 'active',
+        status: 'A',
         tags: ['A', 'B', 'C'],
       },
     ];
@@ -1145,7 +1145,7 @@ describe('CustomersManagement', () => {
         _id: 'c7',
         customerId: 'null-tags',
         name: 'Null Tags Corp',
-        status: 'active',
+        status: 'A',
         tags: null,
       },
     ];
@@ -1168,7 +1168,7 @@ describe('CustomersManagement', () => {
         _id: 'c8',
         customerId: 'no-desc',
         name: 'No Description Corp',
-        status: 'active',
+        status: 'A',
         tags: [],
       },
     ];
@@ -1199,7 +1199,7 @@ describe('CustomersManagement', () => {
         _id: 'c9',
         customerId: 'no-attrs',
         name: 'No Attrs Corp',
-        status: 'active',
+        status: 'A',
         tags: [],
       },
     ];
@@ -1226,8 +1226,9 @@ describe('CustomersManagement', () => {
       expect(screen.getByText('Acme Corporation')).toBeInTheDocument();
     });
 
-    const activeBadge = screen.getByText('active');
-    expect(activeBadge).toHaveAttribute('data-variant', 'success');
+    const activeBadges = screen.getAllByText('Active');
+    const activeBadge = activeBadges.find(el => el.getAttribute('data-variant') === 'success');
+    expect(activeBadge).toBeTruthy();
   });
 
   it('renders danger badge for inactive customer', async () => {
@@ -1237,8 +1238,9 @@ describe('CustomersManagement', () => {
       expect(screen.getByText('Beta Inc')).toBeInTheDocument();
     });
 
-    const inactiveBadge = screen.getByText('inactive');
-    expect(inactiveBadge).toHaveAttribute('data-variant', 'danger');
+    const inactiveBadges = screen.getAllByText('Inactive');
+    const inactiveBadge = inactiveBadges.find(el => el.getAttribute('data-variant') === 'danger');
+    expect(inactiveBadge).toBeTruthy();
   });
 
   it('renders customer with no status defaulting to active label', async () => {
@@ -1262,8 +1264,8 @@ describe('CustomersManagement', () => {
       expect(screen.getByText('No Status Corp')).toBeInTheDocument();
     });
 
-    // customer.status || 'active' => shows 'active'
-    expect(screen.getByText('active')).toBeInTheDocument();
+    // customer.status || 'A' => shows 'Active'
+    expect(screen.getByText('Active')).toBeInTheDocument();
   });
 
   it('edit modal populates with fallback empty values for missing fields', async () => {
@@ -1274,7 +1276,7 @@ describe('CustomersManagement', () => {
         _id: 'c11',
         customerId: 'minimal',
         name: 'Minimal Corp',
-        status: 'active',
+        status: 'A',
         tags: [],
       },
     ];
@@ -1495,8 +1497,8 @@ describe('CustomersManagement', () => {
     const modal = screen.getByTestId('modal');
     // Find status select (the one in the modal, not filters)
     const statusSelect = modal.querySelector('select[name="status"]');
-    await user.selectOptions(statusSelect, 'inactive');
-    expect(statusSelect.value).toBe('inactive');
+    await user.selectOptions(statusSelect, 'I');
+    expect(statusSelect.value).toBe('I');
   });
 
   it('create success shows success message and closes modal', async () => {
@@ -1617,7 +1619,7 @@ describe('CustomersManagement', () => {
       {
         customerId: 'no-id-corp',
         name: 'No ID Corp',
-        status: 'active',
+        status: 'A',
         tags: [],
       },
     ];
@@ -1654,7 +1656,7 @@ describe('CustomersManagement', () => {
       {
         customerId: 'del-no-id',
         name: 'Del No ID Corp',
-        status: 'active',
+        status: 'A',
         tags: [],
       },
     ];
@@ -1687,7 +1689,7 @@ describe('CustomersManagement', () => {
       {
         customerId: 'toggle-no-id',
         name: 'Toggle No ID Corp',
-        status: 'active',
+        status: 'A',
         tags: [],
       },
     ];
@@ -1718,7 +1720,7 @@ describe('CustomersManagement', () => {
       {
         customerId: 'users-no-id',
         name: 'Users No ID Corp',
-        status: 'active',
+        status: 'A',
         tags: [],
       },
     ];
@@ -2499,7 +2501,7 @@ describe('CustomersManagement', () => {
       {
         customerId: 'key-fallback',
         name: 'Key Fallback Corp',
-        status: 'active',
+        status: 'A',
         tags: ['one', 'two'],
         created_at: '2024-06-01T00:00:00Z',
       },
@@ -2658,7 +2660,7 @@ describe('CustomersManagement', () => {
       {
         customerId: 'assign-noid',
         name: 'Assign NoID Corp',
-        status: 'active',
+        status: 'A',
         tags: [],
       },
     ];
@@ -2707,7 +2709,7 @@ describe('CustomersManagement', () => {
       {
         customerId: 'remove-noid',
         name: 'Remove NoID Corp',
-        status: 'active',
+        status: 'A',
         tags: [],
       },
     ];

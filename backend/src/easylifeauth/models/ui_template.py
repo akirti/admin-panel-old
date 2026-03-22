@@ -55,7 +55,7 @@ class UITemplateCreate(BaseModel):
     component: Optional[str] = None
     componentType: Optional[str] = None
     usage: List[str] = []
-    status: str = "Y"
+    status: str = "A"
     accessLevel: str = "USR"
     widgets: List[Widget] = []
     comments: List[TemplateComment] = []

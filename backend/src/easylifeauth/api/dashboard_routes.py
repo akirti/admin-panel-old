@@ -76,34 +76,34 @@ async def get_summary(
 
     # Roles summary
     roles_by_status = {
-        "active": await db.roles.count_documents({"status": "active"}),
-        "inactive": await db.roles.count_documents({"status": "inactive"}),
+        "active": await db.roles.count_documents({"status": {"$in": ["A", "active"]}}),
+        "inactive": await db.roles.count_documents({"status": {"$in": ["I", "inactive"]}}),
     }
 
     # Groups summary
     groups_by_status = {
-        "active": await db.groups.count_documents({"status": "active"}),
-        "inactive": await db.groups.count_documents({"status": "inactive"}),
+        "active": await db.groups.count_documents({"status": {"$in": ["A", "active"]}}),
+        "inactive": await db.groups.count_documents({"status": {"$in": ["I", "inactive"]}}),
     }
 
     # Customers summary
     customers_by_status = {"active": 0, "inactive": 0}
     if hasattr(db, 'customers') and db.customers is not None:
         customers_by_status = {
-            "active": await db.customers.count_documents({"status": "active"}),
-            "inactive": await db.customers.count_documents({"status": "inactive"}),
+            "active": await db.customers.count_documents({"status": {"$in": ["A", "active"]}}),
+            "inactive": await db.customers.count_documents({"status": {"$in": ["I", "inactive"]}}),
         }
 
     # Domains summary
     domains_by_status = {
-        "active": await db.domains.count_documents({"status": "active"}),
-        "inactive": await db.domains.count_documents({"status": "inactive"}),
+        "active": await db.domains.count_documents({"status": {"$in": ["A", "active"]}}),
+        "inactive": await db.domains.count_documents({"status": {"$in": ["I", "inactive"]}}),
     }
 
     # Scenarios summary
     scenarios_by_status = {
-        "active": await db.domain_scenarios.count_documents({"status": "active"}),
-        "inactive": await db.domain_scenarios.count_documents({"status": "inactive"}),
+        "active": await db.domain_scenarios.count_documents({"status": {"$in": ["A", "active"]}}),
+        "inactive": await db.domain_scenarios.count_documents({"status": {"$in": ["I", "inactive"]}}),
     }
 
     # Configurations summary by type
@@ -123,8 +123,8 @@ async def get_summary(
 
     # Playboards summary
     playboards_by_status = {
-        "active": await db.playboards.count_documents({"status": "active"}),
-        "inactive": await db.playboards.count_documents({"status": "inactive"}),
+        "active": await db.playboards.count_documents({"status": {"$in": ["A", "active"]}}),
+        "inactive": await db.playboards.count_documents({"status": {"$in": ["I", "inactive"]}}),
     }
 
     # Permissions by module
