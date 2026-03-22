@@ -1,5 +1,5 @@
 """Async Scenario Routes"""
-from typing import List, Dict, Any
+from typing import Annotated, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from .models import ScenarioCreate, ScenarioUpdate, ScenarioResponse, MessageResponse
@@ -51,8 +51,9 @@ async def get_all_scenarios(
     if not user_domains:
         return []
 
-    # Build query based on user's accessible domains
-    query = {"status": {"$in": ["A", "active"]}}
+    # Build query — super admins see all statuses, others see only active
+    is_super = "super-administrator" in current_user.roles
+    query = {} if is_super else {"status": {"$in": ["A", "active"]}}
 
     # Filter by user's accessible domains (unless super admin with "all")
     if "all" not in user_domains:
@@ -125,7 +126,7 @@ async def update_scenario(
     """Update a scenario"""
     if data.id and data.id != key:
         raise HTTPException(status_code=400, detail="ID mismatch")
-    
+
     try:
         update_data = data.model_dump(exclude_unset=True)
         update_data["_id"] = key
@@ -181,3 +182,21 @@ async def delete_scenario(
         raise HTTPException(status_code=404, detail=e.message)
     except (ScenarioError, ScenarioBadError) as e:
         raise HTTPException(status_code=e.status_code, detail=e.message)
+
+
+@router.post("/{key}/toggle-status", responses={404: {"description": "Scenario not found"}})
+async def toggle_scenario_status(
+    key: str,
+    current_user: Annotated[CurrentUser, Depends(require_admin_or_editor)],
+    db: Annotated[DatabaseManager, Depends(get_db)],
+):
+    """Toggle scenario status between A (active) and I (inactive)."""
+    scenario = await db.domain_scenarios.find_one({"key": key})
+    if not scenario:
+        raise HTTPException(status_code=404, detail="Scenario not found")
+
+    current_status = scenario.get("status", "A")
+    new_status = "I" if current_status in ["A", "active"] else "A"
+    await db.domain_scenarios.update_one({"key": key}, {"$set": {"status": new_status}})
+    label = "activated" if new_status == "A" else "deactivated"
+    return {"message": f"Scenario {label} successfully", "status": new_status}

@@ -371,6 +371,7 @@ export const scenarioAPI = {
   create: (data) => api.post('/scenarios', data),
   update: (key, data) => api.put(`/scenarios/${key}`, data),
   delete: (key) => api.delete(`/scenarios/${key}`),
+  toggleStatus: (key) => api.post(`/scenarios/${key}/toggle-status`),
 };
 
 // Domain Scenarios API (scratch-3 compatible)

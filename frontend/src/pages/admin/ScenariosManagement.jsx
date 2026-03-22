@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { scenarioAPI, domainAPI } from '../../services/api';
-import { FileText, Plus, Edit2, Trash2, Search, Filter, AlertCircle, CheckCircle } from 'lucide-react';
+import { FileText, Plus, Edit2, Trash2, Search, Filter, AlertCircle, CheckCircle, ToggleLeft, ToggleRight } from 'lucide-react';
+import { isActive } from '../../utils/status';
 import { Modal, Table } from '../../components/shared';
 
 // --- Helper functions ---
@@ -12,20 +13,20 @@ function getSubmitLabel(saving, editing) {
 }
 
 const EMPTY_SCENARIO_FORM = {
-  key: '', name: '', dataDomain: '', description: '', fullDescription: '', path: '', order: 0,
+  key: '', name: '', dataDomain: '', description: '', fullDescription: '', path: '', order: 0, status: 'A',
 };
 
 function buildScenarioFormData(scenario) {
   return {
     key: scenario.key, name: scenario.name, dataDomain: scenario.dataDomain,
     description: scenario.description || '', fullDescription: scenario.fullDescription || '',
-    path: scenario.path || '', order: scenario.order || 0,
+    path: scenario.path || '', order: scenario.order || 0, status: scenario.status || 'A',
   };
 }
 
 // --- Sub-components ---
 
-const getScenariosColumns = (onEdit, onDelete) => [
+const getScenariosColumns = (onEdit, onDelete, onToggleStatus) => [
   {
     key: 'name',
     title: 'Scenario',
@@ -65,28 +66,34 @@ const getScenariosColumns = (onEdit, onDelete) => [
     key: 'status',
     title: 'Status',
     render: (val) => {
-      const isActive = val === 'A';
+      const active = isActive(val);
       return (
-        <span className={`px-2 py-1 text-xs rounded-full ${isActive ? 'bg-green-100 text-green-800' : 'bg-surface-hover text-content'}`}>
-          {isActive ? 'Active' : 'Inactive'}
+        <span className={`px-2 py-1 text-xs rounded-full ${active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'}`}>
+          {active ? 'Active' : 'Inactive'}
         </span>
       );
     },
-    filterValue: (val) => val === 'A' ? 'Active' : 'Inactive',
+    filterValue: (val) => isActive(val) ? 'Active' : 'Inactive',
   },
   {
     key: 'actions',
     title: 'Actions',
-    render: (_, row) => (
-      <div className="flex items-center gap-1">
-        <button onClick={(e) => { e.stopPropagation(); onEdit(row); }} className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
-          <Edit2 size={18} />
-        </button>
-        <button onClick={(e) => { e.stopPropagation(); onDelete(row); }} className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
-          <Trash2 size={18} />
-        </button>
-      </div>
-    ),
+    render: (_, row) => {
+      const active = isActive(row.status);
+      return (
+        <div className="flex items-center gap-1">
+          <button onClick={(e) => { e.stopPropagation(); onToggleStatus(row); }} className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${active ? 'text-green-600 hover:bg-green-50' : 'text-content-muted hover:bg-surface-hover'}`} title={active ? 'Deactivate' : 'Activate'}>
+            {active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); onEdit(row); }} className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+            <Edit2 size={18} />
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); onDelete(row); }} className="w-9 h-9 flex items-center justify-center text-content-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+            <Trash2 size={18} />
+          </button>
+        </div>
+      );
+    },
   },
 ];
 
@@ -117,7 +124,7 @@ const ScenarioForm = ({ formData, editingScenario, domains, saving, handleChange
       <label className="block text-sm font-medium text-content-secondary mb-1">Full Description</label>
       <textarea name="fullDescription" value={formData.fullDescription} onChange={handleChange} className="input-field" rows={4} placeholder="Detailed description..." />
     </div>
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-3 gap-4">
       <div>
         <label className="block text-sm font-medium text-content-secondary mb-1">Path</label>
         <input type="text" name="path" value={formData.path} onChange={handleChange} className="input-field" placeholder="/path" />
@@ -125,6 +132,13 @@ const ScenarioForm = ({ formData, editingScenario, domains, saving, handleChange
       <div>
         <label className="block text-sm font-medium text-content-secondary mb-1">Order</label>
         <input type="number" name="order" value={formData.order} onChange={handleChange} className="input-field" min={0} />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-content-secondary mb-1">Status</label>
+        <select name="status" value={formData.status} onChange={handleChange} className="input-field">
+          <option value="A">Active</option>
+          <option value="I">Inactive</option>
+        </select>
       </div>
     </div>
     <div className="flex justify-end gap-3 pt-4">
@@ -159,9 +173,9 @@ const AlertMessages = ({ error, success }) => (
   </>
 );
 
-const ScenariosStats = ({ scenarios, searchTerm, filterDomain }) => {
-  if (searchTerm || filterDomain || scenarios.length === 0) return null;
-  const active = scenarios.filter(s => s.status === 'A').length;
+const ScenariosStats = ({ scenarios, searchTerm, filterDomain, filterStatus }) => {
+  if (searchTerm || filterDomain || filterStatus || scenarios.length === 0) return null;
+  const active = scenarios.filter(s => isActive(s.status)).length;
   const byDomain = {};
   scenarios.forEach(s => { const d = s.dataDomain || 'Unknown'; byDomain[d] = (byDomain[d] || 0) + 1; });
   const topDomains = Object.entries(byDomain).sort((a, b) => b[1] - a[1]).slice(0, 2);
@@ -202,7 +216,7 @@ const ScenariosHeader = ({ onCreateClick, scenarioCount }) => (
   </div>
 );
 
-const ScenariosFilterBar = ({ searchTerm, onSearchChange, filterDomain, onFilterDomainChange, domains }) => (
+const ScenariosFilterBar = ({ searchTerm, onSearchChange, filterDomain, onFilterDomainChange, filterStatus, onFilterStatusChange, domains }) => (
   <div className="card !p-4">
     <div className="flex items-center gap-3">
       <div className="relative flex-1 min-w-[200px]">
@@ -217,8 +231,13 @@ const ScenariosFilterBar = ({ searchTerm, onSearchChange, filterDomain, onFilter
             <option key={domain.key} value={domain.key}>{domain.name}</option>
           ))}
         </select>
-        {filterDomain && (
-          <button className="text-sm text-primary-600 hover:underline whitespace-nowrap" onClick={() => onFilterDomainChange('')}>Clear</button>
+        <select className="input !py-2 min-w-[140px]" value={filterStatus} onChange={(e) => onFilterStatusChange(e.target.value)}>
+          <option value="">All Status</option>
+          <option value="A">Active</option>
+          <option value="I">Inactive</option>
+        </select>
+        {(filterDomain || filterStatus) && (
+          <button className="text-sm text-primary-600 hover:underline whitespace-nowrap" onClick={() => { onFilterDomainChange(''); onFilterStatusChange(''); }}>Clear</button>
         )}
       </div>
     </div>
@@ -235,6 +254,7 @@ function useScenariosData(isSuperAdmin) {
   const [success, setSuccess] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDomain, setFilterDomain] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -261,13 +281,14 @@ function useScenariosData(isSuperAdmin) {
     const lowerSearch = searchTerm.toLowerCase();
     const matchesSearch = scenario.name.toLowerCase().includes(lowerSearch) || scenario.key.toLowerCase().includes(lowerSearch);
     const matchesDomain = !filterDomain || scenario.dataDomain === filterDomain;
-    return matchesSearch && matchesDomain;
+    const matchesStatus = !filterStatus || scenario.status === filterStatus;
+    return matchesSearch && matchesDomain && matchesStatus;
   });
 
   return {
     scenarios, domains, loading, error, success, setError, setSuccess,
     searchTerm, setSearchTerm, filterDomain, setFilterDomain,
-    filteredScenarios, fetchData,
+    filterStatus, setFilterStatus, filteredScenarios, fetchData,
   };
 }
 
@@ -283,7 +304,19 @@ function useScenarioActions(data) {
     }
   };
 
-  return { handleDelete };
+  const handleToggleStatus = async (scenario) => {
+    const label = isActive(scenario.status) ? 'deactivate' : 'activate';
+    if (!confirm(`Are you sure you want to ${label} "${scenario.name}"?`)) return;
+    try {
+      await scenarioAPI.toggleStatus(scenario.key);
+      data.setSuccess(`Scenario ${label}d successfully`);
+      data.fetchData();
+    } catch (error) {
+      data.setError(error.response?.data?.error || `Failed to ${label} scenario`);
+    }
+  };
+
+  return { handleDelete, handleToggleStatus };
 }
 
 function useScenarioFormModal(data) {
@@ -354,17 +387,18 @@ const ScenariosManagement = () => {
 
       <AlertMessages error={data.error} success={data.success} />
 
-      <ScenariosStats scenarios={data.scenarios} searchTerm={data.searchTerm} filterDomain={data.filterDomain} />
+      <ScenariosStats scenarios={data.scenarios} searchTerm={data.searchTerm} filterDomain={data.filterDomain} filterStatus={data.filterStatus} />
 
       <ScenariosFilterBar
         searchTerm={data.searchTerm} onSearchChange={data.setSearchTerm}
         filterDomain={data.filterDomain} onFilterDomainChange={data.setFilterDomain}
+        filterStatus={data.filterStatus} onFilterStatusChange={data.setFilterStatus}
         domains={data.domains}
       />
 
       <div className="card overflow-hidden">
         <Table
-          columns={getScenariosColumns(modal.openEditModal, actions.handleDelete)}
+          columns={getScenariosColumns(modal.openEditModal, actions.handleDelete, actions.handleToggleStatus)}
           data={data.filteredScenarios}
           loading={data.loading}
           emptyMessage="No scenarios found"
