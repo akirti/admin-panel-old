@@ -1,5 +1,5 @@
 import { memo, useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { FixedSizeList } from 'react-window';
+import { List as FixedSizeList } from 'react-window';
 import { ArrowUpDown, ArrowUp, ArrowDown, Filter, X, Check, Loader2 } from 'lucide-react';
 
 // --- Filter condition operators ---
