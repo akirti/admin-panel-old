@@ -56,6 +56,7 @@ const ADMIN_NAV = [
   { path: '/admin/error-logs', icon: AlertTriangle, label: 'Error Logs', featureFlag: 'errorLogs' },
   { path: '/admin/bulk-upload', icon: Upload, label: 'Bulk Upload', featureFlag: 'bulkUpload' },
   { path: '/admin/distribution-lists', icon: Mail, label: 'Distribution Lists', featureFlag: 'distributionLists' },
+  { path: '/admin/jira-dashboard', icon: LayoutDashboard, label: 'Jira Dashboard', featureFlag: 'jiraIntegration' },
   { path: '/admin/ui-schemas', icon: LayoutTemplate, label: 'UI Schemas', dividerBefore: true, featureFlag: 'uiSchemas' },
 ];
 

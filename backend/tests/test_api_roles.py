@@ -364,7 +364,7 @@ class TestRolesRoutes:
         mock_db.roles.find_one.return_value = {
             "_id": ObjectId(OID_9011),
             STR_ROLEID: "editor",
-            "status": "active"
+            "status": "A"
         }
 
         # Mock user notification
@@ -375,14 +375,14 @@ class TestRolesRoutes:
         response = client.post("/roles/507f1f77bcf86cd799439011/toggle-status")
         assert response.status_code == 200
         data = response.json()
-        assert data["status"] == "inactive"
+        assert data["status"] == "I"
 
     def test_toggle_role_status_inactive_to_active(self, client, mock_db, mock_email_service):
         """Test toggling role from inactive to active"""
         mock_db.roles.find_one.return_value = {
             "_id": ObjectId(OID_9011),
             STR_ROLEID: "editor",
-            "status": "inactive"
+            "status": "I"
         }
 
         empty_cursor = empty_async_gen
@@ -392,7 +392,7 @@ class TestRolesRoutes:
         response = client.post("/roles/507f1f77bcf86cd799439011/toggle-status")
         assert response.status_code == 200
         data = response.json()
-        assert data["status"] == "active"
+        assert data["status"] == "A"
 
     def test_toggle_role_status_not_found(self, client, mock_db):
         """Test toggling status of non-existent role"""

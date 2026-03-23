@@ -71,11 +71,53 @@ services:
       retries: 3
       start_period: 20s
 
+  # Jira Dashboard API (standalone FastAPI)
+  jira-api:
+    build:
+      context: ./jira-api
+      dockerfile: Dockerfile
+    container_name: easylife-jira-api
+    restart: unless-stopped
+    stop_grace_period: 10s
+    environment:
+      JIRA_API_DATABASE__URI: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password123}@mongodb:27017
+      JIRA_API_DATABASE__NAME: ${JIRA_DB_NAME:-easylife_jira}
+      JIRA_API_JWT__SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production}
+      JIRA_API_JWT__ALGORITHM: HS256
+      JIRA_API_JWT__ISSUER: easylife-auth
+      JIRA_API_JWT__AUDIENCE: easylife-api
+      JIRA_API_SERVER__CORS_ORIGINS: '["http://localhost:3000","http://localhost:5173"]'
+      JIRA_API_JIRA__BASE_URL: ${JIRA_BASE_URL:-}
+      JIRA_API_JIRA__EMAIL: ${JIRA_EMAIL:-}
+      JIRA_API_JIRA__API_TOKEN: ${JIRA_API_TOKEN:-}
+      JIRA_API_JIRA__PROJECT_KEY: ${JIRA_PROJECT_KEY:-SCEN}
+    ports:
+      - "${JIRA_API_PORT:-8002}:8001"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - easylife-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; r=urllib.request.urlopen('http://localhost:8001/health/live', timeout=5); exit(0 if b'ok' in r.read() else 1)"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
   # Frontend - Admin Panel (React + Nginx)
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile
     container_name: easylife-frontend
     restart: unless-stopped
     stop_grace_period: 5s

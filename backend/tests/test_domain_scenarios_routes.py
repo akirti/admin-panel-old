@@ -170,7 +170,7 @@ class TestDomainScenariosRoutes:
             "key": STR_SCENARIO1,
             "name": EXPECTED_TEST_SCENARIO,
             STR_DOMAINKEY: STR_DOMAIN1,
-            "status": "active",
+            "status": "A",
             STR_SUBDOMAINS: [],
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
@@ -229,7 +229,7 @@ class TestDomainScenariosRoutes:
             "key": STR_SCENARIO1,
             "name": EXPECTED_TEST_SCENARIO,
             STR_DOMAINKEY: STR_DOMAIN1,
-            "status": "active",
+            "status": "A",
             STR_SUBDOMAINS: [],
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
@@ -250,7 +250,7 @@ class TestDomainScenariosRoutes:
             "name": EXPECTED_TEST_SCENARIO,
             STR_DOMAINKEY: STR_DOMAIN1,
             "path": SUBPATH_SCENARIOS_TEST,
-            "status": "active",
+            "status": "A",
             STR_SUBDOMAINS: [],
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
@@ -282,7 +282,7 @@ class TestDomainScenariosRoutes:
             "name": EXPECTED_NEW_SCENARIO,
             STR_DOMAINKEY: STR_DOMAIN1,
             "path": "/scenarios/new",
-            "status": "active",
+            "status": "A",
             STR_SUBDOMAINS: []
         }
 
@@ -298,7 +298,7 @@ class TestDomainScenariosRoutes:
             "name": EXPECTED_NEW_SCENARIO,
             STR_DOMAINKEY: STR_DOMAIN1,
             "path": "/scenarios/existing",
-            "status": "active",
+            "status": "A",
             STR_SUBDOMAINS: []
         }
 
@@ -316,7 +316,7 @@ class TestDomainScenariosRoutes:
             "name": EXPECTED_NEW_SCENARIO,
             STR_DOMAINKEY: "nonexistent",
             "path": "/scenarios/new",
-            "status": "active",
+            "status": "A",
             STR_SUBDOMAINS: []
         }
 
@@ -332,7 +332,7 @@ class TestDomainScenariosRoutes:
             "key": STR_SCENARIO1,
             "name": "Old Name",
             STR_DOMAINKEY: STR_DOMAIN1,
-            "status": "active",
+            "status": "A",
             STR_SUBDOMAINS: [],
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
@@ -354,7 +354,7 @@ class TestDomainScenariosRoutes:
             "key": MOCK_KEY_TEST_SCENARIO,
             "name": "Old Name",
             STR_DOMAINKEY: STR_DOMAIN1,
-            "status": "active",
+            "status": "A",
             STR_SUBDOMAINS: [],
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
@@ -384,7 +384,7 @@ class TestDomainScenariosRoutes:
             "key": STR_SCENARIO1,
             "name": STR_TEST,
             STR_DOMAINKEY: STR_DOMAIN1,
-            "status": "active",
+            "status": "A",
             STR_SUBDOMAINS: [],
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
@@ -405,7 +405,7 @@ class TestDomainScenariosRoutes:
             "key": STR_SCENARIO1,
             "name": STR_TEST,
             STR_DOMAINKEY: STR_DOMAIN1,
-            "status": "active",
+            "status": "A",
             STR_SUBDOMAINS: [],
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
@@ -426,7 +426,7 @@ class TestDomainScenariosRoutes:
             "name": STR_TEST,
             STR_DOMAINKEY: STR_DOMAIN1,
             "path": SUBPATH_SCENARIOS_TEST,
-            "status": "active",
+            "status": "A",
             STR_SUBDOMAINS: [],
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
@@ -436,7 +436,7 @@ class TestDomainScenariosRoutes:
         mock_db.domain_scenarios.update_one = AsyncMock()
 
         response = client.put(f"/domain-scenarios/{scenario_id}", json={
-            STR_SUBDOMAINS: [{"key": STR_SUB1, "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "active"}]
+            STR_SUBDOMAINS: [{"key": STR_SUB1, "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "A"}]
         })
         assert response.status_code == 200
 
@@ -488,7 +488,7 @@ class TestDomainScenariosRoutes:
         mock_scenario = {
             "_id": scenario_id,
             "key": STR_SCENARIO1,
-            "status": "active"
+            "status": "A"
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
@@ -496,7 +496,7 @@ class TestDomainScenariosRoutes:
 
         response = client.post(f"/domain-scenarios/{scenario_id}/toggle-status")
         assert response.status_code == 200
-        assert response.json()["status"] == "inactive"
+        assert response.json()["status"] == "I"
 
     def test_toggle_scenario_status_to_active(self, client, mock_db):
         """Test toggle scenario status to active"""
@@ -504,7 +504,7 @@ class TestDomainScenariosRoutes:
         mock_scenario = {
             "_id": scenario_id,
             "key": STR_SCENARIO1,
-            "status": "inactive"
+            "status": "I"
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
@@ -512,14 +512,14 @@ class TestDomainScenariosRoutes:
 
         response = client.post(f"/domain-scenarios/{scenario_id}/toggle-status")
         assert response.status_code == 200
-        assert response.json()["status"] == "active"
+        assert response.json()["status"] == "A"
 
     def test_toggle_scenario_status_by_key(self, client, mock_db):
         """Test toggle scenario status by key"""
         mock_scenario = {
             "_id": ObjectId(),
             "key": MOCK_KEY_TEST_SCENARIO,
-            "status": "active"
+            "status": "A"
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
@@ -527,7 +527,7 @@ class TestDomainScenariosRoutes:
 
         response = client.post(f"/domain-scenarios/{MOCK_KEY_TEST_SCENARIO}/toggle-status")
         assert response.status_code == 200
-        assert response.json()["status"] == "inactive"
+        assert response.json()["status"] == "I"
 
     def test_toggle_scenario_status_not_found(self, client, mock_db):
         """Test toggle scenario status not found"""
@@ -545,7 +545,7 @@ class TestDomainScenariosRoutes:
             "name": STR_TEST,
             STR_DOMAINKEY: STR_DOMAIN1,
             "path": SUBPATH_SCENARIOS_TEST,
-            "status": "active",
+            "status": "A",
             STR_SUBDOMAINS: [],
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
@@ -553,11 +553,11 @@ class TestDomainScenariosRoutes:
 
         mock_db.domain_scenarios.find_one = AsyncMock(side_effect=[
             mock_scenario.copy(),
-            {**mock_scenario.copy(), STR_SUBDOMAINS: [{"key": STR_SUB1, "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "active"}]}
+            {**mock_scenario.copy(), STR_SUBDOMAINS: [{"key": STR_SUB1, "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "A"}]}
         ])
         mock_db.domain_scenarios.update_one = AsyncMock()
 
-        subdomain_data = {"key": STR_SUB1, "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "active"}
+        subdomain_data = {"key": STR_SUB1, "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "A"}
         response = client.post(f"/domain-scenarios/{scenario_id}/subdomains", json=subdomain_data)
         assert response.status_code == 200
 
@@ -569,7 +569,7 @@ class TestDomainScenariosRoutes:
             "name": STR_TEST,
             STR_DOMAINKEY: STR_DOMAIN1,
             "path": SUBPATH_SCENARIOS_TEST,
-            "status": "active",
+            "status": "A",
             STR_SUBDOMAINS: [],
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
@@ -577,11 +577,11 @@ class TestDomainScenariosRoutes:
 
         mock_db.domain_scenarios.find_one = AsyncMock(side_effect=[
             mock_scenario.copy(),
-            {**mock_scenario.copy(), STR_SUBDOMAINS: [{"key": STR_SUB1, "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "active"}]}
+            {**mock_scenario.copy(), STR_SUBDOMAINS: [{"key": STR_SUB1, "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "A"}]}
         ])
         mock_db.domain_scenarios.update_one = AsyncMock()
 
-        subdomain_data = {"key": STR_SUB1, "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "active"}
+        subdomain_data = {"key": STR_SUB1, "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "A"}
         response = client.post(f"/domain-scenarios/{MOCK_KEY_TEST_SCENARIO}/subdomains", json=subdomain_data)
         assert response.status_code == 200
 
@@ -589,7 +589,7 @@ class TestDomainScenariosRoutes:
         """Test add subdomain to nonexistent scenario"""
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=None)
 
-        subdomain_data = {"key": STR_SUB1, "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "active"}
+        subdomain_data = {"key": STR_SUB1, "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "A"}
         response = client.post(f"/domain-scenarios/{ObjectId()}/subdomains", json=subdomain_data)
         assert response.status_code == 404
 
@@ -604,7 +604,7 @@ class TestDomainScenariosRoutes:
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
 
-        subdomain_data = {"key": "existing", "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "active"}
+        subdomain_data = {"key": "existing", "name": EXPECTED_SUB, "path": SUBPATH_SUB1, "status": "A"}
         response = client.post(f"/domain-scenarios/{scenario_id}/subdomains", json=subdomain_data)
         assert response.status_code == 400
         assert "already exists" in response.json()["detail"]
@@ -658,7 +658,7 @@ class TestDomainScenariosRoutes:
             "_id": ObjectId(),
             "name": "Playboard 1",
             "scenarioKey": STR_SCENARIO1,
-            "status": "active"
+            "status": "A"
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
@@ -686,7 +686,7 @@ class TestDomainScenariosRoutes:
             "_id": ObjectId(),
             "name": "Playboard 1",
             "scenarioKey": MOCK_KEY_TEST_SCENARIO,
-            "status": "active"
+            "status": "A"
         }
 
         mock_db.domain_scenarios.find_one = AsyncMock(return_value=mock_scenario)
@@ -795,7 +795,7 @@ class TestDomainScenariosRoutesRegularUser:
             "key": STR_SCENARIO1,
             "name": STR_TEST,
             STR_DOMAINKEY: STR_DOMAIN2,  # Different domain
-            "status": "active",
+            "status": "A",
             STR_SUBDOMAINS: [],
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)

@@ -47,6 +47,7 @@ const FeedbackManagement = React.lazy(() => import('./pages/admin/FeedbackManage
 const ApiConfigsManagement = React.lazy(() => import('./pages/admin/ApiConfigsManagement'));
 const DistributionListManagement = React.lazy(() => import('./pages/admin/DistributionListManagement'));
 const UISchemaManagement = React.lazy(() => import('./pages/admin/UISchemaManagement'));
+const JiraDashboardPage = React.lazy(() => import('./pages/admin/JiraDashboardPage'));
 
 // Public Pages (lazy)
 const FeedbackPage = React.lazy(() => import('./pages/FeedbackPage'));
@@ -200,6 +201,7 @@ function App() {
           <Route path="api-configs" element={<ApiConfigsManagement />} />
           <Route path="distribution-lists" element={<DistributionListManagement />} />
           <Route path="ui-schemas" element={<UISchemaManagement />} />
+          <Route path="jira-dashboard" element={<JiraDashboardPage />} />
         </Route>
 
         {/* Group Admin Routes */}

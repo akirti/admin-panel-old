@@ -340,7 +340,7 @@ class TestGroupsRoutes:
         mock_db.groups.find_one = AsyncMock(return_value={
             "_id": ObjectId(OID_9011),
             STR_GROUPID: "editors",
-            "status": "active"
+            "status": "A"
         })
 
         # Mock user notification
@@ -351,14 +351,14 @@ class TestGroupsRoutes:
         response = client.post("/groups/507f1f77bcf86cd799439011/toggle-status")
         assert response.status_code == 200
         data = response.json()
-        assert data["status"] == "inactive"
+        assert data["status"] == "I"
 
     def test_toggle_group_status_inactive_to_active(self, client, mock_db, mock_email_service):
         """Test toggling group from inactive to active"""
         mock_db.groups.find_one = AsyncMock(return_value={
             "_id": ObjectId(OID_9011),
             STR_GROUPID: "editors",
-            "status": "inactive"
+            "status": "I"
         })
 
         empty_cursor = empty_async_gen
@@ -368,7 +368,7 @@ class TestGroupsRoutes:
         response = client.post("/groups/507f1f77bcf86cd799439011/toggle-status")
         assert response.status_code == 200
         data = response.json()
-        assert data["status"] == "active"
+        assert data["status"] == "A"
 
     def test_toggle_group_status_not_found(self, client, mock_db):
         """Test toggling status of non-existent group"""

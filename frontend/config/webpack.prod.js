@@ -14,7 +14,7 @@ module.exports = merge(common, {
     rules: [
       {
         test: /\.[jt]sx?$/,
-        exclude: [/node_modules/, /__test__/],
+        exclude: [/node_modules\/(?!jira-dashboard)/, /__test__/],
         use: {
           loader: 'babel-loader',
         },

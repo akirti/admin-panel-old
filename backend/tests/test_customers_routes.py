@@ -166,7 +166,7 @@ class TestCustomersRoutes:
         customer_id=STR_CUST_001,
         name="Acme Corp",
         description="A test customer",
-        customer_status="active",
+        customer_status="A",
         metadata=None,
     ):
         """Return a sample customer document as it would appear in MongoDB."""
@@ -512,7 +512,7 @@ class TestCustomersRoutes:
             STR_CUSTOMERID: "CUST-NEW",
             "name": "New Customer",
             "description": "Freshly created",
-            "status": "active",
+            "status": "A",
             "metadata": {"tier": "gold"},
         }
         response = client.post(PATH_CUSTOMERS, json=payload)
@@ -522,7 +522,7 @@ class TestCustomersRoutes:
         assert data[STR_CUSTOMERID] == "CUST-NEW"
         assert data["name"] == "New Customer"
         assert data["description"] == "Freshly created"
-        assert data["status"] == "active"
+        assert data["status"] == "A"
         mock_db.customers.insert_one.assert_called_once()
 
     def test_create_customer_defaults(self, client, mock_db):
@@ -538,7 +538,7 @@ class TestCustomersRoutes:
 
         assert response.status_code == 201
         data = response.json()
-        assert data["status"] == "active"
+        assert data["status"] == "A"
 
     def test_create_customer_duplicate_id(self, client, mock_db):
         """Test creating a customer with an existing customerId returns 400."""
@@ -766,33 +766,33 @@ class TestCustomersRoutes:
     def test_toggle_status_active_to_inactive(self, client, mock_db):
         """Test toggling an active customer to inactive."""
         oid = ObjectId(OID_d0e1)
-        doc = self._sample_customer_doc(_id=oid, customer_status="active")
+        doc = self._sample_customer_doc(_id=oid, customer_status="A")
         mock_db.customers.find_one = AsyncMock(return_value=doc)
 
         response = client.post(f"/customers/{str(oid)}/toggle-status")
 
         assert response.status_code == 200
         data = response.json()
-        assert data["status"] == "inactive"
-        assert "inactive" in data["message"]
+        assert data["status"] == "I"
+        assert "I" in data["message"]
 
     def test_toggle_status_inactive_to_active(self, client, mock_db):
         """Test toggling an inactive customer to active."""
         oid = ObjectId(OID_d0e1)
-        doc = self._sample_customer_doc(_id=oid, customer_status="inactive")
+        doc = self._sample_customer_doc(_id=oid, customer_status="I")
         mock_db.customers.find_one = AsyncMock(return_value=doc)
 
         response = client.post(f"/customers/{str(oid)}/toggle-status")
 
         assert response.status_code == 200
         data = response.json()
-        assert data["status"] == "active"
-        assert "active" in data["message"]
+        assert data["status"] == "A"
+        assert "A" in data["message"]
 
     def test_toggle_status_calls_update(self, client, mock_db):
         """Test that toggle-status performs an update_one with correct fields."""
         oid = ObjectId(OID_d0e1)
-        doc = self._sample_customer_doc(_id=oid, customer_status="active")
+        doc = self._sample_customer_doc(_id=oid, customer_status="A")
         mock_db.customers.find_one = AsyncMock(return_value=doc)
 
         response = client.post(f"/customers/{str(oid)}/toggle-status")
@@ -801,19 +801,19 @@ class TestCustomersRoutes:
         mock_db.customers.update_one.assert_called_once()
         update_call = mock_db.customers.update_one.call_args
         set_data = update_call[0][1][MONGO_SET]
-        assert set_data["status"] == "inactive"
+        assert set_data["status"] == "I"
         assert "updated_at" in set_data
 
     def test_toggle_status_by_custom_id(self, client, mock_db):
         """Test toggling status using customerId fallback."""
-        doc = self._sample_customer_doc(customer_status="active")
+        doc = self._sample_customer_doc(customer_status="A")
         # ObjectId(STR_CUST_001) raises before find_one, so only one find_one call
         mock_db.customers.find_one = AsyncMock(return_value=doc)
 
         response = client.post("/customers/CUST-001/toggle-status")
 
         assert response.status_code == 200
-        assert response.json()["status"] == "inactive"
+        assert response.json()["status"] == "I"
 
     def test_toggle_status_not_found(self, client, mock_db):
         """Test toggling status of a non-existent customer returns 404."""
@@ -837,8 +837,8 @@ class TestCustomersRoutes:
         response = client.post(f"/customers/{str(oid)}/toggle-status")
 
         assert response.status_code == 200
-        # status is None (not "active"), so the toggle goes to "active"
-        assert response.json()["status"] == "active"
+        # status is None (not "A"), so the toggle goes to "A"
+        assert response.json()["status"] == "A"
 
     # ======================================================================
     # GET /customers/{customer_id}/users  (get_customer_users)

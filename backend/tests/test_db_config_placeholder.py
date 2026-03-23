@@ -120,15 +120,21 @@ class TestBuildDbConfigPlaceholders:
         loader = _make_loader(db_config=cfg)
         assert build_db_config(loader) is None
 
-    def test_returns_none_when_username_unresolved(self):
+    def test_returns_config_when_username_unresolved(self):
+        """Unresolved username placeholder is cleared to empty string."""
         cfg = _resolved_db_config(username=PH_USERNAME)
         loader = _make_loader(db_config=cfg)
-        assert build_db_config(loader) is None
+        result = build_db_config(loader)
+        assert result is not None
+        assert result["username"] == ""
 
-    def test_returns_none_when_password_unresolved(self):
+    def test_returns_config_when_password_unresolved(self):
+        """Unresolved password placeholder is cleared to empty string."""
         cfg = _resolved_db_config(password=PH_PASSWORD)
         loader = _make_loader(db_config=cfg)
-        assert build_db_config(loader) is None
+        result = build_db_config(loader)
+        assert result is not None
+        assert result["password"] == ""
 
     def test_returns_none_when_host_missing(self):
         cfg = _resolved_db_config()
@@ -136,15 +142,21 @@ class TestBuildDbConfigPlaceholders:
         loader = _make_loader(db_config=cfg)
         assert build_db_config(loader) is None
 
-    def test_returns_none_when_username_empty_string(self):
+    def test_returns_config_when_username_empty_string(self):
+        """Empty username is allowed (no-auth dev environments)."""
         cfg = _resolved_db_config(username="")
         loader = _make_loader(db_config=cfg)
-        assert build_db_config(loader) is None
+        result = build_db_config(loader)
+        assert result is not None
+        assert result["username"] == ""
 
-    def test_returns_none_when_password_none(self):
+    def test_returns_config_when_password_none(self):
+        """None password is allowed (no-auth dev environments)."""
         cfg = _resolved_db_config(password=None)
         loader = _make_loader(db_config=cfg)
-        assert build_db_config(loader) is None
+        result = build_db_config(loader)
+        assert result is not None
+        assert result["password"] is None
 
     def test_returns_config_when_all_resolved(self):
         cfg = _resolved_db_config()

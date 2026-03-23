@@ -517,7 +517,8 @@ class TestBootstrap:
             "smtp_config", "jira_config", "atlassian_lookup_config",
             "file_storage_config", "gcs_config", "cors_origins",
             "app_name", "title", "description", "root_path",
-            "handshake_secret",
+            "handshake_secret", "logging_config",
+            "access_token_expiry_minutes", "refresh_token_expiry_minutes",
         }
         assert set(kwargs.keys()) == expected_keys
 

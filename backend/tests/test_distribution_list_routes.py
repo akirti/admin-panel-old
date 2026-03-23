@@ -199,7 +199,10 @@ class TestDistributionListRoutesSuperAdmin:
         response = client.get(PATH_DISTRIBUTION_LISTS)
         assert response.status_code == 200
         call_args = mock_db.distribution_lists.count_documents.call_args[0][0]
-        assert call_args.get("is_active") is True
+        assert "$or" in call_args
+        or_conditions = call_args["$or"]
+        assert {"status": {"$in": ["A", "active"]}} in or_conditions
+        assert {"is_active": True} in or_conditions
 
     def test_list_distribution_lists_pagination(self, client, mock_db):
         """Test pagination metadata calculation."""

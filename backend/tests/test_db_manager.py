@@ -112,12 +112,13 @@ class TestDatabaseManager:
     """Tests for DatabaseManager"""
 
     def test_init_missing_params(self):
-        """Test initialization with missing parameters"""
+        """Test initialization with missing host parameter"""
         with pytest.raises(ValueError):
             DatabaseManager(config={
                 STR_CONNECTIONSCHEME: "mongodb",
-                "host": "localhost"
-                # Missing username and password
+                "username": "user",
+                "password": "pass"
+                # Missing host
             })
 
     @patch('motor.motor_asyncio.AsyncIOMotorClient')

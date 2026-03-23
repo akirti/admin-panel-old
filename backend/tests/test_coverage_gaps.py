@@ -77,7 +77,8 @@ class TestBuildDbConfigUnresolvedRequired:
         loader.get_config_by_path.return_value = None
         assert build_db_config(loader) is None
 
-    def test_missing_password_returns_none(self):
+    def test_empty_password_returns_config(self):
+        """Empty password is allowed (no-auth dev environments)."""
         from main import build_db_config
         loader = MagicMock()
         loader.get_DB_config.return_value = {
@@ -86,7 +87,9 @@ class TestBuildDbConfigUnresolvedRequired:
             "password": "",
         }
         loader.get_config_by_path.return_value = None
-        assert build_db_config(loader) is None
+        result = build_db_config(loader)
+        assert result is not None
+        assert result["password"] == ""
 
 
 # ============================================================================

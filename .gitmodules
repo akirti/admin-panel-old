@@ -1,3 +1,9 @@
 [submodule "noob-grid"]
 	path = noob-grid
 	url = https://github.com/akirti/noob-grid
+[submodule "easylife-jira-board"]
+	path = jira-dashboard
+	url = https://github.com/akirti/easylife-jira-board
+[submodule "easylife-jira-api"]
+	path = jira-api
+	url = https://github.com/akirti/easylife-jira-api

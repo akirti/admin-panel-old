@@ -41,10 +41,33 @@ services:
       ENVIRONMENT: dev
     volumes:
       - ./frontend:/app
+      - ./jira-dashboard:/jira-dashboard
       - /app/node_modules
     command: npm run dev
     depends_on:
       - backend
+      - jira-api
+
+  # Jira Dashboard API - standalone service
+  jira-api:
+    build:
+      context: ./jira-api
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8001"
+    environment:
+      JIRA_API_DATABASE__URI: mongodb://mongodb:27017
+      JIRA_API_DATABASE__NAME: easylife_jira
+      JIRA_API_JWT__SECRET_KEY: ${JWT_SECRET_KEY:-easylife-dev-secret-key-change-me}
+      JIRA_API_JWT__ALGORITHM: HS256
+      JIRA_API_JWT__ISSUER: easylife-auth
+      JIRA_API_JWT__AUDIENCE: easylife-api
+      JIRA_API_SERVER__CORS_ORIGINS: '["http://localhost:3000","http://localhost:5173"]'
+    depends_on:
+      - mongodb
+    volumes:
+      - ./jira-api:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 
   # Enable dev tools (remove profile restriction)
   mailpit:

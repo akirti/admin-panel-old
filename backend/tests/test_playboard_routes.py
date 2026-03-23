@@ -215,7 +215,7 @@ class TestPlayboardRoutes:
             "key": STR_TEST_PLAYBOARD,
             "name": EXPECTED_TEST_PLAYBOARD,
             STR_SCENARIOKEY: STR_SCENARIO1,
-            "status": "active",
+            "status": "A",
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),
             "data": {}
@@ -304,7 +304,7 @@ class TestPlayboardRoutes:
             "key": STR_TEST_PLAYBOARD,
             "name": EXPECTED_TEST_PLAYBOARD,
             STR_SCENARIOKEY: STR_SCENARIO1,
-            "status": "active",
+            "status": "A",
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),
             "data": {"key": "value"}
@@ -430,7 +430,7 @@ class TestPlayboardRoutes:
             "key": STR_TEST_PLAYBOARD,
             "name": "Old Name",
             STR_SCENARIOKEY: STR_SCENARIO1,
-            "status": "active",
+            "status": "A",
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),
             "data": {}
@@ -469,7 +469,7 @@ class TestPlayboardRoutes:
             "key": STR_TEST_PLAYBOARD,
             "name": STR_TEST,
             STR_SCENARIOKEY: STR_SCENARIO1,
-            "status": "active",
+            "status": "A",
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),
             "data": {}
@@ -490,7 +490,7 @@ class TestPlayboardRoutes:
             "key": STR_TEST_PLAYBOARD,
             "name": STR_TEST,
             STR_SCENARIOKEY: STR_SCENARIO1,
-            "status": "active",
+            "status": "A",
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),
             "data": {}
@@ -510,7 +510,7 @@ class TestPlayboardRoutes:
             "key": STR_TEST_PLAYBOARD,
             "name": STR_TEST,
             STR_SCENARIOKEY: STR_SCENARIO1,
-            "status": "active",
+            "status": "A",
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),
             "data": {"old": "data"}
@@ -550,7 +550,7 @@ class TestPlayboardRoutes:
             "key": STR_TEST_PLAYBOARD,
             "name": STR_TEST,
             STR_SCENARIOKEY: STR_SCENARIO1,
-            "status": "active",
+            "status": "A",
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),
             "data": {}
@@ -571,7 +571,7 @@ class TestPlayboardRoutes:
             "key": STR_TEST_PLAYBOARD,
             "name": STR_TEST,
             STR_SCENARIOKEY: STR_SCENARIO1,
-            "status": "active",
+            "status": "A",
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),
             "data": {}
@@ -615,7 +615,7 @@ class TestPlayboardRoutes:
             "_id": playboard_id,
             "key": STR_TEST_PLAYBOARD,
             "name": STR_TEST,
-            "status": "active"
+            "status": "A"
         }
 
         mock_db.playboards.find_one = AsyncMock(return_value=playboard)
@@ -623,7 +623,7 @@ class TestPlayboardRoutes:
 
         response = client.post(f"/playboards/{playboard_id}/toggle-status")
         assert response.status_code == 200
-        assert response.json()["status"] == "inactive"
+        assert response.json()["status"] == "I"
 
     def test_toggle_playboard_status_to_active(self, client, mock_db):
         """Test toggle playboard status to active"""
@@ -632,7 +632,7 @@ class TestPlayboardRoutes:
             "_id": playboard_id,
             "key": STR_TEST_PLAYBOARD,
             "name": STR_TEST,
-            "status": "inactive"
+            "status": "I"
         }
 
         mock_db.playboards.find_one = AsyncMock(return_value=playboard)
@@ -640,7 +640,7 @@ class TestPlayboardRoutes:
 
         response = client.post(f"/playboards/{playboard_id}/toggle-status")
         assert response.status_code == 200
-        assert response.json()["status"] == "active"
+        assert response.json()["status"] == "A"
 
     def test_toggle_playboard_status_invalid_id(self, client, mock_db):
         """Test toggle playboard status with invalid ID"""
@@ -809,7 +809,7 @@ class TestPlayboardRoutesRegularUser:
             "key": STR_TEST_PLAYBOARD,
             "name": STR_TEST,
             STR_SCENARIOKEY: STR_SCENARIO1,
-            "status": "active",
+            "status": "A",
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),
             "data": {}

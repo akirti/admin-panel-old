@@ -12,3 +12,4 @@ export const APP_BASE_PATH = env.APP_BASE_PATH || '';
 // through the Apigee proxy rather than hitting the backend directly.
 export const API_BASE_URL = env.API_BASE_URL || `${APP_BASE_PATH}/api/v1`;
 export const PREVAIL_API_BASE_URL = env.PREVAIL_API_BASE_URL || API_BASE_URL;
+export const JIRA_API_URL = env.JIRA_API_URL || 'http://localhost:8001/api/v1';

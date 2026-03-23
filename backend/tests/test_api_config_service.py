@@ -2568,12 +2568,12 @@ class TestToggleStatus:
         mock_collection.find_one = AsyncMock(return_value={
             "_id": oid,
             "key": STR_TEST_API,
-            "status": "active"
+            "status": "A"
         })
         mock_collection.find_one_and_update = AsyncMock(return_value={
             "_id": oid,
             "key": STR_TEST_API,
-            "status": "inactive"
+            "status": "I"
         })
 
         result = await service.toggle_status(str(oid), MOCK_EMAIL_ADMIN)
@@ -2581,7 +2581,7 @@ class TestToggleStatus:
         assert result is not None
         call_args = mock_collection.find_one_and_update.call_args
         set_data = call_args[0][1][MONGO_SET]
-        assert set_data["status"] == "inactive"
+        assert set_data["status"] == "I"
 
     @pytest.mark.asyncio
     async def test_toggle_inactive_to_active(self, service, mock_collection):
@@ -2590,12 +2590,12 @@ class TestToggleStatus:
         mock_collection.find_one = AsyncMock(return_value={
             "_id": oid,
             "key": STR_TEST_API,
-            "status": "inactive"
+            "status": "I"
         })
         mock_collection.find_one_and_update = AsyncMock(return_value={
             "_id": oid,
             "key": STR_TEST_API,
-            "status": "active"
+            "status": "A"
         })
 
         result = await service.toggle_status(str(oid), MOCK_EMAIL_ADMIN)
@@ -2603,7 +2603,7 @@ class TestToggleStatus:
         assert result is not None
         call_args = mock_collection.find_one_and_update.call_args
         set_data = call_args[0][1][MONGO_SET]
-        assert set_data["status"] == "active"
+        assert set_data["status"] == "A"
 
     @pytest.mark.asyncio
     async def test_toggle_no_status_defaults_to_active(self, service, mock_collection):
@@ -2617,7 +2617,7 @@ class TestToggleStatus:
         mock_collection.find_one_and_update = AsyncMock(return_value={
             "_id": oid,
             "key": STR_TEST_API,
-            "status": "active"
+            "status": "A"
         })
 
         result = await service.toggle_status(str(oid), MOCK_EMAIL_ADMIN)
@@ -2625,7 +2625,7 @@ class TestToggleStatus:
         assert result is not None
         call_args = mock_collection.find_one_and_update.call_args
         set_data = call_args[0][1][MONGO_SET]
-        assert set_data["status"] == "active"
+        assert set_data["status"] == "A"
 
     @pytest.mark.asyncio
     async def test_toggle_nonexistent_config(self, service, mock_collection):

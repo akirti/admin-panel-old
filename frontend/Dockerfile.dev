@@ -6,8 +6,11 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
+# Create jira-dashboard placeholder for npm install (volume will override at runtime)
+RUN mkdir -p /jira-dashboard && echo '{"name":"jira-dashboard","version":"1.0.0","main":"src/index.js"}' > /jira-dashboard/package.json
+
 # Install dependencies
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .

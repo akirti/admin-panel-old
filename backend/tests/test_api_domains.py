@@ -364,13 +364,13 @@ class TestDomainsRoutes:
         mock_db.domains.find_one = AsyncMock(return_value={
             "_id": ObjectId(OID_9011),
             "key": STR_DOMAIN1,
-            "status": "active"
+            "status": "A"
         })
 
         response = client.post("/domains/507f1f77bcf86cd799439011/toggle-status")
         assert response.status_code == 200
         data = response.json()
-        assert data["status"] == "inactive"
+        assert data["status"] == "I"
 
     def test_toggle_domain_status_not_found(self, client, mock_db):
         """Test toggling status of non-existent domain"""

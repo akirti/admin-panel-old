@@ -403,25 +403,25 @@ class TestGroupCRUDIntegration:
         client, db, email_svc = _app()
         oid = ObjectId()
         db.groups.find_one = AsyncMock(return_value={
-            "_id": oid, STR_GROUPID: "editors", "status": "active",
+            "_id": oid, STR_GROUPID: "editors", "status": "A",
         })
         db.users.find.return_value = _empty_cursor()
 
         resp = client.post(f"/groups/{oid}/toggle-status")
         assert resp.status_code == 200
-        assert resp.json()["status"] == "inactive"
+        assert resp.json()["status"] == "I"
 
     def test_toggle_inactive_to_active(self, _app):
         client, db, email_svc = _app()
         oid = ObjectId()
         db.groups.find_one = AsyncMock(return_value={
-            "_id": oid, STR_GROUPID: "editors", "status": "inactive",
+            "_id": oid, STR_GROUPID: "editors", "status": "I",
         })
         db.users.find.return_value = _empty_cursor()
 
         resp = client.post(f"/groups/{oid}/toggle-status")
         assert resp.status_code == 200
-        assert resp.json()["status"] == "active"
+        assert resp.json()["status"] == "A"
 
 
 # ===========================================================================
@@ -535,7 +535,7 @@ class TestInactiveGroupExclusion:
         # Verify the query included status filter
         call_args = db.groups.find.call_args
         query = call_args[0][0] if call_args[0] else call_args[1].get("filter", {})
-        assert query.get("status") == "active"
+        assert query.get("status") == {"$in": ["A", "active"]}
 
     @pytest.mark.asyncio
     async def test_no_active_groups_returns_empty(self):

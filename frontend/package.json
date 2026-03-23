@@ -25,6 +25,7 @@
     "react-hot-toast": "^2.4.0",
     "react-router-dom": "^7.13.1",
     "react-window": "^2.2.7",
+    "jira-dashboard": "file:../jira-dashboard",
     "recharts": "^3.8.0"
   },
   "devDependencies": {
