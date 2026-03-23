@@ -7,3 +7,9 @@
 [submodule "easylife-jira-api"]
 	path = jira-api
 	url = https://github.com/akirti/easylife-jira-api
+[submodule "jira-api"]
+	path = jira-api
+	url = https://github.com/akirti/easylife-jira-api.git
+[submodule "jira-dashboard"]
+	path = jira-dashboard
+	url = https://github.com/akirti/easylife-jira-board.git
