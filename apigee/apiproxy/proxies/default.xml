@@ -1100,6 +1100,42 @@
             <Condition>(proxy.pathsuffix MatchesPath "/error-logs/archives") or (proxy.pathsuffix MatchesPath "/error-logs/archives/**")</Condition>
         </Flow>
 
+        <!-- ==================== System Logs Endpoints ==================== -->
+        <Flow name="SystemLogs-List">
+            <Description>List system log entries</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/system-logs") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="SystemLogs-Files">
+            <Description>List system log files</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/system-logs/files") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="SystemLogs-Config">
+            <Description>Get logging configuration</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/system-logs/config") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="SystemLogs-Download">
+            <Description>Download a system log file</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/system-logs/download/*") and (request.verb = "GET")</Condition>
+        </Flow>
+
+        <Flow name="SystemLogs-PushGCS">
+            <Description>Push system logs to GCS</Description>
+            <Request/>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/system-logs/push-gcs") and (request.verb = "POST")</Condition>
+        </Flow>
+
         <!-- ==================== Prevail Proxy Endpoints ==================== -->
         <Flow name="Prevail-Query">
             <Description>Proxy query to Prevail service</Description>
