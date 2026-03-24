@@ -17,6 +17,11 @@ STR_HS256 = "HS256"
 TEST_ISSUER = "easylife-auth"
 TEST_AUDIENCE = "easylife-api"
 TEST_SECRET_KEY = "test_secret_key"
+PATCH_APP_DATABASE_MANAGER = "easylifeauth.app.DatabaseManager"
+PATCH_APP_TOKEN_MANAGER = "easylifeauth.app.TokenManager"
+PATCH_APP_INIT_DEPENDENCIES = "easylifeauth.app.init_dependencies"
+PATCH_APP_EMAIL_SERVICE = "easylifeauth.app.EmailService"
+PATCH_DEPS_ERROR_LOG_SERVICE = "easylifeauth.api.dependencies.get_error_log_service"
 
 
 # ============================================================================
@@ -208,9 +213,9 @@ class TestCreateAppLifespan:
 
     def test_lifespan_with_db_config_and_token_secret(self):
         """Lines 89-137: startup with db_config + token_secret triggers DB init."""
-        with patch("easylifeauth.app.DatabaseManager") as MockDBM, \
-             patch("easylifeauth.app.TokenManager"), \
-             patch("easylifeauth.app.init_dependencies") as mock_init:
+        with patch(PATCH_APP_DATABASE_MANAGER) as MockDBM, \
+             patch(PATCH_APP_TOKEN_MANAGER), \
+             patch(PATCH_APP_INIT_DEPENDENCIES) as mock_init:
             mock_db = MagicMock()
             mock_db.ping = AsyncMock(return_value=True)
             mock_db.close = MagicMock()
@@ -232,9 +237,9 @@ class TestCreateAppLifespan:
 
     def test_lifespan_db_ping_fails(self):
         """Line 99: db ping returns False."""
-        with patch("easylifeauth.app.DatabaseManager") as MockDBM, \
-             patch("easylifeauth.app.TokenManager"), \
-             patch("easylifeauth.app.init_dependencies"):
+        with patch(PATCH_APP_DATABASE_MANAGER) as MockDBM, \
+             patch(PATCH_APP_TOKEN_MANAGER), \
+             patch(PATCH_APP_INIT_DEPENDENCIES):
             mock_db = MagicMock()
             mock_db.ping = AsyncMock(return_value=False)
             mock_db.close = MagicMock()
@@ -248,9 +253,9 @@ class TestCreateAppLifespan:
 
     def test_lifespan_db_ping_exception(self):
         """Line 100-101: db ping raises exception."""
-        with patch("easylifeauth.app.DatabaseManager") as MockDBM, \
-             patch("easylifeauth.app.TokenManager"), \
-             patch("easylifeauth.app.init_dependencies"):
+        with patch(PATCH_APP_DATABASE_MANAGER) as MockDBM, \
+             patch(PATCH_APP_TOKEN_MANAGER), \
+             patch(PATCH_APP_INIT_DEPENDENCIES):
             mock_db = MagicMock()
             mock_db.ping = AsyncMock(side_effect=ConnectionError("timeout"))
             mock_db.close = MagicMock()
@@ -264,10 +269,10 @@ class TestCreateAppLifespan:
 
     def test_lifespan_email_service_configured(self):
         """Lines 113-115: email service init when smtp_config has required keys."""
-        with patch("easylifeauth.app.DatabaseManager") as MockDBM, \
-             patch("easylifeauth.app.TokenManager"), \
-             patch("easylifeauth.app.EmailService") as MockEmail, \
-             patch("easylifeauth.app.init_dependencies"):
+        with patch(PATCH_APP_DATABASE_MANAGER) as MockDBM, \
+             patch(PATCH_APP_TOKEN_MANAGER), \
+             patch(PATCH_APP_EMAIL_SERVICE) as MockEmail, \
+             patch(PATCH_APP_INIT_DEPENDENCIES):
             mock_db = MagicMock()
             mock_db.ping = AsyncMock(return_value=True)
             mock_db.close = MagicMock()
@@ -287,9 +292,9 @@ class TestCreateAppLifespan:
 
     def test_lifespan_shutdown_db_close_error(self):
         """Lines 136-137: db.close() raises during shutdown."""
-        with patch("easylifeauth.app.DatabaseManager") as MockDBM, \
-             patch("easylifeauth.app.TokenManager"), \
-             patch("easylifeauth.app.init_dependencies"):
+        with patch(PATCH_APP_DATABASE_MANAGER) as MockDBM, \
+             patch(PATCH_APP_TOKEN_MANAGER), \
+             patch(PATCH_APP_INIT_DEPENDENCIES):
             mock_db = MagicMock()
             mock_db.ping = AsyncMock(return_value=True)
             mock_db.close = MagicMock(side_effect=RuntimeError("close failed"))
@@ -419,13 +424,7 @@ class TestCreateAppExceptionHandlers:
 
         mock_log_svc = MagicMock()
         mock_log_svc.log_error = AsyncMock()
-        with patch("easylifeauth.app.get_error_log_service", return_value=mock_log_svc, create=True):
-            # Patch at the import target inside the exception handler
-            with patch.dict("sys.modules", {}):
-                pass
-        # The handler imports get_error_log_service dynamically; we need to patch
-        # the module it imports from
-        with patch("easylifeauth.api.dependencies.get_error_log_service", return_value=mock_log_svc):
+        with patch(PATCH_DEPS_ERROR_LOG_SERVICE, return_value=mock_log_svc):
             resp = client.get("/test-val-log?count=abc")
             assert resp.status_code == 422
 
@@ -442,7 +441,7 @@ class TestCreateAppExceptionHandlers:
 
         mock_log_svc = MagicMock()
         mock_log_svc.log_error = AsyncMock()
-        with patch("easylifeauth.api.dependencies.get_error_log_service", return_value=mock_log_svc):
+        with patch(PATCH_DEPS_ERROR_LOG_SERVICE, return_value=mock_log_svc):
             resp = client.get("/test-gen-log")
             assert resp.status_code == 500
 
@@ -459,7 +458,7 @@ class TestCreateAppExceptionHandlers:
 
         mock_log_svc = MagicMock()
         mock_log_svc.log_error = AsyncMock(side_effect=Exception("log failed"))
-        with patch("easylifeauth.api.dependencies.get_error_log_service", return_value=mock_log_svc):
+        with patch(PATCH_DEPS_ERROR_LOG_SERVICE, return_value=mock_log_svc):
             resp = client.get("/test-gen-log-fail")
             assert resp.status_code == 500
 

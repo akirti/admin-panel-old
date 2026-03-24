@@ -8,8 +8,9 @@ from fastapi.testclient import TestClient
 from easylifeauth.api.atlassian_lookup_routes import router
 from easylifeauth.security.access_control import CurrentUser
 
-PATH_SEARCH_BOARDS = "/api/v1/atlassian/search/boards"
-PATH_SEARCH_USERS = "/api/v1/atlassian/search/users"
+API_PREFIX = "/api/v1"
+PATH_SEARCH_BOARDS = f"{API_PREFIX}/atlassian/search/boards"
+PATH_SEARCH_USERS = f"{API_PREFIX}/atlassian/search/users"
 OID_9011 = "507f1f77bcf86cd799439011"
 STR_TEST = "TEST"
 STR_DEV_BOARD = "Dev Board"
@@ -28,7 +29,7 @@ def _make_disabled_client(mock_current_user):
     mock_service.enabled = False
 
     app = FastAPI()
-    app.include_router(router, prefix="/api/v1")
+    app.include_router(router, prefix=API_PREFIX)
     app.dependency_overrides[get_current_user] = lambda: mock_current_user
     app.dependency_overrides[get_atlassian_lookup_service] = lambda: mock_service
     return TestClient(app)
@@ -39,7 +40,7 @@ def _make_none_client(mock_current_user):
     from easylifeauth.api.dependencies import get_current_user, get_atlassian_lookup_service
 
     app = FastAPI()
-    app.include_router(router, prefix="/api/v1")
+    app.include_router(router, prefix=API_PREFIX)
     app.dependency_overrides[get_current_user] = lambda: mock_current_user
     app.dependency_overrides[get_atlassian_lookup_service] = lambda: None
     return TestClient(app)
@@ -75,7 +76,7 @@ def client(mock_current_user, mock_atlassian_service):
     from easylifeauth.api.dependencies import get_current_user, get_atlassian_lookup_service
 
     app = FastAPI()
-    app.include_router(router, prefix="/api/v1")
+    app.include_router(router, prefix=API_PREFIX)
     app.dependency_overrides[get_current_user] = lambda: mock_current_user
     app.dependency_overrides[get_atlassian_lookup_service] = lambda: mock_atlassian_service
     return TestClient(app)

@@ -10,6 +10,12 @@ from easylifeauth.errors.auth_error import AuthError
 from mock_data import MOCK_EMAIL, MOCK_URL_FRONTEND, MOCK_URL_MONGODB
 
 PATH_ROOT = "/"
+PATH_DOCS = "/docs"
+PATH_REDOC = "/redoc"
+PATH_OPENAPI = "/openapi.json"
+OPENAPI_FILENAME = "openapi.json"
+REDOC_SPEC_URL_ATTR = f'spec-url="{OPENAPI_FILENAME}"'
+REDOC_SCRIPT_NAME = "redoc.standalone.js"
 PATCH_EASYLIFEAUTH_APP_DATABASEMANAGER = "easylifeauth.app.DatabaseManager"
 PATCH_EASYLIFEAUTH_APP_INIT_DEPENDENCIES = "easylifeauth.app.init_dependencies"
 PATCH_EASYLIFEAUTH_APP_TOKENMANAGER = "easylifeauth.app.TokenManager"
@@ -73,35 +79,33 @@ class TestAppRoutes:
 
     def test_docs_endpoint_exists(self, client):
         """Test docs endpoint exists at root level"""
-        response = client.get("/docs")
-        # Should redirect or return docs page
+        response = client.get(PATH_DOCS)
         assert response.status_code in [200, 307]
 
     def test_docs_uses_relative_openapi_url(self, client):
         """Test Swagger UI references openapi.json with a relative URL"""
-        response = client.get("/docs")
+        response = client.get(PATH_DOCS)
         assert response.status_code in [200, 307]
         if response.status_code == 200:
-            # Swagger UI HTML should contain relative "openapi.json" URL
-            assert "openapi.json" in response.text
+            assert OPENAPI_FILENAME in response.text
 
     def test_redoc_endpoint_returns_html(self, client):
         """Test custom ReDoc endpoint returns HTML page"""
-        response = client.get("/redoc")
+        response = client.get(PATH_REDOC)
         assert response.status_code == 200
         assert "text/html" in response.headers.get("content-type", "")
 
     def test_redoc_uses_relative_spec_url(self, client):
         """Test ReDoc HTML uses relative spec-url for openapi.json"""
-        response = client.get("/redoc")
+        response = client.get(PATH_REDOC)
         assert response.status_code == 200
-        assert 'spec-url="openapi.json"' in response.text
+        assert REDOC_SPEC_URL_ATTR in response.text
 
     def test_redoc_includes_redoc_script(self, client):
         """Test ReDoc HTML includes the ReDoc standalone script"""
-        response = client.get("/redoc")
+        response = client.get(PATH_REDOC)
         assert response.status_code == 200
-        assert "redoc.standalone.js" in response.text
+        assert REDOC_SCRIPT_NAME in response.text
 
     @pytest.mark.skipif(
         sys.version_info < (3, 10),
@@ -109,7 +113,7 @@ class TestAppRoutes:
     )
     def test_openapi_endpoint_exists(self, client):
         """Test openapi.json endpoint exists at root level"""
-        response = client.get("/openapi.json")
+        response = client.get(PATH_OPENAPI)
         assert response.status_code == 200
         data = response.json()
         assert "openapi" in data
@@ -126,23 +130,21 @@ class TestDocsWithRootPath:
 
     def test_docs_still_accessible(self, client_with_root_path):
         """Test /docs is accessible when root_path is set"""
-        response = client_with_root_path.get("/docs")
+        response = client_with_root_path.get(PATH_DOCS)
         assert response.status_code in [200, 307]
 
     def test_redoc_still_accessible(self, client_with_root_path):
         """Test /redoc is accessible when root_path is set"""
-        response = client_with_root_path.get("/redoc")
+        response = client_with_root_path.get(PATH_REDOC)
         assert response.status_code == 200
-        assert 'spec-url="openapi.json"' in response.text
+        assert REDOC_SPEC_URL_ATTR in response.text
 
     def test_redoc_does_not_use_absolute_root_path_url(self, client_with_root_path):
         """Test ReDoc does not hardcode root_path in the spec URL"""
-        response = client_with_root_path.get("/redoc")
+        response = client_with_root_path.get(PATH_REDOC)
         assert response.status_code == 200
-        # Should NOT contain the absolute root_path-prefixed URL
-        assert "/mine/tine/security/openapi.json" not in response.text
-        # Should use relative URL
-        assert 'spec-url="openapi.json"' in response.text
+        assert f"/mine/tine/security/{OPENAPI_FILENAME}" not in response.text
+        assert REDOC_SPEC_URL_ATTR in response.text
 
 
 class TestExceptionHandlers:
