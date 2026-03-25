@@ -45,6 +45,7 @@ _system_log_service: Optional[SystemLogService] = None
 _gcs_service: Optional[GCSService] = None
 _ui_template_service: Optional[UITemplateService] = None
 _handshake_secret: Optional[str] = None
+_prevail_api_key: Optional[str] = None
 
 
 def init_dependencies(
@@ -56,6 +57,7 @@ def init_dependencies(
     file_storage_config: Optional[Dict[str, Any]] = None,
     gcs_config: Optional[Dict[str, Any]] = None,
     handshake_secret: Optional[str] = None,
+    prevail_api_key: Optional[str] = None,
     ui_templates_db: Optional[DatabaseManager] = None,
     logging_config: Optional[Dict[str, Any]] = None
 ) -> None:
@@ -67,12 +69,13 @@ def init_dependencies(
     global _file_storage_service
     global _activity_log_service, _error_log_service, _gcs_service
     global _system_log_service
-    global _ui_template_service, _handshake_secret
+    global _ui_template_service, _handshake_secret, _prevail_api_key
 
     _db = db
     _token_manager = token_manager
     _email_service = email_service
     _handshake_secret = handshake_secret
+    _prevail_api_key = prevail_api_key
 
     # Set token manager for access control
     set_token_manager(token_manager)
@@ -295,6 +298,11 @@ def get_handshake_secret() -> Optional[str]:
     return _handshake_secret
 
 
+def get_prevail_api_key() -> Optional[str]:
+    """Get prevail API config key from environment/config"""
+    return _prevail_api_key
+
+
 def get_ui_template_service() -> UITemplateService:
     """Get UI template service"""
     if _ui_template_service is None:
@@ -325,6 +333,7 @@ __all__ = [
     "get_error_log_service",
     "get_system_log_service",
     "get_handshake_secret",
+    "get_prevail_api_key",
     "get_ui_template_service",
     "get_current_user",
 ]

@@ -225,6 +225,8 @@ def bootstrap():
         "environment.app_secrets.private_handshake_secret_key"
     )
 
+    prevail_api_key = config_loader.get_config_by_path("environment.proxies.api.prevail-key")
+
     root_path = (
         os.environ.get("API_ROOT_PATH")
         or config_loader.get_config_by_path("environment.root_path")
@@ -251,6 +253,7 @@ def bootstrap():
     kw["description"] = "Authentication, Authorization, and Administration API"
     kw["root_path"] = root_path
     kw["handshake_secret"] = handshake_secret
+    kw["prevail_api_key"] = prevail_api_key
 
     auth_config = config_loader.get_config_by_path("environment.authentication") or {}
     access_token_expiry = _safe_int(auth_config.get("access_token_expiry_minutes"), 30)

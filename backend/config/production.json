@@ -124,6 +124,11 @@
                 "bundle_file_name": "{environment.jira.ssl.bundle_file_name}",
                 "bundle_data": "{environment.jira.ssl.bundle_data}"
             }
-        }
+        },
+    "proxies":{
+      "api":{
+        "prevail-key":"{environment.proxies.api.prevail-key}"
+      }
+    }
     } 
   }

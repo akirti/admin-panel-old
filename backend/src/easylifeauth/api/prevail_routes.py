@@ -8,7 +8,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 
-from easylifeauth.api.dependencies import get_db, get_gcs_service, get_handshake_secret
+from easylifeauth.api.dependencies import get_db, get_gcs_service, get_handshake_secret, get_prevail_api_key
 from easylifeauth.security.access_control import get_current_user, CurrentUser
 from easylifeauth.services.api_config_service import ApiConfigService
 
@@ -28,16 +28,18 @@ async def execute_prevail_query(
     current_user: CurrentUser = Depends(get_current_user),
     service: ApiConfigService = Depends(get_api_config_service),
     handshake_secret: str = Depends(get_handshake_secret),
+    prevail_api_key: str = Depends(get_prevail_api_key),
 ):
     """
     Proxy a playboard query to the external Prevail service.
 
-    Looks up the api_config with key="prevail" for the target URL and auth.
+    Looks up the api_config with the configured prevail key for the target URL and auth.
     Appends /{scenario_key} to the configured endpoint and forwards the
     JSON payload.
     """
-    # Get the prevail API configuration
-    config = await service.get_config_by_key("prevail")
+    # Get the prevail API configuration using key from config/env
+    api_key = prevail_api_key or "prevail"
+    config = await service.get_config_by_key(api_key)
     if not config:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

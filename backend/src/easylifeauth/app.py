@@ -73,6 +73,7 @@ def create_app(
     description: str = "Authentication and Authorization API for EasyLife",
     root_path: str = "",
     handshake_secret: Optional[str] = None,
+    prevail_api_key: Optional[str] = None,
     logging_config: Optional[Dict[str, Any]] = None,
 ) -> FastAPI:
     """Create and configure FastAPI application
@@ -150,6 +151,7 @@ def create_app(
                 file_storage_config=file_storage_config,
                 gcs_config=gcs_config,
                 handshake_secret=handshake_secret,
+                prevail_api_key=prevail_api_key,
                 ui_templates_db=ui_templates_db_manager,
                 logging_config=logging_config
             )
