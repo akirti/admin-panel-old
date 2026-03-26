@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { getAccessToken } from '../../services/api';
 
 const JiraDashboard = lazy(() =>
   import('jira-dashboard').then(mod => ({ default: mod.JiraDashboard }))
@@ -8,22 +8,9 @@ const JiraDashboard = lazy(() =>
 const JIRA_API_URL = window.__ENV__?.JIRA_API_URL || 'http://localhost:8001/api/v1';
 
 const JiraDashboardPage = () => {
-  const { user } = useAuth();
-
-  // Pass the current access token - the cookie-based auth means we need to
-  // get the token from the cookie or use a token endpoint
-  const getToken = async () => {
-    // The main frontend uses httpOnly cookies, so we extract from api interceptor
-    // For jira-api (separate service), we need a Bearer token
-    // Use the refresh endpoint to get a fresh access token
-    try {
-      const { default: api } = await import('../../services/api');
-      const res = await api.post('/auth/token');
-      return res.data?.access_token;
-    } catch {
-      return null;
-    }
-  };
+  // Return the in-memory access token directly — no network call needed.
+  // The token is already managed by api.js interceptors (login/refresh).
+  const getToken = () => getAccessToken();
 
   return (
     <div className="space-y-6">

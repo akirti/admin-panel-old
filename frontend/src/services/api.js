@@ -53,6 +53,7 @@ export const clearProactiveRefresh = () => {
 
 // Public helpers so AuthContext can set/clear the bearer token
 export const setAccessToken = (token) => { accessToken = token; };
+export const getAccessToken = () => accessToken;
 export const clearAccessToken = () => {
   accessToken = null;
   csrfToken = null;
