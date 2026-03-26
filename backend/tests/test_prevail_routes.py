@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from fastapi import FastAPI
 
 from easylifeauth.api.prevail_routes import router, get_api_config_service
-from easylifeauth.api.dependencies import get_db, get_gcs_service, get_handshake_secret
+from easylifeauth.api.dependencies import get_db, get_gcs_service, get_handshake_secret, get_prevail_api_key
 from easylifeauth.security.access_control import get_current_user
 from mock_data import (
     MOCK_URL_PREVAIL, MOCK_URL_PREVAIL_API, MOCK_URL_PREVAIL_SCENARIO,
@@ -102,6 +102,7 @@ class TestExecutePrevailQuery:
         app.dependency_overrides[get_current_user] = lambda: mock_current_user
         app.dependency_overrides[get_api_config_service] = lambda: mock_service
         app.dependency_overrides[get_handshake_secret] = lambda: None
+        app.dependency_overrides[get_prevail_api_key] = lambda: "prevail"
         return TestClient(app)
 
     # ------------------------------------------------------------------
@@ -823,6 +824,7 @@ class TestExecutePrevailQueryEdgeCases:
         app.dependency_overrides[get_current_user] = lambda: mock_current_user
         app.dependency_overrides[get_api_config_service] = lambda: mock_service
         app.dependency_overrides[get_handshake_secret] = lambda: None
+        app.dependency_overrides[get_prevail_api_key] = lambda: "prevail"
         return TestClient(app)
 
     def test_empty_json_body_is_forwarded(
@@ -944,3 +946,101 @@ class TestExecutePrevailQueryEdgeCases:
 
         assert response.status_code == 429
         assert EXPECTED_PREVAIL_SERVICE_ERROR in response.json()["detail"]
+
+
+class TestPrevailApiKeyFromConfig:
+    """Tests for the prevail_api_key dependency injection from config/env"""
+
+    @pytest.fixture
+    def app(self):
+        app = FastAPI()
+        app.include_router(router)
+        return app
+
+    @pytest.fixture
+    def mock_service(self):
+        service = MagicMock()
+        service.get_config_by_key = AsyncMock()
+        service.test_api = AsyncMock()
+        return service
+
+    @pytest.fixture
+    def mock_current_user(self):
+        user = MagicMock()
+        user.user_id = MOCK_PREVAIL_USER_ID
+        user.email = MOCK_PREVAIL_USER_EMAIL
+        user.roles = [ROLE_USER]
+        user.groups = []
+        user.domains = [STR_DOMAIN1]
+        return user
+
+    @pytest.fixture
+    def active_config(self):
+        return {
+            "_id": MOCK_PREVAIL_CONFIG_ID,
+            "key": "custom-prevail",
+            "name": STR_PREVAIL_API,
+            "endpoint": MOCK_URL_PREVAIL,
+            "status": STR_ACTIVE,
+            "method": METHOD_POST,
+            "auth_type": STR_BEARER,
+            "auth_config": {"token": MOCK_PREVAIL_SERVICE_TOKEN},
+            "timeout": 120,
+            "ssl_verify": True,
+        }
+
+    def _make_client(self, app, mock_current_user, mock_service, prevail_key):
+        app.dependency_overrides[get_db] = lambda: MagicMock()
+        app.dependency_overrides[get_gcs_service] = lambda: MagicMock()
+        app.dependency_overrides[get_current_user] = lambda: mock_current_user
+        app.dependency_overrides[get_api_config_service] = lambda: mock_service
+        app.dependency_overrides[get_handshake_secret] = lambda: None
+        app.dependency_overrides[get_prevail_api_key] = lambda: prevail_key
+        return TestClient(app)
+
+    def test_uses_custom_key_from_config(
+        self, app, mock_service, mock_current_user, active_config
+    ):
+        """Test that a custom prevail_api_key is used for config lookup"""
+        client = self._make_client(app, mock_current_user, mock_service, "custom-prevail")
+        mock_service.get_config_by_key.return_value = active_config
+        mock_service.test_api.return_value = {
+            "success": True, "status_code": 200,
+            "response_body": {"ok": True}, "error": None,
+        }
+
+        client.post("/prevail/scenario-x", json=BODY_Q_TEST)
+
+        mock_service.get_config_by_key.assert_called_once_with("custom-prevail")
+
+    def test_falls_back_to_prevail_when_key_is_none(
+        self, app, mock_service, mock_current_user, active_config
+    ):
+        """Test that None prevail_api_key falls back to 'prevail'"""
+        client = self._make_client(app, mock_current_user, mock_service, None)
+        active_config["key"] = STR_PREVAIL
+        mock_service.get_config_by_key.return_value = active_config
+        mock_service.test_api.return_value = {
+            "success": True, "status_code": 200,
+            "response_body": {"ok": True}, "error": None,
+        }
+
+        client.post("/prevail/scenario-x", json=BODY_Q_TEST)
+
+        mock_service.get_config_by_key.assert_called_once_with(STR_PREVAIL)
+
+    def test_falls_back_to_prevail_when_key_is_empty_string(
+        self, app, mock_service, mock_current_user, active_config
+    ):
+        """Test that empty string prevail_api_key falls back to 'prevail'"""
+        client = self._make_client(app, mock_current_user, mock_service, "")
+        active_config["key"] = STR_PREVAIL
+        mock_service.get_config_by_key.return_value = active_config
+        mock_service.test_api.return_value = {
+            "success": True, "status_code": 200,
+            "response_body": {"ok": True}, "error": None,
+        }
+
+        client.post("/prevail/scenario-x", json=BODY_Q_TEST)
+
+        mock_service.get_config_by_key.assert_called_once_with(STR_PREVAIL)

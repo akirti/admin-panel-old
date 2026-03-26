@@ -353,6 +353,28 @@ class TestDependencyGetters:
         finally:
             deps._activity_log_service = original
 
+    def test_get_prevail_api_key_none(self):
+        """Test get_prevail_api_key returns None when not set"""
+        import easylifeauth.api.dependencies as deps
+        original = deps._prevail_api_key
+        try:
+            deps._prevail_api_key = None
+            result = deps.get_prevail_api_key()
+            assert result is None
+        finally:
+            deps._prevail_api_key = original
+
+    def test_get_prevail_api_key_initialized(self):
+        """Test get_prevail_api_key returns key when set"""
+        import easylifeauth.api.dependencies as deps
+        original = deps._prevail_api_key
+        try:
+            deps._prevail_api_key = "custom-key"
+            result = deps.get_prevail_api_key()
+            assert result == "custom-key"
+        finally:
+            deps._prevail_api_key = original
+
 
 class TestInitDependencies:
     """Tests for init_dependencies function"""

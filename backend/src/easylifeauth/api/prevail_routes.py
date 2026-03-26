@@ -6,6 +6,8 @@ with key="prevail".
 """
 import logging
 
+from typing import Annotated, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 
 from easylifeauth.api.dependencies import get_db, get_gcs_service, get_handshake_secret, get_prevail_api_key
@@ -25,10 +27,10 @@ def get_api_config_service(db=Depends(get_db), gcs_service=Depends(get_gcs_servi
 async def execute_prevail_query(
     scenario_key: str,
     request: Request,
-    current_user: CurrentUser = Depends(get_current_user),
-    service: ApiConfigService = Depends(get_api_config_service),
-    handshake_secret: str = Depends(get_handshake_secret),
-    prevail_api_key: str = Depends(get_prevail_api_key),
+    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+    service: Annotated[ApiConfigService, Depends(get_api_config_service)],
+    handshake_secret: Annotated[Optional[str], Depends(get_handshake_secret)],
+    prevail_api_key: Annotated[Optional[str], Depends(get_prevail_api_key)],
 ):
     """
     Proxy a playboard query to the external Prevail service.
