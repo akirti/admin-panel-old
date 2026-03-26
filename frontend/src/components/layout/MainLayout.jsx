@@ -118,6 +118,34 @@ function getHeaderTitle(isAdmin, isGroupAdmin) {
   return 'Welcome';
 }
 
+const ENV_LABELS = {
+  dev: 'Development', development: 'Development',
+  qa: 'QA',
+  stg: 'Stage', stage: 'Stage',
+  prd: 'Production', prod: 'Production', production: 'Production',
+  local: 'Local',
+};
+
+const ENV_COLORS = {
+  Development: 'bg-amber-100 text-amber-800 border-amber-300',
+  QA: 'bg-cyan-100 text-cyan-800 border-cyan-300',
+  Stage: 'bg-purple-100 text-purple-800 border-purple-300',
+  Production: 'bg-red-100 text-red-800 border-red-300',
+  Local: 'bg-green-100 text-green-800 border-green-300',
+};
+
+function EnvironmentBadge() {
+  const raw = (window.__env?.ENV || '').toLowerCase().trim();
+  if (!raw) return null;
+  const label = ENV_LABELS[raw] || raw;
+  const color = ENV_COLORS[label] || 'bg-surface-hover text-content-muted border-edge';
+  return (
+    <span className={`px-2 py-0.5 text-xs font-semibold rounded border ${color}`}>
+      {label}
+    </span>
+  );
+}
+
 function NavItem({ item, isActive, sidebarOpen, iconSize }) {
   const Icon = item.icon;
   const active = item.path ? isActive(item.path, item.exact) : false;
@@ -248,7 +276,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
 
   // Auto-collapse main sidebar when Explorer is active (Explorer has its own domain sidebar)
   const isExplorerActive = location.pathname.startsWith('/explorer');
-  const effectiveSidebarOpen = isExplorerActive ? false : sidebarOpen;
+  const effectiveSidebarOpen = isExplorerActive ? mobileMenuOpen : sidebarOpen;
   const iconSize = effectiveSidebarOpen ? 20 : 24;
 
   const isActive = (path, exact = false) => {
@@ -262,10 +290,10 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
       Skip to main content
     </a>
     <div className="flex h-screen bg-base-secondary">
-      {/* Mobile backdrop */}
+      {/* Sidebar backdrop */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className={`fixed inset-0 bg-black/50 z-40 ${isExplorerActive ? '' : 'md:hidden'}`}
           onClick={() => setMobileMenuOpen(false)}
           aria-hidden="true"
         />
@@ -276,8 +304,8 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
         className={`
           ${effectiveSidebarOpen ? 'w-64' : 'w-20'}
           bg-sidebar-bg shadow-sm border-r border-edge transition-all duration-300 flex flex-col
-          fixed md:static inset-y-0 left-0 z-50
-          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+          fixed ${isExplorerActive ? '' : 'md:static'} inset-y-0 left-0 z-50
+          ${mobileMenuOpen ? 'translate-x-0' : isExplorerActive ? '-translate-x-full' : '-translate-x-full md:translate-x-0'}
         `}
         role="complementary"
         aria-label="Sidebar"
@@ -339,7 +367,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
         <header className="h-16 bg-header-bg shadow-sm border-b border-edge flex items-center justify-between px-6">
           <div className="flex items-center gap-3">
             <button
-              className="md:hidden p-2 rounded-lg hover:bg-surface-hover text-content-secondary"
+              className={`${isExplorerActive ? '' : 'md:hidden '}p-2 rounded-lg hover:bg-surface-hover text-content-secondary`}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle menu"
             >
@@ -351,6 +379,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
           </div>
 
           <div className="flex items-center gap-4">
+            <EnvironmentBadge />
             <FontSizeControl compact />
             {/* Role badges */}
             <div className="flex gap-2">

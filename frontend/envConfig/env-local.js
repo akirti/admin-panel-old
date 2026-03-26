@@ -4,4 +4,5 @@
   window.__env.APP_BASE_PATH = "";
   window.__env.API_BASE_URL = "/api/v1";
   window.__env.PREVAIL_API_BASE_URL = "/api/v1";
+  window.__env.JIRA_API_URL = "http://localhost:8002/api/v1";
 })(window);

@@ -1,20 +1,27 @@
 # Frontend Dockerfile - Multi-stage build
-# Build context must be project root (for jira-dashboard file: dependency)
+# Build context: ./frontend (standard)
+# REQUIRES: jira-dashboard source copied into frontend/.jira-dashboard/ before build
+# Run: cp -r ../jira-dashboard/src frontend/.jira-dashboard-src && cp ../jira-dashboard/package.json frontend/.jira-dashboard-pkg.json
 
 # Stage 1: Build
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy jira-dashboard library (local file: dependency)
-COPY jira-dashboard/ /jira-dashboard/
+# Set up jira-dashboard as local package
+RUN mkdir -p /jira-dashboard/src
+COPY .jira-dashboard-pkg.json /jira-dashboard/package.json
+COPY .jira-dashboard-src/ /jira-dashboard/src/
 
 # Copy package files and install
-COPY frontend/package.json frontend/yarn.lock ./
+COPY package.json yarn.lock ./
 RUN yarn install --production=false 2>/dev/null || npm install --legacy-peer-deps
 
 # Copy frontend source
-COPY frontend/ .
+COPY . .
+
+# Clean up build artifacts copied for jira-dashboard
+RUN rm -rf .jira-dashboard-src .jira-dashboard-pkg.json
 
 # Set production mode for build
 ENV NODE_ENV=production

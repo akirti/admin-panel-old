@@ -116,13 +116,13 @@ services:
   # Frontend - Admin Panel (React + Nginx)
   frontend:
     build:
-      context: .
-      dockerfile: frontend/Dockerfile
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: easylife-frontend
     restart: unless-stopped
     stop_grace_period: 5s
     environment:
-      ENVIRONMENT: ${ENVIRONMENT:-production}
+      ENVIRONMENT: ${ENVIRONMENT:-local}
     ports:
       - "${FRONTEND_PORT:-3000}:80"
     depends_on:

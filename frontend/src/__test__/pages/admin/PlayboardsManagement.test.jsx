@@ -87,7 +87,7 @@ const mockPlayboards = [
     name: 'Customer Search',
     key: 'customer_search_1',
     scenarioKey: 'customers',
-    status: 'active',
+    status: 'A',
     data: { key: 'customer_search_1', dataDomain: 'customers', widgets: { filters: [{}], grid: { actions: { rowActions: { events: [{}] } } } } },
   },
   {
@@ -96,7 +96,7 @@ const mockPlayboards = [
     name: 'Order Report',
     key: 'order_report_1',
     scenarioKey: 'orders',
-    status: 'inactive',
+    status: 'I',
     data: { key: 'order_report_1', dataDomain: 'orders', widgets: { filters: [], grid: { actions: { rowActions: { events: [] } } } } },
   },
 ];
@@ -1679,7 +1679,7 @@ describe('PlayboardsManagement', () => {
       Array.from(s.options).some(o => o.label === 'Active' || o.label === 'Inactive')
     );
     if (statusSelect) {
-      fireEvent.change(statusSelect, { target: { value: 'inactive' } });
+      fireEvent.change(statusSelect, { target: { value: 'I' } });
     }
 
     const form = modal.querySelector('form');
@@ -1742,7 +1742,7 @@ describe('PlayboardsManagement', () => {
         name: 'Underscore ID Playboard',
         key: 'underscore_pb',
         scenarioKey: 'test',
-        status: 'active',
+        status: 'A',
         data: { key: 'underscore_pb', dataDomain: 'test', widgets: { filters: [], grid: { actions: { rowActions: { events: [] } } } } },
       },
     ];
@@ -1777,7 +1777,7 @@ describe('PlayboardsManagement', () => {
         key: 'direct_widgets',
         scenarioKey: 'sc1',
         dataDomain: 'domain1',
-        status: 'active',
+        status: 'A',
         order: 5,
         program_key: 'prog1',
         config_type: 'gcs',
@@ -1790,7 +1790,7 @@ describe('PlayboardsManagement', () => {
               rowActions: {
                 renderAs: 'dropdown',
                 attributes: ['attr1'],
-                events: [{ key: 'act1', name: 'Action 1', path: '/act1', status: 'active', filters: [{ inputKey: 'ik', dataKey: 'dk' }] }]
+                events: [{ key: 'act1', name: 'Action 1', path: '/act1', status: 'A', filters: [{ inputKey: 'ik', dataKey: 'dk' }] }]
               },
               headerActions: { some: 'action' }
             },
@@ -1842,8 +1842,8 @@ describe('PlayboardsManagement', () => {
         _id: 'pb_nowidgets',
         name: 'No Widgets PB',
         scenarioKey: 'sc1',
-        status: 'inactive',
-        data: { key: 'no_widgets_key', dataDomain: 'dom1', status: 'active', scenarioKey: 'sc1_data', program_key: 'prog_data', config_type: 'db+gcs', order: 3, addon_configurations: ['a1'], scenarioDescription: [{ type: 'p', text: 'desc' }] },
+        status: 'I',
+        data: { key: 'no_widgets_key', dataDomain: 'dom1', status: 'A', scenarioKey: 'sc1_data', program_key: 'prog_data', config_type: 'db+gcs', order: 3, addon_configurations: ['a1'], scenarioDescription: [{ type: 'p', text: 'desc' }] },
       },
     ];
     playboardsAPI.list.mockResolvedValue({
@@ -1875,7 +1875,7 @@ describe('PlayboardsManagement', () => {
         _id: 'pb_nokey',
         name: 'Fallback Name PB',
         scenarioKey: 'sc1',
-        status: 'active',
+        status: 'A',
         data: {},
       },
     ];
@@ -1906,7 +1906,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_datawidgets',
         _id: 'pb_datawidgets',
         name: 'Data Widgets PB',
-        status: 'active',
+        status: 'A',
         data: {
           key: 'data_widget_key',
           widgets: {
@@ -1996,7 +1996,7 @@ describe('PlayboardsManagement', () => {
         _id: 'pb_nodatakey',
         name: 'Downloadable PB',
         scenarioKey: 'sc1',
-        status: 'active',
+        status: 'A',
         data: { widgets: { filters: [], grid: { actions: { rowActions: { events: [] } } } } },
       },
     ];
@@ -2031,7 +2031,7 @@ describe('PlayboardsManagement', () => {
         _id: 'pb_noname',
         name: '',
         scenarioKey: 'sc1',
-        status: 'active',
+        status: 'A',
         data: { widgets: { filters: [], grid: { actions: { rowActions: { events: [] } } } } },
       },
     ];
@@ -2189,7 +2189,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_typed_filter',
         _id: 'pb_typed_filter',
         name: 'Typed Filter PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [
@@ -2262,7 +2262,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_notype',
         _id: 'pb_notype',
         name: 'No Type PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [
@@ -2363,7 +2363,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_actions',
         _id: 'pb_actions',
         name: 'Actions PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [],
@@ -2373,8 +2373,8 @@ describe('PlayboardsManagement', () => {
                 renderAs: 'button',
                 attributes: [],
                 events: [
-                  { key: 'act1', name: 'Action One', path: '/act1', dataDomain: 'dom1', status: 'active', order: 0, filters: [] },
-                  { key: 'act2', name: 'Action Two', path: '/act2', dataDomain: 'dom2', status: 'inactive', order: 1, filters: [{ inputKey: 'q', dataKey: 'd' }] },
+                  { key: 'act1', name: 'Action One', path: '/act1', dataDomain: 'dom1', status: 'A', order: 0, filters: [] },
+                  { key: 'act2', name: 'Action Two', path: '/act2', dataDomain: 'dom2', status: 'I', order: 1, filters: [{ inputKey: 'q', dataKey: 'd' }] },
                 ]
               },
               headerActions: {}
@@ -2429,7 +2429,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_multiact',
         _id: 'pb_multiact',
         name: 'MultiAction PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [],
@@ -2439,8 +2439,8 @@ describe('PlayboardsManagement', () => {
                 renderAs: 'button',
                 attributes: [],
                 events: [
-                  { key: 'act1', name: 'Action One', path: '/act1', status: 'active', order: 0, filters: [] },
-                  { key: 'act2', name: 'Action Two', path: '/act2', status: 'active', order: 1, filters: [] },
+                  { key: 'act1', name: 'Action One', path: '/act1', status: 'A', order: 0, filters: [] },
+                  { key: 'act2', name: 'Action Two', path: '/act2', status: 'A', order: 1, filters: [] },
                 ]
               },
               headerActions: {}
@@ -2493,7 +2493,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_3act',
         _id: 'pb_3act',
         name: '3Action PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [],
@@ -2503,8 +2503,8 @@ describe('PlayboardsManagement', () => {
                 renderAs: 'button',
                 attributes: [],
                 events: [
-                  { key: 'act1', name: 'Action One', path: '/act1', status: 'active', order: 0, filters: [] },
-                  { key: 'act2', name: 'Action Two', path: '/act2', status: 'active', order: 1, filters: [] },
+                  { key: 'act1', name: 'Action One', path: '/act1', status: 'A', order: 0, filters: [] },
+                  { key: 'act2', name: 'Action Two', path: '/act2', status: 'A', order: 1, filters: [] },
                 ]
               },
               headerActions: {}
@@ -2735,7 +2735,7 @@ describe('PlayboardsManagement', () => {
         _id: 'pb_nodata',
         name: 'No Data PB',
         scenarioKey: 'sc1',
-        status: 'active',
+        status: 'A',
         data: null,
       },
     ];
@@ -2804,7 +2804,7 @@ describe('PlayboardsManagement', () => {
         name: 'No Data Prop PB',
         description: 'A description',
         scenarioKey: 'sc1',
-        status: 'active',
+        status: 'A',
       },
     ];
     playboardsAPI.list.mockResolvedValue({
@@ -2989,7 +2989,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_objattr',
         _id: 'pb_objattr',
         name: 'ObjAttr PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [
@@ -3039,7 +3039,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_notypnoattr',
         _id: 'pb_notypnoattr',
         name: 'NoTypeNoAttr PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [
@@ -3088,7 +3088,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_inact',
         _id: 'pb_inact',
         name: 'Inactive Act PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [],
@@ -3098,7 +3098,7 @@ describe('PlayboardsManagement', () => {
                 renderAs: 'button',
                 attributes: [],
                 events: [
-                  { key: 'act1', name: 'Inactive Action', path: '/act1', status: 'inactive', order: 0, filters: [] },
+                  { key: 'act1', name: 'Inactive Action', path: '/act1', status: 'I', order: 0, filters: [] },
                 ]
               },
               headerActions: {}
@@ -3143,7 +3143,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_actfilters',
         _id: 'pb_actfilters',
         name: 'ActFilters PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [],
@@ -3153,7 +3153,7 @@ describe('PlayboardsManagement', () => {
                 renderAs: 'button',
                 attributes: [],
                 events: [
-                  { key: 'act1', name: 'Filtered Action', path: '/act1', status: 'active', order: 0, filters: [{ inputKey: 'query_cust', dataKey: 'customer_id' }] },
+                  { key: 'act1', name: 'Filtered Action', path: '/act1', status: 'A', order: 0, filters: [{ inputKey: 'query_cust', dataKey: 'customer_id' }] },
                 ]
               },
               headerActions: {}
@@ -3284,7 +3284,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_cancelra',
         _id: 'pb_cancelra',
         name: 'CancelRA PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [],
@@ -3294,7 +3294,7 @@ describe('PlayboardsManagement', () => {
                 renderAs: 'button',
                 attributes: [],
                 events: [
-                  { key: 'act1', name: 'Action One', path: '/act1', status: 'active', order: 0, filters: [] },
+                  { key: 'act1', name: 'Action One', path: '/act1', status: 'A', order: 0, filters: [] },
                 ]
               },
               headerActions: {}
@@ -3433,7 +3433,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_undpag',
         _id: 'pb_undpag',
         name: 'Undefined Paginated PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [],
@@ -3484,7 +3484,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_falsepag',
         _id: 'pb_falsepag',
         name: 'False Paginated PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [],
@@ -3534,7 +3534,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_partial',
         _id: 'pb_partial',
         name: 'Partial Grid PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [],
@@ -3571,7 +3571,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_noact',
         _id: 'pb_noact',
         name: 'No Actions PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [],
@@ -3611,7 +3611,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_nogrid',
         _id: 'pb_nogrid',
         name: 'No Grid PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [{ name: 'f1', displayName: 'F1' }],
@@ -3662,7 +3662,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_strop',
         _id: 'pb_strop',
         name: 'String Options PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [
@@ -3720,7 +3720,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_nonarr',
         _id: 'pb_nonarr',
         name: 'NonArray Attrs PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [
@@ -3962,10 +3962,10 @@ describe('PlayboardsManagement', () => {
     // Change status to inactive
     const actionStatusSelect = Array.from(modal.querySelectorAll('select')).find(s => {
       const options = Array.from(s.options);
-      return options.some(o => o.value === 'inactive') && options.length === 2;
+      return options.some(o => o.value === 'I') && options.length === 2;
     });
     if (actionStatusSelect) {
-      await user.selectOptions(actionStatusSelect, 'inactive');
+      await user.selectOptions(actionStatusSelect, 'I');
     }
   });
 
@@ -4110,7 +4110,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_keyonly',
         _id: 'pb_keyonly',
         name: 'KeyOnly PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [
@@ -4162,7 +4162,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_pagattr',
         _id: 'pb_pagattr',
         name: 'PagAttr PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [],
@@ -4212,7 +4212,7 @@ describe('PlayboardsManagement', () => {
         id: 'pb_objattrval',
         _id: 'pb_objattrval',
         name: 'ObjAttrVal PB',
-        status: 'active',
+        status: 'A',
         scenarioKey: 'sc1',
         widgets: {
           filters: [
