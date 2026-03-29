@@ -48,6 +48,7 @@ const ApiConfigsManagement = React.lazy(() => import('./pages/admin/ApiConfigsMa
 const DistributionListManagement = React.lazy(() => import('./pages/admin/DistributionListManagement'));
 const UISchemaManagement = React.lazy(() => import('./pages/admin/UISchemaManagement'));
 const JiraDashboardPage = React.lazy(() => import('./pages/admin/JiraDashboardPage'));
+const AggregatorPage = React.lazy(() => import('./pages/AggregatorPage'));
 
 // Public Pages (lazy)
 const FeedbackPage = React.lazy(() => import('./pages/FeedbackPage'));
@@ -170,6 +171,9 @@ function App() {
             <Route path=":dataDomain" element={<V1ExplorerDomainPage />} />
             <Route path=":dataDomain/:scenarioKey" element={<V1ExplorerReportPage />} />
           </Route>
+
+          {/* EasyWeaver Aggregator — accessible to all logged-in users */}
+          <Route path="/aggregator/*" element={<AggregatorPage />} />
 
           {/* UI Schemas — accessible from main menu with permission check */}
           <Route path="/ui-schemas" element={<UISchemaManagement />} />

@@ -15,6 +15,17 @@ module.exports = {
     extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
     symlinks: false,
     modules: [path.resolve(rootDir, 'node_modules'), 'node_modules'],
+    alias: {
+      // Resolve easyweaver-ui's @/ path alias to its src directory
+      '@': path.resolve(rootDir, '..', 'easyweaver-ui', 'src'),
+      // Deduplicate React ecosystem packages to prevent "two copies" context issues.
+      // Without this, easyweaver-ui's node_modules would bundle separate instances
+      // of React/Router/QueryClient context, breaking provider-consumer wiring.
+      'react': path.resolve(rootDir, 'node_modules/react'),
+      'react-dom': path.resolve(rootDir, 'node_modules/react-dom'),
+      'react-router-dom': path.resolve(rootDir, 'node_modules/react-router-dom'),
+      '@tanstack/react-query': path.resolve(rootDir, 'node_modules/@tanstack/react-query'),
+    },
   },
   resolveLoader: {
     symlinks: false,

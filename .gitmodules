@@ -13,3 +13,9 @@
 [submodule "jira-dashboard"]
 	path = jira-dashboard
 	url = https://github.com/akirti/easylife-jira-board.git
+[submodule "easyweaver-ui"]
+	path = easyweaver-ui
+	url = https://github.com/akirti/easyweaver-ui.git
+[submodule "easyweaver-api"]
+	path = easyweaver-api
+	url = https://github.com/akirti/easyweaver-api.git

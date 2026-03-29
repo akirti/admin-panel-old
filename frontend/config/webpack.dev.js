@@ -13,7 +13,7 @@ module.exports = merge(common, {
     rules: [
       {
         test: /\.[jt]sx?$/,
-        exclude: [/node_modules\/(?!jira-dashboard)/, /__test__/],
+        exclude: [/node_modules\/(?!jira-dashboard|easyweaver-ui)/, /__test__/],
         use: {
           loader: 'babel-loader',
           options: {
@@ -46,6 +46,13 @@ module.exports = merge(common, {
         secure: false,
         cookieDomainRewrite: '',
         cookiePathRewrite: '/',
+      },
+      {
+        context: ['/weaver-api'],
+        target: process.env.EASYWEAVER_PROXY_TARGET || 'http://localhost:8001',
+        changeOrigin: true,
+        secure: false,
+        pathRewrite: { '^/weaver-api': '/api' },
       },
       // Note: /explorer routes are handled by React Router (SPA).
       // Only proxy if the easylife-dashboard runs as a separate MFE.

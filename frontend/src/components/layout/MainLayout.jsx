@@ -31,7 +31,8 @@ import {
   Plug,
   Mail,
   Compass,
-  LayoutTemplate
+  LayoutTemplate,
+  Workflow
 } from 'lucide-react';
 import { Badge } from '../shared';
 import FontSizeControl from '../shared/FontSizeControl';
@@ -56,6 +57,7 @@ const ADMIN_NAV = [
   { path: '/admin/error-logs', icon: AlertTriangle, label: 'Error Logs', featureFlag: 'errorLogs' },
   { path: '/admin/bulk-upload', icon: Upload, label: 'Bulk Upload', featureFlag: 'bulkUpload' },
   { path: '/admin/distribution-lists', icon: Mail, label: 'Distribution Lists', featureFlag: 'distributionLists' },
+  { path: '/aggregator', icon: Workflow, label: 'Aggregator' },
   { path: '/admin/jira-dashboard', icon: LayoutDashboard, label: 'Jira Dashboard', featureFlag: 'jiraIntegration' },
   { path: '/admin/ui-schemas', icon: LayoutTemplate, label: 'UI Schemas', dividerBefore: true, featureFlag: 'uiSchemas' },
 ];
@@ -67,6 +69,7 @@ const GROUP_ADMIN_NAV_BASE = [
   { path: '/management/users', icon: Users, label: 'Users Management' },
   { path: '/management/domains', icon: Layers, label: 'Domains' },
   { path: '/management/scenario-requests', icon: ClipboardList, label: 'Scenario Requests' },
+  { path: '/aggregator', icon: Workflow, label: 'Aggregator' },
 ];
 
 const getGroupAdminNav = (hasGroup) => {
@@ -83,6 +86,7 @@ const USER_NAV = [
   { path: '/ask-scenario', icon: MessageSquarePlus, label: 'Ask Scenario' },
   { path: '/my-requests', icon: ClipboardList, label: 'My Requests' },
   { path: '/explorer', icon: Compass, label: 'Explorer', featureFlag: 'explorer' },
+  { path: '/aggregator', icon: Workflow, label: 'Aggregator' },
   { path: '/profile', icon: User, label: 'Profile' },
   { path: '/feedback', icon: MessageSquare, label: 'Feedback', featureFlag: 'feedback' },
 ];

@@ -3,6 +3,8 @@ module.exports = {
   content: [
     "./public/index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
+    // Scan easyweaver-ui components so Tailwind 3 generates their utility classes
+    "../easyweaver-ui/src/**/*.{ts,tsx}",
   ],
   theme: {
     extend: {
@@ -15,8 +17,15 @@ module.exports = {
         '2xl': 'var(--fs-2xl)',
         '3xl': 'var(--fs-3xl)',
       },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+      },
       colors: {
         primary: {
+          DEFAULT: 'var(--primary)',  // shadcn: bg-primary, text-primary
+          foreground: 'var(--primary-foreground)', // shadcn: text-primary-foreground
           50: 'var(--color-primary-50)',
           100: 'var(--color-primary-100)',
           200: 'var(--color-primary-200)',
@@ -38,10 +47,6 @@ module.exports = {
         base: {
           DEFAULT: 'var(--color-bg)',
           secondary: 'var(--color-bg-secondary)',
-        },
-        sidebar: {
-          bg: 'var(--color-sidebar-bg)',
-          hover: 'var(--color-sidebar-hover)',
         },
         header: {
           bg: 'var(--color-header-bg)',
@@ -68,6 +73,59 @@ module.exports = {
           800: '#262626',
           900: '#171717',
           950: '#0a0a0a',
+        },
+
+        // shadcn/easyweaver-ui color tokens (map to CSS variables from embedded.css)
+        background: 'var(--background)',
+        foreground: 'var(--foreground)',
+        card: {
+          DEFAULT: 'var(--card)',
+          foreground: 'var(--card-foreground)',
+        },
+        popover: {
+          DEFAULT: 'var(--popover)',
+          foreground: 'var(--popover-foreground)',
+        },
+        // "primary" is already defined above for admin-panel (50-950 scale).
+        // shadcn uses "primary" as a flat color. We add primary-foreground here.
+        // The shadcn `bg-primary` class will resolve to var(--primary) via the
+        // CSS variable, not through Tailwind — see note below.
+        muted: {
+          DEFAULT: 'var(--muted)',
+          foreground: 'var(--muted-foreground)',
+        },
+        accent: {
+          DEFAULT: 'var(--accent)',
+          foreground: 'var(--accent-foreground)',
+        },
+        destructive: {
+          DEFAULT: 'var(--destructive)',
+        },
+        border: 'var(--border)',
+        input: 'var(--input)',
+        ring: 'var(--ring)',
+        sidebar: {
+          DEFAULT: 'var(--sidebar)',
+          bg: 'var(--color-sidebar-bg)',     // frontend: bg-sidebar-bg
+          hover: 'var(--color-sidebar-hover)', // frontend: bg-sidebar-hover
+          foreground: 'var(--sidebar-foreground)',
+          primary: 'var(--sidebar-primary)',
+          'primary-foreground': 'var(--sidebar-primary-foreground)',
+          accent: 'var(--sidebar-accent)',
+          'accent-foreground': 'var(--sidebar-accent-foreground)',
+          border: 'var(--sidebar-border)',
+          ring: 'var(--sidebar-ring)',
+        },
+        secondary: {
+          DEFAULT: 'var(--secondary)',
+          foreground: 'var(--secondary-foreground)',
+        },
+        chart: {
+          1: 'var(--chart-1)',
+          2: 'var(--chart-2)',
+          3: 'var(--chart-3)',
+          4: 'var(--chart-4)',
+          5: 'var(--chart-5)',
         },
       },
     },

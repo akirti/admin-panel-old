@@ -1,7 +1,8 @@
 # Frontend Dockerfile - Multi-stage build
 # Build context: ./frontend (standard)
-# REQUIRES: jira-dashboard source copied into frontend/.jira-dashboard/ before build
+# REQUIRES: jira-dashboard and easyweaver-ui source copied before build
 # Run: cp -r ../jira-dashboard/src frontend/.jira-dashboard-src && cp ../jira-dashboard/package.json frontend/.jira-dashboard-pkg.json
+# Run: cp -r ../easyweaver-ui/src frontend/.easyweaver-ui-src && cp ../easyweaver-ui/package.json frontend/.easyweaver-ui-pkg.json
 
 # Stage 1: Build
 FROM node:20-alpine AS builder
@@ -13,21 +14,30 @@ RUN mkdir -p /jira-dashboard/src
 COPY .jira-dashboard-pkg.json /jira-dashboard/package.json
 COPY .jira-dashboard-src/ /jira-dashboard/src/
 
+# Set up easyweaver-ui as local package
+RUN mkdir -p /easyweaver-ui/src
+COPY .easyweaver-ui-pkg.json /easyweaver-ui/package.json
+COPY .easyweaver-ui-src/ /easyweaver-ui/src/
+
+# Install dependencies for local packages (transitive deps)
+RUN cd /jira-dashboard && npm install --omit=dev --legacy-peer-deps
+RUN cd /easyweaver-ui && npm install --omit=dev --legacy-peer-deps
+
 # Copy package files and install
-COPY package.json yarn.lock ./
-RUN yarn install --production=false 2>/dev/null || npm install --legacy-peer-deps
+COPY package.json package-lock.json* yarn.lock* ./
+RUN npm install --legacy-peer-deps
 
 # Copy frontend source
 COPY . .
 
-# Clean up build artifacts copied for jira-dashboard
-RUN rm -rf .jira-dashboard-src .jira-dashboard-pkg.json
+# Clean up build artifacts copied for local packages
+RUN rm -rf .jira-dashboard-src .jira-dashboard-pkg.json .easyweaver-ui-src .easyweaver-ui-pkg.json
 
 # Set production mode for build
 ENV NODE_ENV=production
 
 # Build the application
-RUN yarn build
+RUN npm run build
 
 # Stage 2: Production with Nginx
 FROM nginx:mainline-alpine AS production
