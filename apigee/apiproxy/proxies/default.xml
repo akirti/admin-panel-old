@@ -4,15 +4,19 @@
 
     <PreFlow name="PreFlow">
         <Request>
-            <!-- Validate CORS origin against allowed list (skip for infrastructure endpoints) -->
+            <!-- Validate CORS origin against allowed list (runs for ALL requests including OPTIONS) -->
             <Step>
                 <Name>JS-ValidateCORSOrigin</Name>
-                <Condition>!(proxy.pathsuffix JavaRegex "/(health|health/.*|info|docs|redoc|openapi\\.json)")</Condition>
             </Step>
-            <!-- CORS Preflight handling -->
+            <!-- CORS Preflight: return 200 with headers for valid origins -->
             <Step>
                 <Name>RF-CORSPreflight</Name>
-                <Condition>request.verb == "OPTIONS"</Condition>
+                <Condition>request.verb == "OPTIONS" and cors.is_valid_origin == "true"</Condition>
+            </Step>
+            <!-- CORS Preflight: reject invalid origins with 403 -->
+            <Step>
+                <Name>RF-CORSInvalidOrigin</Name>
+                <Condition>request.verb == "OPTIONS" and cors.is_valid_origin != "true"</Condition>
             </Step>
             <!-- Retrieve credentials (hostname, JWT secret) from encrypted KVM - MUST run before JWT verification -->
             <Step>
@@ -41,9 +45,10 @@
             </Step>
         </Request>
         <Response>
-            <!-- Add CORS headers -->
+            <!-- Add CORS headers to responses (only for validated origins) -->
             <Step>
                 <Name>AM-AddCORSHeaders</Name>
+                <Condition>cors.is_valid_origin == "true"</Condition>
             </Step>
         </Response>
     </PreFlow>
@@ -1423,10 +1428,10 @@
     </PostFlow>
 
     <FaultRules>
-        <!-- CORS preflight: RaiseFault already set the 200 response — skip all error overrides -->
+        <!-- CORS preflight: RaiseFault already set the response — skip all error overrides -->
         <FaultRule name="CORSPreflight">
             <Condition>request.verb == "OPTIONS"</Condition>
-            <!-- No steps — let the RaiseFault 200 response pass through unchanged -->
+            <!-- No steps — let the RaiseFault response (200 or 403) pass through unchanged -->
         </FaultRule>
         <FaultRule name="InvalidJWT">
             <Step>
