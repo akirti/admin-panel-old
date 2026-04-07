@@ -624,21 +624,76 @@ class JiraService:
         return "\n".join(parts)
 
     def _strip_html(self, html_text: str) -> str:
-        """Strip HTML tags from text for cleaner Jira display"""
+        """Convert HTML rich text to Jira wiki markup"""
         if not html_text:
             return ""
         import re
-        # Remove HTML tags
-        clean = re.sub(r'<[^>]+>', '', html_text)
-        # Convert common HTML entities
-        clean = clean.replace('&nbsp;', ' ')
-        clean = clean.replace('&amp;', '&')
-        clean = clean.replace('&lt;', '<')
-        clean = clean.replace('&gt;', '>')
-        clean = clean.replace('&quot;', '"')
-        # Clean up whitespace
-        clean = re.sub(r'\s+', ' ', clean).strip()
-        return clean
+
+        text = html_text
+
+        # Convert block-level elements first (order matters)
+        # Headings
+        for i in range(1, 7):
+            text = re.sub(rf'<h{i}[^>]*>(.*?)</h{i}>', rf'h{i}. \1', text, flags=re.DOTALL)
+
+        # Lists: convert <ul>/<ol> items to Jira format
+        # Handle nested lists by processing inner items first
+        def convert_list_items(match):
+            tag = match.group(1)  # 'ul' or 'ol'
+            content = match.group(2)
+            prefix = '*' if tag == 'ul' else '#'
+            items = re.findall(r'<li[^>]*>(.*?)</li>', content, flags=re.DOTALL)
+            return '\n'.join(f'{prefix} {item.strip()}' for item in items)
+
+        # Process lists (handle up to 3 levels of nesting)
+        for _ in range(3):
+            text = re.sub(r'<(ul|ol)[^>]*>(.*?)</\1>', convert_list_items, text, flags=re.DOTALL)
+
+        # Blockquote
+        text = re.sub(r'<blockquote[^>]*>(.*?)</blockquote>',
+                       lambda m: '{quote}' + m.group(1).strip() + '{quote}', text, flags=re.DOTALL)
+
+        # Code blocks
+        text = re.sub(r'<pre[^>]*><code[^>]*>(.*?)</code></pre>',
+                       lambda m: '{code}' + m.group(1) + '{code}', text, flags=re.DOTALL)
+        text = re.sub(r'<pre[^>]*>(.*?)</pre>',
+                       lambda m: '{code}' + m.group(1) + '{code}', text, flags=re.DOTALL)
+
+        # Inline formatting
+        text = re.sub(r'<strong[^>]*>(.*?)</strong>', r'*\1*', text, flags=re.DOTALL)
+        text = re.sub(r'<b[^>]*>(.*?)</b>', r'*\1*', text, flags=re.DOTALL)
+        text = re.sub(r'<em[^>]*>(.*?)</em>', r'_\1_', text, flags=re.DOTALL)
+        text = re.sub(r'<i[^>]*>(.*?)</i>', r'_\1_', text, flags=re.DOTALL)
+        text = re.sub(r'<u[^>]*>(.*?)</u>', r'+\1+', text, flags=re.DOTALL)
+        text = re.sub(r'<s[^>]*>(.*?)</s>', r'-\1-', text, flags=re.DOTALL)
+        text = re.sub(r'<strike[^>]*>(.*?)</strike>', r'-\1-', text, flags=re.DOTALL)
+        text = re.sub(r'<del[^>]*>(.*?)</del>', r'-\1-', text, flags=re.DOTALL)
+        text = re.sub(r'<code[^>]*>(.*?)</code>', r'{{\1}}', text, flags=re.DOTALL)
+
+        # Links
+        text = re.sub(r'<a[^>]*href="([^"]*)"[^>]*>(.*?)</a>', r'[\2|\1]', text, flags=re.DOTALL)
+
+        # Line breaks and paragraphs
+        text = re.sub(r'<br\s*/?>', '\n', text)
+        text = re.sub(r'<p[^>]*>(.*?)</p>', r'\1\n', text, flags=re.DOTALL)
+        text = re.sub(r'<div[^>]*>(.*?)</div>', r'\1\n', text, flags=re.DOTALL)
+
+        # Horizontal rule
+        text = re.sub(r'<hr\s*/?>', '----', text)
+
+        # Remove any remaining HTML tags
+        text = re.sub(r'<[^>]+>', '', text)
+
+        # Convert HTML entities
+        text = text.replace('&nbsp;', ' ')
+        text = text.replace('&amp;', '&')
+        text = text.replace('&lt;', '<')
+        text = text.replace('&gt;', '>')
+        text = text.replace('&quot;', '"')
+
+        # Clean up excessive blank lines
+        text = re.sub(r'\n{3,}', '\n\n', text)
+        return text.strip()
 
     def _build_update_comment(self, scenario_request: Dict[str, Any], update_type: str) -> str:
         """Build update comment for Jira"""

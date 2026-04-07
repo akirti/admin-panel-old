@@ -450,6 +450,15 @@ function DetailsSidebar({ request }) {
           <p className="text-sm text-content-muted">Request Type</p>
           <p className="font-medium">{request.requestType || 'New Scenario'}</p>
         </div>
+        {request.email && (
+          <div>
+            <p className="text-sm text-content-muted">Created By</p>
+            <p className="font-medium flex items-center gap-2">
+              <User size={14} />
+              {request.email}
+            </p>
+          </div>
+        )}
         <div>
           <p className="text-sm text-content-muted">Created</p>
           <p className="font-medium flex items-center gap-2">
