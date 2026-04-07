@@ -20,12 +20,13 @@ COPY .easyweaver-ui-pkg.json /easyweaver-ui/package.json
 COPY .easyweaver-ui-src/ /easyweaver-ui/src/
 
 # Install dependencies for local packages (transitive deps)
-RUN cd /jira-dashboard && npm install --omit=dev --legacy-peer-deps
-RUN cd /easyweaver-ui && npm install --omit=dev --legacy-peer-deps
+# --ignore-scripts prevents running arbitrary postinstall scripts from packages
+RUN cd /jira-dashboard && npm install --omit=dev --legacy-peer-deps --ignore-scripts
+RUN cd /easyweaver-ui && npm install --omit=dev --legacy-peer-deps --ignore-scripts
 
 # Copy package files and install
 COPY package.json package-lock.json* yarn.lock* ./
-RUN npm install --legacy-peer-deps
+RUN npm ci --legacy-peer-deps --ignore-scripts
 
 # Copy frontend source
 COPY . .
