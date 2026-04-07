@@ -8,7 +8,7 @@ import V1DataTable from '../../components/explorer/v1_DataTable';
 import { playboardAPI } from '../../services/api';
 import { prevailAPI } from '../../services/v1_explorerApi';
 import { ENV } from '../../config/env';
-import { getColumnsFromData as getColumnsObj } from '../../utils/v1_reportUtils';
+import { getColumnsFromData as getColumnsObj, getAttrValue } from '../../utils/v1_reportUtils';
 import V1DescriptionRenderer from '../../components/explorer/v1_DescriptionRenderer';
 
 // Date regex for detecting date strings in filter values (YYYY-MM-DD)
@@ -24,6 +24,10 @@ function convertFilterValue(value, filterType) {
   }
   if (filterType === 'multi-select' && typeof value === 'string') {
     return value.split(',').map((v) => v.trim());
+  }
+  // Treat comma-separated input values as a list
+  if (filterType === 'input' && typeof value === 'string' && value.includes(',')) {
+    return value.split(',').map((v) => v.trim()).filter(Boolean);
   }
   return value;
 }
@@ -57,7 +61,8 @@ function mapFilterConfigToLogicArgs(logic_args, filterConfig, filterValues) {
     const step = filter.index != null ? filter.index.toString() : '0';
     ensureStep(logic_args, step);
     if (filter.dataKey in filterValues) {
-      logic_args[step].query_params[filter.dataKey] = convertFilterValue(filterValues[filter.dataKey], filter.type);
+      const filterType = filter.type || getAttrValue(filter.attributes, 'type') || 'input';
+      logic_args[step].query_params[filter.dataKey] = convertFilterValue(filterValues[filter.dataKey], filterType);
     }
   });
 }
