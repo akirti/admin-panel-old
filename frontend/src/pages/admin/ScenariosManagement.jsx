@@ -350,7 +350,7 @@ function useScenarioFormModal(data) {
     setSaving(true);
     try {
       if (editingScenario) {
-        await scenarioAPI.update(editingScenario._id, { _id: editingScenario._id, ...formData });
+        await scenarioAPI.update(editingScenario.key, formData);
         data.setSuccess('Scenario updated successfully');
       } else {
         await scenarioAPI.create(formData);

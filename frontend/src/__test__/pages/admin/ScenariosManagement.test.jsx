@@ -280,8 +280,7 @@ describe('ScenariosManagement', () => {
     await user.click(screen.getByText('Update'));
 
     await waitFor(() => {
-      expect(scenarioAPI.update).toHaveBeenCalledWith('s1', expect.objectContaining({
-        _id: 's1',
+      expect(scenarioAPI.update).toHaveBeenCalledWith('revenue-report', expect.objectContaining({
         key: 'revenue-report',
         name: 'Revenue Report',
       }));

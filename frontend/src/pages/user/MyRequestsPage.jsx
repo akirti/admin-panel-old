@@ -12,7 +12,8 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  RefreshCw
+  RefreshCw,
+  ExternalLink
 } from 'lucide-react';
 import { scenarioRequestAPI } from '../../services/api';
 import { Badge } from '../../components/shared';
@@ -218,6 +219,7 @@ function MyRequestsPage() {
                     <th className="text-left px-5 py-4">Name</th>
                     <th className="text-left px-5 py-4">Domain</th>
                     <th className="text-left px-5 py-4">Status</th>
+                    <th className="text-left px-5 py-4">Jira</th>
                     <th className="text-left px-5 py-4">Created</th>
                     <th className="text-left px-5 py-4">Updated</th>
                     <th className="text-center px-5 py-4">Actions</th>
@@ -243,6 +245,21 @@ function MyRequestsPage() {
                       </td>
                       <td className="px-5 py-4">
                         {getStatusBadge(request.status)}
+                      </td>
+                      <td className="px-5 py-4">
+                        {(request.jira?.ticket_key || request.jira_integration?.ticket_key) ? (
+                          <a
+                            href={request.jira?.ticket_url || request.jira_integration?.ticket_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700 bg-primary-50 px-2 py-1 rounded"
+                          >
+                            {request.jira?.ticket_key || request.jira_integration?.ticket_key}
+                            <ExternalLink size={10} />
+                          </a>
+                        ) : (
+                          <span className="text-xs text-content-muted">-</span>
+                        )}
                       </td>
                       <td className="px-5 py-4 text-sm text-content-secondary">
                         {formatDate(request.row_add_stp)}
