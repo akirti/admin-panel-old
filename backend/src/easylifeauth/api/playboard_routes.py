@@ -54,6 +54,42 @@ def check_domain_access(user_domains: List[str], domain_key: str) -> bool:
     return domain_key in user_domains
 
 
+def build_group_filter(current_user: CurrentUser) -> Optional[dict]:
+    """Build MongoDB group filter for non-super-admins.
+
+    Returns None if no group filter is needed (super-admin),
+    otherwise returns a filter dict to merge into the query.
+    """
+    if "super-administrator" in current_user.roles:
+        return None
+    user_groups = list(current_user.groups or [])
+    conditions = [
+        {"groups": {"$exists": False}},
+        {"groups": {"$size": 0}},
+    ]
+    if user_groups:
+        conditions.append({"groups": {"$in": user_groups}})
+    return {"$or": conditions}
+
+
+def check_group_access(playboard: dict, current_user: CurrentUser) -> None:
+    """Check if user has group-level access to a playboard.
+
+    Raises HTTPException 403 if the user is not in any required group.
+    Super-admins bypass this check.
+    """
+    if "super-administrator" in current_user.roles:
+        return
+    pb_groups = playboard.get("groups", [])
+    if pb_groups:
+        user_groups = set(current_user.groups or [])
+        if not (user_groups & set(pb_groups)):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: not in required group"
+            )
+
+
 def create_pagination_meta(total: int, page: int, limit: int) -> PaginationMeta:
     """Create pagination metadata."""
     pages = math.ceil(total / limit) if limit > 0 else 0
@@ -127,6 +163,15 @@ async def list_playboards(
     if search:
         query["name"] = {"$regex": re.escape(search), "$options": "i"}
 
+    # Apply group-level access filter for non-super-admins
+    group_filter = build_group_filter(current_user)
+    if group_filter:
+        if "$and" in query:
+            query["$and"].append(group_filter)
+        else:
+            existing = {k: v for k, v in query.items()}
+            query = {"$and": [existing, group_filter]} if existing else group_filter
+
     # Get total count
     total = await db.playboards.count_documents(query)
 
@@ -136,7 +181,8 @@ async def list_playboards(
     playboards = []
     async for pb in cursor:
         pb["_id"] = str(pb["_id"])
-        playboards.append(PlayboardInDB(**pb))
+        # Return raw dict — existing data may not match strict PlayboardInDB model
+        playboards.append(pb)
 
     return {
         "data": playboards,
@@ -186,6 +232,15 @@ async def count_playboards(
             return {"count": 0}
         query["scenarioKey"] = scenario_key
 
+    # Apply group-level access filter for non-super-admins
+    group_filter = build_group_filter(current_user)
+    if group_filter:
+        if "$and" in query:
+            query["$and"].append(group_filter)
+        else:
+            existing = {k: v for k, v in query.items()}
+            query = {"$and": [existing, group_filter]} if existing else group_filter
+
     count = await db.playboards.count_documents(query)
     return {"count": count}
 
@@ -231,6 +286,9 @@ async def get_playboard(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied to this playboard's domain"
         )
+
+    # Check group-level access
+    check_group_access(playboard, current_user)
 
     playboard["_id"] = str(playboard["_id"])
     return PlayboardInDB(**playboard)
@@ -308,6 +366,7 @@ async def create_playboard(
         "scenarioDescription": playboard_data.scenarioDescription or data_obj.get("scenarioDescription"),
         "data": data_obj,  # Store the full data object
         "status": playboard_data.status if playboard_data.status != "A" else data_obj.get("status", "A"),
+        "groups": playboard_data.groups or [],
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc),
         "created_by": current_user.email,
@@ -407,6 +466,7 @@ async def upload_playboard_json(
         "scenarioDescription": json_data.get("scenarioDescription"),
         "data": json_data,  # Store the full JSON data
         "status": "A",
+        "groups": json_data.get("groups", []),
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc),
         "created_by": current_user.email,
@@ -645,5 +705,8 @@ async def download_playboard_json(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied to this playboard's domain"
         )
+
+    # Check group-level access
+    check_group_access(playboard, current_user)
 
     return playboard.get("data", {})

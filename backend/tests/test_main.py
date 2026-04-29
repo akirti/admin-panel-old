@@ -519,6 +519,7 @@ class TestBootstrap:
             "app_name", "title", "description", "root_path",
             "handshake_secret", "logging_config",
             "access_token_expiry_minutes", "refresh_token_expiry_minutes",
+            "prevail_api_key",
         }
         assert set(kwargs.keys()) == expected_keys
 

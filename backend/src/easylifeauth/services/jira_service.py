@@ -654,10 +654,11 @@ class JiraService:
                        lambda m: '{quote}' + m.group(1).strip() + '{quote}', text, flags=re.DOTALL)
 
         # Code blocks
+        _code_tag = '{code}'
         text = re.sub(r'<pre[^>]*><code[^>]*>(.*?)</code></pre>',
-                       lambda m: '{code}' + m.group(1) + '{code}', text, flags=re.DOTALL)
+                       lambda m: _code_tag + m.group(1) + _code_tag, text, flags=re.DOTALL)
         text = re.sub(r'<pre[^>]*>(.*?)</pre>',
-                       lambda m: '{code}' + m.group(1) + '{code}', text, flags=re.DOTALL)
+                       lambda m: _code_tag + m.group(1) + _code_tag, text, flags=re.DOTALL)
 
         # Inline formatting
         text = re.sub(r'<strong[^>]*>(.*?)</strong>', r'*\1*', text, flags=re.DOTALL)

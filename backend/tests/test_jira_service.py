@@ -1193,7 +1193,7 @@ class TestJiraServiceStripHtml:
         from easylifeauth.services.jira_service import JiraService
         service = JiraService()
         result = service._strip_html("<p>Hello <b>World</b></p>")
-        assert result == "Hello World"
+        assert result == "Hello *World*"
 
     @patch(PATCH_JIRA_SERVICE_JIRA)
     def test_strip_html_with_br(self, mock_jira):

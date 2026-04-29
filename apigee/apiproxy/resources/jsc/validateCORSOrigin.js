@@ -9,11 +9,11 @@
  *   "cors.is_valid_origin" — "true" / "false" for use in Conditions
  */
 
-var origin = context.getVariable("request.header.origin") || "";
-var allowedOriginsRaw = context.getVariable("kvm.cors.allowed_origins") || "";
+const origin = context.getVariable("request.header.origin") || "";
+const allowedOriginsRaw = context.getVariable("kvm.cors.allowed_origins") || "";
 
 // Default allowed origins when KVM entry is not configured.
-var DEFAULT_ORIGINS = [
+const DEFAULT_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
     "http://localhost:8000",
@@ -25,13 +25,13 @@ var DEFAULT_ORIGINS = [
 ];
 
 // Wildcard suffixes: any origin whose hostname ends with these is allowed.
-var ALLOWED_SUFFIXES = [
+const ALLOWED_SUFFIXES = [
     ".mydomain.com",
     ".localhost.net"
 ];
 
-var allowedOrigins;
-var usingKVM = false;
+let allowedOrigins;
+let usingKVM = false;
 if (allowedOriginsRaw && allowedOriginsRaw.trim().length > 0) {
     allowedOrigins = allowedOriginsRaw.split(",").map(function (o) {
         return o.trim();
@@ -41,12 +41,12 @@ if (allowedOriginsRaw && allowedOriginsRaw.trim().length > 0) {
     allowedOrigins = DEFAULT_ORIGINS;
 }
 
-var validatedOrigin = "";
-var isValid = false;
+let validatedOrigin = "";
+let isValid = false;
 
 if (origin) {
     // 1. Exact match
-    for (var i = 0; i < allowedOrigins.length; i++) {
+    for (let i = 0; i < allowedOrigins.length; i++) {
         if (allowedOrigins[i] === origin) {
             validatedOrigin = origin;
             isValid = true;
@@ -56,12 +56,12 @@ if (origin) {
 
     // 2. Suffix match (wildcard subdomains)
     if (!isValid) {
-        var originWithoutProto = origin.replace(/^https?:\/\//, "");
-        var hostname = originWithoutProto.split(":")[0];
-        for (var j = 0; j < ALLOWED_SUFFIXES.length; j++) {
-            var suffix = ALLOWED_SUFFIXES[j];
+        const originWithoutProto = origin.replace(/^https?:\/\//, "");
+        const hostname = originWithoutProto.split(":")[0];
+        for (let j = 0; j < ALLOWED_SUFFIXES.length; j++) {
+            const suffix = ALLOWED_SUFFIXES[j];
             if (hostname.length > suffix.length &&
-                hostname.substring(hostname.length - suffix.length) === suffix) {
+                hostname.endsWith(suffix)) {
                 validatedOrigin = origin;
                 isValid = true;
                 break;
@@ -72,7 +72,7 @@ if (origin) {
     // 3. Fallback: if KVM is NOT configured and origin is HTTPS,
     //    allow it (production may have origins not yet in the default list).
     //    When KVM IS configured, strictly enforce the list.
-    if (!isValid && !usingKVM && origin.indexOf("https://") === 0) {
+    if (!isValid && !usingKVM && origin.startsWith("https://")) {
         validatedOrigin = origin;
         isValid = true;
         // Log so it's visible in Apigee analytics
@@ -82,7 +82,6 @@ if (origin) {
     // No Origin header (server-to-server, health probes, curl) — allow through
     // without CORS headers (non-browser requests don't need CORS)
     isValid = true;
-    validatedOrigin = "";
 }
 
 context.setVariable("cors.allowed_origin", validatedOrigin);

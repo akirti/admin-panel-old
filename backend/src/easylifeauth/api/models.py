@@ -211,6 +211,7 @@ class PlayboardCreate(BaseModel):
     scenarioDescription: Optional[List[Dict[str, Any]]] = None
     data: Optional[Dict[str, Any]] = None  # Full JSON data (may contain key, scenarioKey, etc.)
     status: str = "A"
+    groups: Optional[List[str]] = None
 
     model_config = {"extra": "allow"}
 
@@ -230,6 +231,7 @@ class PlayboardUpdate(BaseModel):
     scenarioDescription: Optional[List[Dict[str, Any]]] = None
     data: Optional[Dict[str, Any]] = None
     status: Optional[str] = None
+    groups: Optional[List[str]] = None
 
     model_config = {
         "extra": "allow",
@@ -252,6 +254,7 @@ class PlayboardResponse(BaseModel):
     scenarioDescription: Optional[List[Dict[str, Any]]] = None
     data: Optional[Dict[str, Any]] = None
     status: Optional[str] = "A"
+    groups: List[str] = Field(default_factory=list)
     created_at: Optional[datetime] = None
     created_by: Optional[str] = None
     updated_at: Optional[datetime] = None
@@ -921,6 +924,7 @@ class PlayboardInDB(BaseModel):
     scenarioDescription: Optional[list[WidgetDescription]] = None
     data: Optional[Dict[str, Any]] = None
     status: str = "A"
+    groups: List[str] = Field(default_factory=list)
     created_at: Optional[datetime] = None
     created_by: Optional[str] = None
     updated_at: Optional[datetime] = None

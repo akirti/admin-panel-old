@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Input, Table, Modal, Badge, SearchInput, Select, Toggle, FileUpload, Pagination } from '../../components/shared';
 import { isActive } from '../../utils/status';
-import { playboardsAPI, scenariosAPI, domainsAPI } from '../../services/api';
+import { playboardsAPI, scenariosAPI, domainsAPI, groupsAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 import { Eye, Download, Pencil, Trash2, X, Plus, Upload, ChevronUp, ChevronDown, Copy, ChevronRight, Search, Filter } from 'lucide-react';
 
@@ -92,7 +92,7 @@ const TABS = [
 
 // --- Extracted Tab Sub-components ---
 
-const BasicInfoTab = ({ formData, setFormData, scenarios, domains, addonInput, setAddonInput, addAddon, removeAddon }) => (
+const BasicInfoTab = ({ formData, setFormData, scenarios, domains, groups, addonInput, setAddonInput, addAddon, removeAddon }) => (
   <div className="space-y-4">
     <div className="grid grid-cols-2 gap-4">
       <Input label="Key *" value={formData.key} onChange={(e) => setFormData({ ...formData, key: e.target.value })} placeholder="customers_scenario_playboard_1" required />
@@ -109,6 +109,39 @@ const BasicInfoTab = ({ formData, setFormData, scenarios, domains, addonInput, s
     </div>
     <div className="grid grid-cols-2 gap-4">
       <Select label="Status" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} options={[{ value: 'A', label: 'Active' }, { value: 'I', label: 'Inactive' }]} />
+    </div>
+    <div>
+      <label className="block text-sm font-medium text-content-secondary mb-2">Restrict to Groups</label>
+      <div className="border border-edge rounded-lg p-3" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+        {groups && groups.length > 0 ? (
+          <div className="grid grid-cols-2 gap-2">
+            {groups.map(g => {
+              const groupKey = g.key || g._id;
+              const isChecked = (formData.groups || []).includes(groupKey);
+              return (
+                <label key={groupKey} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-surface-secondary p-1 rounded">
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {
+                      const current = formData.groups || [];
+                      const updated = isChecked ? current.filter(k => k !== groupKey) : [...current, groupKey];
+                      setFormData({ ...formData, groups: updated });
+                    }}
+                    className="rounded border-edge"
+                  />
+                  <span className="truncate">{g.name || groupKey}</span>
+                </label>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-content-muted text-sm">No groups available</p>
+        )}
+      </div>
+      <p className="text-xs text-content-muted mt-1">
+        {(formData.groups || []).length === 0 ? 'Accessible to all users with domain access' : `Restricted to ${formData.groups.length} group(s)`}
+      </p>
     </div>
     <div>
       <label className="block text-sm font-medium text-content-secondary mb-1">Description</label>
@@ -593,7 +626,8 @@ const DEFAULT_FORM = {
   key: '', name: '', description: '', scenarioKey: '', dataDomain: '', status: 'A', order: 0,
   program_key: '', config_type: 'db', addon_configurations: [],
   widgets: { ...DEFAULT_WIDGETS },
-  scenarioDescription: []
+  scenarioDescription: [],
+  groups: []
 };
 
 const DEFAULT_FILTER = {
@@ -608,6 +642,7 @@ function buildFormPayload(formData) {
     dataDomain: formData.dataDomain, order: formData.order, program_key: formData.program_key,
     config_type: formData.config_type, addon_configurations: formData.addon_configurations,
     widgets: formData.widgets, scenarioDescription: formData.scenarioDescription,
+    groups: formData.groups || [],
   };
 }
 
@@ -630,21 +665,24 @@ function usePlayboardsData() {
   const [playboards, setPlayboards] = useState([]);
   const [scenarios, setScenarios] = useState([]);
   const [domains, setDomains] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [pagination, setPagination] = useState({ page: 0, limit: 25, total: 0, pages: 0 });
 
   const fetchData = useCallback(async () => {
     try {
-      const [playboardsRes, scenariosRes, domainsRes] = await Promise.all([
+      const [playboardsRes, scenariosRes, domainsRes, groupsRes] = await Promise.all([
         playboardsAPI.list({ search: search || undefined, page: pagination.page, limit: pagination.limit }),
         scenariosAPI.list({ limit: 100 }),
         domainsAPI.list({ limit: 100 }),
+        groupsAPI.list({ limit: 100 }).catch(() => ({ data: { data: [] } })),
       ]);
       setPlayboards(playboardsRes.data.data || playboardsRes.data);
       setPagination(prev => ({ ...prev, ...(playboardsRes.data.pagination || {}) }));
       setScenarios(scenariosRes.data.data || scenariosRes.data);
       setDomains(domainsRes.data.data || domainsRes.data);
+      setGroups(groupsRes.data.data || groupsRes.data || []);
     } catch { toast.error('Failed to load data'); }
     finally { setLoading(false); }
   }, [search, pagination.page, pagination.limit]);
@@ -653,7 +691,7 @@ function usePlayboardsData() {
 
   const handlePageChange = (newPage) => setPagination(prev => ({ ...prev, page: newPage }));
 
-  return { playboards, scenarios, domains, loading, search, setSearch, pagination, setPagination, fetchData, handlePageChange };
+  return { playboards, scenarios, domains, groups, loading, search, setSearch, pagination, setPagination, fetchData, handlePageChange };
 }
 
 // --- Helpers for useFilterBuilder to reduce cognitive complexity ---
@@ -921,6 +959,7 @@ function buildEditFormDataFromItem(item) {
     program_key: item.program_key || itemData.program_key || '', config_type: item.config_type || itemData.config_type || 'db',
     addon_configurations: item.addon_configurations || itemData.addon_configurations || [], widgets,
     scenarioDescription: item.scenarioDescription || itemData.scenarioDescription || [],
+    groups: item.groups || [],
   };
 }
 
@@ -1301,6 +1340,11 @@ function buildPlayboardColumns(crud) {
     { key: 'dataFilters', title: 'Filters', render: (_, item) => <Badge variant="primary">{item.data?.widgets?.filters?.length || 0}</Badge>, sortValue: (_, item) => item.data?.widgets?.filters?.length || 0, filterable: false },
     { key: 'dataActions', title: 'Row Actions', render: (_, item) => <Badge variant="success">{item.data?.widgets?.grid?.actions?.rowActions?.events?.length || 0}</Badge>, sortValue: (_, item) => item.data?.widgets?.grid?.actions?.rowActions?.events?.length || 0, filterable: false },
     { key: 'status', title: 'Status', render: (val) => { const active = isActive(val); return <Badge variant={active ? 'success' : 'danger'}>{active ? 'Active' : 'Inactive'}</Badge>; } },
+    { key: 'groups', title: 'Groups', render: (_, item) => {
+      const g = item.groups || [];
+      if (g.length === 0) return <span className="text-content-muted text-xs">All Users</span>;
+      return <div className="flex flex-wrap gap-1">{g.map(gk => <Badge key={gk} variant="warning" className="text-xs">{gk}</Badge>)}</div>;
+    }, sortValue: (_, item) => (item.groups || []).length, filterable: false },
     { key: 'actions', title: '', render: (_, item) => (
       <PlayboardActionsCell item={item} onView={crud.handleViewDetails} onDownload={crud.handleDownload} onEdit={crud.openEditModal} onDelete={crud.handleDelete} />
     )}
@@ -1310,7 +1354,7 @@ function buildPlayboardColumns(crud) {
 // --- Tab content renderer ---
 
 const PlayboardTabContent = ({ activeTab, formData, setFormData, pbData, extras, filterBuilder, rowActionBuilder, gridColumns }) => {
-  if (activeTab === 'basic') return <BasicInfoTab formData={formData} setFormData={setFormData} scenarios={pbData.scenarios} domains={pbData.domains} addonInput={extras.addonInput} setAddonInput={extras.setAddonInput} addAddon={extras.addAddon} removeAddon={extras.removeAddon} />;
+  if (activeTab === 'basic') return <BasicInfoTab formData={formData} setFormData={setFormData} scenarios={pbData.scenarios} domains={pbData.domains} groups={pbData.groups} addonInput={extras.addonInput} setAddonInput={extras.setAddonInput} addAddon={extras.addAddon} removeAddon={extras.removeAddon} />;
   if (activeTab === 'filters') return <FiltersTab formData={formData} filterBuilder={filterBuilder} />;
   if (activeTab === 'grid') return <GridTab formData={formData} setFormData={setFormData} rowActionBuilder={rowActionBuilder} gridColumns={gridColumns} domains={pbData.domains} onRenderAsChange={extras.handleRenderAsChange} onPageSizeChange={extras.handlePageSizeChange} onPaginatedChange={extras.handlePaginatedChange} />;
   if (activeTab === 'description') return <DescriptionTab formData={formData} currentDescription={extras.currentDescription} setCurrentDescription={extras.setCurrentDescription} addDescription={extras.addDescription} removeDescription={extras.removeDescription} />;

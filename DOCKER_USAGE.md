@@ -3,24 +3,28 @@
 ## Quick Start
 
 ### Start all services (production)
-```bash
+
+```Shell
 docker-compose up -d
 ```
 
 ### Start with dev tools (Mailpit + Mongo Express)
-```bash
+
+```Shell
 docker-compose --profile dev up -d
 ```
 
 ### Build and start (after code changes)
-```bash
+
+```Shell
 docker-compose up -d --build
 ```
 
 ## Service Management
 
 ### View logs
-```bash
+
+```Shell
 docker-compose logs -f              # All services
 docker-compose logs -f backend      # Backend only
 docker-compose logs -f frontend     # Frontend only
@@ -28,35 +32,39 @@ docker-compose logs -f mongodb      # MongoDB only
 ```
 
 ### Check service status
-```bash
+
+```Shell
 docker-compose ps
 ```
 
 ### Restart a specific service
-```bash
+
+```Shell
 docker-compose restart backend
 docker-compose restart frontend
 ```
 
 ### Stop all services
-```bash
+
+```Shell
 docker-compose down
 ```
 
 ### Stop and remove volumes (clean reset)
-```bash
+
+```Shell
 docker-compose down -v
 ```
 
 ## Access Points
 
-| Service | URL | Description |
-|---------|-----|-------------|
-| Frontend | http://localhost:3000 | React admin panel |
-| Backend API | http://localhost:8000 | FastAPI backend |
-| API Docs | http://localhost:8000/docs | Swagger UI |
-| Mongo Express | http://localhost:8081 | Database UI (dev profile) |
-| Mailpit UI | http://localhost:8025 | Email testing UI (dev profile) |
+| Service       | URL                          | Description                    |
+| ------------- | ---------------------------- | ------------------------------ |
+| Frontend      | <http://localhost:3000>      | React admin panel              |
+| Backend API   | <http://localhost:8000>      | FastAPI backend                |
+| API Docs      | <http://localhost:8000/docs> | Swagger UI                     |
+| Mongo Express | <http://localhost:8081>      | Database UI (dev profile)      |
+| Mailpit UI    | <http://localhost:8025>      | Email testing UI (dev profile) |
 
 ## Environment Variables
 
@@ -92,44 +100,50 @@ MAILPIT_WEB_PORT=8025
 
 ## Services Overview
 
-| Service | Container Name | Image |
-|---------|---------------|-------|
-| MongoDB | easylife-mongodb | mongo:7.0 |
-| Backend | easylife-backend | Custom (FastAPI) |
-| Frontend | easylife-frontend | Custom (React + Nginx) |
-| Mailpit | easylife-mailpit | axllent/mailpit (dev) |
-| Mongo Express | easylife-mongo-express | mongo-express (dev) |
+| Service       | Container Name         | Image                  |
+| ------------- | ---------------------- | ---------------------- |
+| MongoDB       | easylife-mongodb       | mongo:7.0              |
+| Backend       | easylife-backend       | Custom (FastAPI)       |
+| Frontend      | easylife-frontend      | Custom (React + Nginx) |
+| Mailpit       | easylife-mailpit       | axllent/mailpit (dev)  |
+| Mongo Express | easylife-mongo-express | mongo-express (dev)    |
 
 ## Troubleshooting
 
 ### Check if services are healthy
-```bash
+
+```Shell
 docker-compose ps
 ```
 
 ### View container resource usage
-```bash
+
+```Shell
 docker stats
 ```
 
 ### Access MongoDB shell
-```bash
+
+```Shell
 docker exec -it easylife-mongodb mongosh -u admin -p password123
 ```
 
 ### Access backend container shell
-```bash
+
+```Shell
 docker exec -it easylife-backend /bin/bash
 ```
 
 ### Rebuild a specific service
-```bash
+
+```Shell
 docker-compose build backend
 docker-compose up -d backend
 ```
 
 ### Clear Docker cache and rebuild
-```bash
+
+```Shell
 docker-compose build --no-cache
 docker-compose up -d
 ```
@@ -138,13 +152,15 @@ docker-compose up -d
 
 MongoDB data is persisted in a Docker volume named `mongodb_data`. To backup:
 
-```bash
+```Shell
 docker exec easylife-mongodb mongodump --uri="mongodb://admin:password123@localhost:27017" --out=/dump
 docker cp easylife-mongodb:/dump ./backup
 ```
 
 To restore:
-```bash
+
+```Shell
 docker cp ./backup easylife-mongodb:/dump
 docker exec easylife-mongodb mongorestore --uri="mongodb://admin:password123@localhost:27017" /dump
 ```
+

@@ -258,24 +258,21 @@ services:
     container_name: easylife-easyweaver-api
     restart: unless-stopped
     environment:
-      EW_DATABASE_URL: postgresql+asyncpg://${EASYWEAVER_PG_USER:-easyweaver}:${EASYWEAVER_PG_PASSWORD:-easyweaver}@easyweaver-postgres:5432/${EASYWEAVER_PG_DB:-easyweaver}
-      EW_MONGO_URL: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password123}@mongodb:27017
-      EW_REDIS_URL: redis://easyweaver-redis:6379/0
-      EW_CELERY_BROKER_URL: redis://easyweaver-redis:6379/1
-      EW_CELERY_RESULT_BACKEND: redis://easyweaver-redis:6379/1
-      EW_JWT_SECRET_KEY: ${JWT_SECRET:-change-me}
-      EW_SECRET_KEY: ${EASYWEAVER_SECRET_KEY:-change-me-in-production}
-      EW_FERNET_KEY: ${EASYWEAVER_FERNET_KEY:-oJ9oJV-mmCP2OW7x1aXBG0DlclWSCcImr3_V8ZhE8_E=}
-      EW_ADMIN_JWT_SECRET_KEY: ${ADMIN_JWT_SECRET_KEY:-your-super-secret-key-change-in-production-use-openssl-rand-hex-32}
-      EW_ADMIN_JWT_ISSUER: ""
-      EW_ADMIN_JWT_AUDIENCE: ""
-      EW_CORS_ORIGINS: '["http://localhost:3000","http://localhost:5173","http://localhost:80"]'
-      EW_DEBUG: "true"
+      EASYWEAVER_MONGO_URL: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password123}@mongodb:27017
+      EASYWEAVER_REDIS_URL: redis://easyweaver-redis:6379/0
+      EASYWEAVER_CELERY_BROKER_URL: redis://easyweaver-redis:6379/1
+      EASYWEAVER_CELERY_RESULT_BACKEND: redis://easyweaver-redis:6379/1
+      EASYWEAVER_JWT_SECRET_KEY: ${JWT_SECRET:-change-me}
+      EASYWEAVER_SECRET_KEY: ${EASYWEAVER_SECRET_KEY:-change-me-in-production}
+      EASYWEAVER_FERNET_KEY: ${EASYWEAVER_FERNET_KEY:-oJ9oJV-mmCP2OW7x1aXBG0DlclWSCcImr3_V8ZhE8_E=}
+      EASYWEAVER_ADMIN_JWT_SECRET_KEY: ${ADMIN_JWT_SECRET_KEY:-your-super-secret-key-change-in-production-use-openssl-rand-hex-32}
+      EASYWEAVER_ADMIN_JWT_ISSUER: ""
+      EASYWEAVER_ADMIN_JWT_AUDIENCE: ""
+      EASYWEAVER_CORS_ORIGINS: '["http://localhost:3000","http://localhost:5173","http://localhost:80"]'
+      EASYWEAVER_DEBUG: "true"
     ports:
       - "${EASYWEAVER_API_PORT:-8003}:8001"
     depends_on:
-      easyweaver-postgres:
-        condition: service_healthy
       easyweaver-redis:
         condition: service_healthy
       mongodb:
@@ -290,17 +287,14 @@ services:
     restart: unless-stopped
     command: celery -A easyweaver.tasks.celery_app:celery_app worker --loglevel=info --concurrency=2
     environment:
-      EW_DATABASE_URL: postgresql+asyncpg://${EASYWEAVER_PG_USER:-easyweaver}:${EASYWEAVER_PG_PASSWORD:-easyweaver}@easyweaver-postgres:5432/${EASYWEAVER_PG_DB:-easyweaver}
-      EW_MONGO_URL: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password123}@mongodb:27017
-      EW_REDIS_URL: redis://easyweaver-redis:6379/0
-      EW_CELERY_BROKER_URL: redis://easyweaver-redis:6379/1
-      EW_CELERY_RESULT_BACKEND: redis://easyweaver-redis:6379/1
-      EW_SECRET_KEY: ${EASYWEAVER_SECRET_KEY:-change-me-in-production}
-      EW_FERNET_KEY: ${EASYWEAVER_FERNET_KEY:-oJ9oJV-mmCP2OW7x1aXBG0DlclWSCcImr3_V8ZhE8_E=}
+      EASYWEAVER_MONGO_URL: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password123}@mongodb:27017
+      EASYWEAVER_REDIS_URL: redis://easyweaver-redis:6379/0
+      EASYWEAVER_CELERY_BROKER_URL: redis://easyweaver-redis:6379/1
+      EASYWEAVER_CELERY_RESULT_BACKEND: redis://easyweaver-redis:6379/1
+      EASYWEAVER_SECRET_KEY: ${EASYWEAVER_SECRET_KEY:-change-me-in-production}
+      EASYWEAVER_FERNET_KEY: ${EASYWEAVER_FERNET_KEY:-oJ9oJV-mmCP2OW7x1aXBG0DlclWSCcImr3_V8ZhE8_E=}
     depends_on:
       easyweaver-redis:
-        condition: service_healthy
-      easyweaver-postgres:
         condition: service_healthy
       mongodb:
         condition: service_healthy

@@ -16,12 +16,12 @@ _SERVICE_UNAVAILABLE_MSG = "System log service not initialized"
 
 @router.get("")
 async def list_system_logs(
-    filename: Optional[str] = Query(None, description="Log file to read (default: current)"),
-    lines: int = Query(200, ge=1, le=5000, description="Number of recent lines"),
-    level: Optional[str] = Query(None, description="Filter by level (DEBUG, INFO, WARNING, ERROR)"),
-    search: Optional[str] = Query(None, description="Search text in log entries"),
-    current_user: Annotated[CurrentUser, Depends(require_super_admin)] = ...,
-    service: Annotated[SystemLogService, Depends(get_system_log_service)] = ...,
+    current_user: Annotated[CurrentUser, Depends(require_super_admin)],
+    service: Annotated[SystemLogService, Depends(get_system_log_service)],
+    filename: Annotated[Optional[str], Query(description="Log file to read (default: current)")] = None,
+    lines: Annotated[int, Query(ge=1, le=5000, description="Number of recent lines")] = 200,
+    level: Annotated[Optional[str], Query(description="Filter by level (DEBUG, INFO, WARNING, ERROR)")] = None,
+    search: Annotated[Optional[str], Query(description="Search text in log entries")] = None,
 ) -> Dict[str, Any]:
     """Read system log entries with optional filtering."""
     if service is None:
@@ -77,9 +77,9 @@ async def download_log_file(
 
 @router.post("/push-gcs")
 async def push_log_to_gcs(
-    filename: Optional[str] = Query(None, description="File to push (default: current)"),
-    current_user: Annotated[CurrentUser, Depends(require_super_admin)] = ...,
-    service: Annotated[SystemLogService, Depends(get_system_log_service)] = ...,
+    current_user: Annotated[CurrentUser, Depends(require_super_admin)],
+    service: Annotated[SystemLogService, Depends(get_system_log_service)],
+    filename: Annotated[Optional[str], Query(description="File to push (default: current)")] = None,
 ) -> Dict[str, Any]:
     """Compress and push a log file to GCS errors/ folder."""
     if service is None:
