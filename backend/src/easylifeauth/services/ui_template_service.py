@@ -132,6 +132,9 @@ class UITemplateService:
         data["rowUpdateUserId"] = user_email
         data["rowUpdateStp"] = now
 
+        if "widgets" in data:
+            data["widgets"] = self._strip_widget_overrides(data["widgets"])
+
         result = await collection.insert_one(data)
         data["_id"] = str(result.inserted_id)
         return data
@@ -150,6 +153,9 @@ class UITemplateService:
 
         update_data["rowUpdateUserId"] = user_email
         update_data["rowUpdateStp"] = datetime.now(timezone.utc).isoformat()
+
+        if "widgets" in update_data:
+            update_data["widgets"] = self._strip_widget_overrides(update_data["widgets"])
 
         try:
             result = await collection.find_one_and_update(
@@ -346,7 +352,23 @@ class UITemplateService:
         for w in widgets:
             if w["key"] == widget_key:
                 overrides = w.get("overrides", {})
-                overrides[override_key] = override
+                # Strip empty fields from the override
+                clean = {}
+                for field in ("key", "displayName", "datakey", "value"):
+                    val = override.get(field)
+                    if val is not None and str(val).strip():
+                        clean[field] = str(val).strip()
+                attrs = override.get("attributes", [])
+                clean_attrs = [
+                    a for a in attrs
+                    if (a.get("key") or "").strip() or (a.get("value") or "").strip()
+                ]
+                if clean_attrs:
+                    clean["attributes"] = clean_attrs
+                if clean:
+                    overrides[override_key] = clean
+                elif override_key in overrides:
+                    del overrides[override_key]
                 w["overrides"] = overrides
                 updated = True
                 break
@@ -396,3 +418,37 @@ class UITemplateService:
                 raise ValueError(
                     f"Invalid Jira ticket key: '{key}'. Expected format: PROJ-123"
                 )
+
+    @staticmethod
+    def _strip_widget_overrides(widgets: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Strip empty override fields from all widgets."""
+        for w in widgets:
+            overrides = w.get("overrides")
+            if not overrides or not isinstance(overrides, dict):
+                continue
+
+            clean_overrides = {}
+            for ok, ov in overrides.items():
+                if not isinstance(ov, dict):
+                    continue
+
+                attrs = ov.get("attributes", [])
+                clean_attrs = [
+                    a for a in attrs
+                    if (a.get("key") or "").strip() or (a.get("value") or "").strip()
+                ]
+
+                clean = {}
+                for field in ("key", "displayName", "datakey", "value"):
+                    val = ov.get(field)
+                    if val is not None and str(val).strip():
+                        clean[field] = str(val).strip()
+                if clean_attrs:
+                    clean["attributes"] = clean_attrs
+
+                if clean:
+                    clean_overrides[ok] = clean
+
+            w["overrides"] = clean_overrides
+
+        return widgets
