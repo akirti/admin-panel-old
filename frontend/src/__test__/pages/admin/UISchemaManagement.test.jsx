@@ -72,6 +72,13 @@ jest.mock('../../../components/admin/UITemplatePreview', () => ({
   default: ({ template }) => <div data-testid="template-preview">{template?.name || 'no-name'}</div>,
 }));
 
+jest.mock('../../../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    hasGroup: (group) => group === 'ui-editors',
+    hasAnyRole: (roles) => roles.includes('super-administrator'),
+  }),
+}));
+
 jest.mock('lucide-react', () => ({
   Eye: (p) => <span {...p}>Eye</span>,
   Pencil: (p) => <span {...p}>Pencil</span>,
