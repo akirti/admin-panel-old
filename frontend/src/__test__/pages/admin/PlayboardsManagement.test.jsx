@@ -14,6 +14,7 @@ jest.mock('../../../services/api', () => ({
   },
   scenariosAPI: { list: jest.fn() },
   domainsAPI: { list: jest.fn() },
+  groupsAPI: { list: jest.fn() },
 }));
 
 jest.mock('react-hot-toast', () => ({ __esModule: true,
@@ -102,12 +103,13 @@ const mockPlayboards = [
 ];
 
 async function setupMocks() {
-  const { playboardsAPI, scenariosAPI, domainsAPI } = await import('../../../services/api');
+  const { playboardsAPI, scenariosAPI, domainsAPI, groupsAPI } = await import('../../../services/api');
   playboardsAPI.list.mockResolvedValue({
     data: { data: mockPlayboards, pagination: { total: 2, pages: 1, page: 0, limit: 25 } },
   });
   scenariosAPI.list.mockResolvedValue({ data: { data: [{ key: 'customers', name: 'Customers' }] } });
   domainsAPI.list.mockResolvedValue({ data: { data: [{ key: 'customers', name: 'Customers' }] } });
+  groupsAPI.list.mockResolvedValue({ data: { data: [{ groupId: 'ui-editors', name: 'UI Editors' }] } });
 }
 
 function renderPlayboardsManagement() {
