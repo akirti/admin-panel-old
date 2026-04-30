@@ -5,12 +5,14 @@ import { uiTemplatesAPI } from '../../services/api';
 import UITemplatePreview from '../../components/admin/UITemplatePreview';
 import { Eye, Pencil, Plus, ToggleLeft, ToggleRight, GitBranch, ArrowUp, ArrowDown, Trash2, MessageSquarePlus, Code, ChevronDown, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../contexts/AuthContext';
 
 /* ─── Constants ─── */
 const JIRA_KEY_REGEX = /^[A-Z]+-\d+$/;
 const DEFAULT_FORM = {
   name: '', description: '', page: '', component: '', componentType: 'grid',
   version: '1.0.0', accessLevel: 'USR', usage: [], widgets: [], status: 'A',
+  _jiraKey: '', _comment: '',
 };
 const DEFAULT_WIDGET_ATTRIBUTES = [
   { key: 'width', value: '60' },
@@ -383,11 +385,29 @@ function WidgetEditor({ widgets, setWidgets }) {
 /* ─── Create/Edit Form ─── */
 function TemplateForm({ formData, setFormData, editingItem, onSubmit, onCancel }) {
   const descId = useId();
+  const commentId = useId();
   const widgets = formData.widgets || [];
   const setWidgets = (w) => setFormData({ ...formData, widgets: w });
 
+  const existingComments = editingItem?.comments || [];
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const jira = (formData._jiraKey || '').trim().toUpperCase();
+    const comment = (formData._comment || '').trim();
+    if (!jira || !JIRA_KEY_REGEX.test(jira)) {
+      toast.error('Valid Jira ticket key required (e.g. PROJ-123)');
+      return;
+    }
+    if (!comment) {
+      toast.error('Comment is required to save');
+      return;
+    }
+    onSubmit(e);
+  };
+
   return (
-    <form onSubmit={onSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+    <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
       <div className="grid grid-cols-2 gap-4">
         <Input label="Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
         <Input label="Page Code" value={formData.page} onChange={(e) => setFormData({ ...formData, page: e.target.value })} required />
@@ -409,6 +429,46 @@ function TemplateForm({ formData, setFormData, editingItem, onSubmit, onCancel }
       )}
 
       <WidgetEditor widgets={widgets} setWidgets={setWidgets} />
+
+      {/* ── Change Comment (required) ── */}
+      <div className="border border-edge rounded-lg p-3 space-y-3 bg-surface-secondary">
+        <span className="text-sm font-medium text-content-secondary">Change Comment <span className="text-red-500">*</span></span>
+        <div className="grid grid-cols-2 gap-3">
+          <Input label="Jira Ticket" value={formData._jiraKey || ''} placeholder="PROJ-123" required
+            onChange={(e) => setFormData({ ...formData, _jiraKey: e.target.value.toUpperCase() })} />
+          <div>
+            <label htmlFor={commentId} className="block text-sm font-medium text-content-secondary mb-1">Comment <span className="text-red-500">*</span></label>
+            <textarea id={commentId} className="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
+              rows={2} value={formData._comment || ''} placeholder="Describe what changed and why..."
+              onChange={(e) => setFormData({ ...formData, _comment: e.target.value })} required />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Existing Comments (read-only, when editing) ── */}
+      {existingComments.length > 0 && (
+        <div className="border border-edge rounded-lg p-3 space-y-2">
+          <span className="text-sm font-medium text-content-secondary">Comment History ({existingComments.length})</span>
+          <div className="max-h-40 overflow-y-auto space-y-2">
+            {[...existingComments].reverse().map((c, idx) => (
+              <div key={idx} className="border border-edge rounded p-2 bg-surface text-xs space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-content">{c.author || 'Unknown'}</span>
+                  <span className="text-content-muted">{c.timestamp ? new Date(c.timestamp).toLocaleString() : '-'}</span>
+                </div>
+                <p className="text-content-secondary">{c.comment}</p>
+                {c.reason?.length > 0 && (
+                  <div className="flex gap-1 flex-wrap">
+                    {c.reason.map((r, ri) => (
+                      <span key={ri} className="inline-block px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-[10px] font-mono">{r}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-end space-x-3 pt-4 border-t border-edge">
         <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
@@ -505,7 +565,7 @@ function AddCommentForm({ templateId, onSuccess, onCancel }) {
 }
 
 /* ─── Table columns ─── */
-function buildColumns({ onView, onEdit, onPreview, onBumpVersion, onToggle, onAddComment, onDelete }) {
+function buildColumns({ onView, onEdit, onPreview, onBumpVersion, onToggle, onAddComment, onDelete, canEdit }) {
   return [
     { key: 'name', title: 'Name' },
     { key: 'page', title: 'Page' },
@@ -521,14 +581,18 @@ function buildColumns({ onView, onEdit, onPreview, onBumpVersion, onToggle, onAd
       render: (_, item) => (
         <div className="flex items-center space-x-1">
           <button onClick={(e) => { e.stopPropagation(); onView(item); }} className="p-1 text-content-muted hover:text-primary-600" title="View JSON"><Code size={15} /></button>
-          <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-1 text-content-muted hover:text-primary-600" title="Edit"><Pencil size={15} /></button>
           <button onClick={(e) => { e.stopPropagation(); onPreview(item); }} className="p-1 text-content-muted hover:text-blue-600" title="Preview"><Eye size={15} /></button>
-          <button onClick={(e) => { e.stopPropagation(); onBumpVersion(item); }} className="p-1 text-content-muted hover:text-purple-600" title="Bump Version"><GitBranch size={15} /></button>
-          <button onClick={(e) => { e.stopPropagation(); onAddComment(item); }} className="p-1 text-content-muted hover:text-green-600" title="Add Comment"><MessageSquarePlus size={15} /></button>
-          <button onClick={(e) => { e.stopPropagation(); onToggle(item); }} className="p-1 text-content-muted hover:text-yellow-600" title="Toggle Status">
-            {isStatusActive(item.status) ? <ToggleRight size={15} /> : <ToggleLeft size={15} />}
-          </button>
-          <button onClick={(e) => { e.stopPropagation(); onDelete(item); }} className="p-1 text-red-500 hover:text-red-600" title="Delete"><Trash2 size={15} /></button>
+          {canEdit && (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-1 text-content-muted hover:text-primary-600" title="Edit"><Pencil size={15} /></button>
+              <button onClick={(e) => { e.stopPropagation(); onBumpVersion(item); }} className="p-1 text-content-muted hover:text-purple-600" title="Bump Version"><GitBranch size={15} /></button>
+              <button onClick={(e) => { e.stopPropagation(); onAddComment(item); }} className="p-1 text-content-muted hover:text-green-600" title="Add Comment"><MessageSquarePlus size={15} /></button>
+              <button onClick={(e) => { e.stopPropagation(); onToggle(item); }} className="p-1 text-content-muted hover:text-yellow-600" title="Toggle Status">
+                {isStatusActive(item.status) ? <ToggleRight size={15} /> : <ToggleLeft size={15} />}
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); onDelete(item); }} className="p-1 text-red-500 hover:text-red-600" title="Delete"><Trash2 size={15} /></button>
+            </>
+          )}
         </div>
       ),
     },
@@ -539,6 +603,9 @@ function buildColumns({ onView, onEdit, onPreview, onBumpVersion, onToggle, onAd
    Main Component
    ═══════════════════════════════════════════════════════════ */
 const UISchemaManagement = () => {
+  const { hasGroup, hasAnyRole } = useAuth();
+  const canEdit = hasAnyRole(['super-administrator', 'administrator']) || hasGroup('ui-editors');
+
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterPage, setFilterPage] = useState('');
@@ -560,10 +627,19 @@ const UISchemaManagement = () => {
   const resetForm = () => { setFormData({ ...DEFAULT_FORM }); setEditingItem(null); };
 
   // ── CRUD handlers ──
+  const _buildComment = () => ({
+    comment: (formData._comment || '').trim(),
+    author: '',
+    reason: [(formData._jiraKey || '').trim().toUpperCase()],
+  });
+
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      await uiTemplatesAPI.create({ ...formData, widgets: stripOverrides(formData.widgets || []) });
+      const { _jiraKey, _comment, ...payload } = formData;
+      payload.widgets = stripOverrides(payload.widgets || []);
+      payload.comments = [_buildComment()];
+      await uiTemplatesAPI.create(payload);
       toast.success('Template created');
       setFormModalOpen(false); resetForm(); fetchData();
     } catch (error) { toast.error(error.response?.data?.detail || 'Failed to create'); }
@@ -572,8 +648,11 @@ const UISchemaManagement = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      const { version, status, ...updateData } = formData;
-      await uiTemplatesAPI.update(editingItem._id, { ...updateData, widgets: stripOverrides(updateData.widgets || []) });
+      const { version, status, _jiraKey, _comment, ...updateData } = formData;
+      updateData.widgets = stripOverrides(updateData.widgets || []);
+      const existingComments = editingItem?.comments || [];
+      updateData.comments = [...existingComments, _buildComment()];
+      await uiTemplatesAPI.update(editingItem._id, updateData);
       toast.success('Template updated');
       setFormModalOpen(false); resetForm(); fetchData();
     } catch (error) { toast.error(error.response?.data?.detail || 'Failed to update'); }
@@ -610,6 +689,8 @@ const UISchemaManagement = () => {
       usage: item.usage || [],
       widgets: item.widgets || [],
       status: item.status || 'A',
+      _jiraKey: '',
+      _comment: '',
     });
     setFormModalOpen(true);
   };
@@ -627,7 +708,7 @@ const UISchemaManagement = () => {
   const columns = buildColumns({
     onView: openDetail, onEdit: openEdit, onPreview: openPreview,
     onBumpVersion: openVersionBump, onToggle: handleToggle,
-    onAddComment: openAddComment, onDelete: handleDelete,
+    onAddComment: openAddComment, onDelete: handleDelete, canEdit,
   });
 
   return (
@@ -638,9 +719,11 @@ const UISchemaManagement = () => {
           <h1 className="text-2xl font-bold text-content">UI Schema Templates</h1>
           <p className="text-content-muted mt-1">Manage JSON-based UI templates for grids and forms</p>
         </div>
-        <Button onClick={() => { resetForm(); setFormModalOpen(true); }}>
-          <Plus size={16} className="mr-2" /> New Template
-        </Button>
+        {canEdit && (
+          <Button onClick={() => { resetForm(); setFormModalOpen(true); }}>
+            <Plus size={16} className="mr-2" /> New Template
+          </Button>
+        )}
       </div>
 
       {/* Filters */}

@@ -28,34 +28,33 @@ def _get_service():
     return get_ui_template_service()
 
 
-def _check_ui_management_access(current_user) -> None:
-    """Raise 403 unless user is super-admin or has admin role + ui-management group."""
+def _check_ui_editor_access(current_user) -> None:
+    """Raise 403 unless user can edit UI schemas.
+
+    Allowed: super-administrator, administrator, or any role with ui-editors group.
+    """
     roles = current_user.roles or []
     groups = current_user.groups if hasattr(current_user, "groups") else []
 
-    if "super-administrator" in roles:
+    if "super-administrator" in roles or "administrator" in roles:
         return
 
-    has_admin_role = any(
-        r in roles
-        for r in ["administrator", "group-administrator", "group-editor"]
-    )
-    has_group = "ui-management" in (groups or [])
+    if "ui-editors" in (groups or []):
+        return
 
-    if not (has_admin_role and has_group):
-        raise HTTPException(403, "Requires ui-management group access")
+    raise HTTPException(403, "Requires ui-editors group or administrator role")
 
 
-def require_ui_management_access(
+def require_ui_editor_access(
     current_user: Annotated[object, Depends(get_current_user)],
 ):
-    """Dependency: require ui-management access, returns current_user."""
-    _check_ui_management_access(current_user)
+    """Dependency: require ui-editors access for write operations."""
+    _check_ui_editor_access(current_user)
     return current_user
 
 
 # Annotated type aliases for DI
-ManagementUser = Annotated[object, Depends(require_ui_management_access)]
+EditorUser = Annotated[object, Depends(require_ui_editor_access)]
 AuthenticatedUser = Annotated[object, Depends(get_current_user)]
 
 
@@ -63,7 +62,7 @@ AuthenticatedUser = Annotated[object, Depends(get_current_user)]
 
 @router.get("")
 async def list_templates(
-    current_user: ManagementUser,
+    current_user: AuthenticatedUser,
     page: int = Query(0, ge=0),
     limit: int = Query(25, ge=1, le=500),
     search: Optional[str] = None,
@@ -82,7 +81,7 @@ async def list_templates(
 
 @router.get("/count")
 async def count_templates(
-    current_user: ManagementUser,
+    current_user: AuthenticatedUser,
     search: Optional[str] = None,
     status: Optional[str] = None,
     page_code: Optional[str] = None,
@@ -109,7 +108,7 @@ async def lookup_template(
 @router.get("/{template_id}", responses=_RESP_404)
 async def get_template(
     template_id: str,
-    current_user: ManagementUser,
+    current_user: AuthenticatedUser,
 ):
     svc = _get_service()
     template = await svc.get_by_id(template_id)
@@ -121,7 +120,7 @@ async def get_template(
 @router.post("", responses={400: {"description": "Bad request"}})
 async def create_template(
     body: UITemplateCreate,
-    current_user: ManagementUser,
+    current_user: EditorUser,
 ):
     svc = _get_service()
     data = body.model_dump()
@@ -137,7 +136,7 @@ async def create_template(
 async def update_template(
     template_id: str,
     body: UITemplateUpdate,
-    current_user: ManagementUser,
+    current_user: EditorUser,
 ):
     svc = _get_service()
     data = body.model_dump(exclude_none=True)
@@ -150,7 +149,7 @@ async def update_template(
 @router.delete("/{template_id}", responses=_RESP_404)
 async def delete_template(
     template_id: str,
-    current_user: ManagementUser,
+    current_user: EditorUser,
 ):
     svc = _get_service()
     success = await svc.delete_template(template_id, current_user.email)
@@ -162,7 +161,7 @@ async def delete_template(
 @router.post("/{template_id}/toggle-status", responses=_RESP_404)
 async def toggle_status(
     template_id: str,
-    current_user: ManagementUser,
+    current_user: EditorUser,
 ):
     svc = _get_service()
     result = await svc.toggle_status(template_id, current_user.email)
@@ -175,7 +174,7 @@ async def toggle_status(
 async def bump_version(
     template_id: str,
     body: UITemplateVersionBump,
-    current_user: ManagementUser,
+    current_user: EditorUser,
 ):
     svc = _get_service()
     data = body.model_dump()
@@ -192,7 +191,7 @@ async def bump_version(
 async def reorder_widgets(
     template_id: str,
     widget_keys: List[str],
-    current_user: ManagementUser,
+    current_user: EditorUser,
 ):
     svc = _get_service()
     result = await svc.reorder_widgets(
@@ -211,7 +210,7 @@ async def update_widget_attributes(
     template_id: str,
     widget_key: str,
     attributes: List[WidgetAttribute],
-    current_user: ManagementUser,
+    current_user: EditorUser,
 ):
     svc = _get_service()
     attrs = [a.model_dump() for a in attributes]
@@ -227,7 +226,7 @@ async def update_widget_attributes(
 async def add_comment(
     template_id: str,
     body: TemplateComment,
-    current_user: ManagementUser,
+    current_user: EditorUser,
 ):
     svc = _get_service()
     comment = body.model_dump()
@@ -251,7 +250,7 @@ async def set_widget_override(
     widget_key: str,
     override_key: str,
     body: WidgetOverride,
-    current_user: ManagementUser,
+    current_user: EditorUser,
 ):
     svc = _get_service()
     override = body.model_dump()
@@ -271,7 +270,7 @@ async def remove_widget_override(
     template_id: str,
     widget_key: str,
     override_key: str,
-    current_user: ManagementUser,
+    current_user: EditorUser,
 ):
     svc = _get_service()
     result = await svc.remove_widget_override(

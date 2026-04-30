@@ -124,6 +124,7 @@ async def seed_database():
         {"groupId": "analysts", "name": "Analysts", "description": "Data analysts", "permissions": ["domains.view", "scenarios.view", "playboards.view", "configurations.view", "dashboard.view"], "domains": ["analytics", "sales", "finance"], "status": "active", "priority": 3, "type": "custom", "created_at": now, "updated_at": now},
         {"groupId": "sales-team", "name": "Sales Team", "description": "Sales department team", "permissions": ["domains.view", "scenarios.view", "playboards.view", "dashboard.view"], "domains": ["sales"], "status": "active", "priority": 4, "type": "custom", "created_at": now, "updated_at": now},
         {"groupId": "hr-team", "name": "HR Team", "description": "Human resources team", "permissions": ["users.view", "domains.view", "dashboard.view"], "domains": ["hr"], "status": "active", "priority": 5, "type": "custom", "created_at": now, "updated_at": now},
+        {"groupId": "ui-editors", "name": "UI Editors", "description": "Users who can create and edit UI schema templates", "permissions": ["ui_template.read", "ui_template.write", "ui_template.edit", "ui_template.delete"], "domains": [], "status": "active", "priority": 6, "type": "custom", "created_at": now, "updated_at": now},
     ]
 
     await db.groups.delete_many({})

@@ -74,7 +74,7 @@ const GROUP_ADMIN_NAV_BASE = [
 
 const getGroupAdminNav = (hasGroup) => {
   const items = [...GROUP_ADMIN_NAV_BASE];
-  if (hasGroup && hasGroup('ui-management')) {
+  if (hasGroup && (hasGroup('ui-management') || hasGroup('ui-editors'))) {
     items.push({ path: '/management/ui-schemas', icon: LayoutTemplate, label: 'UI Schemas' });
   }
   return items;
