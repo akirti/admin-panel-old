@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import UISchemaManagement from '../../../pages/admin/UISchemaManagement';
 
@@ -328,7 +328,10 @@ describe('UISchemaManagement', () => {
         expect(screen.getByText('Edit Template')).toBeInTheDocument();
       });
       expect(screen.getByDisplayValue('Scenarios Grid')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('scenarios')).toBeInTheDocument();
+      // Page Code and Component are now Select dropdowns — verify they render in the modal
+      const modal = screen.getByTestId('modal');
+      expect(within(modal).getByText('Page Code')).toBeInTheDocument();
+      expect(within(modal).getByText('Access Level')).toBeInTheDocument();
     });
   });
 

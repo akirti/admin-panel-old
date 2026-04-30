@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useId } from 'react';
 import { Card, Button, Input, Table, Modal, Badge, SearchInput, Select, Pagination } from '../../components/shared';
 import { isActive as isStatusActive } from '../../utils/status';
-import { uiTemplatesAPI } from '../../services/api';
+import { uiTemplatesAPI, configurationsAPI } from '../../services/api';
 import UITemplatePreview from '../../components/admin/UITemplatePreview';
 import { Eye, Pencil, Plus, ToggleLeft, ToggleRight, GitBranch, ArrowUp, ArrowDown, Trash2, MessageSquarePlus, Code, ChevronDown, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -11,7 +11,7 @@ import { useAuth } from '../../contexts/AuthContext';
 const JIRA_KEY_REGEX = /^[A-Z]+-\d+$/;
 const DEFAULT_FORM = {
   name: '', description: '', page: '', component: '', componentType: 'grid',
-  version: '1.0.0', accessLevel: 'USR', usage: [], widgets: [], status: 'A',
+  version: '1.0.0', accessLevel: 'COM', usage: [], widgets: [], status: 'A',
   _jiraKey: '', _comment: '',
 };
 const DEFAULT_WIDGET_ATTRIBUTES = [
@@ -383,7 +383,7 @@ function WidgetEditor({ widgets, setWidgets }) {
 }
 
 /* ─── Create/Edit Form ─── */
-function TemplateForm({ formData, setFormData, editingItem, onSubmit, onCancel }) {
+function TemplateForm({ formData, setFormData, editingItem, onSubmit, onCancel, pageOptions, componentOptions }) {
   const descId = useId();
   const commentId = useId();
   const widgets = formData.widgets || [];
@@ -410,14 +410,20 @@ function TemplateForm({ formData, setFormData, editingItem, onSubmit, onCancel }
     <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
       <div className="grid grid-cols-2 gap-4">
         <Input label="Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
-        <Input label="Page Code" value={formData.page} onChange={(e) => setFormData({ ...formData, page: e.target.value })} required />
+        <Select label="Page Code" value={formData.page}
+          onChange={(e) => setFormData({ ...formData, page: e.target.value })}
+          options={[{ value: '', label: '-- Select Page --' }, ...pageOptions]} />
       </div>
       <div className="grid grid-cols-3 gap-4">
-        <Input label="Component" value={formData.component || ''} onChange={(e) => setFormData({ ...formData, component: e.target.value })} />
+        <Select label="Component" value={formData.component || ''}
+          onChange={(e) => setFormData({ ...formData, component: e.target.value })}
+          options={[{ value: '', label: '-- Select Component --' }, ...componentOptions]} />
         <Select label="Component Type" value={formData.componentType || 'grid'}
           onChange={(e) => setFormData({ ...formData, componentType: e.target.value })}
           options={[{ value: 'grid', label: 'Data Grid' }, { value: 'form', label: 'Form' }, { value: 'custom', label: 'Custom' }]} />
-        <Input label="Access Level" value={formData.accessLevel || 'USR'} onChange={(e) => setFormData({ ...formData, accessLevel: e.target.value })} />
+        <Select label="Access Level" value={formData.accessLevel || 'COM'}
+          onChange={(e) => setFormData({ ...formData, accessLevel: e.target.value })}
+          options={[{ value: 'COM', label: 'COM - Computer' }, { value: 'US', label: 'US - User' }, { value: 'BO', label: 'BO - Both' }]} />
       </div>
       <div>
         <label htmlFor={descId} className="block text-sm font-medium text-content-secondary mb-1">Description</label>
@@ -606,6 +612,27 @@ const UISchemaManagement = () => {
   const { hasGroup, hasAnyRole } = useAuth();
   const canEdit = hasAnyRole(['super-administrator', 'administrator']) || hasGroup('ui-editors');
 
+  const [pageOptions, setPageOptions] = useState([]);
+  const [componentOptions, setComponentOptions] = useState([]);
+
+  useEffect(() => {
+    const fetchLookups = async () => {
+      try {
+        const res = await configurationsAPI.list({ type: 'lookup-data', limit: 100 });
+        const configs = res?.data?.data || [];
+        for (const cfg of configs) {
+          const lookups = cfg.lookups || {};
+          const opts = Object.entries(lookups).map(([value, label]) => ({ value, label }));
+          if (cfg.key === 'page-codes' || cfg.key === 'ui-schema-pages') setPageOptions(opts);
+          if (cfg.key === 'ui-schema-components' || cfg.key === 'page-components-codes') setComponentOptions(opts);
+        }
+      } catch {
+        // Lookups are optional — fall back to empty
+      }
+    };
+    fetchLookups();
+  }, []);
+
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterPage, setFilterPage] = useState('');
@@ -756,7 +783,8 @@ const UISchemaManagement = () => {
         title={editingItem ? 'Edit Template' : 'New Template'} size="xl">
         <TemplateForm formData={formData} setFormData={setFormData} editingItem={editingItem}
           onSubmit={editingItem ? handleUpdate : handleCreate}
-          onCancel={() => { setFormModalOpen(false); resetForm(); }} />
+          onCancel={() => { setFormModalOpen(false); resetForm(); }}
+          pageOptions={pageOptions} componentOptions={componentOptions} />
       </Modal>
 
       {/* Preview Modal */}
