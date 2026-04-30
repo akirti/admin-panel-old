@@ -14,7 +14,12 @@ class WidgetAttribute(BaseModel):
 
 
 class WidgetOverride(BaseModel):
-    """Override set for a widget, keyed by custom key"""
+    """Override set for a widget — same shape as widget, all fields optional.
+    On save, empty/null fields are stripped so only explicit overrides persist."""
+    key: Optional[str] = None
+    displayName: Optional[str] = None
+    datakey: Optional[str] = None
+    value: Optional[str] = None
     attributes: List[WidgetAttribute] = []
 
     model_config = {"extra": "allow"}
