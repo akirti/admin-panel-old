@@ -33,9 +33,19 @@ const YN_ATTRIBUTE_KEYS = new Set([
 ]);
 const DEFAULT_WIDGET = { key: '', displayName: '', index: 0, datakey: '', value: '', attributes: [], overrides: {} };
 
-const OVERRIDE_KEY_OPTIONS = [
-  'mobile', 'tablet', 'compact', 'readonly', 'print', 'export', 'embedded',
+// Override keys: { backendKey: displayLabel }
+// Backend stores the short code (e.g. "01"), frontend shows "01-Mobile"
+const OVERRIDE_KEYS = [
+  { code: '01', label: 'Mobile' },
+  { code: 'TB', label: 'Tablet' },
+  { code: 'CP', label: 'Compact' },
+  { code: 'RO', label: 'Readonly' },
+  { code: 'PR', label: 'Print' },
+  { code: 'EX', label: 'Export' },
+  { code: 'EM', label: 'Embedded' },
 ];
+const OVERRIDE_CODE_TO_LABEL = Object.fromEntries(OVERRIDE_KEYS.map(({ code, label }) => [code, label]));
+const OVERRIDE_KEY_CODES = OVERRIDE_KEYS.map(({ code }) => code);
 
 function stripOverrides(widgets) {
   return widgets.map((w) => {
@@ -271,7 +281,7 @@ function WidgetEditor({ widgets, setWidgets }) {
         const summary = w.key || w.displayName || `Widget ${wIdx + 1}`;
         const overrideKeys = Object.keys(w.overrides || {});
         const activeTab = getActiveTab(wIdx);
-        const availableOverrides = OVERRIDE_KEY_OPTIONS.filter((k) => !overrideKeys.includes(k));
+        const availableOverrides = OVERRIDE_KEYS.filter(({ code }) => !overrideKeys.includes(code));
 
         return (
           <div key={`widget-${wIdx}`} className="border border-edge rounded-lg bg-surface-secondary">
@@ -312,10 +322,10 @@ function WidgetEditor({ widgets, setWidgets }) {
                       <button type="button"
                         className={`px-3 py-1.5 text-xs font-medium rounded-t border border-b-0 transition-colors ${activeTab === ok ? 'bg-surface text-purple-600 border-edge' : 'text-content-muted hover:text-content border-transparent'}`}
                         onClick={() => setActiveTab(wIdx, ok)}>
-                        {ok}
+                        {ok}-{OVERRIDE_CODE_TO_LABEL[ok] || ok}
                       </button>
                       <button type="button" onClick={() => removeOverride(wIdx, ok)}
-                        className="ml-0.5 p-0.5 text-content-muted hover:text-red-500 text-xs" title={`Remove ${ok} override`}>
+                        className="ml-0.5 p-0.5 text-content-muted hover:text-red-500 text-xs" title={`Remove ${ok}-${OVERRIDE_CODE_TO_LABEL[ok] || ok} override`}>
                         &times;
                       </button>
                     </div>
@@ -333,11 +343,11 @@ function WidgetEditor({ widgets, setWidgets }) {
                 {dropdownOpen === wIdx && availableOverrides.length > 0 && (
                   <div className="flex flex-wrap gap-1 py-2 px-1 border-b border-edge bg-surface-secondary">
                     <span className="text-xs text-content-muted mr-1 py-1">Add override:</span>
-                    {availableOverrides.map((ok) => (
-                      <button key={ok} type="button"
+                    {availableOverrides.map(({ code, label }) => (
+                      <button key={code} type="button"
                         className="px-2.5 py-1 text-xs rounded border border-edge bg-surface hover:bg-primary-50 hover:border-primary-300 hover:text-primary-600 transition-colors"
-                        onClick={() => addOverride(wIdx, ok)}>
-                        {ok}
+                        onClick={() => addOverride(wIdx, code)}>
+                        {code}-{label}
                       </button>
                     ))}
                   </div>
