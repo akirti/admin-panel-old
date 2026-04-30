@@ -321,26 +321,27 @@ function WidgetEditor({ widgets, setWidgets }) {
                     </div>
                   ))}
                   {availableOverrides.length > 0 && (
-                    <div className="relative">
-                      <button type="button"
-                        className="px-2 py-1.5 text-xs text-primary-500 hover:text-primary-600 font-medium"
-                        onClick={() => setDropdownOpen(dropdownOpen === wIdx ? null : wIdx)}>
-                        + Override
-                      </button>
-                      {dropdownOpen === wIdx && (
-                        <div className="absolute top-full left-0 z-50 mt-1 bg-surface border border-edge rounded-lg shadow-lg py-1 min-w-[120px]">
-                          {availableOverrides.map((ok) => (
-                            <button key={ok} type="button"
-                              className="w-full text-left px-3 py-1.5 text-xs hover:bg-surface-hover"
-                              onClick={() => addOverride(wIdx, ok)}>
-                              {ok}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    <button type="button"
+                      className="px-2 py-1.5 text-xs text-primary-500 hover:text-primary-600 font-medium"
+                      onClick={() => setDropdownOpen(dropdownOpen === wIdx ? null : wIdx)}>
+                      + Override
+                    </button>
                   )}
                 </div>
+
+                {/* Inline override picker */}
+                {dropdownOpen === wIdx && availableOverrides.length > 0 && (
+                  <div className="flex flex-wrap gap-1 py-2 px-1 border-b border-edge bg-surface-secondary">
+                    <span className="text-xs text-content-muted mr-1 py-1">Add override:</span>
+                    {availableOverrides.map((ok) => (
+                      <button key={ok} type="button"
+                        className="px-2.5 py-1 text-xs rounded border border-edge bg-surface hover:bg-primary-50 hover:border-primary-300 hover:text-primary-600 transition-colors"
+                        onClick={() => addOverride(wIdx, ok)}>
+                        {ok}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
                 {/* Tab content */}
                 {activeTab === 'base' ? (
