@@ -33,6 +33,29 @@ const YN_ATTRIBUTE_KEYS = new Set([
 ]);
 const DEFAULT_WIDGET = { key: '', displayName: '', index: 0, datakey: '', value: '', attributes: [], overrides: {} };
 
+const OVERRIDE_KEY_OPTIONS = [
+  'mobile', 'tablet', 'compact', 'readonly', 'print', 'export', 'embedded',
+];
+
+function stripOverrides(widgets) {
+  return widgets.map((w) => {
+    const cleanOverrides = {};
+    for (const [overrideKey, override] of Object.entries(w.overrides || {})) {
+      const cleanAttrs = (override.attributes || []).filter(
+        (a) => (a.key && a.key.trim()) || (a.value && a.value.trim())
+      );
+      const clean = {};
+      if (override.key?.trim()) clean.key = override.key.trim();
+      if (override.displayName?.trim()) clean.displayName = override.displayName.trim();
+      if (override.datakey?.trim()) clean.datakey = override.datakey.trim();
+      if (override.value?.trim()) clean.value = override.value.trim();
+      if (cleanAttrs.length > 0) clean.attributes = cleanAttrs;
+      if (Object.keys(clean).length > 0) cleanOverrides[overrideKey] = clean;
+    }
+    return { ...w, overrides: cleanOverrides };
+  });
+}
+
 /* ─── Data-fetching hook ─── */
 function useTemplatesData(search, filterStatus, filterPage, pagination, setPagination) {
   const [templates, setTemplates] = useState([]);
@@ -62,13 +85,65 @@ function useTemplatesData(search, filterStatus, filterPage, pagination, setPagin
   return { templates, loading, fetchData };
 }
 
+/* ─── Widget tab content ─── */
+function WidgetTabContent({ fields, onFieldChange, attributes, onAttrChange, onAddAttr, onRemoveAttr, isBase }) {
+  return (
+    <div className="space-y-2 pt-2">
+      <div className="grid grid-cols-3 gap-2">
+        <input className="px-2 py-1 text-sm border border-edge rounded bg-surface"
+          placeholder={isBase ? 'Key' : 'Override key'} value={fields.key || ''}
+          onChange={(e) => onFieldChange('key', e.target.value)} />
+        <input className="px-2 py-1 text-sm border border-edge rounded bg-surface"
+          placeholder={isBase ? 'Display Name' : 'Override display name'} value={fields.displayName || ''}
+          onChange={(e) => onFieldChange('displayName', e.target.value)} />
+        <input className="px-2 py-1 text-sm border border-edge rounded bg-surface"
+          placeholder={isBase ? 'Data Key' : 'Override data key'} value={fields.datakey || ''}
+          onChange={(e) => onFieldChange('datakey', e.target.value)} />
+      </div>
+      {!isBase && (
+        <input className="px-2 py-1 text-sm border border-edge rounded bg-surface w-full"
+          placeholder="Override value" value={fields.value || ''}
+          onChange={(e) => onFieldChange('value', e.target.value)} />
+      )}
+      <div className="ml-2 space-y-1">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-content-muted">Attributes</span>
+          <button type="button" onClick={onAddAttr} className="text-xs text-primary-500 hover:underline">+ attr</button>
+        </div>
+        {(attributes || []).map((attr, aIdx) => (
+          <div key={`attr-${aIdx}`} className="flex gap-2 items-center">
+            <input className="px-2 py-0.5 text-xs border border-edge rounded bg-surface flex-1" placeholder="key"
+              value={attr.key} onChange={(e) => onAttrChange(aIdx, 'key', e.target.value)} />
+            {YN_ATTRIBUTE_KEYS.has(attr.key) ? (
+              <select className="px-2 py-0.5 text-xs border border-edge rounded bg-surface flex-1"
+                value={attr.value} onChange={(e) => onAttrChange(aIdx, 'value', e.target.value)}>
+                <option value="Y">Yes</option>
+                <option value="N">No</option>
+              </select>
+            ) : (
+              <input className="px-2 py-0.5 text-xs border border-edge rounded bg-surface flex-1" placeholder="value"
+                value={attr.value} onChange={(e) => onAttrChange(aIdx, 'value', e.target.value)} />
+            )}
+            <button type="button" onClick={() => onRemoveAttr(aIdx)} className="text-red-400 hover:text-red-500">
+              <Trash2 size={12} />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Widget editor sub-component ─── */
 function WidgetEditor({ widgets, setWidgets }) {
   const [expandedIdx, setExpandedIdx] = useState(null);
+  const [activeTabs, setActiveTabs] = useState({});
+  const [dropdownOpen, setDropdownOpen] = useState(null);
 
-  const toggleExpand = (idx) => {
-    setExpandedIdx(prev => prev === idx ? null : idx);
-  };
+  const getActiveTab = (idx) => activeTabs[idx] || 'base';
+  const setActiveTab = (idx, tab) => setActiveTabs((prev) => ({ ...prev, [idx]: tab }));
+
+  const toggleExpand = (idx) => setExpandedIdx((prev) => (prev === idx ? null : idx));
 
   const addWidget = () => {
     const newIdx = widgets.length;
@@ -84,11 +159,8 @@ function WidgetEditor({ widgets, setWidgets }) {
   const removeWidget = (idx) => {
     const next = widgets.filter((_, i) => i !== idx).map((w, i) => ({ ...w, index: i }));
     setWidgets(next);
-    if (expandedIdx === idx) {
-      setExpandedIdx(null);
-    } else if (expandedIdx !== null && expandedIdx > idx) {
-      setExpandedIdx(expandedIdx - 1);
-    }
+    if (expandedIdx === idx) setExpandedIdx(null);
+    else if (expandedIdx !== null && expandedIdx > idx) setExpandedIdx(expandedIdx - 1);
   };
 
   const moveWidget = (idx, dir) => {
@@ -117,15 +189,72 @@ function WidgetEditor({ widgets, setWidgets }) {
 
   const addAttr = (wIdx) => {
     const next = [...widgets];
-    const attrs = [...(next[wIdx].attributes || []), { key: '', value: '' }];
-    next[wIdx] = { ...next[wIdx], attributes: attrs };
+    next[wIdx] = { ...next[wIdx], attributes: [...(next[wIdx].attributes || []), { key: '', value: '' }] };
     setWidgets(next);
   };
 
   const removeAttr = (wIdx, aIdx) => {
     const next = [...widgets];
-    const attrs = (next[wIdx].attributes || []).filter((_, i) => i !== aIdx);
-    next[wIdx] = { ...next[wIdx], attributes: attrs };
+    next[wIdx] = { ...next[wIdx], attributes: (next[wIdx].attributes || []).filter((_, i) => i !== aIdx) };
+    setWidgets(next);
+  };
+
+  // ── Override CRUD ──
+  const addOverride = (wIdx, overrideKey) => {
+    const next = [...widgets];
+    const overrides = { ...(next[wIdx].overrides || {}), [overrideKey]: { attributes: [] } };
+    next[wIdx] = { ...next[wIdx], overrides };
+    setWidgets(next);
+    setActiveTab(wIdx, overrideKey);
+    setDropdownOpen(null);
+  };
+
+  const removeOverride = (wIdx, overrideKey) => {
+    const next = [...widgets];
+    const overrides = { ...(next[wIdx].overrides || {}) };
+    delete overrides[overrideKey];
+    next[wIdx] = { ...next[wIdx], overrides };
+    setWidgets(next);
+    setActiveTab(wIdx, 'base');
+  };
+
+  const updateOverrideField = (wIdx, overrideKey, field, value) => {
+    const next = [...widgets];
+    const overrides = { ...(next[wIdx].overrides || {}) };
+    overrides[overrideKey] = { ...(overrides[overrideKey] || {}), [field]: value };
+    next[wIdx] = { ...next[wIdx], overrides };
+    setWidgets(next);
+  };
+
+  const updateOverrideAttr = (wIdx, overrideKey, aIdx, field, value) => {
+    const next = [...widgets];
+    const overrides = { ...(next[wIdx].overrides || {}) };
+    const ov = { ...(overrides[overrideKey] || {}) };
+    const attrs = [...(ov.attributes || [])];
+    attrs[aIdx] = { ...attrs[aIdx], [field]: value };
+    ov.attributes = attrs;
+    overrides[overrideKey] = ov;
+    next[wIdx] = { ...next[wIdx], overrides };
+    setWidgets(next);
+  };
+
+  const addOverrideAttr = (wIdx, overrideKey) => {
+    const next = [...widgets];
+    const overrides = { ...(next[wIdx].overrides || {}) };
+    const ov = { ...(overrides[overrideKey] || {}) };
+    ov.attributes = [...(ov.attributes || []), { key: '', value: '' }];
+    overrides[overrideKey] = ov;
+    next[wIdx] = { ...next[wIdx], overrides };
+    setWidgets(next);
+  };
+
+  const removeOverrideAttr = (wIdx, overrideKey, aIdx) => {
+    const next = [...widgets];
+    const overrides = { ...(next[wIdx].overrides || {}) };
+    const ov = { ...(overrides[overrideKey] || {}) };
+    ov.attributes = (ov.attributes || []).filter((_, i) => i !== aIdx);
+    overrides[overrideKey] = ov;
+    next[wIdx] = { ...next[wIdx], overrides };
     setWidgets(next);
   };
 
@@ -140,20 +269,23 @@ function WidgetEditor({ widgets, setWidgets }) {
       {widgets.map((w, wIdx) => {
         const isExpanded = expandedIdx === wIdx;
         const summary = w.key || w.displayName || `Widget ${wIdx + 1}`;
+        const overrideKeys = Object.keys(w.overrides || {});
+        const activeTab = getActiveTab(wIdx);
+        const availableOverrides = OVERRIDE_KEY_OPTIONS.filter((k) => !overrideKeys.includes(k));
+
         return (
           <div key={`widget-${wIdx}`} className="border border-edge rounded-lg bg-surface-secondary overflow-hidden">
-            {/* Collapsed header — always visible */}
-            <div
-              className="flex items-center gap-2 p-3 cursor-pointer hover:bg-surface-hover select-none"
-              onClick={() => toggleExpand(wIdx)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleExpand(wIdx); } }}
-            >
+            {/* Collapsed header */}
+            <div className="flex items-center gap-2 p-3 cursor-pointer hover:bg-surface-hover select-none"
+              onClick={() => toggleExpand(wIdx)} role="button" tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleExpand(wIdx); } }}>
               {isExpanded ? <ChevronDown size={14} className="text-content-muted flex-shrink-0" /> : <ChevronRight size={14} className="text-content-muted flex-shrink-0" />}
               <span className="text-xs font-mono text-content-muted">#{wIdx}</span>
               <span className="text-sm font-medium text-content truncate flex-1">{summary}</span>
               <span className="text-xs text-content-muted">{(w.attributes || []).length} attrs</span>
+              {overrideKeys.length > 0 && (
+                <span className="text-xs text-purple-500">{overrideKeys.length} override{overrideKeys.length > 1 ? 's' : ''}</span>
+              )}
               <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                 <button type="button" onClick={() => moveWidget(wIdx, -1)} disabled={wIdx === 0}
                   className="p-1 hover:bg-surface rounded disabled:opacity-30"><ArrowUp size={14} /></button>
@@ -164,43 +296,70 @@ function WidgetEditor({ widgets, setWidgets }) {
                 </button>
               </div>
             </div>
-            {/* Expanded body */}
+
+            {/* Expanded body with tabs */}
             {isExpanded && (
-              <div className="p-3 pt-0 space-y-2 border-t border-edge">
-                <div className="grid grid-cols-3 gap-2 pt-2">
-                  <input className="px-2 py-1 text-sm border border-edge rounded bg-surface" placeholder="Key"
-                    value={w.key} onChange={(e) => updateWidget(wIdx, 'key', e.target.value)} />
-                  <input className="px-2 py-1 text-sm border border-edge rounded bg-surface" placeholder="Display Name"
-                    value={w.displayName} onChange={(e) => updateWidget(wIdx, 'displayName', e.target.value)} />
-                  <input className="px-2 py-1 text-sm border border-edge rounded bg-surface" placeholder="Data Key"
-                    value={w.datakey || ''} onChange={(e) => updateWidget(wIdx, 'datakey', e.target.value)} />
-                </div>
-                {/* Attributes */}
-                <div className="ml-2 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-content-muted">Attributes</span>
-                    <button type="button" onClick={() => addAttr(wIdx)} className="text-xs text-primary-500 hover:underline">+ attr</button>
-                  </div>
-                  {(w.attributes || []).map((attr, aIdx) => (
-                    <div key={`attr-${wIdx}-${aIdx}`} className="flex gap-2 items-center">
-                      <input className="px-2 py-0.5 text-xs border border-edge rounded bg-surface flex-1" placeholder="key"
-                        value={attr.key} onChange={(e) => updateAttr(wIdx, aIdx, 'key', e.target.value)} />
-                      {YN_ATTRIBUTE_KEYS.has(attr.key) ? (
-                        <select className="px-2 py-0.5 text-xs border border-edge rounded bg-surface flex-1"
-                          value={attr.value} onChange={(e) => updateAttr(wIdx, aIdx, 'value', e.target.value)}>
-                          <option value="Y">Yes</option>
-                          <option value="N">No</option>
-                        </select>
-                      ) : (
-                        <input className="px-2 py-0.5 text-xs border border-edge rounded bg-surface flex-1" placeholder="value"
-                          value={attr.value} onChange={(e) => updateAttr(wIdx, aIdx, 'value', e.target.value)} />
-                      )}
-                      <button type="button" onClick={() => removeAttr(wIdx, aIdx)} className="text-red-400 hover:text-red-500">
-                        <Trash2 size={12} />
+              <div className="p-3 pt-0 border-t border-edge">
+                {/* Tab bar */}
+                <div className="flex items-center gap-1 border-b border-edge pt-2 pb-0 mb-0 overflow-x-auto">
+                  <button type="button"
+                    className={`px-3 py-1.5 text-xs font-medium rounded-t border border-b-0 transition-colors ${activeTab === 'base' ? 'bg-surface text-content border-edge' : 'text-content-muted hover:text-content border-transparent'}`}
+                    onClick={() => setActiveTab(wIdx, 'base')}>
+                    Base
+                  </button>
+                  {overrideKeys.map((ok) => (
+                    <div key={ok} className="flex items-center">
+                      <button type="button"
+                        className={`px-3 py-1.5 text-xs font-medium rounded-t border border-b-0 transition-colors ${activeTab === ok ? 'bg-surface text-purple-600 border-edge' : 'text-content-muted hover:text-content border-transparent'}`}
+                        onClick={() => setActiveTab(wIdx, ok)}>
+                        {ok}
+                      </button>
+                      <button type="button" onClick={() => removeOverride(wIdx, ok)}
+                        className="ml-0.5 p-0.5 text-content-muted hover:text-red-500 text-xs" title={`Remove ${ok} override`}>
+                        &times;
                       </button>
                     </div>
                   ))}
+                  {availableOverrides.length > 0 && (
+                    <div className="relative">
+                      <button type="button"
+                        className="px-2 py-1.5 text-xs text-primary-500 hover:text-primary-600 font-medium"
+                        onClick={() => setDropdownOpen(dropdownOpen === wIdx ? null : wIdx)}>
+                        + Override
+                      </button>
+                      {dropdownOpen === wIdx && (
+                        <div className="absolute top-full left-0 z-10 mt-1 bg-surface border border-edge rounded-lg shadow-lg py-1 min-w-[120px]">
+                          {availableOverrides.map((ok) => (
+                            <button key={ok} type="button"
+                              className="w-full text-left px-3 py-1.5 text-xs hover:bg-surface-hover"
+                              onClick={() => addOverride(wIdx, ok)}>
+                              {ok}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
+
+                {/* Tab content */}
+                {activeTab === 'base' ? (
+                  <WidgetTabContent isBase
+                    fields={{ key: w.key, displayName: w.displayName, datakey: w.datakey }}
+                    onFieldChange={(field, value) => updateWidget(wIdx, field, value)}
+                    attributes={w.attributes || []}
+                    onAttrChange={(aIdx, field, value) => updateAttr(wIdx, aIdx, field, value)}
+                    onAddAttr={() => addAttr(wIdx)}
+                    onRemoveAttr={(aIdx) => removeAttr(wIdx, aIdx)} />
+                ) : (
+                  <WidgetTabContent isBase={false}
+                    fields={w.overrides?.[activeTab] || {}}
+                    onFieldChange={(field, value) => updateOverrideField(wIdx, activeTab, field, value)}
+                    attributes={w.overrides?.[activeTab]?.attributes || []}
+                    onAttrChange={(aIdx, field, value) => updateOverrideAttr(wIdx, activeTab, aIdx, field, value)}
+                    onAddAttr={() => addOverrideAttr(wIdx, activeTab)}
+                    onRemoveAttr={(aIdx) => removeOverrideAttr(wIdx, activeTab, aIdx)} />
+                )}
               </div>
             )}
           </div>
@@ -393,7 +552,7 @@ const UISchemaManagement = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      await uiTemplatesAPI.create(formData);
+      await uiTemplatesAPI.create({ ...formData, widgets: stripOverrides(formData.widgets || []) });
       toast.success('Template created');
       setFormModalOpen(false); resetForm(); fetchData();
     } catch (error) { toast.error(error.response?.data?.detail || 'Failed to create'); }
@@ -403,7 +562,7 @@ const UISchemaManagement = () => {
     e.preventDefault();
     try {
       const { version, status, ...updateData } = formData;
-      await uiTemplatesAPI.update(editingItem._id, updateData);
+      await uiTemplatesAPI.update(editingItem._id, { ...updateData, widgets: stripOverrides(updateData.widgets || []) });
       toast.success('Template updated');
       setFormModalOpen(false); resetForm(); fetchData();
     } catch (error) { toast.error(error.response?.data?.detail || 'Failed to update'); }
