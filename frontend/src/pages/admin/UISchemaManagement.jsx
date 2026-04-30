@@ -274,7 +274,7 @@ function WidgetEditor({ widgets, setWidgets }) {
         const availableOverrides = OVERRIDE_KEY_OPTIONS.filter((k) => !overrideKeys.includes(k));
 
         return (
-          <div key={`widget-${wIdx}`} className="border border-edge rounded-lg bg-surface-secondary overflow-hidden">
+          <div key={`widget-${wIdx}`} className="border border-edge rounded-lg bg-surface-secondary">
             {/* Collapsed header */}
             <div className="flex items-center gap-2 p-3 cursor-pointer hover:bg-surface-hover select-none"
               onClick={() => toggleExpand(wIdx)} role="button" tabIndex={0}
@@ -328,7 +328,7 @@ function WidgetEditor({ widgets, setWidgets }) {
                         + Override
                       </button>
                       {dropdownOpen === wIdx && (
-                        <div className="absolute top-full left-0 z-10 mt-1 bg-surface border border-edge rounded-lg shadow-lg py-1 min-w-[120px]">
+                        <div className="absolute top-full left-0 z-50 mt-1 bg-surface border border-edge rounded-lg shadow-lg py-1 min-w-[120px]">
                           {availableOverrides.map((ok) => (
                             <button key={ok} type="button"
                               className="w-full text-left px-3 py-1.5 text-xs hover:bg-surface-hover"
