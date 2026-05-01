@@ -39,6 +39,26 @@ async def execute_prevail_query(
     Appends /{scenario_key} to the configured endpoint and forwards the
     JSON payload.
     """
+    # EasyWeaver routing check
+    try:
+        from easylifeauth.api.ew_adapter_routes import get_adapter
+        from easylifeauth.api.dependencies import get_db
+        db = get_db()
+        playboard = await db.db.playboards.find_one({"key": scenario_key})
+        if playboard and playboard.get("data", {}).get("data_source") == "easyweaver":
+            adapter = get_adapter()
+            if adapter:
+                body = await request.json()
+                token = request.headers.get("Authorization", "")
+                result = await adapter.execute(playboard, body, token=token)
+                if result.get("status") == "processing":
+                    from fastapi.responses import JSONResponse
+                    return JSONResponse(status_code=202, content=result)
+                return result
+    except Exception as e:
+        logger.warning(f"EasyWeaver routing check failed: {e}")
+        # Fall through to existing Prevail proxy
+
     # Get the prevail API configuration using key from config/env
     api_key = prevail_api_key or "prevail"
     config = await service.get_config_by_key(api_key)

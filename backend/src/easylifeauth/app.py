@@ -40,6 +40,8 @@ from .api import (
     prevail_router,
     ui_template_router,
     atlassian_lookup_router,
+    explorer_publish_router,
+    ew_adapter_router,
 )
 from .api.system_log_routes import router as system_log_router
 from .api.dependencies import init_dependencies
@@ -410,6 +412,8 @@ def create_app(
     app.include_router(prevail_router, prefix=API_BASE_ROUTE)
     app.include_router(ui_template_router, prefix=API_BASE_ROUTE)
     app.include_router(atlassian_lookup_router, prefix=API_BASE_ROUTE)
+    app.include_router(explorer_publish_router, prefix=API_BASE_ROUTE)
+    app.include_router(ew_adapter_router, prefix=f"{API_BASE_ROUTE}/prevail")
 
     # Custom ReDoc using relative openapi.json URL (works behind any proxy basepath)
     @app.get("/redoc", include_in_schema=False)

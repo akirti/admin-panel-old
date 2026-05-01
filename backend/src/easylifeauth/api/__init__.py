@@ -25,6 +25,8 @@ from .error_log_routes import router as error_log_router
 from .prevail_routes import router as prevail_router
 from .ui_template_routes import router as ui_template_router
 from .atlassian_lookup_routes import router as atlassian_lookup_router
+from .explorer_publish_routes import router as explorer_publish_router
+from .ew_adapter_routes import router as ew_adapter_router
 
 __all__ = [
     "auth_router",
@@ -53,4 +55,6 @@ __all__ = [
     "prevail_router",
     "ui_template_router",
     "atlassian_lookup_router",
+    "explorer_publish_router",
+    "ew_adapter_router",
 ]
