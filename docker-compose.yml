@@ -47,10 +47,13 @@ services:
       # Config pipeline: pick environment, point to config folder inside container
       EASYLIFE_ENVIRONMENT: ${EASYLIFE_ENVIRONMENT:-production}
       CONFIG_PATH: /app/config
+      EW_REDIS_URL: redis://easyweaver-redis:6379/2
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:
       mongodb:
+        condition: service_healthy
+      easyweaver-redis:
         condition: service_healthy
     networks:
       - easylife-network

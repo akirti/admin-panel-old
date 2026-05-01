@@ -9,7 +9,7 @@ from ..errors.playboard_error import PlayboardNotFoundError, PlayboardBadError
 
 UPDATE_ATTRS = [
     "dataDomain", "scenerioKey", "widgets", "order",
-    "status", "program_key", "addon_configurations"
+    "status", "program_key", "addon_configurations", "data"
 ]
 INSERT_ATTRS = UPDATE_ATTRS + []
 

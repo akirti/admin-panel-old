@@ -35,6 +35,9 @@ bcrypt>=4.1.0,<6.0.0
 # CORS
 # (included in fastapi)
 
+# Redis (EasyWeaver bridge cache)
+redis[hiredis]>=5.0,<6.0
+
 # Jira Integration
 jira>=3.10.5,<4.0.0
 atlassian-python-api>=3.41.0
