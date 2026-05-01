@@ -31,4 +31,12 @@ export const downloadAPI = {
   }
 };
 
-export default { prevailAPI, downloadAPI };
+// EasyWeaver adapter endpoints
+export const ewAdapterAPI = {
+  getResults: (runId, params = {}) =>
+    api.get(`/prevail/results/${runId}`, { params }),
+  cancelRun: (runId) =>
+    api.post(`/prevail/cancel/${runId}`),
+};
+
+export default { prevailAPI, downloadAPI, ewAdapterAPI };

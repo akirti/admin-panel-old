@@ -6,7 +6,10 @@ import V1Breadcrumbs from '../../components/explorer/v1_Breadcrumbs';
 import V1FilterSection from '../../components/explorer/v1_FilterSection';
 import V1DataTable from '../../components/explorer/v1_DataTable';
 import { playboardAPI } from '../../services/api';
-import { prevailAPI } from '../../services/v1_explorerApi';
+import { prevailAPI, ewAdapterAPI } from '../../services/v1_explorerApi';
+import { useQueryProgress } from '../../hooks/useQueryProgress';
+import V1QueryProgress from '../../components/explorer/v1_QueryProgress';
+import V1QueryError from '../../components/explorer/v1_QueryError';
 import { ENV } from '../../config/env';
 import { getColumnsFromData as getColumnsObj, getAttrValue } from '../../utils/v1_reportUtils';
 import V1DescriptionRenderer from '../../components/explorer/v1_DescriptionRenderer';
@@ -447,6 +450,12 @@ function V1ExplorerReportPage() {
   const [currentCount, setCurrentCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
 
+  // Async query state (EasyWeaver SSE)
+  const [asyncRun, setAsyncRun] = useState(null);
+  const [showProgress, setShowProgress] = useState(false);
+  const [queryError, setQueryError] = useState(null);
+  const [forceRefresh, setForceRefresh] = useState(false);
+
   // Sorting
   const [sortBy, setSortBy] = useState('');
   const [sortOrder, setSortOrder] = useState('asc');
@@ -467,6 +476,39 @@ function V1ExplorerReportPage() {
     }
     return [];
   }, [playboard]);
+
+  // --- SSE progress handlers for async queries ---
+  const handleQueryComplete = useCallback(async (resultsUrl, statusData) => {
+    try {
+      const response = await ewAdapterAPI.getResults(asyncRun?.run_id, {
+        page, page_size: pageSize,
+      });
+      setData(response.data?.data || []);
+      const pgn = response.data?.pagination || {};
+      setTotalCount(pgn.total_count || 0);
+      setEnd(pgn.end || false);
+      setCountEvaluated(pgn.count_evaluated || false);
+      setPages(Math.ceil((pgn.total_count || 0) / pageSize));
+      setShowTable(true);
+      setShowProgress(false);
+      setAsyncRun(null);
+    } catch (e) {
+      setQueryError({ message: 'Failed to fetch results', technical: { detail: e.message } });
+      setShowProgress(false);
+    }
+  }, [asyncRun, page, pageSize]);
+
+  const handleQueryError = useCallback((errorData) => {
+    setQueryError(errorData);
+    setShowProgress(false);
+    setAsyncRun(null);
+  }, []);
+
+  const { progress, elapsed, cancel } = useQueryProgress(
+    showProgress ? asyncRun : null,
+    handleQueryComplete,
+    handleQueryError,
+  );
 
   // --- Fetch playboard config on mount ---
   useEffect(() => {
@@ -580,6 +622,20 @@ function V1ExplorerReportPage() {
         };
 
         const response = await prevailAPI.execute(playboard.key, apiPayload);
+
+        // Handle async processing (EasyWeaver adapter returns 202)
+        if (response.status === 202 || response.data?.status === 'processing') {
+          setAsyncRun({
+            run_id: response.data.run_id,
+            sse_url: response.data.sse_url,
+            results_url: response.data.results_url,
+          });
+          setShowProgress(true);
+          setQueryError(null);
+          setLoading(false);
+          return;
+        }
+
         const resData = response.data;
 
         if (resData?.data) {
@@ -712,6 +768,29 @@ function V1ExplorerReportPage() {
           filterConfig={filterConfig}
           onSubmit={handleFilterSubmit}
           initialFilterValues={filters}
+          onForceRefresh={
+            playboard?.data?.data_source === 'easyweaver'
+              ? () => { setForceRefresh(true); handleFilterSubmit(filters); }
+              : undefined
+          }
+        />
+      )}
+
+      {/* Async query progress */}
+      {showProgress && (
+        <V1QueryProgress
+          progress={progress}
+          elapsed={elapsed}
+          onCancel={() => { cancel(); setShowProgress(false); }}
+        />
+      )}
+
+      {/* Async query error */}
+      {queryError && !showProgress && (
+        <V1QueryError
+          error={queryError}
+          onRetry={() => { setQueryError(null); fetchReport(filters); }}
+          onCancel={() => setQueryError(null)}
         />
       )}
 
