@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI, clearAccessToken, scheduleProactiveRefresh, clearProactiveRefresh } from '../services/api';
+import { authAPI, clearAccessToken, setAccessToken, scheduleProactiveRefresh, clearProactiveRefresh } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -32,8 +32,19 @@ export function AuthProvider({ children }) {
       try {
         const userData = await attemptProfile();
         setUser(userData);
-        // Schedule proactive refresh if we got a valid session
-        scheduleProactiveRefresh(900); // default 15 min, will be corrected on next refresh
+        // Obtain a fresh access token so in-memory bearer is available
+        // (needed by jira-dashboard and other services that use getAccessToken())
+        try {
+          const refreshResp = await authAPI.refresh();
+          if (refreshResp.data?.access_token) {
+            setAccessToken(refreshResp.data.access_token);
+          }
+          const expiresIn = refreshResp.data?.expires_in || 900;
+          scheduleProactiveRefresh(expiresIn);
+        } catch {
+          // Refresh failed — bearer token unavailable, cookie auth still works
+          scheduleProactiveRefresh(900);
+        }
       } catch (error) {
         const status = error?.response?.status;
         const isNetworkError = error?.code === 'ERR_NETWORK' || error?.code === 'ECONNABORTED'

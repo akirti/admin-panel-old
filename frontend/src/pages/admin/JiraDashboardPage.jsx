@@ -1,16 +1,33 @@
 import { lazy, Suspense } from 'react';
-import { getAccessToken } from '../../services/api';
+import { getAccessToken, setAccessToken, authAPI } from '../../services/api';
+import { JIRA_API_URL } from '../../config/env';
 
 const JiraDashboard = lazy(() =>
   import('jira-dashboard').then(mod => ({ default: mod.JiraDashboard }))
 );
 
-const JIRA_API_URL = window.__ENV__?.JIRA_API_URL || 'http://localhost:8001/api/v1';
-
 const JiraDashboardPage = () => {
-  // Return the in-memory access token directly — no network call needed.
-  // The token is already managed by api.js interceptors (login/refresh).
-  const getToken = () => getAccessToken();
+  // Async token provider: returns in-memory token if available,
+  // otherwise fetches a fresh one via login session cookies.
+  const getToken = async () => {
+    const existing = getAccessToken();
+    if (existing) return existing;
+
+    // No in-memory token (page was reloaded) — get a fresh one
+    try {
+      const response = await authAPI.getProfile();
+      // Profile endpoint doesn't return a token, but if we got here
+      // the session cookies are valid. Try refresh.
+      const refreshResp = await authAPI.refresh();
+      if (refreshResp.data?.access_token) {
+        setAccessToken(refreshResp.data.access_token);
+        return refreshResp.data.access_token;
+      }
+    } catch {
+      // Fall through — token unavailable
+    }
+    return null;
+  };
 
   return (
     <div className="space-y-6">
