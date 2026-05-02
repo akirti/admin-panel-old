@@ -5,6 +5,8 @@ module.exports = {
     "./src/**/*.{js,ts,jsx,tsx}",
     // Scan easyweaver-ui components so Tailwind 3 generates their utility classes
     "../easyweaver-ui/src/**/*.{ts,tsx}",
+    // Scan jira-dashboard components for theme token classes
+    "../jira-dashboard/src/**/*.{js,jsx}",
   ],
   theme: {
     extend: {
