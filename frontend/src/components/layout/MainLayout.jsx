@@ -397,7 +397,7 @@ function MainLayout({ isAdmin = false, isGroupAdmin = false }) {
         </header>
 
         {/* Page Content */}
-        <div className={`p-6 ${location.pathname.startsWith('/aggregator') ? '' : 'max-w-screen-2xl mx-auto'}`}>
+        <div className={`p-6 ${location.pathname.startsWith('/aggregator') || isExplorerActive ? '' : 'max-w-screen-2xl mx-auto'}`}>
           <Breadcrumbs />
           <Outlet />
         </div>

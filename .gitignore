@@ -76,6 +76,10 @@ backend/coverage.xml
 backend/Pipfile.lock
 backend/poetry.lock
 docs/**
+/docs/**
+/docs/*.md
+/docs/**/*.md
+/docs/**/**/*.md
 docs/EXPLORER_ANALYSIS_REPORT.md
 docs/apigee-proxy-gap-analysis.md
 #frontend/envConfig/
@@ -122,6 +126,19 @@ jira-dashboard/*.zip
 jira-dashboard/*.rar
 jira-dashboard/*.swp
 
+easyweaver-ui/node_modules/
+easyweaver-ui/.env
+easyweaver-ui/.env.local
+easyweaver-ui/.DS_Store
+easyweaver-ui/dist/
+easyweaver-ui/*.swp
+
+easyweaver-api/node_modules/
+easyweaver-api/.env
+easyweaver-api/.env.local
+easyweaver-api/.DS_Store
+easyweaver-api/.venv**/
+easyweaver-api/*.swp
 
 jira-api/.env
 jira-api/.env.local
@@ -142,3 +159,11 @@ jira-api/*.swp
 jira-api.egg-info/
 jira-api/.venv/**
 jira-dashboard/.venv/**
+AGENTS.md
+ASSEMBLY_PLAN.md
+sonar-project-1.properties
+sonar-scanner-report.json
+sonar-scanner-report.xml
+sonar-scanner-report.*
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+ASSEMBLY_PLAN.md

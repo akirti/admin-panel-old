@@ -8,5 +8,5 @@
   w.__env.APP_BASE_PATH = "";
   w.__env.API_BASE_URL = "/api/v1";
   w.__env.PREVAIL_API_BASE_URL = "/api/v1";
-  w.__env.JIRA_API_URL = "http://localhost:8002/api/v1";
+  w.__env.JIRA_API_URL = "/jira-api";
 })(window);

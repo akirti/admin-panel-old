@@ -10,43 +10,44 @@
 
 **Key constraint:** DatasetPanel only executes `type: "single"` queries. Joins happen through JoinStepCard via REST. So we only need WS progress for single-source batched fetches.
 
----
+***
 
 ## File Map
 
-| Action | File | Responsibility |
-|--------|------|----------------|
-| Modify | `easyweaver-api/src/easyweaver/queries/executor.py` | Add `execute_single_source_batched()` with progress_callback |
-| Create | `easyweaver-api/src/easyweaver/queries/ws_handler.py` | WebSocket handler for query execution |
-| Modify | `easyweaver-api/src/easyweaver/queries/router.py` | Add `/run/ws` WebSocket endpoint |
-| Modify | `easyweaver-api/src/easyweaver/queries/service.py` | Add `update_query_run_progress()` helper |
-| Modify | `easyweaver-api/src/easyweaver/queries/models.py` | Add `progress` field to QueryRun |
-| Modify | `easyweaver-api/src/easyweaver/queries/schemas.py` | Add `progress` to QueryRunResponse |
-| Create | `easyweaver-ui/src/hooks/use-query-ws.ts` | WebSocket hook for query execution |
-| Create | `easyweaver-ui/src/components/query/QueryFetchProgress.tsx` | Compact inline progress display |
-| Modify | `easyweaver-ui/src/components/query/DatasetPanel.tsx` | WS execution with progress |
-| Modify | `easyweaver-ui/src/types/index.ts` | Add query WS client message type |
+| Action | File                                                        | Responsibility                                                |
+| ------ | ----------------------------------------------------------- | ------------------------------------------------------------- |
+| Modify | `easyweaver-api/src/easyweaver/queries/executor.py`         | Add `execute_single_source_batched()` with progress\_callback |
+| Create | `easyweaver-api/src/easyweaver/queries/ws_handler.py`       | WebSocket handler for query execution                         |
+| Modify | `easyweaver-api/src/easyweaver/queries/router.py`           | Add `/run/ws` WebSocket endpoint                              |
+| Modify | `easyweaver-api/src/easyweaver/queries/service.py`          | Add `update_query_run_progress()` helper                      |
+| Modify | `easyweaver-api/src/easyweaver/queries/models.py`           | Add `progress` field to QueryRun                              |
+| Modify | `easyweaver-api/src/easyweaver/queries/schemas.py`          | Add `progress` to QueryRunResponse                            |
+| Create | `easyweaver-ui/src/hooks/use-query-ws.ts`                   | WebSocket hook for query execution                            |
+| Create | `easyweaver-ui/src/components/query/QueryFetchProgress.tsx` | Compact inline progress display                               |
+| Modify | `easyweaver-ui/src/components/query/DatasetPanel.tsx`       | WS execution with progress                                    |
+| Modify | `easyweaver-ui/src/types/index.ts`                          | Add query WS client message type                              |
 
----
+***
 
 ### Task 1: Backend — Add batched query execution to queries/executor.py
 
 **Files:**
-- Modify: `easyweaver-api/src/easyweaver/queries/executor.py:67-87`
+
+* Modify: `easyweaver-api/src/easyweaver/queries/executor.py:67-87`
 
 This adds `execute_single_source_batched()` which wraps the existing connector with batched fetching and progress callbacks, reusing the same adaptive batch sizing from the process executor.
 
-- [ ] **Step 1: Add the `_emit` helper and `execute_single_source_batched` function**
+* [ ] **Step 1: Add the** **`_emit`** **helper and** **`execute_single_source_batched`** **function**
 
 Add after line 10 (after the existing imports):
 
-```python
+```Python
 from easyweaver.processes.batch_adapter import adapt_batch_size
 ```
 
 Add after the existing `execute_single_source` function (after line 87):
 
-```python
+```Python
 async def _emit(callback, event_type: str, **data) -> None:
     """Fire a progress callback if one is provided."""
     if callback is not None:
@@ -166,32 +167,35 @@ async def execute_single_source_batched(
     return df
 ```
 
-- [ ] **Step 2: Verify the module imports are correct**
+* [ ] **Step 2: Verify the module imports are correct**
 
 Run: `cd easyweaver-api && python -c "from easyweaver.queries.executor import execute_single_source_batched; print('OK')"`
 Expected: `OK`
 
-- [ ] **Step 3: Commit**
+* [ ] **Step 3: Commit**
 
-```bash
+```Shell
 git add easyweaver-api/src/easyweaver/queries/executor.py
 git commit -m "feat: add execute_single_source_batched with progress callbacks"
 ```
 
----
+***
 
 ### Task 2: Backend — Update QueryRun model and service
 
 **Files:**
-- Modify: `easyweaver-api/src/easyweaver/queries/models.py`
-- Modify: `easyweaver-api/src/easyweaver/queries/service.py`
-- Modify: `easyweaver-api/src/easyweaver/queries/schemas.py`
 
-- [ ] **Step 1: Add `progress` and `control` fields to QueryRun model**
+* Modify: `easyweaver-api/src/easyweaver/queries/models.py`
+
+* Modify: `easyweaver-api/src/easyweaver/queries/service.py`
+
+* Modify: `easyweaver-api/src/easyweaver/queries/schemas.py`
+
+* [ ] **Step 1: Add** **`progress`** **and** **`control`** **fields to QueryRun model**
 
 In `easyweaver-api/src/easyweaver/queries/models.py`, update the `QueryRun` dataclass:
 
-```python
+```Python
 @dataclass
 class QueryRun:
     id: uuid.UUID
@@ -234,11 +238,11 @@ class QueryRun:
         }
 ```
 
-- [ ] **Step 2: Add `update_query_run_progress` to service.py**
+* [ ] **Step 2: Add** **`update_query_run_progress`** **to service.py**
 
 In `easyweaver-api/src/easyweaver/queries/service.py`, add after `update_query_run`:
 
-```python
+```Python
 async def update_query_run_progress(
     db: AsyncIOMotorDatabase,
     run_id: str,
@@ -254,11 +258,11 @@ async def update_query_run_progress(
     await db.query_runs.update_one({"_id": run_id}, {"$set": updates})
 ```
 
-- [ ] **Step 3: Add `progress` to QueryRunResponse schema**
+* [ ] **Step 3: Add** **`progress`** **to QueryRunResponse schema**
 
 In `easyweaver-api/src/easyweaver/queries/schemas.py`, update `QueryRunResponse`:
 
-```python
+```Python
 class QueryRunResponse(BaseModel):
     id: uuid.UUID
     status: Literal["pending", "running", "completed", "failed", "cancelled"]
@@ -271,30 +275,31 @@ class QueryRunResponse(BaseModel):
     model_config = {"from_attributes": True}
 ```
 
-- [ ] **Step 4: Verify imports**
+* [ ] **Step 4: Verify imports**
 
 Run: `cd easyweaver-api && python -c "from easyweaver.queries.models import QueryRun; from easyweaver.queries.service import update_query_run_progress; print('OK')"`
 Expected: `OK`
 
-- [ ] **Step 5: Commit**
+* [ ] **Step 5: Commit**
 
-```bash
+```Shell
 git add easyweaver-api/src/easyweaver/queries/models.py easyweaver-api/src/easyweaver/queries/service.py easyweaver-api/src/easyweaver/queries/schemas.py
 git commit -m "feat: add progress/control fields to QueryRun model"
 ```
 
----
+***
 
 ### Task 3: Backend — Create QueryWebSocketHandler
 
 **Files:**
-- Create: `easyweaver-api/src/easyweaver/queries/ws_handler.py`
+
+* Create: `easyweaver-api/src/easyweaver/queries/ws_handler.py`
 
 This handler manages a single WebSocket connection for query execution, broadcasting progress events from the batched executor.
 
-- [ ] **Step 1: Create the handler**
+* [ ] **Step 1: Create the handler**
 
-```python
+```Python
 """WebSocket handler for real-time query execution with progress.
 
 Accepts a WebSocket connection, receives a start message with a QueryRequest,
@@ -605,32 +610,33 @@ class QueryWebSocketHandler:
                 del _active_query_handlers[run_id]
 ```
 
-- [ ] **Step 2: Verify the module imports**
+* [ ] **Step 2: Verify the module imports**
 
 Run: `cd easyweaver-api && python -c "from easyweaver.queries.ws_handler import QueryWebSocketHandler; print('OK')"`
 Expected: `OK`
 
-- [ ] **Step 3: Commit**
+* [ ] **Step 3: Commit**
 
-```bash
+```Shell
 git add easyweaver-api/src/easyweaver/queries/ws_handler.py
 git commit -m "feat: add QueryWebSocketHandler for real-time query progress"
 ```
 
----
+***
 
 ### Task 4: Backend — Add WebSocket endpoint to query router
 
 **Files:**
-- Modify: `easyweaver-api/src/easyweaver/queries/router.py:373-390`
+
+* Modify: `easyweaver-api/src/easyweaver/queries/router.py:373-390`
 
 Add a new WS endpoint `/run/ws` for query execution with progress. Keep the existing `/ws/{run_id}` endpoint for backward compatibility.
 
-- [ ] **Step 1: Add the `/run/ws` endpoint**
+* [ ] **Step 1: Add the** **`/run/ws`** **endpoint**
 
 Add before the existing `@router.websocket("/ws/{run_id}")` at line 373:
 
-```python
+```Python
 @router.websocket("/run/ws")
 async def run_query_ws(
     websocket: WebSocket,
@@ -660,30 +666,31 @@ async def run_query_ws(
     await handler.handle()
 ```
 
-- [ ] **Step 2: Verify the endpoint is registered**
+* [ ] **Step 2: Verify the endpoint is registered**
 
 Run: `cd easyweaver-api && python -c "from easyweaver.queries.router import router; routes = [r.path for r in router.routes]; print('/run/ws' in routes or any('run/ws' in str(r.path) for r in router.routes))"`
 Expected: `True`
 
-- [ ] **Step 3: Commit**
+* [ ] **Step 3: Commit**
 
-```bash
+```Shell
 git add easyweaver-api/src/easyweaver/queries/router.py
 git commit -m "feat: add /queries/run/ws WebSocket endpoint"
 ```
 
----
+***
 
 ### Task 5: Frontend — Add WsClientMessage type for queries
 
 **Files:**
-- Modify: `easyweaver-ui/src/types/index.ts:494-501`
 
-- [ ] **Step 1: Extend WsClientMessage union**
+* Modify: `easyweaver-ui/src/types/index.ts:494-501`
+
+* [ ] **Step 1: Extend WsClientMessage union**
 
 In `easyweaver-ui/src/types/index.ts`, update the `WsClientMessage` type (around line 494):
 
-```typescript
+```TypeScript
 // Client → Server
 export type WsClientMessage =
   | { type: 'start'; param_values: Record<string, unknown>; max_rows: number; target_batch_seconds?: number }
@@ -698,25 +705,26 @@ export type WsClientMessage =
 
 Note: The backend handler receives `type: 'start'` with a `request` field (not `start_query`). The frontend hook will send `{ type: 'start', request: ... }`. The `start_query` variant is defined here for type-safety to distinguish process starts from query starts on the frontend side. The hook will map it to `{ type: 'start', request }` when sending.
 
-- [ ] **Step 2: Commit**
+* [ ] **Step 2: Commit**
 
-```bash
+```Shell
 git add easyweaver-ui/src/types/index.ts
 git commit -m "feat: add start_query WsClientMessage type"
 ```
 
----
+***
 
 ### Task 6: Frontend — Create useQueryWebSocket hook
 
 **Files:**
-- Create: `easyweaver-ui/src/hooks/use-query-ws.ts`
+
+* Create: `easyweaver-ui/src/hooks/use-query-ws.ts`
 
 This is modeled after `use-process-ws.ts` but connects to `/queries/run/ws` instead.
 
-- [ ] **Step 1: Create the hook**
+* [ ] **Step 1: Create the hook**
 
-```typescript
+```TypeScript
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { WsServerMessage } from '@/types';
 
@@ -841,29 +849,30 @@ export function useQueryWebSocket(): UseQueryWebSocketReturn {
 }
 ```
 
-- [ ] **Step 2: Verify it compiles**
+* [ ] **Step 2: Verify it compiles**
 
 Run: `cd easyweaver-ui && npx tsc --noEmit src/hooks/use-query-ws.ts 2>&1 | head -20`
 
-- [ ] **Step 3: Commit**
+* [ ] **Step 3: Commit**
 
-```bash
+```Shell
 git add easyweaver-ui/src/hooks/use-query-ws.ts
 git commit -m "feat: add useQueryWebSocket hook for query progress"
 ```
 
----
+***
 
 ### Task 7: Frontend — Create QueryFetchProgress component
 
 **Files:**
-- Create: `easyweaver-ui/src/components/query/QueryFetchProgress.tsx`
+
+* Create: `easyweaver-ui/src/components/query/QueryFetchProgress.tsx`
 
 A compact inline progress display for DatasetPanel — shows progress bar, row count, batch info, and pause/resume/cancel controls. Reuses `DatasetProgress` type from `use-progress-state.ts`.
 
-- [ ] **Step 1: Create the component**
+* [ ] **Step 1: Create the component**
 
-```tsx
+```TSX
 import { Loader2, Pause, Play, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { ProgressState } from '@/hooks/use-progress-state';
@@ -942,37 +951,38 @@ export function QueryFetchProgress({ state, onPause, onResume, onCancel }: Query
 }
 ```
 
-- [ ] **Step 2: Commit**
+* [ ] **Step 2: Commit**
 
-```bash
+```Shell
 git add easyweaver-ui/src/components/query/QueryFetchProgress.tsx
 git commit -m "feat: add QueryFetchProgress compact progress component"
 ```
 
----
+***
 
 ### Task 8: Frontend — Wire DatasetPanel to use WebSocket execution
 
 **Files:**
-- Modify: `easyweaver-ui/src/components/query/DatasetPanel.tsx`
+
+* Modify: `easyweaver-ui/src/components/query/DatasetPanel.tsx`
 
 Add WS-first execution with REST fallback (same pattern as ProcessRunner). Show QueryFetchProgress while running via WS.
 
-- [ ] **Step 1: Add imports**
+* [ ] **Step 1: Add imports**
 
 At the top of `DatasetPanel.tsx`, add these imports:
 
-```typescript
+```TypeScript
 import { useQueryWebSocket } from '@/hooks/use-query-ws';
 import { useProgressState } from '@/hooks/use-progress-state';
 import { QueryFetchProgress } from './QueryFetchProgress';
 ```
 
-- [ ] **Step 2: Add WS hooks and state inside the component**
+* [ ] **Step 2: Add WS hooks and state inside the component**
 
 After the existing hooks (line 74, after `const { data: schema } = useSourceSchema(...)`), add:
 
-```typescript
+```TypeScript
   // WebSocket execution
   const { sendCommand, lastMessage, isConnected, connect, disconnect } = useQueryWebSocket();
   const { state: progressState, dispatch } = useProgressState();
@@ -985,23 +995,23 @@ After the existing hooks (line 74, after `const { data: schema } = useSourceSche
 
 Also add `useRef` to the React imports at line 1:
 
-```typescript
+```TypeScript
 import { useEffect, useRef, useState } from 'react';
 ```
 
 And add `QueryRequest` to the type imports (line 17):
 
-```typescript
+```TypeScript
 import type { FilterCondition, TransformSpec, QueryRequest, ColumnInfo, DataBinding, SortSpec, GroupBySpec } from '@/types';
 ```
 
 (QueryRequest is already imported — verify it is.)
 
-- [ ] **Step 3: Add WS message dispatch effect**
+* [ ] **Step 3: Add WS message dispatch effect**
 
 After the existing `useEffect` for syncing run status (line 89), add:
 
-```typescript
+```TypeScript
   // Dispatch incoming WS messages to progress reducer
   useEffect(() => {
     if (lastMessage) {
@@ -1059,11 +1069,11 @@ After the existing `useEffect` for syncing run status (line 89), add:
   }, [isConnected]);
 ```
 
-- [ ] **Step 4: Replace handleRun to use WS-first**
+* [ ] **Step 4: Replace handleRun to use WS-first**
 
 Replace the existing `handleRun` function (lines 91-157) with:
 
-```typescript
+```TypeScript
   const handleRun = async () => {
     if (!dataset.sourceId || !dataset.table) {
       toast.error('Select a connection and table first');
@@ -1148,11 +1158,11 @@ Replace the existing `handleRun` function (lines 91-157) with:
   };
 ```
 
-- [ ] **Step 5: Add wsRunning flag and update isRunning/canRun**
+* [ ] **Step 5: Add wsRunning flag and update isRunning/canRun**
 
 Replace the existing `isRunning` and `canRun` lines (around line 160-161) with:
 
-```typescript
+```TypeScript
   const wsRunning =
     wsExecuting.current &&
     !progressState.completed &&
@@ -1163,11 +1173,11 @@ Replace the existing `isRunning` and `canRun` lines (around line 160-161) with:
   const canRun = !!dataset.sourceId && !!dataset.table && !isRunning;
 ```
 
-- [ ] **Step 6: Add QueryFetchProgress to the JSX**
+* [ ] **Step 6: Add QueryFetchProgress to the JSX**
 
 After the Run Query button (after line 300 `</Button>`), add:
 
-```tsx
+```TSX
         {/* WS-driven progress */}
         {wsRunning && (
           <QueryFetchProgress
@@ -1179,33 +1189,33 @@ After the Run Query button (after line 300 `</Button>`), add:
         )}
 ```
 
-- [ ] **Step 7: Verify it compiles**
+* [ ] **Step 7: Verify it compiles**
 
 Run: `cd easyweaver-ui && npx tsc --noEmit 2>&1 | head -20`
 Expected: No errors related to DatasetPanel
 
-- [ ] **Step 8: Commit**
+* [ ] **Step 8: Commit**
 
-```bash
+```Shell
 git add easyweaver-ui/src/components/query/DatasetPanel.tsx
 git commit -m "feat: wire DatasetPanel to WebSocket execution with progress"
 ```
 
----
+***
 
 ### Task 9: Integration test — Verify end-to-end
 
 **Files:** None (manual testing)
 
-- [ ] **Step 1: Start the backend**
+* [ ] **Step 1: Start the backend**
 
 Run: `cd easyweaver-api && python run.py`
 
-- [ ] **Step 2: Start the frontend**
+* [ ] **Step 2: Start the frontend**
 
 Run: `cd easyweaver-ui && npm run dev`
 
-- [ ] **Step 3: Test in browser**
+* [ ] **Step 3: Test in browser**
 
 1. Open the query explorer at `/aggregator/queries`
 2. Select a data source and table
@@ -1216,16 +1226,17 @@ Run: `cd easyweaver-ui && npm run dev`
 7. Verify: on completion, results appear in the DataTable
 8. Verify: if WS fails to connect within 3s, REST fallback works (can test by temporarily blocking WS in Network tab)
 
-- [ ] **Step 4: Test saved process runs still work**
+* [ ] **Step 4: Test saved process runs still work**
 
 1. Navigate to a saved process
 2. Run it
 3. Verify: ProgressPanel still appears with full dataset/phase tracking
 4. Verify: no regressions
 
-- [ ] **Step 5: Commit all remaining changes if any**
+* [ ] **Step 5: Commit all remaining changes if any**
 
-```bash
+```Shell
 git add -A
 git commit -m "feat: query explorer real-time WebSocket progress"
 ```
+

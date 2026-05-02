@@ -73,14 +73,14 @@ function V1ExplorerSidebar() {
 
   if (loading) {
     return (
-      <div className={`${getSidebarWidth(collapsed)} bg-surface border-r border-edge flex items-center justify-center`}>
+      <div className={`${getSidebarWidth(collapsed)} shrink-0 bg-surface border-r border-edge flex items-center justify-center`}>
         <Loader2 className="animate-spin text-primary-600" size={24} />
       </div>
     );
   }
 
   return (
-    <div className={`${getSidebarWidth(collapsed)} bg-surface border-r border-edge flex flex-col transition-all duration-200`}>
+    <div className={`${getSidebarWidth(collapsed)} shrink-0 bg-surface border-r border-edge flex flex-col transition-all duration-200`}>
       <SidebarHeader collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
       <nav className="flex-1 overflow-y-auto py-2 px-2">
         <ul className="space-y-1">
